@@ -1,0 +1,373 @@
+version: "3.9"
+services:
+  # FireflyIII - Accounting and money management
+  fireflyiii:
+    image: fireflyiii/core:latest
+    container_name: fireflyIII
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.121
+      firefly_network:
+        ipv4_address: 172.18.2.49
+    volumes:
+      - ${CONFIG_FOLDER}/FireflyIII:/var/www/html/storage/upload
+    ports:
+      - 8668:8080/tcp
+    environment:
+      - APP_KEY=${FIREFLY_KEY}
+      - DB_CONNECTION=mysql
+      - DB_DATABASE=${FIREFLY_DB}
+      - DB_HOST=mariadb
+      - DB_PASSWORD=${FIREFLY_DB_PASSWORD}
+      - DB_PORT=3306
+      - DB_USERNAME=${FIREFLY_DB_USER}
+    restart: unless-stopped
+  # Bookstack - Docs server
+  bookstack:
+    image: linuxserver/bookstack:latest
+    container_name: bookstack
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.122
+      bookstack_network:
+        ipv4_address: 172.18.2.57
+    volumes:
+      - ${CONFIG_FOLDER}/Bookstack:/config
+    ports:
+      - 6875:80/tcp
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - APP_URL=https://docs.${DOMAIN_NAME}
+      - DB_DATABASE=${BOOKSTACK_DB}
+      - DB_HOST=mariadb
+      - DB_USER=${BOOKSTACK_DB_USER}
+      - DB_PASS=${BOOKSTACK_DB_PASSWORD}
+      # Authentication - https://www.bookstackapp.com/docs/admin/oidc-auth/
+      - AUTH_METHOD=oidc
+      - AUTH_AUTO_INITIATE=true
+      - OIDC_NAME=authentik
+      - OIDC_DISPLAY_NAME_CLAIMS=name
+      - OIDC_CLIENT_ID=${BOOKSTACK_OIDC_ID}
+      - OIDC_CLIENT_SECRET=${BOOKSTACK_OIDC_SECRET}
+      - OIDC_ISSUER=https://auth.${DOMAIN_NAME}/application/o/bookstack/
+      - OIDC_ISSUER_DISCOVER=true
+      # - OIDC_DUMP_USER_DETAILS=true
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.bookstack-rtr.entrypoints=websecure"
+      - "traefik.http.routers.bookstack-rtr.rule=Host(`docs.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.bookstack-rtr.tls=true"
+      - "traefik.http.routers.bookstack-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bookstack-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.bookstack-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.bookstack-rtr.service=bookstack-svc"
+      - "traefik.http.services.bookstack-svc.loadbalancer.server.port=80"
+    restart: unless-stopped
+  # Gitea - Self-hosted Git service
+  # https://docs.gitea.io/en-us/install-with-docker/
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.123
+      gitea_network:
+        ipv4_address: 172.18.2.65
+    volumes:
+      - ${DATA_FOLDER}/Gitea:/git
+      - ${CONFIG_FOLDER}/Gitea:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+    #   - 2222:22/tcp   # SSH 
+      - 3001:3000/tcp # Web view
+    environment:
+      - DISABLE_REGISTRATION=true
+      - GITEA_CUSTOM=/data
+      - GITEA__database__DB_TYPE=mysql
+      - GITEA__database__HOST=mariadb:3306
+      - GITEA__database__NAME=${GITEA_DB}
+      - GITEA__database__USER=${GITEA_DB_USER}
+      - GITEA__database__PASSWD=${GITEA_DB_PASSWORD}
+      - ROOT_URL=https://git.${DOMAIN_NAME}/
+      - DOMAIN=${DOMAIN_NAME}
+      - SSH_DOMAIN=${DOMAIN_NAME}
+      - SSH_EXPOSE_ANONYMOUS=false
+      - USER_UID=${USERID}
+      - USER_GID=${GROUPID}
+      - USER=git
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.gitea-rtr.entrypoints=websecure"
+      - "traefik.http.routers.gitea-rtr.rule=Host(`git.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.gitea-rtr.tls=true"
+      - "traefik.http.routers.gitea-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gitea-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.gitea-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.gitea-rtr.service=gitea-svc"
+      - "traefik.http.services.gitea-svc.loadbalancer.server.port=3000"
+    restart: unless-stopped
+  # Vaultwarden - Password manager
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.124
+    volumes:
+      - ${CONFIG_FOLDER}/Vaultwarden:/data
+    # ports:
+    #   - 3012:3012/tcp # WS server
+    #   - 8888:8888/tcp # Web page
+    environment:
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+      - INVITATIONS_ALLOWED=false
+      - SIGNUPS_ALLOWED=false
+      - ROCKET_PORT=8888
+    labels:
+      - "traefik.enable=true"
+      # Web UI
+      ## HTTP Router
+      - "traefik.http.routers.vaultwarden-rtr.entrypoints=websecure"
+      - "traefik.http.routers.vaultwarden-rtr.rule=Host(`vault.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.vaultwarden-rtr.tls=true"
+      - "traefik.http.routers.vaultwarden-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.vaultwarden-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.vaultwarden-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.vaultwarden-rtr.service=vaultwarden-svc"
+      - "traefik.http.services.vaultwarden-svc.loadbalancer.server.port=8888"
+      # Websocker (notifications, etc.)
+      ## HTTP Router
+      - "traefik.http.routers.vaultwarden-ws-rtr.entrypoints=websecure"
+      - "traefik.http.routers.vaultwarden-ws-rtr.rule=Host(`vault.${DOMAIN_NAME}`) && Path(`/notifications/hub`)"
+      - "traefik.http.routers.vaultwarden-ws-rtr.tls=true"
+      - "traefik.http.routers.vaultwarden-ws-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.vaultwarden-ws-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.vaultwarden-ws-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.vaultwarden-ws-rtr.service=vaultwarden-ws-svc"
+      - "traefik.http.services.vaultwarden-ws-svc.loadbalancer.server.port=3012"
+    restart: unless-stopped
+
+  # Code-server - Self-hosted web VSCode
+  code-server:
+    image: ghcr.io/linuxserver/code-server:version-v3.8.0
+    container_name: code-server
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.125
+    volumes:
+      - ${CONFIG_FOLDER}/Code-server:/config
+      - /etc/localtime:/etc/localtime:ro
+      # - /var/run/docker.sock:/var/run/docker.sock # For docker development
+    ports:
+      - 8443:8443
+      - 41237:41237 # SSH
+    environment:
+      - HOME=/config
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - TZ=${TIMEZONE}
+      - PASSWORD=${CODE_PASSWORD}
+      - SUDO_PASSWORD=${CODE_SUDO_PASSWORD}
+      - DOCKER_MODS=linuxserver/mods:universal-git|linuxserver/mods:code-server-python3|linuxserver/mods:code-server-python2|linuxserver/mods:code-server-php|linuxserver/mods:code-server-nodejs|linuxserver/mods:code-server-npmglobal|linuxserver/mods:code-server-golang|linuxserver/mods:code-server-dotnet|linuxserver/mods:code-server-docker
+    restart: unless-stopped
+  # Tandoor - Recipes server
+  tandoor:
+    image: vabene1111/recipes:latest
+    container_name: tandoor
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.126
+      tandoor_network:
+        ipv4_address: 172.18.2.73
+    volumes:
+      - ${CONFIG_FOLDER}/TandoorRecipes/mediafiles:/opt/recipes/mediafiles
+      - ${CONFIG_FOLDER}/TandoorRecipes/staticfiles:/opt/recipes/staticfiles
+    ports:
+      - 8753:8080/tcp
+    environment:
+      - DEBUG=0
+      - SECRET_KEY=${TANDOOR_KEY}
+      - DB_ENGINE=django.db.backends.postgresql
+      - POSTGRES_DB=${TANDOOR_DB}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PASSWORD=${TANDOOR_DB_PASSWORD}
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${TANDOOR_DB_USER}
+    restart: unless-stopped
+  # Gotify - Notification server
+  gotify:
+    image: gotify/server:latest
+    container_name: gotify
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.127
+    volumes:
+      - ${CONFIG_FOLDER}/Gotify:/app/data
+      - /etc/localtime:/etc/localtime:ro
+    # ports:
+    #   - 8800:8800/tcp
+    environment:
+      - GOTIFY_DATABASE_CONNECTION=data/gotify.db
+      - GOTIFY_DATABASE_DIALECT=sqlite3
+      - GOTIFY_SERVER_PORT=8800
+    restart: unless-stopped
+  # CyberChef
+  cyberchef:
+    image: mpepping/cyberchef:latest
+    container_name: cyberchef
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.128
+    ports:
+      - 8095:8000
+    restart: unless-stopped
+  # Immich stack - Photo server
+  immich-server:
+    image: altran1502/immich-server:release
+    container_name: immich_server
+    entrypoint: ["/bin/sh", "./start-server.sh"]
+    networks:
+      immich_network:
+        ipv4_address: 172.18.2.97
+    volumes:
+      - ${DATA_FOLDER}/Photos:/usr/src/app/upload
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DB_HOSTNAME=postgres
+      - DB_USERNAME=${IMMICH_DB_USER}
+      - DB_PASSWORD=${IMMICH_DB_PASS}
+      - DB_DATABASE_NAME=${IMMICH_DB}
+      - REDIS_HOSTNAME=redis
+      - ENABLE_MAPBOX=false
+      - JWT_SECRET=${IMMICH_JWT_SECRET}
+    restart: unless-stopped
+
+  immich-microservices:
+    image: altran1502/immich-server:release
+    entrypoint: ["/bin/sh", "./start-microservices.sh"]
+    container_name: immich_microservices
+    networks:
+      immich_network:
+        ipv4_address: 172.18.2.98
+    volumes:
+      - ${DATA_FOLDER}/Photos:/usr/src/app/upload
+    environment:
+      - NODE_ENV=production
+      - DB_HOSTNAME=postgres
+      - DB_USERNAME=${IMMICH_DB_USER}
+      - DB_PASSWORD=${IMMICH_DB_PASS}
+      - DB_DATABASE_NAME=${IMMICH_DB}
+      - REDIS_HOSTNAME=redis
+      - ENABLE_MAPBOX=false
+      - JWT_SECRET=${IMMICH_JWT_SECRET}
+    restart: unless-stopped
+
+  immich-machine-learning:
+    image: altran1502/immich-machine-learning:release
+    container_name: immich_machine_learning
+    entrypoint: ["/bin/sh", "./entrypoint.sh"]
+    networks:
+      immich_network:
+        ipv4_address: 172.18.2.99
+    volumes:
+      - ${DATA_FOLDER}/Photos:/usr/src/app/upload
+    environment:
+      - NODE_ENV=production
+      - DB_HOSTNAME=postgres
+      - DB_USERNAME=${IMMICH_DB_USER}
+      - DB_PASSWORD=${IMMICH_DB_PASS}
+      - DB_DATABASE_NAME=${IMMICH_DB}
+      - ENABLE_MAPBOX=false
+      - JWT_SECRET=${IMMICH_JWT_SECRET}
+    restart: unless-stopped
+
+  immich-web:
+    image: altran1502/immich-web:release
+    entrypoint: ["/bin/sh", "./entrypoint.sh"]
+    container_name: immich_web
+    networks:
+      immich_network:
+        ipv4_address: 172.18.2.100
+    environment:
+      - ENABLE_MAPBOX=false
+      - JWT_SECRET=${IMMICH_JWT_SECRET}
+    restart: unless-stopped
+
+  immich-proxy:
+    container_name: immich_proxy
+    image: altran1502/immich-proxy:release
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.130
+      immich_network:
+        ipv4_address: 172.18.2.101
+    ports:
+      - 2283:80
+    logging:
+      driver: none
+    depends_on:
+      - immich-server
+    labels:
+      - "traefik.enable=true"
+      # Web UI
+      ## HTTP Router
+      - "traefik.http.routers.immich-rtr.entrypoints=websecure"
+      - "traefik.http.routers.immich-rtr.rule=Host(`photos.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.immich-rtr.tls=true"
+      - "traefik.http.routers.immich-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.immich-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.immich-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.immich-rtr.service=immich-svc"
+      - "traefik.http.services.immich-svc.loadbalancer.server.port=80"
+    restart: unless-stopped
+
+  paperless-ngx:
+    image: linuxserver/paperless-ngx:latest
+    container_name: paperless-ngx
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.129
+      paperless_network:
+        ipv4_address: 172.18.2.89
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - TZ=${TIMEZONE}
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ${CONFIG_FOLDER}/Paperless-ng:/config
+      - ${DATA_FOLDER}/Paperless-ng:/data
+    ports:
+      - 8089:8000
+    restart: unless-stopped
+
+networks: # All these networks are created in the databases stack, which re
+  proxy_network:
+    external: true
+  firefly_network:
+    external: true
+  bookstack_network:
+    external: true
+  gitea_network:
+    external: true
+  tandoor_network:
+    external: true
+  paperless_network:
+    external: true
+  immich_network:
+    external: true

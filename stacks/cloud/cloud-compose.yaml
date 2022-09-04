@@ -1,0 +1,211 @@
+version: "3.9"
+services:
+  # OnlyOffice - Document server
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: onlyoffice
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.202
+      cloud_network:
+        ipv4_address: 172.18.2.34
+    ports:
+      - 9980:80
+    stdin_open: true
+    stop_grace_period: 60s
+    environment:
+      - JWT_ENABLED=true
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET}
+      - JWT_HEADER=AuthorizationJwt
+    depends_on:
+      # - nextcloud
+      - seafile
+    volumes:
+      - ${CONFIG_FOLDER}/OnlyOffice/data:/var/log/onlyoffice
+      - ${CONFIG_FOLDER}/OnlyOffice/logs:/var/www/onlyoffice/Data
+      - ${CONFIG_FOLDER}/OnlyOffice/lib:/var/lib/onlyoffice
+      - ${CONFIG_FOLDER}/OnlyOffice/db:/var/lib/postgresql
+      # - ${CONFIG_FOLDER}/OnlyOffice/config:/etc/onlyoffice/documentserver/  # Not working actually
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.onlyoffice-rtr.entrypoints=websecure"
+      - "traefik.http.routers.onlyoffice-rtr.rule=Host(`onlyoffice.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.onlyoffice-rtr.tls=true"
+      - "traefik.http.routers.onlyoffice-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.onlyoffice-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.onlyoffice-rtr.middlewares=seafile-mw@docker,ratelimit-mw@docker,compress-mw@docker"
+      ## HTTP Services
+      - "traefik.http.routers.onlyoffice-rtr.service=onlyoffice-svc"
+      - "traefik.http.services.onlyoffice-svc.loadbalancer.server.port=80"
+      - "traefik.http.services.onlyoffice-svc.loadbalancer.passHostHeader=true"
+    restart: unless-stopped
+
+  memcached:
+    image: memcached:1.6
+    container_name: seafile-memcached
+    entrypoint: memcached -m 256
+    networks:
+      cloud_network:
+        ipv4_address: 172.18.2.38
+    restart: unless-stopped
+          
+  seafile:
+    image: seafileltd/seafile-mc:latest
+    container_name: seafile
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.203
+      cloud_network:
+        ipv4_address: 172.18.2.37
+    ports:
+      - 8857:80
+      # 8080 - seafdav
+      # 8082 - seafhttp
+    volumes:
+      - ${DATA_FOLDER}/Seafile:/shared/seafile/
+    environment:
+      - DB_HOST=mariadb
+      - DB_ROOT_PASSWD=${MYSQL_ROOT_PASSWORD}  # Only required for Seafile to create the user and database it will use afterwards. Its user will be written in the config, after that it can be removed
+      # If it doesn't work, remove databases seafile_db, seahub_db, ccnet_db and user 'seafile'@'%.%.%.%' and restart
+      - TIME_ZONE=${TIMEZONE}  # Optional, default is UTC. Should be uncomment and set to your local time zone.
+      - SEAFILE_ADMIN_EMAIL=${SEAFILE_ADMIN_EMAIL} # Specifies Seafile admin user, default is 'me@example.com'.
+      - SEAFILE_ADMIN_PASSWORD=${SEAFILE_ADMIN_PASSWORD} # Specifies Seafile admin password, default is 'asecret'.
+      - SEAFILE_SERVER_LETSENCRYPT=false   # Not using HTTPS since it will be behind Traefik
+      - SEAFILE_SERVER_HOSTNAME=cloud.${DOMAIN_NAME} # Specifies your host name if https is enabled.
+      - SEAFILE_SERVICE_URL=https://cloud.${DOMAIN_NAME}
+      - SEAFILE_FILE_SERVER_ROOT=https://cloud.${DOMAIN_NAME}/seafhttp
+    depends_on:
+      - memcached
+    labels:
+      - "traefik.enable=true"
+      # Seafile main
+      ## HTTP Router
+      - "traefik.http.routers.seafile-rtr.entrypoints=websecure"
+      - "traefik.http.routers.seafile-rtr.rule=Host(`cloud.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.seafile-rtr.tls=true"
+      - "traefik.http.routers.seafile-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.seafile-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.seafile-rtr.middlewares=seafile-mw@docker,ratelimit-mw@docker,compress-mw@docker"
+      ## HTTP Services
+      - "traefik.http.routers.seafile-rtr.service=seafile-svc"
+      - "traefik.http.services.seafile-svc.loadbalancer.server.port=80"
+
+      # Seafdav - webdav path
+      ## HTTP Router Seafdav
+      - "traefik.http.routers.seafile-dav-rtr.entrypoints=websecure"
+      - "traefik.http.routers.seafile-dav-rtr.rule=Host(`cloud.${DOMAIN_NAME}`) && PathPrefix(`/seafdav`)"
+      - "traefik.http.routers.seafile-dav-rtr.tls=true"
+      - "traefik.http.routers.seafile-dav-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.seafile-dav-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.seafile-dav-rtr.middlewares=seafile-mw@docker,ratelimit-mw@docker,compress-mw@docker"
+      ## HTTP Services
+      - "traefik.http.routers.seafile-dav-rtr.service=seafile-dav-svc"
+      - "traefik.http.services.seafile-dav-svc.loadbalancer.server.port=8080"
+
+      # Seafhttp
+      ## HTTP Router Seafhttp
+      - "traefik.http.routers.seafile-http-rtr.entrypoints=websecure"
+      - "traefik.http.routers.seafile-http-rtr.rule=Host(`cloud.${DOMAIN_NAME}`) && PathPrefix(`/seafhttp`)"
+      - "traefik.http.routers.seafile-http-rtr.tls=true"
+      - "traefik.http.routers.seafile-http-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.seafile-http-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.middlewares.seafile-strip.stripprefix.prefixes=/seafhttp"
+      - "traefik.http.routers.seafile-http-rtr.middlewares=seafile-mw@docker,ratelimit-mw@docker,compress-mw@docker,seafile-strip@docker"
+      ## HTTP Services
+      - "traefik.http.routers.seafile-http-rtr.service=seafile-http-svc"
+      - "traefik.http.services.seafile-http-svc.loadbalancer.server.port=8082"
+
+      # Special headers
+      - "traefik.http.middlewares.seafile-mw.headers.customFrameOptionsValue=allow-from https://${DOMAIN_NAME}"
+      - "traefik.http.middlewares.seafile-mw.headers.contentSecurityPolicy=frame-ancestors 'self' ${DOMAIN_NAME} *.${DOMAIN_NAME}"
+      - "traefik.http.middlewares.seafile-mw.headers.accessControlAllowOriginList=${DOMAIN_NAME},cloud.${DOMAIN_NAME},onlyoffice.${DOMAIN_NAME}"
+
+      - "traefik.http.middlewares.seafile-mw.headers.stsSeconds=155520011"
+      - "traefik.http.middlewares.seafile-mw.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.seafile-mw.headers.stsPreload=true"
+      # - "traefik.http.middlewares.seafile-mw.headers.accessControlAllowOrigin=*"
+      # - "traefik.http.middlewares.seafile-mw.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
+      # Remaining basic security headers
+      - "traefik.http.middlewares.seafile-mw.headers.accessControlAllowMethods=GET,OPTIONS,PUT"
+      - "traefik.http.middlewares.seafile-mw.headers.accessControlMaxAge=100"
+      - "traefik.http.middlewares.seafile-mw.headers.addvaryheader=true"
+      - "traefik.http.middlewares.seafile-mw.headers.hostsProxyHeaders=X-Forwarded-Host"
+      - "traefik.http.middlewares.seafile-mw.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.seafile-mw.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.seafile-mw.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.seafile-mw.headers.referrerPolicy=same-origin"
+      - "traefik.http.middlewares.seafile-mw.headers.permissionsPolicy=camera=(), microphone=(), geolocation=(), payment=(), usb=(), vr=()"
+      - "traefik.http.middlewares.seafile-mw.headers.customResponseHeaders.X-Robots-Tag=none,noarchive,nosnippet,notranslate,noimageindex,"
+      - "traefik.http.middlewares.seafile-mw.headers.customResponseHeaders.server="
+      - "traefik.http.middlewares.seafile-mw.headers.customRequestHeaders.X-Forwarded-Proto=https" # PLEASE ADD THIS, otherwise it will crash
+    restart: unless-stopped
+
+networks:
+  proxy_network:
+    external: true
+  cloud_network:
+    external: true
+
+  # Nextcloud - to be linked with MariaDB and Redis
+  # nextcloud:
+  #   image: linuxserver/nextcloud:latest
+  #   container_name: nextcloud
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.201
+  #     cloud_network:
+  #       ipv4_address: 172.18.2.33
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/Nextcloud/config:/config
+  #     - ${DATA_FOLDER}/Nextcloud:/data
+  #     - /etc/localtime:/etc/localtime:ro
+  #   ports:
+  #     - 444:443/tcp
+  #     - 8000:80/tcp
+  #   environment:
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Router
+  #     - "traefik.http.routers.nextcloud-rtr.entrypoints=websecure"
+  #     - "traefik.http.routers.nextcloud-rtr.rule=Host(`cloud.${DOMAIN_NAME}`)"
+  #     - "traefik.http.routers.nextcloud-rtr.tls=true"
+  #     - "traefik.http.routers.nextcloud-rtr.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.nextcloud-rtr.tls.options=tls-opts@file"
+  #     ## Middlewares
+  #     - "traefik.http.routers.nextcloud-rtr.middlewares=nextcloud-mw@docker,nextcloud-redirect@docker,ratelimit-mw@docker,compress-mw@docker"
+  #     # Nextcloud special headers
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.customFrameOptionsValue=allow-from https://${DOMAIN_NAME}"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.contentSecurityPolicy=frame-ancestors 'self' ${DOMAIN_NAME} *.${DOMAIN_NAME}"
+      
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.stsSeconds=155520011"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.stsIncludeSubdomains=true"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.stsPreload=true"
+  #     # - "traefik.http.middlewares.nextcloud-mw.headers.accessControlAllowOrigin=*"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
+  #     # Remaining basic security headers
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.accessControlAllowMethods=GET,OPTIONS,PUT"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.accessControlMaxAge=100"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.hostsProxyHeaders=X-Forwarded-Host"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.forceSTSHeader=true"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.contentTypeNosniff=true"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.browserXssFilter=true"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.referrerPolicy=same-origin"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.permissionsPolicy=camera=(), microphone=(), geolocation=(), payment=(), usb=(), vr=()"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.customResponseHeaders.X-Robots-Tag=none,noarchive,nosnippet,notranslate,noimageindex,"
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.customResponseHeaders.server=" 
+  #     # Nextcloud webdav redirect middleware
+  #     - "traefik.http.middlewares.nextcloud-redirect.redirectregex.regex=/.well-known/(card|cal)dav"
+  #     - "traefik.http.middlewares.nextcloud-redirect.redirectregex.replacement=/remote.php/dav/"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.nextcloud-rtr.service=nextcloud-svc"
+  #     ### Note - The docker image provided by linuxserver only accepts https, therefore we have the following
+  #     - "traefik.http.services.nextcloud-svc.loadbalancer.server.port=443"
+  #     - "traefik.http.services.nextcloud-svc.loadbalancer.server.scheme=https"
+  #   restart: unless-stopped

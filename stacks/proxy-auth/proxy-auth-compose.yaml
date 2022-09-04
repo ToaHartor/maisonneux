@@ -1,0 +1,430 @@
+version: "3.9"
+services:
+  # SWAG - Nginx docker container (+ many things)
+  # swag:
+  #   image: linuxserver/swag:latest
+  #   container_name: SWAG
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.2
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/SWAG:/config
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - ${CONFIG_FOLDER}/Tautulli/newsletters:/newsletter
+  #   ports:
+  #     - 443:443/tcp
+  #     - 80:80/tcp
+  #   environment:
+  #     - URL=${DOMAIN_NAME}
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - TZ=${TIMEZONE}
+  #     - DNSPLUGIN=ovh
+  #     - VALIDATION=dns
+  #     - ONLY_SUBDOMAINS=false
+  #     - SUBDOMAINS=wildcard
+  #   cap_add:
+  #     - NET_ADMIN
+  #   restart: unless-stopped
+  # Traefik - Reverse proxy
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.1
+      auth_network:
+        ipv4_address: 172.18.3.1
+      monit_network:
+        ipv4_address: 172.18.2.20
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${CONFIG_FOLDER}/Traefik/config:/config
+      - ${CONFIG_FOLDER}/Traefik/certificates:/letsencrypt
+      - ${CONFIG_FOLDER}/Traefik/logs:/logs
+    ports:
+      # Dashboard, only exposed on this interface if api.insecure=true
+      # - 0.0.0.0:18080:8080
+      # 80/443 exposed on the server for port forwarding
+      - 0.0.0.0:80:80
+      - 0.0.0.0:443:443
+    security_opt:
+      - "no-new-privileges:true"
+    command:
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--global.sendAnonymousUsage=false"
+      # Logs
+      - "--log.level=INFO"
+      # - "--log.filePath=/logs/traefik.log" # If commented, then you can watch the logs in the docker logs directly
+      - "--accesslog=true"
+      - "--accesslog.filepath=/logs/access.log"
+      - "--accesslog.bufferingsize=100"
+      - "--serversTransport.insecureSkipVerify=true"
+      # - "--api.insecure=true" # Only for testing purposes, will expose the dashboard on the port 8080
+      # Metrics
+      - "--metrics.influxDB.address=influxdb:8086"
+      - "--metrics.influxDB.protocol=http"
+      - "--metrics.influxDB.addEntryPointsLabels=true"
+      - "--metrics.influxDB.addRoutersLabels=true"
+      - "--metrics.influxDB.addServicesLabels=true"
+      - "--metrics.influxDB.pushInterval=60s"
+      - "--metrics.influxDB.username=${INFLUX_TRAEFIK_USER}"
+      - "--metrics.influxDB.password=${INFLUX_TRAEFIK_PASS}"
+      - "--metrics.influxDB.database=${INFLUX_TRAEFIK_DB}"
+      # Enabling theme plugin
+      - "--experimental.plugins.theme-park.modulename=github.com/packruler/traefik-themepark"
+      - "--experimental.plugins.theme-park.version=v1.1.0"
+      # Providers
+      - "--providers.file.directory=/config"
+      - "--providers.file.watch=true"
+      - "--providers.docker=true"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=proxy_network"
+      # HTTP to HTTPS redirection
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      # Certificate challenge
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=ovh"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.delayBeforeCheck=90"
+      - "--certificatesresolvers.letsencrypt.acme.email=${EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      # - "--certificatesresolvers.letsencrypt.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory" # Only for testing
+    environment:
+      # Edit this accordingly to the domain provider (since my domain is given by OVH, then )
+      # For OVH : https://www.grottedubarbu.fr/traefik-dns-challenge-ovh/
+      - OVH_ENDPOINT=${OVH_ENDPOINT}
+      - OVH_APPLICATION_KEY=${OVH_APPLICATION_KEY}
+      - OVH_APPLICATION_SECRET=${OVH_APPLICATION_SECRET}
+      - OVH_CONSUMER_KEY=${OVH_CONSUMER_KEY}
+    labels:
+      - "traefik.enable=true"
+      ## Traefik Interface
+      # HTTP Routers
+      - "traefik.http.routers.traefik-rtr.entrypoints=websecure"
+      - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.${DOMAIN_NAME}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.traefik-rtr.tls=true"
+      - "traefik.http.routers.traefik-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik-rtr.tls.options=tls-opts@file"
+      - "traefik.http.routers.traefik-rtr.middlewares=chain-forwardauth@docker"
+      # API service
+      - "traefik.http.routers.traefik-rtr.service=api@internal"
+      ## Healthcheck/ping
+      #- "traefik.http.routers.ping.rule=Host(`traefik.$DOMAINNAME_SHB`) && Path(`/ping`)"
+      #- "traefik.http.routers.ping.tls=true"
+      #- "traefik.http.routers.ping.service=ping@internal"
+      ## Middleware chains
+      - "traefik.http.middlewares.chain-forwardauth.chain.middlewares=secureheaders-mw,authentik-mw" # ratelimit-mw,compress-mw
+      - "traefik.http.middlewares.chain-forwardauth-plex.chain.middlewares=secureheaders-mw,authentik-plex-mw"
+      - "traefik.http.middlewares.chain-noauth.chain.middlewares=secureheaders-mw"
+      ## Middlewares definition
+      ## Authentik (plex auth) - Cookie generation directly in authentik + allows basic auth login with the Authorization header
+      - "traefik.http.middlewares.authentik-plex-mw.forwardauth.address=http://authentik_server:9000/outpost.goauthentik.io/auth/traefik"
+      - "traefik.http.middlewares.authentik-plex-mw.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.authentik-plex-mw.forwardauth.authResponseHeaders=Cookie,Authorization,X-authentik-username,X-authentik-groups,X-authentik-email,X-authentik-name,X-authentik-uid,X-authentik-jwt,X-authentik-meta-jwks,X-authentik-meta-outpost,X-authentik-meta-provider,X-authentik-meta-app,X-authentik-meta-version"
+      ## Authentik (auth) - No cookie here, also to allow Proxy Auth in Organizr
+      - "traefik.http.middlewares.authentik-mw.forwardauth.address=http://authentik_server:9000/outpost.goauthentik.io/auth/traefik"
+      - "traefik.http.middlewares.authentik-mw.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.authentik-mw.forwardauth.authResponseHeaders=X-authentik-username,X-authentik-groups,X-authentik-email,X-authentik-name,X-authentik-uid,X-authentik-jwt,X-authentik-meta-jwks,X-authentik-meta-outpost,X-authentik-meta-provider,X-authentik-meta-app,X-authentik-meta-version"
+      ## Rate limit
+      - "traefik.http.middlewares.ratelimit-mw.ratelimit.average=200"
+      - "traefik.http.middlewares.ratelimit-mw.ratelimit.burst=100"
+      # - "traefik.http.middlewares.ratelimit-mw.ratelimit.sourcecriterion.ipstrategy.excludedips=127.0.0.1/32, 192.168.1.0/24, 172.16.0.0/12"
+      ## Compress
+      - "traefik.http.middlewares.compress-mw.compress=true"
+      ## Secure headers
+      - "traefik.http.middlewares.secureheaders-mw.headers.accessControlAllowMethods=GET,OPTIONS,PUT"
+      - "traefik.http.middlewares.secureheaders-mw.headers.accessControlMaxAge=100"
+      - "traefik.http.middlewares.secureheaders-mw.headers.hostsProxyHeaders=X-Forwarded-Host"
+      - "traefik.http.middlewares.secureheaders-mw.headers.stsSeconds=63072000"
+      - "traefik.http.middlewares.secureheaders-mw.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.secureheaders-mw.headers.stsPreload=true"
+      - "traefik.http.middlewares.secureheaders-mw.headers.forceSTSHeader=true"
+      # - "traefik.http.middlewares.secureheaders-mw.headers.customFrameOptionsValue=allow-from https://${DOMAIN_NAME}"
+      - "traefik.http.middlewares.secureheaders-mw.headers.contentSecurityPolicy=frame-ancestors 'self' ${DOMAIN_NAME} *.${DOMAIN_NAME}"
+      - "traefik.http.middlewares.secureheaders-mw.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.secureheaders-mw.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.secureheaders-mw.headers.referrerPolicy=strict-origin"
+      - "traefik.http.middlewares.secureheaders-mw.headers.permissionsPolicy=camera=(), microphone=(), geolocation=(), payment=(), usb=(), vr=()"
+      - "traefik.http.middlewares.secureheaders-mw.headers.customResponseHeaders.X-Robots-Tag=none,noarchive,nosnippet,notranslate,noimageindex,"
+      - "traefik.http.middlewares.secureheaders-mw.headers.customResponseHeaders.server=" 
+    # For Plex : https://www.reddit.com/r/Traefik/comments/dc2pn7/how_to_direct_traefik_v2_to_nondocker_services/
+    restart: always
+  
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: adguard
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.3
+    volumes:
+      - ${CONFIG_FOLDER}/AdGuard/work:/opt/adguardhome/work
+      - ${CONFIG_FOLDER}/AdGuard/conf:/opt/adguardhome/conf
+    ports:
+      - 3050:3000
+    # labels:
+    #   - "traefik.enable=true"
+    #   ## HTTP Router
+    #   - "traefik.http.routers.theme-park-rtr.priority=150"
+    #   - "traefik.http.routers.theme-park-rtr.entrypoints=websecure"
+    #   - "traefik.http.routers.theme-park-rtr.rule=Host(`ads.${DOMAIN_NAME}`)"
+    #   - "traefik.http.routers.theme-park-rtr.tls=true"
+    #   - "traefik.http.routers.theme-park-rtr.tls.certresolver=letsencrypt"
+    #   - "traefik.http.routers.theme-park-rtr.tls.options=tls-opts@file"
+    #   ## Middlewares
+    #   - "traefik.http.routers.theme-park-rtr.middlewares=chain-noauth@docker"
+    #   ## HTTP Services
+    #   - "traefik.http.routers.theme-park-rtr.service=theme-park-svc"
+    #   - "traefik.http.services.theme-park-svc.loadbalancer.server.port=3000"
+    restart: unless-stopped
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: authentik_server
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.2
+      auth_network:
+        ipv4_address: 172.18.3.2
+    command: server
+    environment:
+      - AUTHENTIK_REDIS__HOST=redis_authentik
+      - AUTHENTIK_POSTGRESQL__HOST=postgres_authentik
+      - AUTHENTIK_POSTGRESQL__USER=${AUTHENTIK_DB_USER}
+      - AUTHENTIK_POSTGRESQL__NAME=${AUTHENTIK_DB}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_DB_PASS}
+      - AUTHENTIK_AUTHENTIK__GEOIP=/geoip/GeoLite2-City.mmdb
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=false
+      - AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true
+      # AUTHENTIK_LOG_LEVEL: trace # If a specific log level is needed
+      - AUTHENTIK_HOST=https://auth.${DOMAIN_NAME}
+      - AUTHENTIK_HOST_BROWSER=https://auth.${DOMAIN_NAME}
+      # AUTHENTIK_INSECURE: "true"
+    volumes:
+      - ${CONFIG_FOLDER}/Authentik/media:/media
+      - ${CONFIG_FOLDER}/Authentik/custom-templates:/templates
+      - geoip:/geoip
+    env_file:
+      - stack.env
+    labels:
+      - "traefik.enable=true"
+      # HTTP Routers
+      # This one might require an additional CNAME mapping to your domain name (if using OVH)
+      - "traefik.http.routers.authentik.rule=Host(`auth.${DOMAIN_NAME}`) || (Host(`${DOMAIN_NAME}`) || HostRegexp(`{subdomain:[a-z0-9]+}.${DOMAIN_NAME}`)) && PathPrefix(`/outpost.goauthentik.io/`)"
+      - "traefik.http.routers.authentik.entrypoints=websecure"
+      - "traefik.http.routers.authentik.tls=true"
+      - "traefik.http.routers.authentik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.authentik.tls.options=tls-opts@file"
+      - "traefik.http.routers.authentik.service=authentik-svc"
+      - "traefik.http.routers.authentik.middlewares=chain-noauth@docker"
+      # Service
+      - "traefik.http.services.authentik-svc.loadbalancer.server.port=9000"
+    ports:
+      - 9080:9000
+    depends_on:
+      - authentik-db
+      - authentik-redis
+    restart: unless-stopped
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: authentik_worker
+    networks:
+      auth_network:
+        ipv4_address: 172.18.3.3
+    command: worker
+    environment:
+      - AUTHENTIK_REDIS__HOST=redis_authentik
+      - AUTHENTIK_POSTGRESQL__HOST=postgres_authentik
+      - AUTHENTIK_POSTGRESQL__USER=${AUTHENTIK_DB_USER}
+      - AUTHENTIK_POSTGRESQL__NAME=${AUTHENTIK_DB}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_DB_PASS}
+      - AUTHENTIK_AUTHENTIK__GEOIP=/geoip/GeoLite2-City.mmdb
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=false
+      - AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true
+    user: root
+    volumes:
+      - ${CONFIG_FOLDER}/Authentik/media:/media
+      - ${CONFIG_FOLDER}/Authentik/certs:/certs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${CONFIG_FOLDER}/Authentik/custom-templates:/templates
+      - geoip:/geoip
+    env_file:
+      - stack.env
+    depends_on:
+      - authentik-db
+      - authentik-redis
+    restart: unless-stopped
+
+  authentik-db:
+    image: postgres:12-alpine
+    container_name: postgres_authentik
+    networks:
+      auth_network:
+        ipv4_address: 172.18.3.5
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_FOLDER}/Authentik/database:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${AUTHENTIK_DB_PASS}
+      - POSTGRES_USER=${AUTHENTIK_DB_USER}
+      - POSTGRES_DB=${AUTHENTIK_DB}
+    env_file:
+      - stack.env
+
+  authentik-redis:
+    image: redis:alpine
+    container_name: redis_authentik
+    networks:
+      auth_network:
+        ipv4_address: 172.18.3.6
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    restart: unless-stopped
+
+  authentik-geoip:
+    image: maxmindinc/geoipupdate:latest
+    container_name: geoip_authentik
+    networks:
+      auth_network:
+        ipv4_address: 172.18.3.7
+    volumes:
+      - geoip:/usr/share/GeoIP
+    environment:
+      - GEOIPUPDATE_EDITION_IDS=GeoLite2-City
+      - GEOIPUPDATE_FREQUENCY=8
+    env_file:
+      - stack.env
+
+  organizr:
+    image: organizr/organizr:latest
+    container_name: organizr
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.5
+    volumes:
+      - ${CONFIG_FOLDER}/Organizr:/config
+      - /etc/localtime:/etc/localtime:ro
+      # - ${CONFIG_FOLDER}/Tautulli/newsletters:/newsletter # For tautulli newsletters, needs fix
+    ports:
+    #   - 443:443/tcp
+      - 0.0.0.0:4080:80/tcp
+    environment:
+      - branch=v2-master
+      - fpm=false
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+    labels:
+    # https://github.com/causefx/Organizr/issues/1240
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.organizr-rtr.priority=100"
+      - "traefik.http.routers.organizr-rtr.entrypoints=websecure"
+      - "traefik.http.routers.organizr-rtr.rule=Host(`${DOMAIN_NAME}`)" #, `www.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.organizr-rtr.tls=true"
+      - "traefik.http.routers.organizr-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.organizr-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.organizr-rtr.middlewares=chain-forwardauth@docker,organizr-theme@docker"
+      ## HTTP Services
+      - "traefik.http.routers.organizr-rtr.service=organizr-svc"
+      - "traefik.http.services.organizr-svc.loadbalancer.server.port=80"
+      - "traefik.http.services.organizr-svc.loadbalancer.passHostHeader=true"
+    restart: unless-stopped
+  # Theme.park - Theme suite for docker services
+  theme-park:
+    image: ghcr.io/gilbn/theme.park
+    container_name: theme-park
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.6
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - TZ=${TIMEZONE}
+      - TP_URLBASE=themepark #optional, to be reachable with domain.com/themepark
+    volumes:
+      - ${CONFIG_FOLDER}/ThemePark:/config #optional
+    # ports:
+    #   - 8080:80
+    #   - 4443:443
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.theme-park-rtr.priority=150"
+      - "traefik.http.routers.theme-park-rtr.entrypoints=websecure"
+      - "traefik.http.routers.theme-park-rtr.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/themepark`)"
+      - "traefik.http.routers.theme-park-rtr.tls=true"
+      - "traefik.http.routers.theme-park-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.theme-park-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.theme-park-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.theme-park-rtr.service=theme-park-svc"
+      - "traefik.http.services.theme-park-svc.loadbalancer.server.port=80"
+    # Theme middlewares
+    ## Organizr
+      - "traefik.http.middlewares.organizr-theme.plugin.theme-park.app=organizr"
+      - "traefik.http.middlewares.organizr-theme.plugin.theme-park.theme=${APP_THEME}"
+      - "traefik.http.middlewares.organizr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
+    ## Sonarr
+      - "traefik.http.middlewares.sonarr-theme.plugin.theme-park.app=sonarr"
+      - "traefik.http.middlewares.sonarr-theme.plugin.theme-park.theme=${APP_THEME}"
+      - "traefik.http.middlewares.sonarr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
+    ## Radarr
+      - "traefik.http.middlewares.radarr-theme.plugin.theme-park.app=radarr"
+      - "traefik.http.middlewares.radarr-theme.plugin.theme-park.theme=${APP_THEME}"
+      - "traefik.http.middlewares.radarr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
+    ## Lidarr
+      - "traefik.http.middlewares.lidarr-theme.plugin.theme-park.app=lidarr"
+      - "traefik.http.middlewares.lidarr-theme.plugin.theme-park.theme=${APP_THEME}"
+      - "traefik.http.middlewares.lidarr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
+    ## Prowlarr
+      - "traefik.http.middlewares.prowlarr-theme.plugin.theme-park.app=prowlarr"
+      - "traefik.http.middlewares.prowlarr-theme.plugin.theme-park.theme=${APP_THEME}"
+      - "traefik.http.middlewares.prowlarr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
+    ## Tautulli
+      - "traefik.http.middlewares.tautulli-theme.plugin.theme-park.app=tautulli"
+      - "traefik.http.middlewares.tautulli-theme.plugin.theme-park.theme=${APP_THEME}"
+      - "traefik.http.middlewares.tautulli-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
+    ## Plex
+      - "traefik.http.middlewares.plex-theme.plugin.theme-park.app=plex"
+      - "traefik.http.middlewares.plex-theme.plugin.theme-park.theme=${APP_THEME}"
+      - "traefik.http.middlewares.plex-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
+    restart: unless-stopped
+
+volumes:
+  geoip:
+    driver: local
+
+networks:
+  proxy_network:
+     name: proxy_network
+     ipam:
+      driver: default
+      config:
+        - subnet: 172.18.1.0/24
+          gateway: 172.18.1.254
+  auth_network:
+     name: auth_network
+     ipam:
+      driver: default
+      config:
+        - subnet: 172.18.3.0/24
+          gateway: 172.18.3.254
+  monit_network:
+    external: true

@@ -1,0 +1,192 @@
+version: "3.9"
+services:
+  # Cloudbeaver
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    networks:
+      database_network:
+        ipv4_address: 172.18.2.1
+      proxy_network:
+        ipv4_address: 172.18.1.10
+    volumes:
+      - ${CONFIG_FOLDER}/Cloudbeaver:/opt/cloudbeaver/workspace
+    ports:
+      - 8978:8978/tcp
+    restart: unless-stopped
+  # MariaDB : Nextcloud, Gitea, FireflyIII, Bookstack
+  mariadb:
+    image: linuxserver/mariadb:latest
+    container_name: mariadb
+    networks:
+      database_network:
+        ipv4_address: 172.18.2.2
+      cloud_network:
+        ipv4_address: 172.18.2.35
+      firefly_network:
+        ipv4_address: 172.18.2.50
+      bookstack_network:
+        ipv4_address: 172.18.2.58
+      gitea_network:
+        ipv4_address: 172.18.2.66
+    volumes:
+      - ${DATA_FOLDER}/MariaDB:/config
+      - /etc/localtime:/etc/localtime:ro
+    # ports:
+    #   - 3306:3306/tcp
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - TZ=${TIMEZONE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DIR=/config
+    restart: unless-stopped
+
+  # PostgreSQL  - Tandoor
+  postgresql:
+    image: postgres:14-alpine
+    container_name: postgres
+    networks:
+      database_network:
+        ipv4_address: 172.18.2.3
+      tandoor_network:
+        ipv4_address: 172.18.2.74
+      immich_network:
+        ipv4_address: 172.18.2.102
+    volumes:
+      - ${DATA_FOLDER}/Postgres:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+    # ports:
+    #   - 5432:5432/tcp
+    environment: # TODO change with secrets
+      - POSTGRES_USER=${PG_ROOT_USER}
+      - POSTGRES_PASSWORD=${PG_ROOT_PASSWORD}
+      - TZ=${TIMEZONE}
+    restart: unless-stopped
+
+  # InfluxDB time series database
+  influxdb:
+    image: influxdb:1.8.10
+    container_name: influxdb
+    networks:
+      database_network:
+        ipv4_address: 172.18.2.4
+      monit_network:
+        ipv4_address: 172.18.2.19
+    volumes:
+      - ${DATA_FOLDER}/InfluxDB:/var/lib/influxdb
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - INFLUXDB_DATA_INDEX_VERSION=tsi1 # Might need to also be changed in the actual config
+    # ports:
+    #   - 8086:8086/tcp
+    restart: unless-stopped
+  # Redis
+  redis:
+    image: redis:latest
+    container_name: redis
+    networks:
+      database_network:
+        ipv4_address: 172.18.2.5
+      # cloud_network: # Uncomment if nextcloud
+      #   ipv4_address: 172.18.2.36
+      paperless_network:
+        ipv4_address: 172.18.2.90
+      immich_network:
+        ipv4_address: 172.18.2.103
+    volumes: # Maybe move to /dev/shm
+      - ${DATA_FOLDER}/Redis:/data
+    # ports:
+    #   - 6379:6379/tcp
+    restart: unless-stopped
+  # MongoDB for mangatagger
+  mangatagger-db: # you can use your own mongodb, edit the manga-tagger settings.json accordingly
+    image: mongo:latest
+    container_name: mangatagger-db
+    networks:
+      database_network:
+        ipv4_address: 172.18.2.6
+      mangatagger_network:
+        ipv4_address: 172.18.2.82
+    volumes:
+      - ${DATA_FOLDER}/MangaTagger/db:/data/db
+      - ${DATA_FOLDER}/MangaTagger/db/config:/data/configdb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_INIT_DB}
+    restart: unless-stopped
+
+networks:
+  proxy_network:
+    external: true
+  database_network:
+    name: database_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.0/28
+          gateway: 172.18.2.14
+  monit_network:
+    name: monit_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.16/28
+          gateway: 172.18.2.30
+  cloud_network:
+    name: cloud_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.32/28
+          gateway: 172.18.2.46
+  firefly_network:
+    name: firefly_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.48/29
+          gateway: 172.18.2.54
+  bookstack_network:
+    name: bookstack_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.56/29
+          gateway: 172.18.2.62
+  gitea_network:
+    name: gitea_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.64/29
+          gateway: 172.18.2.70
+  tandoor_network:
+    name: tandoor_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.72/29
+          gateway: 172.18.2.78
+  mangatagger_network:
+    name: mangatagger_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.80/29
+          gateway: 172.18.2.86
+  paperless_network:
+    name: paperless_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.88/29
+          gateway: 172.18.2.94
+  immich_network:
+    name: immich_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.96/28
+          gateway: 172.18.2.110

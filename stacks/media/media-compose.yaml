@@ -1,0 +1,626 @@
+version: "3.9"
+services:
+  # Sonarr
+  sonarr:
+    image: linuxserver/sonarr:develop
+    container_name: sonarr
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.101
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+      - ${DISK_ROOT}:/tv  # Official documentation recommends a single mapping for both downloads and media directories
+      - ${CONFIG_FOLDER}/Sonarr:/config
+    ports:
+      - 8989:8989/tcp # Web interface
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+    labels:
+      - "traefik.enable=true"
+      # Router for UI
+      # - "traefik.http.routers.sonarr-rtr.rule=Host(`media.${DOMAIN_NAME}`) && PathPrefix(`/tv`)" # And don't forget to add the subfolder option in sonarr
+      - "traefik.http.routers.sonarr-rtr.rule=Host(`tv.${DOMAIN_NAME}`)" 
+      - "traefik.http.routers.sonarr-rtr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr-rtr.priority=99"
+      - "traefik.http.routers.sonarr-rtr.tls=true"
+      - "traefik.http.routers.sonarr-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.sonarr-rtr.tls.options=tls-opts@file"
+      # Router for API
+      # - "traefik.http.routers.sonarr-api-rtr.rule=Host(`media.${DOMAIN_NAME}`) && PathPrefix(`/tv`) && (Headers(`X-Api-Key`, `${SONARR_API_KEY}`) || Query(`apikey`, `${SONARR_API_KEY}`))"
+      - "traefik.http.routers.sonarr-api-rtr.rule=Host(`tv.${DOMAIN_NAME}`) && (Headers(`X-Api-Key`, `${SONARR_API_KEY}`) || Query(`apikey`, `${SONARR_API_KEY}`))"
+      - "traefik.http.routers.sonarr-api-rtr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr-api-rtr.priority=100"
+      - "traefik.http.routers.sonarr-api-rtr.tls=true"
+      - "traefik.http.routers.sonarr-api-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.sonarr-api-rtr.tls.options=tls-opts@file"
+      # Middleware
+      - "traefik.http.routers.sonarr-rtr.middlewares=chain-forwardauth-plex@docker,sonarr-theme@docker"
+      - "traefik.http.routers.sonarr-api-rtr.middlewares=chain-noauth@docker"
+      # Service
+      - "traefik.http.routers.sonarr-rtr.service=sonarr-svc"
+      - "traefik.http.routers.sonarr-api-rtr.service=sonarr-svc"
+      - "traefik.http.services.sonarr-svc.loadbalancer.server.port=8989"
+      # - "traefik.http.services.sonarr-svc.loadbalancer.passHostHeader=true"
+    restart: unless-stopped
+  # Radarr
+  radarr:
+    image: linuxserver/radarr:nightly
+    container_name: radarr
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.102
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+      - ${DISK_ROOT}:/movies
+      - ${CONFIG_FOLDER}/Radarr:/config
+    ports:
+      - 7878:7878/tcp # Web interface
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+    labels:
+      - "traefik.enable=true"
+      # Router for UI
+      # - "traefik.http.routers.radarr-rtr.rule=Host(`media.${DOMAIN_NAME}`) && PathPrefix(`/movies`)"
+      - "traefik.http.routers.radarr-rtr.rule=Host(`movies.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.radarr-rtr.entrypoints=websecure"
+      - "traefik.http.routers.radarr-rtr.priority=99"
+      - "traefik.http.routers.radarr-rtr.tls=true"
+      - "traefik.http.routers.radarr-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.radarr-rtr.tls.options=tls-opts@file"
+      # Router for API
+      # - "traefik.http.routers.radarr-api-rtr.rule=Host(`media.${DOMAIN_NAME}`) && PathPrefix(`/movies`) && (Headers(`X-Api-Key`, `${RADARR_API_KEY}`) || Query(`apikey`, `${RADARR_API_KEY}`))"
+      - "traefik.http.routers.radarr-api-rtr.rule=Host(`movies.${DOMAIN_NAME}`) && (Headers(`X-Api-Key`, `${RADARR_API_KEY}`) || Query(`apikey`, `${RADARR_API_KEY}`))"
+      - "traefik.http.routers.radarr-api-rtr.entrypoints=websecure"
+      - "traefik.http.routers.radarr-api-rtr.priority=100"
+      - "traefik.http.routers.radarr-api-rtr.tls=true"
+      - "traefik.http.routers.radarr-api-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.radarr-api-rtr.tls.options=tls-opts@file"
+      # Middleware
+      - "traefik.http.routers.radarr-rtr.middlewares=chain-forwardauth-plex@docker,radarr-theme@docker"
+      - "traefik.http.routers.radarr-api-rtr.middlewares=chain-noauth@docker"
+      # Service
+      - "traefik.http.routers.radarr-rtr.service=radarr-svc"
+      - "traefik.http.routers.radarr-api-rtr.service=radarr-svc"
+      - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
+    restart: unless-stopped
+  # Radarr for 4K movies
+  radarr4k:
+    image: linuxserver/radarr:nightly
+    container_name: radarr4k
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.103
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+      - ${DISK_ROOT}:/movies
+      - ${CONFIG_FOLDER}/Radarr4K:/config
+    ports:
+      - 7879:7878/tcp # Web interface
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+    labels:
+      - "traefik.enable=true"
+      # Router for UI
+      # - "traefik.http.routers.radarr4k-rtr.rule=Host(`media.${DOMAIN_NAME}`) && PathPrefix(`/4kmovies`)"
+      - "traefik.http.routers.radarr4k-rtr.rule=Host(`movies4k.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.radarr4k-rtr.entrypoints=websecure"
+      - "traefik.http.routers.radarr4k-rtr.priority=99"
+      - "traefik.http.routers.radarr4k-rtr.tls=true"
+      - "traefik.http.routers.radarr4k-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.radarr4k-rtr.tls.options=tls-opts@file"
+      # Router for API
+      # - "traefik.http.routers.radarr4k-api-rtr.rule=Host(`media.${DOMAIN_NAME}`) && PathPrefix(`/4kmovies`) && (Headers(`X-Api-Key`, `${RADARR4K_API_KEY}`) || Query(`apikey`, `${RADARR4K_API_KEY}`))"
+      - "traefik.http.routers.radarr4k-api-rtr.rule=Host(`movies4k.${DOMAIN_NAME}`) && (Headers(`X-Api-Key`, `${RADARR4K_API_KEY}`) || Query(`apikey`, `${RADARR4K_API_KEY}`))"
+      - "traefik.http.routers.radarr4k-api-rtr.entrypoints=websecure"
+      - "traefik.http.routers.radarr4k-api-rtr.priority=100"
+      - "traefik.http.routers.radarr4k-api-rtr.tls=true"
+      - "traefik.http.routers.radarr4k-api-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.radarr4k-api-rtr.tls.options=tls-opts@file"
+      # Middleware
+      - "traefik.http.routers.radarr4k-rtr.middlewares=chain-forwardauth-plex@docker,radarr-theme@docker"
+      - "traefik.http.routers.radarr4k-api-rtr.middlewares=chain-noauth@docker"
+      # Service
+      - "traefik.http.routers.radarr4k-rtr.service=radarr4k-svc"
+      - "traefik.http.routers.radarr4k-api-rtr.service=radarr4k-svc"
+      - "traefik.http.services.radarr4k-svc.loadbalancer.server.port=7878"
+    restart: unless-stopped
+  # Lidarr
+  lidarr:
+    image: linuxserver/lidarr:nightly
+    container_name: lidarr
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.104
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${DISK_ROOT}:/music
+      - ${CONFIG_FOLDER}/Lidarr:/config
+    ports:
+      - 8686:8686/tcp # Web interface
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+    labels:
+      - "traefik.enable=true"
+      # Router for UI
+      # - "traefik.http.routers.lidarr-rtr.rule=Host(`media.${DOMAIN_NAME}`) && PathPrefix(`/music`)"
+      - "traefik.http.routers.lidarr-rtr.rule=Host(`music.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.lidarr-rtr.entrypoints=websecure"
+      - "traefik.http.routers.lidarr-rtr.priority=99"
+      - "traefik.http.routers.lidarr-rtr.tls=true"
+      - "traefik.http.routers.lidarr-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.lidarr-rtr.tls.options=tls-opts@file"
+      # Router for API
+      # - "traefik.http.routers.lidarr-api-rtr.rule=Host(`media.${DOMAIN_NAME}`) && PathPrefix(`/music`) && (Headers(`X-Api-Key`, `${LIDARR_API_KEY}`) || Query(`apikey`, `${LIDARR_API_KEY}`))"
+      - "traefik.http.routers.lidarr-api-rtr.rule=Host(`music.${DOMAIN_NAME}`) && (Headers(`X-Api-Key`, `${LIDARR_API_KEY}`) || Query(`apikey`, `${LIDARR_API_KEY}`))"
+      - "traefik.http.routers.lidarr-api-rtr.entrypoints=websecure"
+      - "traefik.http.routers.lidarr-api-rtr.priority=100"
+      - "traefik.http.routers.lidarr-api-rtr.tls=true"
+      - "traefik.http.routers.lidarr-api-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.lidarr-api-rtr.tls.options=tls-opts@file"
+      # Middleware
+      - "traefik.http.routers.lidarr-rtr.middlewares=chain-forwardauth-plex@docker,lidarr-theme@docker"
+      - "traefik.http.routers.lidarr-api-rtr.middlewares=chain-noauth@docker"
+      # Service
+      - "traefik.http.routers.lidarr-rtr.service=lidarr-svc"
+      - "traefik.http.routers.lidarr-api-rtr.service=lidarr-svc"
+      - "traefik.http.services.lidarr-svc.loadbalancer.server.port=8686"
+    restart: unless-stopped
+  # Torrent indexers
+  # Prowlarr
+  prowlarr:
+    image: hotio/prowlarr:nightly
+    container_name: prowlarr
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.105
+    volumes:
+      - ${CONFIG_FOLDER}/Prowlarr:/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 9696:9696/tcp # Web interface
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - UMASK=002
+    labels:
+      - "traefik.enable=true"
+      # Router for UI
+      - "traefik.http.routers.prowlarr-rtr.rule=Host(`indexer.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.prowlarr-rtr.entrypoints=websecure"
+      - "traefik.http.routers.prowlarr-rtr.priority=99"
+      - "traefik.http.routers.prowlarr-rtr.tls=true"
+      - "traefik.http.routers.prowlarr-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.prowlarr-rtr.tls.options=tls-opts@file"
+      # Router for API
+      - "traefik.http.routers.prowlarr-api-rtr.rule=Host(`indexer.${DOMAIN_NAME}`) && (Headers(`X-Api-Key`, `${PROWLARR_API_KEY}`) || Query(`apikey`, `${PROWLARR_API_KEY}`))"
+      - "traefik.http.routers.prowlarr-api-rtr.entrypoints=websecure"
+      - "traefik.http.routers.prowlarr-api-rtr.priority=100"
+      - "traefik.http.routers.prowlarr-api-rtr.tls=true"
+      - "traefik.http.routers.prowlarr-api-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.prowlarr-api-rtr.tls.options=tls-opts@file"
+      # Middleware
+      - "traefik.http.routers.prowlarr-rtr.middlewares=chain-forwardauth-plex@docker,prowlarr-theme@docker"
+      - "traefik.http.routers.prowlarr-api-rtr.middlewares=chain-noauth@docker"
+      # Service
+      - "traefik.http.routers.prowlarr-rtr.service=prowlarr-svc"
+      - "traefik.http.routers.prowlarr-api-rtr.service=prowlarr-svc"
+      - "traefik.http.services.prowlarr-svc.loadbalancer.server.port=9696"
+    restart: unless-stopped
+  # Jackett
+  # jackett:
+  #   image: linuxserver/jackett:latest
+  #   container_name: Jackett
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.105
+  #   volumes:
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - ${CONFIG_FOLDER}/Jackett:/config
+  #     - ${DISK_ROOT}:/disk_root
+  #     - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+  #     - ${DOWNLOAD_FOLDER}:/downloads
+  #   ports:
+  #     - 9117:9117/tcp # Web interface
+  #   environment:
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - UMASK=002
+  #   restart: unless-stopped
+
+  # Downloaders
+  # qbittorrent:
+  #   image: hotio/qbittorrent:latest
+  #   container_name: qbittorrent
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.130
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/qbittorrent:/config
+  #     - ${DOWNLOAD_FOLDER}:/downloads
+  #   environment:
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - UMASK=002
+  #     - TZ=Etc/UTC
+  #     # - VPN_ENABLED=true # Needs additional setup with wireguard here : https://hotio.dev/containers/qbittorrent/
+  #   #   - VPN_LAN_NETWORK
+  #   #   - VPN_CONF=wg0
+  #   #   - VPN_ADDITIONAL_PORTS
+  #   #   - VPN_IP_CHECK_DELAY=5
+  #   #   - PRIVOXY_ENABLED=false
+  #   # cap_add:
+  #   #   - NET_ADMIN
+  #   # sysctls:
+  #   #   - net.ipv4.conf.all.src_valid_mark=1
+  #   #   - net.ipv6.conf.all.disable_ipv6=0
+  #   ports:
+  #     - 8085:8080
+  #   # labels:
+  #   #   - "traefik.enable=true"
+
+  #   #   ## HTTP Router
+  #   #   - "traefik.http.routers.qbittorrent-rtr.priority=90"
+  #   #   - "traefik.http.routers.qbittorrent-rtr.entrypoints=websecure"
+  #   #   - "traefik.http.routers.qbittorrent-rtr.rule=Host(`torrent.${DOMAIN_NAME}`)" #  && PathPrefix(`/transmission/`)
+  #   #   - "traefik.http.routers.qbittorrent-rtr.tls=true"
+  #   #   - "traefik.http.routers.qbittorrent-rtr.tls.certresolver=letsencrypt"
+  #   #   - "traefik.http.routers.qbittorrent-rtr.tls.options=tls-opts@file"
+  #   #   ## Router for the RPC endpoint (has authentication included), only matches if the transmission session id is included, might be removed later
+  #   #   # - "traefik.http.routers.transmission-rpc-rtr.priority=91"
+  #   #   # - "traefik.http.routers.transmission-rpc-rtr.entrypoints=websecure"
+  #   #   # - "traefik.http.routers.transmission-rpc-rtr.rule=Host(`torrent.${DOMAIN_NAME}`) && PathPrefix(`/transmission/rpc`) && HeadersRegexp(`authorization`, `Basic [a-z-A-Z0-9+/=\\s]+`)" #&& HeadersRegexp(`X-Transmission-Session-Id`, `[a-z-A-Z0-9]+`)"
+  #   #   # - "traefik.http.routers.transmission-rpc-rtr.tls=true"
+  #   #   # - "traefik.http.routers.transmission-rpc-rtr.tls.certresolver=letsencrypt"
+  #   #   # - "traefik.http.routers.transmission-rpc-rtr.tls.options=tls-opts@file"
+  #   #   ## Middlewares
+  #   #   - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-forwardauth-plex@docker"
+  #   #   # - "traefik.http.routers.transmission-rpc-rtr.middlewares=chain-noauth@docker"
+  #   #   ## HTTP Services
+  #   #   - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
+  #   #   # - "traefik.http.routers.transmission-rpc-rtr.service=transmission-svc"
+  #   #   - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
+  #   restart: unless-stopped
+  # Transmission - torrent
+  transmission:
+    image: linuxserver/transmission:latest
+    container_name: transmission
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.106
+    volumes:
+      - ${CONFIG_FOLDER}/Transmission:/config
+      - /etc/localtime:/etc/localtime:ro
+      - ${DOWNLOAD_FOLDER}:/downloads
+      - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+    ports:
+      # - 9091:9091/tcp # Web interface - No since we use Flood for that
+      - 28531:51413/tcp # Random port ?
+      - 28531:51413/udp
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      # - TRANSMISSION_WEB_HOME=/ #optional
+      - USER=${TRANSMISSION_USER} #optional
+      - PASS=${TRANSMISSION_PASS} #optional
+      # - WHITELIST=iplist #optional
+      # - HOST_WHITELIST=dnsnane list #optional
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router for the RPC endpoint (has authentication included), only matches if the transmission session id is included, might be removed later
+      - "traefik.http.routers.transmission-rpc-rtr.priority=91"
+      # - "traefik.http.routers.transmission-rpc-rtr.rule=Host(`dl.${DOMAIN_NAME}`) && PathPrefix(`/transmission/rpc`) && HeadersRegexp(`authorization`, `Basic [a-zA-Z0-9+/=\\s]+`)"
+      - "traefik.http.routers.transmission-rpc-rtr.rule=Host(`torrent.${DOMAIN_NAME}`) && PathPrefix(`/transmission/rpc`) && HeadersRegexp(`authorization`, `Basic [a-zA-Z0-9+/=\\s]+`)"
+      - "traefik.http.routers.transmission-rpc-rtr.entrypoints=websecure"
+      - "traefik.http.routers.transmission-rpc-rtr.tls=true"
+      - "traefik.http.routers.transmission-rpc-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.transmission-rpc-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.transmission-rpc-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.transmission-rpc-rtr.service=transmission-rpc-svc"
+      - "traefik.http.services.transmission-rpc-svc.loadbalancer.server.port=9091"
+    restart: unless-stopped
+  # Flood - A modern UI for various torrent clients
+  flood:
+    image: jesec/flood:master
+    container_name: flood
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.131
+    user: ${USERID}:${GROUPID}
+    command: --auth none --port 3010 --allowedpath /data --trurl http://transmission:9091/transmission/rpc --truser ${TRANSMISSION_USER} --trpass ${TRANSMISSION_PASS} #--baseuri /transmission 
+    environment:
+      - HOME=/config
+    volumes:
+      - ${CONFIG_FOLDER}/Flood/config:/config
+      - ${CONFIG_FOLDER}/Flood/data:/data
+      - /usr/bin/mediainfo:/usr/bin/mediainfo  # Should be installed on the system
+    ports:
+      - 3010:3010
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.flood-rtr.priority=90"
+      - "traefik.http.routers.flood-rtr.entrypoints=websecure"
+      # - "traefik.http.routers.flood-rtr.rule=Host(`dl.${DOMAIN_NAME}`) && PathPrefix(`/transmission`)"
+      - "traefik.http.routers.flood-rtr.rule=Host(`torrent.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.flood-rtr.tls=true"
+      - "traefik.http.routers.flood-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.flood-rtr.tls.options=tls-opts@file"
+      - "traefik.http.routers.flood-rtr.middlewares=chain-forwardauth@docker"
+      - "traefik.http.routers.flood-rtr.service=flood-svc"
+      - "traefik.http.services.flood-svc.loadbalancer.server.port=3010"
+    restart: unless-stopped
+
+  # JDownloader2
+  jdownloader2:
+    image: jlesage/jdownloader-2:latest
+    container_name: jdownloader
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.107
+    volumes:
+      - ${CONFIG_FOLDER}/JDownloader:/config
+      - /etc/localtime:/etc/localtime:ro
+      - ${DOWNLOAD_FOLDER}/complete:/output
+    ports:
+      - 5800:5800/tcp # Web interface
+      - 3129:3129/tcp # MyJDownloader applications
+    environment:
+      - DISPLAY_HEIGHT=800
+      - DISPLAY_WIDTH=1680
+      - USER_ID=${USERID}
+      - GROUP_ID=${GROUPID}
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.jdl-rtr.entrypoints=websecure"
+      # - "traefik.http.routers.jdl-rtr.rule=Host(`dl.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.jdl-rtr.rule=Host(`ddl.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.jdl-rtr.tls=true"
+      - "traefik.http.routers.jdl-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.jdl-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.jdl-rtr.middlewares=chain-forwardauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.jdl-rtr.service=jdl-svc"
+      - "traefik.http.services.jdl-svc.loadbalancer.server.port=5800"
+    restart: unless-stopped
+  # API for Jdownloader for Organizr
+  myjd-api:
+    image: rix1337/docker-myjd-api:latest
+    container_name: jd-api
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.108
+    volumes:
+      - ${CONFIG_FOLDER}/myjd-api:/config
+      - ${CONFIG_FOLDER}/JDownloader:/opt/JDownloader/cfg
+      - /etc/localtime:/etc/localtime:ro
+    # ports:
+    #   - 8080:8080/tcp # Mapping port
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - USER=${JD_USER}
+      - PASS=${JD_PASSWORD}
+      - DEVICE=JDownloader
+    restart: unless-stopped
+  # Tautulli - Plex monitoring
+  # Had some problems to make it work with Authentik, when making a request to it, the request to another service will make Authentik loop
+  # It was solved by deleting the provider and creating it again, checking that it was working and finally adding the scope mapping
+  tautulli:
+    image: tautulli/tautulli:latest
+    container_name: tautulli
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.109
+    volumes:
+      - ${CONFIG_FOLDER}/Tautulli:/config
+      - /etc/localtime:/etc/localtime:ro
+      - "${PLEX_LOGS_FOLDER}:/plex_logs"
+    ports:
+      - 8181:8181/tcp
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - TZ=${TIMEZONE}
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.tautulli-rtr.entrypoints=websecure"
+      - "traefik.http.routers.tautulli-rtr.rule=Host(`tautulli.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.tautulli-rtr.tls=true"
+      - "traefik.http.routers.tautulli-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.tautulli-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.tautulli-rtr.middlewares=chain-forwardauth-plex@docker,tautulli-theme@docker"
+      ## HTTP Services
+      - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
+      - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
+    restart: unless-stopped
+
+  # Overseerr - User content suggestions and requests for Plex
+  overseerr:
+    image: sctx/overseerr:latest
+    container_name: overseerr
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.110
+    volumes:
+      - ${CONFIG_FOLDER}/Overseerr:/app/config
+    ports:
+      - 5055:5055/tcp
+    environment:
+      - TZ=${TIMEZONE}
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.overseerr-rtr.entrypoints=websecure"
+      - "traefik.http.routers.overseerr-rtr.rule=Host(`request.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.overseerr-rtr.tls=true"
+      - "traefik.http.routers.overseerr-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.overseerr-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.overseerr-rtr.middlewares=chain-forwardauth-plex@docker"
+      ## HTTP Services
+      - "traefik.http.routers.overseerr-rtr.service=overseerr-svc"
+      - "traefik.http.services.overseerr-svc.loadbalancer.server.port=5055"
+    restart: unless-stopped
+
+  #TODO Antennas + TVheadend
+  # Komga - Manga reader + server
+  komga:
+    image: gotson/komga
+    container_name: komga
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.111
+    volumes:
+      - ${CONFIG_FOLDER}/Komga:/config
+      - ${MANGA_FOLDER}:/data
+      - /etc/timezone:/etc/timezone:ro
+    ports:
+      - 8568:8568/tcp
+    user: ${USERID}:${GROUPID}
+    environment:
+      - SERVER_PORT=8568
+      - JAVA_TOOL_OPTIONS=-Xmx4g # I wish we could lower this, but setting it to a maximum of 4GB is fine to avoid any problems
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.komga-rtr.entrypoints=websecure"
+      - "traefik.http.routers.komga-rtr.rule=Host(`manga.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.komga-rtr.tls=true"
+      - "traefik.http.routers.komga-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.komga-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.komga-rtr.middlewares=chain-forwardauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.komga-rtr.service=komga-svc"
+      - "traefik.http.services.komga-svc.loadbalancer.server.port=8568"
+    restart: unless-stopped
+  # FMD2 - Free Manga Downloader 2
+  fmd2:
+    image: banhcanh/docker-fmd2
+    container_name: fmd2
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.112
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - TZ=${TIMEZONE}
+      - UMASK=022 #optional
+    ports:
+      - 6080:6080
+    volumes:
+      - ${CONFIG_FOLDER}/FMD2/userdata:/app/FMD2/userdata
+      - ${CONFIG_FOLDER}/FMD2/modules:/app/FMD2/lua
+      - ${CONFIG_FOLDER}/FMD2/data:/app/FMD2/data
+      - ${CONFIG_FOLDER}/FMD2/wine/data:/config/.wine
+      - ${DOWNLOAD_FOLDER}/complete/manga:/downloads
+      # - ${CONFIG_FOLDER}/FMD2/config:/config
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.fmd2-rtr.entrypoints=websecure"
+      - "traefik.http.routers.fmd2-rtr.rule=Host(`fmd.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.fmd2-rtr.tls=true"
+      - "traefik.http.routers.fmd2-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.fmd2-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.fmd2-rtr.middlewares=chain-forwardauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.fmd2-rtr.service=fmd2-svc"
+      - "traefik.http.services.fmd2-svc.loadbalancer.server.port=6080"
+    restart: unless-stopped
+  # Manga Tagger
+  mangatagger:
+    image: banhcanh/manga-tagger
+    container_name: mangatagger
+    networks:
+      mangatagger_network:
+        ipv4_address: 172.18.2.81
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - TZ=${TIMEZONE}
+      - UMASK=022 #optional
+
+      - MANGA_TAGGER_DEBUG_MODE=false
+
+      - MANGA_TAGGER_IMAGE_COVER=true
+      - MANGA_TAGGER_ADULT_RESULT=true
+
+      - MANGA_TAGGER_DRY_RUN=false
+      - MANGA_TAGGER_DB_INSERT=false
+      - MANGA_TAGGER_RENAME_FILE=false
+      - MANGA_TAGGER_WRITE_COMICINFO=false
+
+      - MANGA_TAGGER_THREADS=8
+      - MANGA_TAGGER_MAX_QUEUE_SIZE=0
+
+      - MANGA_TAGGER_DB_NAME=${MONGO_INIT_DB}
+      - MANGA_TAGGER_DB_HOST_ADDRESS=mangatagger-db
+      - MANGA_TAGGER_DB_PORT=27017
+      - MANGA_TAGGER_DB_USERNAME=${MONGO_ROOT_USER}
+      - MANGA_TAGGER_DB_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MANGA_TAGGER_DB_AUTH_SOURCE=admin
+      - MANGA_TAGGER_DB_SELECTION_TIMEOUT=10000
+
+      - MANGA_TAGGER_LOGGING_LEVEL=info
+      - MANGA_TAGGER_LOGGING_CONSOLE=true
+      - MANGA_TAGGER_LOGGING_FILE=true
+      - MANGA_TAGGER_LOGGING_JSON=false
+      - MANGA_TAGGER_LOGGING_TCP=false
+      - MANGA_TAGGER_LOGGING_JSONTCP=false
+
+    volumes:
+      - ${CONFIG_FOLDER}/MangaTagger:/config
+      - ${MANGA_FOLDER}:/manga # directory manga-tagger move tagged files to
+      - ${DOWNLOAD_FOLDER}/complete/manga:/downloads # directory manga-tagger watch
+      - ${CONFIG_FOLDER}/MangaTagger/MangaTaggerLib.py:/app/Manga-Tagger/MangaTaggerLib/MangaTaggerLib.py # Added my own modifications
+    restart: unless-stopped
+  # TubeSync
+  tubesync:
+    image: ghcr.io/meeb/tubesync:latest
+    container_name: tubesync
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.113
+    ports:
+      - 4848:4848
+    volumes:
+      - ${CONFIG_FOLDER}/Tubesync:/config
+      - ${DOWNLOAD_FOLDER}/complete:/downloads
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.tubesync-rtr.entrypoints=websecure"
+      - "traefik.http.routers.tubesync-rtr.rule=Host(`tube.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.tubesync-rtr.tls=true"
+      - "traefik.http.routers.tubesync-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.tubesync-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.tubesync-rtr.middlewares=chain-forwardauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.tubesync-rtr.service=tubesync-svc"
+      - "traefik.http.services.tubesync-svc.loadbalancer.server.port=4848"
+    restart: unless-stopped
+networks:
+  proxy_network:
+    external: true  # Created in the nginx compose
+  mangatagger_network:
+    external: true

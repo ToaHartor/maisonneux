@@ -1,0 +1,85 @@
+version: "3.9"
+services:
+  # Varken, Plex/Arr/Overseerr collector
+  varken:
+    image: boerderij/varken:github #! Clone the develop branch and build before
+    container_name: varken
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.151
+      monit_network:
+        ipv4_address: 172.18.2.18
+    volumes:
+      - ${CONFIG_FOLDER}/Varken:/config
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+    restart: unless-stopped
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.150
+      monit_network:
+        ipv4_address: 172.18.2.17
+    volumes:
+      - ${CONFIG_FOLDER}/Grafana:/var/lib/grafana
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_PATHS_CONFIG=/var/lib/grafana/config/grafana.ini
+      - GF_PATHS_PROVISIONING=/var/lib/grafana/config/provisioning
+      - GF_SERVER_DOMAIN=graphs.${DOMAIN_NAME}
+      - GF_SERVER_ROOT_URL=https://graphs.${DOMAIN_NAME}
+      ## Proxy auth (with user header)
+      # - GF_AUTH_PROXY_AUTO_SIGN_UP=true
+      # - GF_AUTH_PROXY_ENABLED=true
+      # - GF_AUTH_PROXY_HEADER_NAME=X-WEBAUTH-USER
+      # - GF_AUTH_PROXY_HEADER_PROPERTY=username
+      # - GF_AUTH_PROXY_HEADERS="Email:X-USER-EMAIL, Name:X-USER-Name"
+      ## OAuth (https://goauthentik.io/integrations/services/grafana/)
+      - GF_AUTH_GENERIC_OAUTH_ENABLED=true
+      - GF_AUTH_GENERIC_OAUTH_NAME=authentik
+      - GF_AUTH_GENERIC_OAUTH_USE_PKCE=true
+      ### Setting ALLOWED_DOMAINS didn't work for me
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_ID=${GRAFANA_OAUTH_CLIENT_ID}
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=${GRAFANA_OAUTH_CLIENT_SECRET}
+      - GF_AUTH_GENERIC_OAUTH_SCOPES=openid profile email
+      # Auth urls from Authentik
+      - GF_AUTH_GENERIC_OAUTH_AUTH_URL=https://auth.${DOMAIN_NAME}/application/o/authorize/
+      - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=https://auth.${DOMAIN_NAME}/application/o/token/
+      - GF_AUTH_GENERIC_OAUTH_API_URL=https://auth.${DOMAIN_NAME}/application/o/userinfo/
+      - GF_AUTH_SIGNOUT_REDIRECT_URL=https://auth.${DOMAIN_NAME}/application/o/grafana/end-session/
+      - GF_AUTH_GENERIC_OAUTH_TLS_SKIP_VERIFY_INSECURE=true # Enable this when using self signed certificates (while testing)
+      # Optionally enable auto-login (bypasses Grafana login screen)
+      - GF_AUTH_OAUTH_AUTO_LOGIN=true
+      # Optionally map user groups to Grafana roles
+      - GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH=contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'
+    labels:
+      - "traefik.enable=true"
+
+      ## HTTP Router
+      - "traefik.http.routers.grafana-rtr.entrypoints=websecure"
+      - "traefik.http.routers.grafana-rtr.rule=Host(`graphs.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.grafana-rtr.tls=true"
+      - "traefik.http.routers.grafana-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.grafana-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      ### Here the authentication is handled by the redirection with OAuth, therefore forward auth isn't needed
+      - "traefik.http.routers.grafana-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.grafana-rtr.service=grafana-svc"
+      - "traefik.http.services.grafana-svc.loadbalancer.server.port=3000"
+    restart: unless-stopped
+
+networks:
+  proxy_network:
+    external: true
+  monit_network:
+    external: true
