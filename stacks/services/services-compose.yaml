@@ -52,6 +52,8 @@ services:
       - OIDC_CLIENT_SECRET=${BOOKSTACK_OIDC_SECRET}
       - OIDC_ISSUER=https://auth.${DOMAIN_NAME}/application/o/bookstack/
       - OIDC_ISSUER_DISCOVER=true
+
+      - SESSION_LIFETIME=1440  # Session lifetime (mins)
       # - OIDC_DUMP_USER_DETAILS=true
     labels:
       - "traefik.enable=true"
@@ -253,6 +255,7 @@ services:
       - REDIS_HOSTNAME=redis
       - ENABLE_MAPBOX=false
       - JWT_SECRET=${IMMICH_JWT_SECRET}
+      - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
     restart: unless-stopped
 
   immich-microservices:
@@ -273,6 +276,7 @@ services:
       - REDIS_HOSTNAME=redis
       - ENABLE_MAPBOX=false
       - JWT_SECRET=${IMMICH_JWT_SECRET}
+      - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
     restart: unless-stopped
 
   immich-machine-learning:
@@ -292,6 +296,7 @@ services:
       - DB_DATABASE_NAME=${IMMICH_DB}
       - ENABLE_MAPBOX=false
       - JWT_SECRET=${IMMICH_JWT_SECRET}
+      - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
     restart: unless-stopped
 
   immich-web:
@@ -304,6 +309,7 @@ services:
     environment:
       - ENABLE_MAPBOX=false
       - JWT_SECRET=${IMMICH_JWT_SECRET}
+      - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
     restart: unless-stopped
 
   immich-proxy:
@@ -315,7 +321,7 @@ services:
       immich_network:
         ipv4_address: 172.18.2.101
     ports:
-      - 2283:80
+      - 2283:8080
     logging:
       driver: none
     depends_on:
@@ -333,7 +339,7 @@ services:
       - "traefik.http.routers.immich-rtr.middlewares=chain-noauth@docker"
       ## HTTP Services
       - "traefik.http.routers.immich-rtr.service=immich-svc"
-      - "traefik.http.services.immich-svc.loadbalancer.server.port=80"
+      - "traefik.http.services.immich-svc.loadbalancer.server.port=8080"
     restart: unless-stopped
 
   paperless-ngx:
