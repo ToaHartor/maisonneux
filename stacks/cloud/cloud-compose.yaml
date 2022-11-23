@@ -50,9 +50,32 @@ services:
       cloud_network:
         ipv4_address: 172.18.2.38
     restart: unless-stopped
+  
+  # Elasticsearch for Seafile - Pro version only
+  elasticsearch:
+    image: elasticsearch:7.16.2
+    container_name: seafile-elasticsearch
+    networks:
+      cloud_network:
+        ipv4_address: 172.18.2.39
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 2g
+    user: ${USERID}:${GROUPID}
+    volumes:
+      - ${DATA_FOLDER}/Elasticsearch:/usr/share/elasticsearch/data  # Requested, specifies the path to Elasticsearch data persistent store.
           
   seafile:
-    image: seafileltd/seafile-mc:latest
+    # Community edition
+    #image: seafileltd/seafile-mc:latest
+    # Pro edition (requires docker login docker.seadrive.org) with the right credentials
+    image: docker.seadrive.org/seafileltd/seafile-pro-mc:latest
     container_name: seafile
     networks:
       proxy_network:
@@ -78,6 +101,7 @@ services:
       - SEAFILE_FILE_SERVER_ROOT=https://cloud.${DOMAIN_NAME}/seafhttp
     depends_on:
       - memcached
+      - elasticsearch # Pro version only
     labels:
       - "traefik.enable=true"
       # Seafile main
