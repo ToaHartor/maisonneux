@@ -61,7 +61,8 @@ Strikethrough softwares are no longer part of my stacks, but the composes are st
 |Functionality|Name|Link|Stack|Auth provider in Authentik|
 |-|-|-|-|-|
 |TV/Movie/Music server|Plex|https://www.plex.tv|*|Proxy with scope mapping|
-|Manga server|Komga|https://github.com/gotson/komga|media|None, but might support OIDC|
+|~~Manga server (formerly, so long because Java)~~|~~Komga~~|~~https://github.com/gotson/komga~~|~~media~~|~~None, but might support OIDC~~|
+|Manga server|Kavita|https://github.com/Kareadita/Kavita|media|None|
 
 Note*: Plex is not deployed with Docker here, to avoid any problems with hardware transcoding (and removes the headache of having a NVIDIA docker)
 

@@ -437,13 +437,23 @@ services:
       ## HTTP Router
       - "traefik.http.routers.tautulli-rtr.entrypoints=websecure"
       - "traefik.http.routers.tautulli-rtr.rule=Host(`tautulli.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.tautulli-rtr.priority=99"
       - "traefik.http.routers.tautulli-rtr.tls=true"
       - "traefik.http.routers.tautulli-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.tautulli-rtr.tls.options=tls-opts@file"
+      ## API HTTP Router
+      - "traefik.http.routers.tautulli-api-rtr.entrypoints=websecure"
+      - "traefik.http.routers.tautulli-api-rtr.rule=Host(`tautulli.${DOMAIN_NAME}`) && PathPrefix(`/api/v2`)"
+      - "traefik.http.routers.tautulli-api-rtr.priority=100"
+      - "traefik.http.routers.tautulli-api-rtr.tls=true"
+      - "traefik.http.routers.tautulli-api-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.tautulli-api-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.tautulli-rtr.middlewares=chain-forwardauth-plex@docker,tautulli-theme@docker"
+      - "traefik.http.routers.tautulli-api-rtr.middlewares=tautulli-theme@docker"
       ## HTTP Services
       - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
+      - "traefik.http.routers.tautulli-api-rtr.service=tautulli-svc"
       - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
     restart: unless-stopped
 
@@ -477,36 +487,62 @@ services:
 
   #TODO Antennas + TVheadend
   # Komga - Manga reader + server
-  komga:
-    image: gotson/komga
-    container_name: komga
+  # komga:
+  #   image: gotson/komga
+  #   container_name: komga
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.111
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/Komga:/config
+  #     - ${MANGA_FOLDER}:/data
+  #     - /etc/timezone:/etc/timezone:ro
+  #   ports:
+  #     - 8568:8568/tcp
+  #   user: ${USERID}:${GROUPID}
+  #   environment:
+  #     - SERVER_PORT=8568
+  #     - JAVA_TOOL_OPTIONS=-Xmx4g # I wish we could lower this, but setting it to a maximum of 4GB is fine to avoid any problems
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Router
+  #     - "traefik.http.routers.komga-rtr.entrypoints=websecure"
+  #     - "traefik.http.routers.komga-rtr.rule=Host(`manga.${DOMAIN_NAME}`)"
+  #     - "traefik.http.routers.komga-rtr.tls=true"
+  #     - "traefik.http.routers.komga-rtr.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.komga-rtr.tls.options=tls-opts@file"
+  #     ## Middlewares
+  #     - "traefik.http.routers.komga-rtr.middlewares=chain-forwardauth@docker"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.komga-rtr.service=komga-svc"
+  #     - "traefik.http.services.komga-svc.loadbalancer.server.port=8568"
+  #   restart: unless-stopped
+  
+  # Kavita - book/manga server
+  kavita:
+    image: kizaing/kavita:latest
+    container_name: kavita
     networks:
       proxy_network:
-        ipv4_address: 172.18.1.111
+        ipv4_address: 172.18.1.215
     volumes:
-      - ${CONFIG_FOLDER}/Komga:/config
-      - ${MANGA_FOLDER}:/data
-      - /etc/timezone:/etc/timezone:ro
-    ports:
-      - 8568:8568/tcp
+        - ${MANGA_FOLDER}:/manga # ${MANGA_FOLDER}
+        - /sharedfolders/WDBlue4To/LN:/lightnovels
+        - ${CONFIG_FOLDER}/Kavita:/kavita/config
     user: ${USERID}:${GROUPID}
-    environment:
-      - SERVER_PORT=8568
-      - JAVA_TOOL_OPTIONS=-Xmx4g # I wish we could lower this, but setting it to a maximum of 4GB is fine to avoid any problems
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Router
-      - "traefik.http.routers.komga-rtr.entrypoints=websecure"
-      - "traefik.http.routers.komga-rtr.rule=Host(`manga.${DOMAIN_NAME}`)"
-      - "traefik.http.routers.komga-rtr.tls=true"
-      - "traefik.http.routers.komga-rtr.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.komga-rtr.tls.options=tls-opts@file"
-      ## Middlewares
-      - "traefik.http.routers.komga-rtr.middlewares=chain-forwardauth@docker"
-      ## HTTP Services
-      - "traefik.http.routers.komga-rtr.service=komga-svc"
-      - "traefik.http.services.komga-svc.loadbalancer.server.port=8568"
+    ports:
+      - 5066:5000
     restart: unless-stopped
+      
+      #Uncomment if you want to implement healthchecks
+      #healthcheck:
+      #   test: curl --fail http://localhost:5000 || exit 1
+      #   interval: 300s
+      #   retries: 3
+      #   start_period: 30s
+      #   timeout: 15s
+
+
   # FMD2 - Free Manga Downloader 2
   fmd2:
     image: banhcanh/docker-fmd2
