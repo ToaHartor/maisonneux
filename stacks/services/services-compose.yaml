@@ -256,6 +256,14 @@ services:
       - ENABLE_MAPBOX=false
       - JWT_SECRET=${IMMICH_JWT_SECRET}
       - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
+      # OAuth settings : https://immich.app/docs/usage/oauth
+      - OAUTH_ENABLED=true
+      - OAUTH_ISSUER_URL=https://auth.${DOMAIN_NAME}/application/o/immich/
+      - OAUTH_CLIENT_ID=${IMMICH_OAUTH_ID}
+      - OAUTH_CLIENT_SECRET=${IMMICH_OAUTH_SECRET}
+      # - OAUTH_SCOPE=   # Default to 'openid email profile'
+      - OAUTH_AUTO_REGISTER=true
+      - OAUT_BUTTON_TEXT="Login with Authentik"
     restart: unless-stopped
 
   immich-microservices:
@@ -277,6 +285,14 @@ services:
       - ENABLE_MAPBOX=false
       - JWT_SECRET=${IMMICH_JWT_SECRET}
       - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
+      # OAuth settings : https://immich.app/docs/usage/oauth
+      - OAUTH_ENABLED=true
+      - OAUTH_ISSUER_URL=https://auth.${DOMAIN_NAME}/application/o/immich/
+      - OAUTH_CLIENT_ID=${IMMICH_OAUTH_ID}
+      - OAUTH_CLIENT_SECRET=${IMMICH_OAUTH_SECRET}
+      # - OAUTH_SCOPE=   # Default to 'openid email profile'
+      - OAUTH_AUTO_REGISTER=true
+      - OAUT_BUTTON_TEXT="Login with Authentik"
     restart: unless-stopped
 
   immich-machine-learning:

@@ -89,7 +89,7 @@ Note*: Plex is not deployed with Docker here, to avoid any problems with hardwar
 |Recipes|Tandoor|https://github.com/TandoorRecipes/recipes|services|None|
 |Notifications|Gotify|https://github.com/gotify/server|services|Not exposed|
 |Cryptography utilities|Cyberchef|https://github.com/gchq/CyberChef, Dockerized version https://github.com/mpepping/docker-cyberchef/|services|Not exposed|
-|Photo server|Immich|https://github.com/immich-app/immich|services|None|
+|Photo server|Immich|https://github.com/immich-app/immich|services|OIDC|
 |Database manager|Cloudbeaver|https://github.com/dbeaver/cloudbeaver|databases|Not exposed|
 |Document management|Paperless-ngx|https://github.com/paperless-ngx/paperless-ngx|services|Not exposed|
 
