@@ -394,25 +394,25 @@ services:
       - "traefik.http.services.jdl-svc.loadbalancer.server.port=5800"
     restart: unless-stopped
   # API for Jdownloader for Organizr
-  myjd-api:
-    image: rix1337/docker-myjd-api:latest
-    container_name: jd-api
-    networks:
-      proxy_network:
-        ipv4_address: 172.18.1.108
-    volumes:
-      - ${CONFIG_FOLDER}/myjd-api:/config
-      - ${CONFIG_FOLDER}/JDownloader:/opt/JDownloader/cfg
-      - /etc/localtime:/etc/localtime:ro
-    # ports:
-    #   - 8080:8080/tcp # Mapping port
-    environment:
-      - PUID=${USERID}
-      - PGID=${GROUPID}
-      - USER=${JD_USER}
-      - PASS=${JD_PASSWORD}
-      - DEVICE=JDownloader
-    restart: unless-stopped
+  # myjd-api:
+  #   image: rix1337/docker-myjd-api:latest
+  #   container_name: jd-api
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.108
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/myjd-api:/config
+  #     - ${CONFIG_FOLDER}/JDownloader:/opt/JDownloader/cfg
+  #     - /etc/localtime:/etc/localtime:ro
+  #   # ports:
+  #   #   - 8080:8080/tcp # Mapping port
+  #   environment:
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - USER=${JD_USER}
+  #     - PASS=${JD_PASSWORD}
+  #     - DEVICE=JDownloader
+  #   restart: unless-stopped
   # Tautulli - Plex monitoring
   # Had some problems to make it work with Authentik, when making a request to it, the request to another service will make Authentik loop
   # It was solved by deleting the provider and creating it again, checking that it was working and finally adding the scope mapping
@@ -562,6 +562,7 @@ services:
       - ${CONFIG_FOLDER}/FMD2/modules:/app/FMD2/lua
       - ${CONFIG_FOLDER}/FMD2/data:/app/FMD2/data
       - ${CONFIG_FOLDER}/FMD2/wine/data:/config/.wine
+      - ${CONFIG_FOLDER}/FMD2/config:/config
       - ${DOWNLOAD_FOLDER}/complete/manga:/downloads
       # - ${CONFIG_FOLDER}/FMD2/config:/config
     labels:

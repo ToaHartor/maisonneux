@@ -216,7 +216,7 @@ services:
     volumes:
       - ${CONFIG_FOLDER}/Authentik/media:/media
       - ${CONFIG_FOLDER}/Authentik/custom-templates:/templates
-      - geoip:/geoip
+      - ${CONFIG_FOLDER}/Authentik/geoip:/geoip
     env_file:
       - stack.env
     labels:
@@ -261,7 +261,7 @@ services:
       - ${CONFIG_FOLDER}/Authentik/certs:/certs
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${CONFIG_FOLDER}/Authentik/custom-templates:/templates
-      - geoip:/geoip
+      - ${CONFIG_FOLDER}/Authentik/geoip:/geoip
     env_file:
       - stack.env
     depends_on:
@@ -303,6 +303,8 @@ services:
       interval: 30s
       retries: 5
       timeout: 3s
+    volumes:
+      - ${CONFIG_FOLDER}/Authentik/redis:/data
     restart: unless-stopped
 
   authentik-geoip:
@@ -312,7 +314,7 @@ services:
       auth_network:
         ipv4_address: 172.18.3.7
     volumes:
-      - geoip:/usr/share/GeoIP
+      - ${CONFIG_FOLDER}/Authentik/geoip:/usr/share/GeoIP
     environment:
       - GEOIPUPDATE_EDITION_IDS=GeoLite2-City
       - GEOIPUPDATE_FREQUENCY=8

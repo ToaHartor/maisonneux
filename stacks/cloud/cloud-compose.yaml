@@ -24,7 +24,12 @@ services:
       - ${CONFIG_FOLDER}/OnlyOffice/data:/var/log/onlyoffice
       - ${CONFIG_FOLDER}/OnlyOffice/logs:/var/www/onlyoffice/Data
       - ${CONFIG_FOLDER}/OnlyOffice/lib:/var/lib/onlyoffice
+      # Fonts
+      - ${CONFIG_FOLDER}/OnlyOffice/fonts:/usr/share/fonts/truetype/custom
+      # Embedded databases
       - ${CONFIG_FOLDER}/OnlyOffice/db:/var/lib/postgresql
+      - ${CONFIG_FOLDER}/OnlyOffice/rabbitmq:/var/lib/rabbitmq
+      - ${CONFIG_FOLDER}/OnlyOffice/redis:/var/lib/redis
       # - ${CONFIG_FOLDER}/OnlyOffice/config:/etc/onlyoffice/documentserver/  # Not working actually
     labels:
       - "traefik.enable=true"
