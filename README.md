@@ -99,6 +99,7 @@ Note*: Plex is not deployed with Docker here, to avoid any problems with hardwar
 |Metrics aggregation|Telegraf|https://github.com/influxdata/telegraf|*|-|
 |Tautulli/Arr/Overseerr metric aggregator|Varken|Develop branch is still active here https://github.com/Boerderij/Varken/tree/develop|monitoring|-|
 |Monitoring dashboard + alerting|Grafana|https://github.com/grafana/grafana|monitoring|OIDC|
+|Disk monitoring|Scrutiny|https://github.com/AnalogJ/scrutiny|monitoring|None (local)|
 
 Note*: Telegraf is directly installed on the server, making the  metric collection permissions easier, limiting problems that could happen while collecting metrics.
 

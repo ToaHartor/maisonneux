@@ -77,6 +77,37 @@ services:
       - "traefik.http.routers.grafana-rtr.service=grafana-svc"
       - "traefik.http.services.grafana-svc.loadbalancer.server.port=3000"
     restart: unless-stopped
+  # Scrutiny - Disk monitoring and alerting
+  scrutiny:
+    container_name: scrutiny
+    image: ghcr.io/analogj/scrutiny:master-omnibus
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.152
+      monit_network:
+        ipv4_address: 172.18.2.21
+    cap_add:
+      - SYS_RAWIO
+      - SYS_ADMIN # For NVME data collection
+    ports:
+      - "8809:8080" # webapp
+      # - "8808:8086" # influxDB admin
+    volumes:
+      - /run/udev:/run/udev:ro
+      - ${CONFIG_FOLDER}/Scrutiny/config:/opt/scrutiny/config
+      - ${CONFIG_FOLDER}/Scrutiny/influxdb:/opt/scrutiny/influxdb
+    devices:
+    # Add all desired disks
+      - "/dev/sda"
+      - "/dev/sdb"
+      - "/dev/sdc"
+      - "/dev/sdd"
+      - "/dev/sde"
+      - "/dev/sdf"
+      - "/dev/sdg"
+      - "/dev/sdh"
+    # NVME disks
+      - "/dev/nvme0"  # SYS_ADMIN permission should be added
 
 networks:
   proxy_network:
