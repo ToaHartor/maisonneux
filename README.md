@@ -92,6 +92,7 @@ Note*: Plex is not deployed with Docker here, to avoid any problems with hardwar
 |Photo server|Immich|https://github.com/immich-app/immich|services|OIDC|
 |Database manager|Cloudbeaver|https://github.com/dbeaver/cloudbeaver|databases|Not exposed|
 |Document management|Paperless-ngx|https://github.com/paperless-ngx/paperless-ngx|services|Not exposed|
+|Notes/Memo|Memos|https://github.com/usememos/memos|services|OIDC|
 
 ##### Monitoring
 |Name|Required by|Link|Stack|Auth provider in Authentik|

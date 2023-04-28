@@ -61,7 +61,7 @@ services:
       - "traefik.http.routers.bookstack-rtr.entrypoints=websecure"
       - "traefik.http.routers.bookstack-rtr.rule=Host(`docs.${DOMAIN_NAME}`)"
       - "traefik.http.routers.bookstack-rtr.tls=true"
-      - "traefik.http.routers.bookstack-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.bookstack-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.bookstack-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.bookstack-rtr.middlewares=chain-noauth@docker"
@@ -107,7 +107,7 @@ services:
       - "traefik.http.routers.gitea-rtr.entrypoints=websecure"
       - "traefik.http.routers.gitea-rtr.rule=Host(`git.${DOMAIN_NAME}`)"
       - "traefik.http.routers.gitea-rtr.tls=true"
-      - "traefik.http.routers.gitea-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.gitea-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.gitea-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.gitea-rtr.middlewares=chain-noauth@docker"
@@ -139,7 +139,7 @@ services:
       - "traefik.http.routers.vaultwarden-rtr.entrypoints=websecure"
       - "traefik.http.routers.vaultwarden-rtr.rule=Host(`vault.${DOMAIN_NAME}`)"
       - "traefik.http.routers.vaultwarden-rtr.tls=true"
-      - "traefik.http.routers.vaultwarden-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.vaultwarden-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.vaultwarden-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.vaultwarden-rtr.middlewares=chain-noauth@docker"
@@ -151,7 +151,7 @@ services:
       - "traefik.http.routers.vaultwarden-ws-rtr.entrypoints=websecure"
       - "traefik.http.routers.vaultwarden-ws-rtr.rule=Host(`vault.${DOMAIN_NAME}`) && Path(`/notifications/hub`)"
       - "traefik.http.routers.vaultwarden-ws-rtr.tls=true"
-      - "traefik.http.routers.vaultwarden-ws-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.vaultwarden-ws-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.vaultwarden-ws-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.vaultwarden-ws-rtr.middlewares=chain-noauth@docker"
@@ -236,7 +236,7 @@ services:
     restart: unless-stopped
   # Immich stack - Photo server
   immich-server:
-    image: altran1502/immich-server:release
+    image: ghcr.io/immich-app/immich-server:release
     container_name: immich_server
     entrypoint: ["/bin/sh", "./start-server.sh"]
     networks:
@@ -264,10 +264,13 @@ services:
       # - OAUTH_SCOPE=   # Default to 'openid email profile'
       - OAUTH_AUTO_REGISTER=true
       - OAUT_BUTTON_TEXT="Login with Authentik"
+      - TYPESENSE_API_KEY=${IMMICH_TYPESENSE_API_KEY}
+    depends_on:
+      - typesense
     restart: unless-stopped
 
   immich-microservices:
-    image: altran1502/immich-server:release
+    image: ghcr.io/immich-app/immich-server:release
     entrypoint: ["/bin/sh", "./start-microservices.sh"]
     container_name: immich_microservices
     networks:
@@ -293,17 +296,20 @@ services:
       # - OAUTH_SCOPE=   # Default to 'openid email profile'
       - OAUTH_AUTO_REGISTER=true
       - OAUT_BUTTON_TEXT="Login with Authentik"
+      - TYPESENSE_API_KEY=${IMMICH_TYPESENSE_API_KEY}
+    depends_on:
+      - typesense
     restart: unless-stopped
 
   immich-machine-learning:
-    image: altran1502/immich-machine-learning:release
+    image: ghcr.io/immich-app/immich-machine-learning:release
     container_name: immich_machine_learning
-    entrypoint: ["/bin/sh", "./entrypoint.sh"]
     networks:
       immich_network:
         ipv4_address: 172.18.2.99
     volumes:
       - ${DATA_FOLDER}/Photos:/usr/src/app/upload
+      - ${CONFIG_FOLDER}/Immich/model-cache:/cache
     environment:
       - NODE_ENV=production
       - DB_HOSTNAME=postgres
@@ -313,10 +319,11 @@ services:
       - ENABLE_MAPBOX=false
       - JWT_SECRET=${IMMICH_JWT_SECRET}
       - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
+      - TYPESENSE_API_KEY=${IMMICH_TYPESENSE_API_KEY}
     restart: unless-stopped
 
   immich-web:
-    image: altran1502/immich-web:release
+    image: ghcr.io/immich-app/immich-web:release
     entrypoint: ["/bin/sh", "./entrypoint.sh"]
     container_name: immich_web
     networks:
@@ -330,7 +337,7 @@ services:
 
   immich-proxy:
     container_name: immich_proxy
-    image: altran1502/immich-proxy:release
+    image: ghcr.io/immich-app/immich-proxy:release
     networks:
       proxy_network:
         ipv4_address: 172.18.1.130
@@ -349,13 +356,28 @@ services:
       - "traefik.http.routers.immich-rtr.entrypoints=websecure"
       - "traefik.http.routers.immich-rtr.rule=Host(`photos.${DOMAIN_NAME}`)"
       - "traefik.http.routers.immich-rtr.tls=true"
-      - "traefik.http.routers.immich-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.immich-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.immich-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.immich-rtr.middlewares=chain-noauth@docker"
       ## HTTP Services
       - "traefik.http.routers.immich-rtr.service=immich-svc"
       - "traefik.http.services.immich-svc.loadbalancer.server.port=8080"
+    restart: unless-stopped
+  
+  typesense:
+    container_name: immich_typesense
+    image: typesense/typesense:0.24.0
+    networks:
+      immich_network:
+        ipv4_address: 172.18.2.104
+    environment:
+      - TYPESENSE_API_KEY=${IMMICH_TYPESENSE_API_KEY}
+      - TYPESENSE_DATA_DIR=/data
+    logging:
+      driver: none
+    volumes:
+      - ${CONFIG_FOLDER}/Immich/typesense:/data
     restart: unless-stopped
 
   paperless-ngx:
@@ -377,6 +399,34 @@ services:
     ports:
       - 8089:8000
     restart: unless-stopped
+  # Memos - Note/memo server
+  memos:
+    image: ghcr.io/usememos/memos:latest
+    container_name: memos
+    networks:
+      proxy_network: 
+        ipv4_address: 172.18.1.132
+    user: ${USERID}:${GROUPID}
+    volumes:
+      - ${CONFIG_FOLDER}/Memos:/var/opt/memos
+    ports:
+      - 5230:5230
+    labels:
+      - "traefik.enable=true"
+      # Web UI
+      ## HTTP Router
+      - "traefik.http.routers.memos-rtr.entrypoints=websecure"
+      - "traefik.http.routers.memos-rtr.rule=Host(`memos.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.memos-rtr.tls=true"
+      # - "traefik.http.routers.memos-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.memos-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.memos-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.memos-rtr.service=memos-svc"
+      - "traefik.http.services.memos-svc.loadbalancer.server.port=5230"
+    restart: unless-stopped
+
 
 networks: # All these networks are created in the databases stack, which re
   proxy_network:
