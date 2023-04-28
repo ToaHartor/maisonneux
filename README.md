@@ -44,6 +44,8 @@ Strikethrough softwares are no longer part of my stacks, but the composes are st
 |Home dashboard|Organizr|https://github.com/causefx/Organizr|proxy-auth|Proxy with scope mapping|
 |Service themes|theme.park|https://github.com/GilbN/theme.park|proxy-auth|None|
 |Backup solution (WIP)|Kopia|https://github.com/kopia/kopia|backup||
+|Docker socket proxy|Docker socket proxy|https://github.com/Tecnativa/docker-socket-proxy|proxy-auth||
+|Homepage (WIP)|Homepage|https://github.com/benphelps/homepage|proxy-auth|Not exposed|
 
 ##### Media management
 |Functionality|Name|Link|Stack|Auth provider in Authentik|
