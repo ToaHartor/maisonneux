@@ -68,7 +68,7 @@ services:
       - "traefik.http.routers.grafana-rtr.entrypoints=websecure"
       - "traefik.http.routers.grafana-rtr.rule=Host(`graphs.${DOMAIN_NAME}`)"
       - "traefik.http.routers.grafana-rtr.tls=true"
-      - "traefik.http.routers.grafana-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.grafana-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.grafana-rtr.tls.options=tls-opts@file"
       ## Middlewares
       ### Here the authentication is handled by the redirection with OAuth, therefore forward auth isn't needed

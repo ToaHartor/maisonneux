@@ -37,7 +37,7 @@ services:
       - "traefik.http.routers.onlyoffice-rtr.entrypoints=websecure"
       - "traefik.http.routers.onlyoffice-rtr.rule=Host(`onlyoffice.${DOMAIN_NAME}`)"
       - "traefik.http.routers.onlyoffice-rtr.tls=true"
-      - "traefik.http.routers.onlyoffice-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.onlyoffice-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.onlyoffice-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.onlyoffice-rtr.middlewares=seafile-mw@docker,ratelimit-mw@docker,compress-mw@docker"
@@ -114,7 +114,7 @@ services:
       - "traefik.http.routers.seafile-rtr.entrypoints=websecure"
       - "traefik.http.routers.seafile-rtr.rule=Host(`cloud.${DOMAIN_NAME}`)"
       - "traefik.http.routers.seafile-rtr.tls=true"
-      - "traefik.http.routers.seafile-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.seafile-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.seafile-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.seafile-rtr.middlewares=seafile-mw@docker,ratelimit-mw@docker,compress-mw@docker"
@@ -127,7 +127,7 @@ services:
       - "traefik.http.routers.seafile-dav-rtr.entrypoints=websecure"
       - "traefik.http.routers.seafile-dav-rtr.rule=Host(`cloud.${DOMAIN_NAME}`) && PathPrefix(`/seafdav`)"
       - "traefik.http.routers.seafile-dav-rtr.tls=true"
-      - "traefik.http.routers.seafile-dav-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.seafile-dav-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.seafile-dav-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.seafile-dav-rtr.middlewares=seafile-mw@docker,ratelimit-mw@docker,compress-mw@docker"
@@ -140,7 +140,7 @@ services:
       - "traefik.http.routers.seafile-http-rtr.entrypoints=websecure"
       - "traefik.http.routers.seafile-http-rtr.rule=Host(`cloud.${DOMAIN_NAME}`) && PathPrefix(`/seafhttp`)"
       - "traefik.http.routers.seafile-http-rtr.tls=true"
-      - "traefik.http.routers.seafile-http-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.seafile-http-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.seafile-http-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.middlewares.seafile-strip.stripprefix.prefixes=/seafhttp"
@@ -205,7 +205,7 @@ networks:
   #     - "traefik.http.routers.nextcloud-rtr.entrypoints=websecure"
   #     - "traefik.http.routers.nextcloud-rtr.rule=Host(`cloud.${DOMAIN_NAME}`)"
   #     - "traefik.http.routers.nextcloud-rtr.tls=true"
-  #     - "traefik.http.routers.nextcloud-rtr.tls.certresolver=letsencrypt"
+  # #     - "traefik.http.routers.nextcloud-rtr.tls.certresolver=letsencrypt"
   #     - "traefik.http.routers.nextcloud-rtr.tls.options=tls-opts@file"
   #     ## Middlewares
   #     - "traefik.http.routers.nextcloud-rtr.middlewares=nextcloud-mw@docker,nextcloud-redirect@docker,ratelimit-mw@docker,compress-mw@docker"

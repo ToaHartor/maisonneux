@@ -117,7 +117,11 @@ services:
       - "traefik.http.routers.traefik-rtr.entrypoints=websecure"
       - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.${DOMAIN_NAME}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
       - "traefik.http.routers.traefik-rtr.tls=true"
+      # Certificate generation for the entire server is made here
       - "traefik.http.routers.traefik-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].main=${DOMAIN_NAME}"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].sans=*.${DOMAIN_NAME}"
+
       - "traefik.http.routers.traefik-rtr.tls.options=tls-opts@file"
       - "traefik.http.routers.traefik-rtr.middlewares=chain-forwardauth@docker"
       # API service
@@ -182,7 +186,7 @@ services:
     #   - "traefik.http.routers.theme-park-rtr.entrypoints=websecure"
     #   - "traefik.http.routers.theme-park-rtr.rule=Host(`ads.${DOMAIN_NAME}`)"
     #   - "traefik.http.routers.theme-park-rtr.tls=true"
-    #   - "traefik.http.routers.theme-park-rtr.tls.certresolver=letsencrypt"
+    # #   - "traefik.http.routers.theme-park-rtr.tls.certresolver=letsencrypt"
     #   - "traefik.http.routers.theme-park-rtr.tls.options=tls-opts@file"
     #   ## Middlewares
     #   - "traefik.http.routers.theme-park-rtr.middlewares=chain-noauth@docker"
@@ -226,7 +230,7 @@ services:
       - "traefik.http.routers.authentik.rule=Host(`auth.${DOMAIN_NAME}`) || (Host(`${DOMAIN_NAME}`) || HostRegexp(`{subdomain:[a-z0-9]+}.${DOMAIN_NAME}`)) && PathPrefix(`/outpost.goauthentik.io/`)"
       - "traefik.http.routers.authentik.entrypoints=websecure"
       - "traefik.http.routers.authentik.tls=true"
-      - "traefik.http.routers.authentik.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.authentik.tls.certresolver=letsencrypt"
       - "traefik.http.routers.authentik.tls.options=tls-opts@file"
       - "traefik.http.routers.authentik.service=authentik-svc"
       - "traefik.http.routers.authentik.middlewares=chain-noauth@docker"
@@ -347,7 +351,7 @@ services:
       - "traefik.http.routers.organizr-rtr.entrypoints=websecure"
       - "traefik.http.routers.organizr-rtr.rule=Host(`${DOMAIN_NAME}`)" #, `www.${DOMAIN_NAME}`)"
       - "traefik.http.routers.organizr-rtr.tls=true"
-      - "traefik.http.routers.organizr-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.organizr-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.organizr-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.organizr-rtr.middlewares=chain-forwardauth@docker,organizr-theme@docker"
@@ -380,7 +384,7 @@ services:
       - "traefik.http.routers.theme-park-rtr.entrypoints=websecure"
       - "traefik.http.routers.theme-park-rtr.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/themepark`)"
       - "traefik.http.routers.theme-park-rtr.tls=true"
-      - "traefik.http.routers.theme-park-rtr.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.theme-park-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.theme-park-rtr.tls.options=tls-opts@file"
       ## Middlewares
       - "traefik.http.routers.theme-park-rtr.middlewares=chain-noauth@docker"
