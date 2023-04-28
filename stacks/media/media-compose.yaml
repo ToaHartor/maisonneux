@@ -656,6 +656,24 @@ services:
       - "traefik.http.routers.tubesync-rtr.service=tubesync-svc"
       - "traefik.http.services.tubesync-svc.loadbalancer.server.port=4848"
     restart: unless-stopped
+  # xTeVe - M3U proxy for Plex DVR
+  xteve:
+    image: dnsforge/xteve:latest
+    container_name: xteve
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.115
+    volumes:
+      - ${CONFIG_FOLDER}/xTeve:/home/xteve/conf
+    environment:
+      - TZ=${TIMEZONE}
+      - XTEVE_BRANCH=beta
+      - XTEVE_API=1
+      - XTEVE_PORT=8953
+      - XTEVE_DEBUG=0
+    ports:
+      - 8953:8953
+    restart: unless-stopped
   # Kaizoku - Manga download manager
   kaizoku:
     container_name: kaizoku
