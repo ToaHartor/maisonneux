@@ -656,9 +656,34 @@ services:
       - "traefik.http.routers.tubesync-rtr.service=tubesync-svc"
       - "traefik.http.services.tubesync-svc.loadbalancer.server.port=4848"
     restart: unless-stopped
+  # Kaizoku - Manga download manager
+  kaizoku:
+    container_name: kaizoku
+    image: ghcr.io/oae/kaizoku:latest
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.116
+      kaizoku_network:
+        ipv4_address: 172.18.2.113
+    environment:
+      - DATABASE_URL=postgresql://${KAIZOKU_DB_USER}:${KAIZOKU_DB_PASS}@postgres:5432/${KAIZOKU_DB}
+      - KAIZOKU_PORT=3968
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - TZ=${TIMEZONE}
+    volumes:
+      - /sharedfolders/WDBlue4To/Kaizoku:/data
+      - ${CONFIG_FOLDER}/Kaizoku/config:/config
+      - ${CONFIG_FOLDER}/Kaizoku/logs:/logs
+    ports:
+      - '3968:3968'
 
 networks:
   proxy_network:
     external: true  # Created in the nginx compose
   mangatagger_network:
+    external: true
+  kaizoku_network:
     external: true

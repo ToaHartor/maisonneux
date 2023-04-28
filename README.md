@@ -56,6 +56,7 @@ Strikethrough softwares are no longer part of my stacks, but the composes are st
 |~~Indexer (formerly)~~|~~Jackett~~|~~https://github.com/Jackett/Jackett~~|~~media~~||
 |Plex user/library statistics|Tautulli|https://github.com/Tautulli/Tautulli|media|Proxy with scope mapping|
 |TV/Movies requesting|Overseerr|https://github.com/sct/overseerr|media|Proxy with scope mapping|
+|Manga downloader/manager (WIP)|Kaizoku|https://github.com/oae/kaizoku|media|Not exposed|
 
 ##### Media servers
 |Functionality|Name|Link|Stack|Auth provider in Authentik|

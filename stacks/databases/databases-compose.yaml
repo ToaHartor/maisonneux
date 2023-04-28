@@ -53,6 +53,8 @@ services:
         ipv4_address: 172.18.2.74
       immich_network:
         ipv4_address: 172.18.2.102
+      kaizoku_network:
+        ipv4_address: 172.18.2.115
     volumes:
       - ${DATA_FOLDER}/Postgres:/var/lib/postgresql/data
       - /etc/localtime:/etc/localtime:ro
@@ -94,6 +96,8 @@ services:
         ipv4_address: 172.18.2.90
       immich_network:
         ipv4_address: 172.18.2.103
+      kaizoku_network:
+        ipv4_address: 172.18.2.114
     volumes: # Maybe move to /dev/shm
       - ${DATA_FOLDER}/Redis:/data
     # ports:
@@ -190,3 +194,10 @@ networks:
       config:
         - subnet: 172.18.2.96/28
           gateway: 172.18.2.110
+  kaizoku_network:
+    name: kaizoku_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.112/29
+          gateway: 172.18.2.118
