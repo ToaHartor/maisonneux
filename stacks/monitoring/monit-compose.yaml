@@ -31,6 +31,7 @@ services:
     ports:
       - 3000:3000
     environment:
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
       - GF_SECURITY_ALLOW_EMBEDDING=true
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_PATHS_CONFIG=/var/lib/grafana/config/grafana.ini
