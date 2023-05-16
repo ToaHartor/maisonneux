@@ -41,7 +41,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${CONFIG_FOLDER}/Traefik/config:/config
       - ${CONFIG_FOLDER}/Traefik/certificates:/letsencrypt
-      - ${CONFIG_FOLDER}/Traefik/logs:/logs
+      - /var/log/traefik:/logs
     ports:
       # Dashboard, only exposed on this interface if api.insecure=true
       # - 0.0.0.0:18080:8080
@@ -64,7 +64,7 @@ services:
       - "--global.sendAnonymousUsage=false"
       # Logs
       - "--log.level=INFO"
-      # - "--log.filePath=/logs/traefik.log" # If commented, then you can watch the logs in the docker logs directly
+      - "--log.filePath=/logs/traefik.log"
       - "--accesslog=true"
       - "--accesslog.filepath=/logs/access.log"
       - "--accesslog.bufferingsize=100"
@@ -96,6 +96,9 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--entrypoints.web.http.redirections.entryPoint.priority=1000" # Higher priority than any rule per default to redirect everything to https. If no redirection is required, put a higher priority to the rule.
       - "--entrypoints.websecure.address=:443"
+      # Crowdsec on entrypoints (defined in file)
+      - "--entrypoints.web.http.middlewares=crowdsec-bouncer@file"
+      - "--entrypoints.websecure.http.middlewares=crowdsec-bouncer@file"
       # Certificate challenge
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=ovh"
@@ -484,6 +487,60 @@ services:
       - SYSTEM=0
       - TASKS=1 # Portainer
       - VOLUMES=1 # Portainer
+    restart: unless-stopped
+  # CrowdSec - Open-source & collaborative security IPS
+  crowdsec:
+    image: ghcr.io/crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.20
+    environment:
+      - COLLECTIONS=crowdsecurity/traefik 
+        crowdsecurity/http-cve 
+        crowdsecurity/whitelist-good-actors 
+        crowdsecurity/iptables crowdsecurity/linux 
+        crowdsecurity/nginx crowdsecurity/sshd
+        LePresidente/grafana LePresidente/gitea
+        Dominic-Wagner/vaultwarden
+      - PUID=${USERID}
+      - GID=${GROUPID}
+
+      # Gitea : https://hub.crowdsec.net/author/LePresidente/collections/gitea
+      # Grafana: https://hub.crowdsec.net/author/LePresidente/collections/grafana
+      # Prowlarr: https://hub.crowdsec.net/author/schiz0phr3ne/collections/prowlarr
+      # Radarr: https://hub.crowdsec.net/author/schiz0phr3ne/collections/radarr
+      # Sonarr: https://hub.crowdsec.net/author/schiz0phr3ne/collections/sonarr
+      # sshd: https://hub.crowdsec.net/author/crowdsecurity/collections/sshd
+      # traefik: https://hub.crowdsec.net/author/crowdsecurity/collections/traefik
+      # Adguard: https://hub.crowdsec.net/author/LePresidente/collections/adguardhome
+      # uptime-kuma?: https://hub.crowdsec.net/author/timokoessler/collections/uptime-kuma
+      # Vaultwarden: https://hub.crowdsec.net/author/Dominic-Wagner/collections/vaultwarden
+      # MariaDB?: https://hub.crowdsec.net/author/crowdsecurity/collections/mariadb
+      # PGSQL?: https://hub.crowdsec.net/author/crowdsecurity/collections/pgsql
+
+    volumes:
+      - /var/log:/logs:ro # System logs
+      - /var/log/auth.log:/var/log/auth.log:ro
+      - /var/log/crowdsec:/var/log/crowdsec:ro
+      - ${CONFIG_FOLDER}/Crowdsec/data:/var/lib/crowdsec/data
+      - ${CONFIG_FOLDER}/Crowdsec/config:/etc/crowdsec
+    ports: 
+    - 10808:8080
+    restart: unless-stopped
+  # Crowdsec Traefik Bouncer
+  crowdsec-traefik-bouncer:
+    image: fbonalair/traefik-crowdsec-bouncer
+    container_name: bouncer_traefik
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.21
+    environment:
+      - CROWDSEC_BOUNCER_API_KEY=${CROWDSEC_BOUNCER_API_KEY}
+      - CROWDSEC_AGENT_HOST=crowdsec:8080
+      - GIN_MODE=release
+    depends_on:
+      - crowdsec
     restart: unless-stopped
 
 volumes:

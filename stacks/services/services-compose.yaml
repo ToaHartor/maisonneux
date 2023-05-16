@@ -82,6 +82,7 @@ services:
     volumes:
       - ${DATA_FOLDER}/Gitea:/git
       - ${CONFIG_FOLDER}/Gitea:/data
+      - /var/log/gitea:/var/log/gitea
       - /etc/localtime:/etc/localtime:ro
     ports:
     #   - 2222:22/tcp   # SSH 
@@ -89,11 +90,20 @@ services:
     environment:
       - DISABLE_REGISTRATION=true
       - GITEA_CUSTOM=/data
+      # Database configuration
       - GITEA__database__DB_TYPE=mysql
       - GITEA__database__HOST=mariadb:3306
       - GITEA__database__NAME=${GITEA_DB}
       - GITEA__database__USER=${GITEA_DB_USER}
       - GITEA__database__PASSWD=${GITEA_DB_PASSWORD}
+      - GITEA__database__LOG_SQL=false
+      # Logs
+      - GITEA__log__ROOT_PATH=/var/log/gitea
+      - GITEA__log__MODE=console,file
+      - GITEA__log__LEVEL=Info
+      - GITEA__log__ENABLE_ACCESS_LOG=true
+      - GITEA__log__ACCESS=file  # Stored in $ROOT_PATH/access.log
+
       - ROOT_URL=https://git.${DOMAIN_NAME}/
       - DOMAIN=${DOMAIN_NAME}
       - SSH_DOMAIN=${DOMAIN_NAME}
@@ -124,13 +134,20 @@ services:
         ipv4_address: 172.18.1.124
     volumes:
       - ${CONFIG_FOLDER}/Vaultwarden:/data
+      - /var/log/vaultwarden:/var/log/vaultwarden
     # ports:
     #   - 3012:3012/tcp # WS server
     #   - 8888:8888/tcp # Web page
     environment:
+      # Logs to be collected by Crowdsec
+      - LOG_FILE=/var/log/vaultwarden/vaultwarden.log
+      - LOG_LEVEL=info
+      - EXTENDED_LOGGING=true
+      - ROCKET_CLI_COLORS=false
       - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
       - INVITATIONS_ALLOWED=false
       - SIGNUPS_ALLOWED=false
+      - SHOW_PASSWORD_HINT=false
       - ROCKET_PORT=8888
     labels:
       - "traefik.enable=true"
