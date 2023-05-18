@@ -443,6 +443,102 @@ services:
       - "traefik.http.routers.memos-rtr.service=memos-svc"
       - "traefik.http.services.memos-svc.loadbalancer.server.port=5230"
     restart: unless-stopped
+  # Outline - Wiki/Doc server
+  outline:
+    image: outlinewiki/outline:latest
+    container_name: outline
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.133
+      outline_network:
+        ipv4_address: 172.18.2.121
+    environment:
+      # https://github.com/outline/outline/blob/main/.env.sample
+      # https://github.com/outline/outline/discussions/3437
+      - NODE_ENV=production
+
+      - SECRET_KEY=${OUTLINE_SECRET_KEY}
+      - UTILS_SECRET=${OUTLINE_UTILS_SECRET}
+
+      # For production point these at your databases, in development the default
+      # should work out of the box.
+      - DATABASE_URL=postgres://${OUTLINE_PSQL_USER}:${OUTLINE_PSQL_PASS}@postgres:5432/outline
+      # - DATABASE_URL_TEST=postgres://user:pass@localhost:5432/outline-test
+      # - DATABASE_CONNECTION_POOL_MIN=
+      # - DATABASE_CONNECTION_POOL_MAX=
+      # Uncomment this to disable SSL for connecting to Postgres
+      - PGSSLMODE=disable
+
+      - REDIS_URL=redis://redis:6379
+
+      - URL=https://wiki.${DOMAIN_NAME}
+      - PORT=3852
+
+      - AWS_ACCESS_KEY_ID=${MINIO_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_SECRET_KEY}
+      - AWS_REGION=local
+      - AWS_S3_ACCELERATE_URL=
+      - AWS_S3_UPLOAD_BUCKET_URL=http://minio:9000
+      - AWS_S3_UPLOAD_BUCKET_NAME=outline-bucket
+      - AWS_S3_UPLOAD_MAX_SIZE=26214400
+      - AWS_S3_FORCE_PATH_STYLE=true
+      - AWS_S3_ACL=private
+
+      - OIDC_CLIENT_ID=${OUTLINE_OIDC_CLIENT_ID}
+      - OIDC_CLIENT_SECRET=${OUTLINE_OIDC_CLIENT_SECRET}
+      - OIDC_AUTH_URI=https://auth.${DOMAIN_NAME}/application/o/authorize/
+      - OIDC_TOKEN_URI=https://auth.${DOMAIN_NAME}/application/o/token/
+      - OIDC_USERINFO_URI=https://auth.${DOMAIN_NAME}/application/o/userinfo/
+      - OIDC_USERNAME_CLAIM=preferred_username
+      - OIDC_DISPLAY_NAME=Authentik
+      - OIDC_SCOPES=openid profile email
+      
+      - LOG_LEVEL=info
+      - WEB_CONCURRENCY=1
+      - MAXIMUM_IMPORT_SIZE=5120000
+    # ports:
+    #   - "3852:3852"
+    labels:
+      - "traefik.enable=true"
+      # Web UI
+      ## HTTP Router
+      - "traefik.http.routers.outline-rtr.entrypoints=websecure"
+      - "traefik.http.routers.outline-rtr.rule=Host(`wiki.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.outline-rtr.tls=true"
+      - "traefik.http.routers.outline-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.outline-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.outline-rtr.service=outline-svc"
+      - "traefik.http.services.outline-svc.loadbalancer.server.port=3852"
+    depends_on:
+      - minio
+    restart: unless-stopped
+  # Minio - Bucket storage for Outline
+  minio:
+    image: minio/minio
+    container_name: minio
+    networks:
+      database_network:
+        ipv4_address: 172.18.2.7
+      outline_network:
+        ipv4_address: 172.18.2.124
+    # ports:
+    #   - "9000:9000"
+    #   - "9025:9025"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+    entrypoint: sh
+    command: -c 'minio server /data --console-address ":9025"'
+    volumes:
+      - ${DATA_FOLDER}/Minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
 
 
 networks: # All these networks are created in the databases stack, which re
@@ -459,4 +555,8 @@ networks: # All these networks are created in the databases stack, which re
   paperless_network:
     external: true
   immich_network:
+    external: true
+  outline_network:
+    external: true
+  database_network:
     external: true

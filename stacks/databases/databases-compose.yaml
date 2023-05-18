@@ -55,6 +55,8 @@ services:
         ipv4_address: 172.18.2.102
       kaizoku_network:
         ipv4_address: 172.18.2.115
+      outline_network:
+        ipv4_address: 172.18.2.122
     volumes:
       - ${DATA_FOLDER}/Postgres:/var/lib/postgresql/data
       - /etc/localtime:/etc/localtime:ro
@@ -98,6 +100,8 @@ services:
         ipv4_address: 172.18.2.103
       kaizoku_network:
         ipv4_address: 172.18.2.114
+      outline_network:
+        ipv4_address: 172.18.2.123
     volumes: # Maybe move to /dev/shm
       - ${DATA_FOLDER}/Redis:/data
     # ports:
@@ -201,3 +205,10 @@ networks:
       config:
         - subnet: 172.18.2.112/29
           gateway: 172.18.2.118
+  outline_network:
+    name: outline_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.120/29
+          gateway: 172.18.2.126

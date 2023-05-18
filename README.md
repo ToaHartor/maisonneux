@@ -87,6 +87,7 @@ Note*: Plex is not deployed with Docker here, to avoid any problems with hardwar
 |Document editor|OnlyOffice|https://github.com/ONLYOFFICE/DocumentServer|cloud|None, but only apps with the JWT token can use it|
 |Finances manager|Firefly III|https://github.com/firefly-iii/firefly-iii|services|Not exposed|
 |Documentation/Wiki|Bookstack|https://github.com/BookStackApp/BookStack|services|OIDC|
+|Documentation/Wiki|Outline|https://github.com/outline/outline|services|OIDC|
 |Git/Code repository server|Gitea|https://github.com/go-gitea/gitea|services|OIDC|
 |Password manager|Vaultwarden|https://github.com/dani-garcia/vaultwarden|services|None|
 |Coding server|Code-server|https://github.com/coder/code-server|services|Not exposed|
