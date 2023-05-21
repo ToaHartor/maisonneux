@@ -68,9 +68,9 @@ services:
       - TZ=${TIMEZONE}
     restart: unless-stopped
 
-  # InfluxDB time series database
+  # InfluxDB2 - Time series database for monitoring
   influxdb:
-    image: influxdb:1.8.10
+    image: influxdb:latest #1.8.10
     container_name: influxdb
     networks:
       database_network:
@@ -78,10 +78,23 @@ services:
       monit_network:
         ipv4_address: 172.18.2.19
     volumes:
-      - ${DATA_FOLDER}/InfluxDB:/var/lib/influxdb
+      # - ${DATA_FOLDER}/InfluxDB:/var/lib/influxdb
+      - ${CONFIG_FOLDER}/influxdb2:/etc/influxdb2
+      - /docker/InfluxDB2:/var/lib/influxdb2
       - /etc/localtime:/etc/localtime:ro
     environment:
-      - INFLUXDB_DATA_INDEX_VERSION=tsi1 # Might need to also be changed in the actual config
+      # - INFLUXDB_DATA_INDEX_VERSION=tsi1 # Might need to also be changed in the actual config
+      # Init creds
+      # - DOCKER_INFLUXDB_INIT_MODE=upgrade
+      - INFLUXD_REPORTING_DISABLED=true
+      - INFLUXD_UI_DISABLED=true
+      # Lowest mean less ram ?
+      - INFLUXD_STORAGE_CACHE_SNAPSHOT_MEMORY_SIZE=10485760 # default : 26214400
+
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_INIT_USER}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_INIT_BUCKET}
     # ports:
     #   - 8086:8086/tcp
     restart: unless-stopped

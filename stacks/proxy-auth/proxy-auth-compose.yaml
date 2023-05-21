@@ -71,15 +71,14 @@ services:
       - "--serversTransport.insecureSkipVerify=true"
       # - "--api.insecure=true" # Only for testing purposes, will expose the dashboard on the port 8080
       # Metrics
-      - "--metrics.influxDB.address=influxdb:8086"
-      - "--metrics.influxDB.protocol=http"
-      - "--metrics.influxDB.addEntryPointsLabels=true"
-      - "--metrics.influxDB.addRoutersLabels=true"
-      - "--metrics.influxDB.addServicesLabels=true"
-      - "--metrics.influxDB.pushInterval=60s"
-      - "--metrics.influxDB.username=${INFLUX_TRAEFIK_USER}"
-      - "--metrics.influxDB.password=${INFLUX_TRAEFIK_PASS}"
-      - "--metrics.influxDB.database=${INFLUX_TRAEFIK_DB}"
+      - "--metrics.influxDB2.address=http://influxdb:8086"
+      - "--metrics.influxDB2.addEntryPointsLabels=true"
+      - "--metrics.influxDB2.addRoutersLabels=true"
+      - "--metrics.influxDB2.addServicesLabels=true"
+      - "--metrics.influxDB2.pushInterval=60s"
+      - "--metrics.influxDB2.token=${INFLUX_TRAEFIK_TOKEN}"
+      - "--metrics.influxDB2.org=${INFLUX_TRAEFIK_ORG}"
+      - "--metrics.influxDB2.bucket=${INFLUX_TRAEFIK_DB}"
       # Enabling theme plugin
       - "--experimental.plugins.theme-park.modulename=github.com/packruler/traefik-themepark"
       - "--experimental.plugins.theme-park.version=v1.1.0"
