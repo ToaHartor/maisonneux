@@ -67,15 +67,16 @@ services:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    mem_limit: 2g
+    # ulimits:
+    #   memlock:
+    #     soft: -1
+    #     hard: -1
+    # mem_limit: 2g
     user: ${USERID}:${GROUPID}
     volumes:
       - ${DATA_FOLDER}/Elasticsearch:/usr/share/elasticsearch/data  # Requested, specifies the path to Elasticsearch data persistent store.
-          
+    restart: unless-stopped
+   
   seafile:
     # Community edition
     #image: seafileltd/seafile-mc:latest
