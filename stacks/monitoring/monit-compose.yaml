@@ -78,6 +78,35 @@ services:
       - "traefik.http.routers.grafana-rtr.service=grafana-svc"
       - "traefik.http.services.grafana-svc.loadbalancer.server.port=3000"
     restart: unless-stopped
+  # Loki - Log sourcing
+  loki:
+    image: grafana/loki:2.8.2
+    container_name: loki
+    networks:
+      monit_network:
+        ipv4_address: 172.18.2.22
+    volumes:
+      - ${CONFIG_FOLDER}/loki:/etc/loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  # Promtail - Log collector
+  promtail:
+    image: grafana/promtail:2.8.2
+    container_name: promtail
+    networks:
+      monit_network:
+        ipv4_address: 172.18.2.23
+    volumes:
+      - ${CONFIG_FOLDER}/promtail:/etc/promtail
+      - /var/log:/var/log
+    command: -config.file=/etc/promtail/config.yml
+    depends-on:
+      - loki
+    restart: unless-stopped
+
   # Scrutiny - Disk monitoring and alerting
   scrutiny:
     container_name: scrutiny
