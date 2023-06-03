@@ -24,10 +24,10 @@ Issues are not opened, as I'm not supposed to give support for the softwares/Doc
 - [ ] Health checks in compose
 - [ ] Finish Adguard config
 - [ ] Backup setup (Kopia ?)
-- [ ] Migration to InfluxDB 2
-- [ ] Try Kavita as book server (Komga alternative)
+- [X] Migration to InfluxDB 2
+- [X] Try Kavita as book server (Komga alternative)
 - [ ] Docker secrets or vault usage
-- [ ] Use a Docker proxy for applications requiring access to `docker.sock`
+- [X] Use a Docker proxy for applications requiring access to `docker.sock`
 
 
 ### Softwares used
@@ -106,6 +106,7 @@ Note*: Plex is not deployed with Docker here, to avoid any problems with hardwar
 |Tautulli/Arr/Overseerr metric aggregator|Varken|Develop branch is still active here https://github.com/Boerderij/Varken/tree/develop|monitoring|-|
 |Monitoring dashboard + alerting|Grafana|https://github.com/grafana/grafana|monitoring|OIDC|
 |Disk monitoring|Scrutiny|https://github.com/AnalogJ/scrutiny|monitoring|None (local)|
+|Logs aggregator|Promtail+Loki|https://github.com/grafana/loki|monitoring|-|
 
 Note*: Telegraf is directly installed on the server, making the  metric collection permissions easier, limiting problems that could happen while collecting metrics.
 
