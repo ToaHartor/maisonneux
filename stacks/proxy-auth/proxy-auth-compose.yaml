@@ -153,6 +153,8 @@ services:
       - "traefik.http.middlewares.compress-mw.compress=true"
       ## Secure headers
       - "traefik.http.middlewares.secureheaders-mw.headers.accessControlAllowMethods=GET,OPTIONS,PUT"
+      - "traefik.http.middlewares.secureheaders-mw.headers.accessControlAllowOriginListRegex=https://([a-z]*\\.)?${DOMAIN_NAME}"
+      - "traefik.http.middlewares.secureheaders-mw.headers.addVaryHeader=true"
       - "traefik.http.middlewares.secureheaders-mw.headers.accessControlMaxAge=100"
       - "traefik.http.middlewares.secureheaders-mw.headers.hostsProxyHeaders=X-Forwarded-Host"
       - "traefik.http.middlewares.secureheaders-mw.headers.stsSeconds=63072000"

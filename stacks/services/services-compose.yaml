@@ -477,12 +477,12 @@ services:
       - AWS_ACCESS_KEY_ID=${MINIO_ACCESS_KEY}
       - AWS_SECRET_ACCESS_KEY=${MINIO_SECRET_KEY}
       - AWS_REGION=local
-      - AWS_S3_ACCELERATE_URL=
-      - AWS_S3_UPLOAD_BUCKET_URL=http://minio:9000
+      # - AWS_S3_ACCELERATE_URL=
+      - AWS_S3_UPLOAD_BUCKET_URL=https://bucket.${DOMAIN_NAME}  # Should be accessible from outside, especially for image upload
       - AWS_S3_UPLOAD_BUCKET_NAME=outline-bucket
       - AWS_S3_UPLOAD_MAX_SIZE=26214400
-      - AWS_S3_FORCE_PATH_STYLE=true
-      - AWS_S3_ACL=private
+      # - AWS_S3_FORCE_PATH_STYLE=true
+      # - AWS_S3_ACL=private
 
       - OIDC_CLIENT_ID=${OUTLINE_OIDC_CLIENT_ID}
       - OIDC_CLIENT_SECRET=${OUTLINE_OIDC_CLIENT_SECRET}
@@ -519,16 +519,22 @@ services:
     image: minio/minio
     container_name: minio
     networks:
+      proxy_network:
+        ipv4_address: 172.18.1.134
       database_network:
         ipv4_address: 172.18.2.7
       outline_network:
         ipv4_address: 172.18.2.124
     # ports:
-    #   - "9000:9000"
+    #   - "9005:9000"
     #   - "9025:9025"
     environment:
       - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
       - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+      - MINIO_DOMAIN=bucket.${DOMAIN_NAME}
+      - MINIO_BROWSER=off
+      - MINIO_SERVER_URL=https://bucket.${DOMAIN_NAME}
+      # - MINIO_API_CORS_ALLOW_ORIGIN=*.${DOMAIN_NAME},${DOMAIN_NAME}
     entrypoint: sh
     command: -c 'minio server /data --console-address ":9025"'
     volumes:
@@ -538,6 +544,19 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+    labels:
+      - "traefik.enable=true"
+      # Web UI
+      ## HTTP Router
+      - "traefik.http.routers.minio-rtr.entrypoints=websecure"
+      - "traefik.http.routers.minio-rtr.rule=Host(`bucket.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.minio-rtr.tls=true"
+      - "traefik.http.routers.minio-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.minio-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.minio-rtr.service=minio-svc"
+      - "traefik.http.services.minio-svc.loadbalancer.server.port=9000"
     restart: unless-stopped
 
 
