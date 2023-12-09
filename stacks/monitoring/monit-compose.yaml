@@ -10,7 +10,7 @@ services:
       monit_network:
         ipv4_address: 172.18.2.18
     volumes:
-      - ${CONFIG_FOLDER}/Varken:/config
+      - ${CONFIG_FOLDER}/varken:/config
       - /etc/localtime:/etc/localtime:ro
     environment:
       - PUID=${USERID}
@@ -26,12 +26,13 @@ services:
       monit_network:
         ipv4_address: 172.18.2.17
     volumes:
-      - ${CONFIG_FOLDER}/Grafana:/var/lib/grafana
+      - ${CONFIG_FOLDER}/grafana:/var/lib/grafana
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 3000:3000
     environment:
       - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+      - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_SECURITY_ALLOW_EMBEDDING=true
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_PATHS_CONFIG=/var/lib/grafana/config/grafana.ini
@@ -59,7 +60,7 @@ services:
       - GF_AUTH_SIGNOUT_REDIRECT_URL=https://auth.${DOMAIN_NAME}/application/o/grafana/end-session/
       - GF_AUTH_GENERIC_OAUTH_TLS_SKIP_VERIFY_INSECURE=true # Enable this when using self signed certificates (while testing)
       # Optionally enable auto-login (bypasses Grafana login screen)
-      - GF_AUTH_OAUTH_AUTO_LOGIN=true
+      - GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN=true
       # Optionally map user groups to Grafana roles
       - GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH=contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'
     labels:
@@ -79,66 +80,143 @@ services:
       - "traefik.http.services.grafana-svc.loadbalancer.server.port=3000"
     restart: unless-stopped
   # Loki - Log sourcing
-  loki:
-    image: grafana/loki:2.8.2
-    container_name: loki
-    networks:
-      monit_network:
-        ipv4_address: 172.18.2.22
-    volumes:
-      - ${CONFIG_FOLDER}/loki:/etc/loki
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
-    restart: unless-stopped
+  # loki:
+  #   image: grafana/loki:2.8.2
+  #   container_name: loki
+  #   networks:
+  #     monit_network:
+  #       ipv4_address: 172.18.2.22
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/loki:/etc/loki
+  #   ports:
+  #     - "3100:3100"
+  #   command: -config.file=/etc/loki/local-config.yaml
+  #   restart: unless-stopped
 
-  # Promtail - Log collector
-  promtail:
-    image: grafana/promtail:2.8.2
-    container_name: promtail
-    networks:
-      monit_network:
-        ipv4_address: 172.18.2.23
-    volumes:
-      - ${CONFIG_FOLDER}/promtail:/etc/promtail
-      - /var/log:/var/log
-    command: -config.file=/etc/promtail/config.yml
-    depends-on:
-      - loki
-    restart: unless-stopped
+  # # Promtail - Log collector
+  # promtail:
+  #   image: grafana/promtail:2.8.2
+  #   container_name: promtail
+  #   networks:
+  #     monit_network:
+  #       ipv4_address: 172.18.2.23
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/promtail:/etc/promtail
+  #     - /var/log:/var/log:ro
+  #   command: -config.file=/etc/promtail/config.yml
+  #   depends_on:
+  #     - loki
+  #   restart: unless-stopped
 
   # Scrutiny - Disk monitoring and alerting
+  # The collector 
   scrutiny:
     container_name: scrutiny
-    image: ghcr.io/analogj/scrutiny:master-omnibus
+    image: ghcr.io/analogj/scrutiny:master-web  # Replace with master-omnibus to have the collector and the interface
     networks:
       proxy_network:
         ipv4_address: 172.18.1.152
       monit_network:
         ipv4_address: 172.18.2.21
-    cap_add:
-      - SYS_RAWIO
-      - SYS_ADMIN # For NVME data collection
+  #   cap_add:
+  #     - SYS_RAWIO
+  #     - SYS_ADMIN # For NVME data collection
     ports:
-      - "8809:8080" # webapp
+      - "0.0.0.0:5668:8080" # webapp
       # - "8808:8086" # influxDB admin
     volumes:
-      - /run/udev:/run/udev:ro
-      - ${CONFIG_FOLDER}/Scrutiny/config:/opt/scrutiny/config
-      - ${CONFIG_FOLDER}/Scrutiny/influxdb:/opt/scrutiny/influxdb
-    devices:
-    # Add all desired disks
-      - "/dev/sda"
-      - "/dev/sdb"
-      - "/dev/sdc"
-      - "/dev/sdd"
-      - "/dev/sde"
-      - "/dev/sdf"
-      - "/dev/sdg"
-      - "/dev/sdh"
-    # NVME disks
-      - "/dev/nvme0"  # SYS_ADMIN permission should be added
+      - ${CONFIG_FOLDER}/scrutiny:/opt/scrutiny/config
+    environment:
+      - SCRUTINY_WEB_INFLUXDB_HOST=influxdb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
+    # devices:
+    # # Add all desired disks
+    #   - "/dev/sda"
+    #   - "/dev/sdb"
+    #   - "/dev/sdc"
+    #   - "/dev/sdd"
+    #   - "/dev/sde"
+    #   - "/dev/sdf"
+    #   - "/dev/sdg"
+    #   - "/dev/sdh"
+    # # NVME disks
+    #   - "/dev/nvme0"  # SYS_ADMIN permission should be added
     restart: unless-stopped
+  # Prometheus - Metrics aggregator
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.153
+      monit_network:
+        ipv4_address: 172.18.2.24
+    volumes:
+      - ${CONFIG_FOLDER}/prometheus/config/:/etc/prometheus/
+      - ${CONFIG_FOLDER}/prometheus/data/:/prometheus/
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--log.level=info'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - 9090:9090
+    depends_on:
+      - mimir
+    restart: always
+
+  # minio-monit:
+  #   image: minio/minio
+  #   container_name: minio-monit
+  #   networks:
+  #     monit_network:
+  #       ipv4_address: 172.18.2.25
+  #   # ports:
+  #   #   - "9005:9000"
+  #   #   - "9025:9025"
+  #   environment:
+  #     - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+  #     - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+  #     - MINIO_DEFAULT_BUCKETS=mimir
+  #     # - MINIO_DOMAIN=bucket.${DOMAIN_NAME}
+  #     - MINIO_BROWSER=off
+  #     # - MINIO_SERVER_URL=http://minio-monit:9000
+  #     # - MINIO_API_CORS_ALLOW_ORIGIN=*.${DOMAIN_NAME},${DOMAIN_NAME}
+  #   entrypoint: sh
+  #   command: -c 'minio server /data --console-address ":9025"'
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/minio-monit:/data
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://minio-monit:9000/minio/health/live"]
+  #     interval: 30s
+  #     timeout: 20s
+  #     retries: 3
+  #   restart: unless-stopped
+  # Mimir - Long term storage for Prometheus
+  # Mainly configured using https://github.com/grafana/mimir/discussions/4187 and https://grafana.com/docs/mimir/latest/get-started/
+  mimir:
+    image: grafana/mimir:latest
+    container_name: mimir
+    networks:
+      monit_network:
+        ipv4_address: 172.18.2.26
+    command: 
+      - '--config.file=/etc/mimir.yaml'
+      # - '--querier.query-store-after'
+      # - '--querier.query-ingesters-within'
+      # - '--blocks-storage.bucket-store.ignore-blocks-within'
+    volumes:
+      - ${CONFIG_FOLDER}/mimir/mimir.yaml:/etc/mimir.yaml
+      - ${CONFIG_FOLDER}/mimir/alertmanager-fallback-config.yaml:/etc/alertmanager-fallback-config.yaml
+      - ${CONFIG_FOLDER}/mimir/data:/data
+    # depends_on: 
+      # - minio-monit
+    restart: unless-stopped
+  
 
 networks:
   proxy_network:
