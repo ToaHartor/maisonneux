@@ -570,7 +570,48 @@ services:
     ports:
       - "13370:3001"
     restart: always
-
+  
+  # Wakapi - programming statistics
+  wakapi:
+    image: ghcr.io/muety/wakapi:latest
+    container_name: wakapi
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.136
+      wakapi_network:
+        ipv4_address: 172.18.2.137
+    environment:
+      # See README.md and config.default.yml for all config options
+      WAKAPI_PASSWORD_SALT: "${WAKAPI_PWD_SALT}"
+      WAKAPI_DB_TYPE: "postgres"
+      WAKAPI_DB_NAME: "${WAKAPI_DB_NAME}"
+      WAKAPI_DB_USER: "${WAKAPI_DB_USER}"
+      WAKAPI_DB_PASSWORD: "${WAKAPI_DB_PWD}"
+      WAKAPI_DB_HOST: "postgres"
+      WAKAPI_DB_PORT: "5432"
+      ENVIRONMENT: "prod"
+      # WAKAPI_SUPPORT_CONTACT: "contact@dev"
+      WAKAPI_PUBLIC_URL: "wakapi.${DOMAIN_NAME}"
+      WAKAPI_ALLOW_SIGNUP: false
+      # WAKAPI_DISABLE_FRONTPAGE: true
+    labels:
+      - "traefik.enable=true"
+      # Web UI
+      ## HTTP Router
+      - "traefik.http.routers.wakapi-rtr.entrypoints=websecure"
+      - "traefik.http.routers.wakapi-rtr.rule=Host(`wakapi.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.wakapi-rtr.tls=true"
+      - "traefik.http.routers.wakapi-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.wakapi-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.wakapi-rtr.service=wakapi-svc"
+      - "traefik.http.services.wakapi-svc.loadbalancer.server.port=3000"
+    volumes:
+      - ${CONFIG_FOLDER}/wakapi:/data
+    # ports:
+    #   - 0.0.0.0:3144:3000
+    restart: always
 
 
 networks: # All these networks are created in the databases stack, which links services to their databases
@@ -589,6 +630,8 @@ networks: # All these networks are created in the databases stack, which links s
   immich_network:
     external: true
   outline_network:
+    external: true
+  wakapi_network:
     external: true
   database_network:
     external: true

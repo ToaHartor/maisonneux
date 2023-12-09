@@ -58,6 +58,8 @@ services:
         ipv4_address: 172.18.2.115
       outline_network:
         ipv4_address: 172.18.2.122
+      wakapi_network:
+        ipv4_address: 172.18.2.138
     volumes:
       - ${DATA_FOLDER}/postgres:/var/lib/postgresql/data
       # - /etc/localtime:/etc/localtime:ro
@@ -229,3 +231,10 @@ networks:
       config:
         - subnet: 172.18.2.120/29
           gateway: 172.18.2.126
+  wakapi_network:
+    name: wakapi_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.136/29
+          gateway: 172.18.2.142
