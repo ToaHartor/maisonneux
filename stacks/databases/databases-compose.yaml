@@ -7,10 +7,10 @@ services:
     networks:
       database_network:
         ipv4_address: 172.18.2.1
-      proxy_network:
-        ipv4_address: 172.18.1.10
+      # proxy_network:
+      #   ipv4_address: 172.18.1.10
     volumes:
-      - ${CONFIG_FOLDER}/Cloudbeaver:/opt/cloudbeaver/workspace
+      - ${CONFIG_FOLDER}/cloudbeaver:/opt/cloudbeaver/workspace
     ports:
       - 8978:8978/tcp
     restart: unless-stopped
@@ -29,9 +29,10 @@ services:
         ipv4_address: 172.18.2.58
       gitea_network:
         ipv4_address: 172.18.2.66
+    # user: ${USERID}:${GROUPID}
     volumes:
-      - ${DATA_FOLDER}/MariaDB:/config
-      - /etc/localtime:/etc/localtime:ro
+      - ${DATA_FOLDER}/mariadb:/config:rw
+      # - /etc/localtime:/etc/localtime:ro
     # ports:
     #   - 3306:3306/tcp
     environment:
@@ -58,8 +59,8 @@ services:
       outline_network:
         ipv4_address: 172.18.2.122
     volumes:
-      - ${DATA_FOLDER}/Postgres:/var/lib/postgresql/data
-      - /etc/localtime:/etc/localtime:ro
+      - ${DATA_FOLDER}/postgres:/var/lib/postgresql/data
+      # - /etc/localtime:/etc/localtime:ro
     # ports:
     #   - 5432:5432/tcp
     environment: # TODO change with secrets
@@ -80,8 +81,8 @@ services:
     volumes:
       # - ${DATA_FOLDER}/InfluxDB:/var/lib/influxdb
       - ${CONFIG_FOLDER}/influxdb2:/etc/influxdb2
-      - /docker/InfluxDB2:/var/lib/influxdb2
-      - /etc/localtime:/etc/localtime:ro
+      - ${DATA_FOLDER}/influxdb2:/var/lib/influxdb2
+      # - /etc/localtime:/etc/localtime:ro
     environment:
       # - INFLUXDB_DATA_INDEX_VERSION=tsi1 # Might need to also be changed in the actual config
       # Init creds
@@ -95,8 +96,9 @@ services:
       - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_INIT_PASSWORD}
       - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_INIT_ORG}
       - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_INIT_BUCKET}
-    # ports:
-    #   - 8086:8086/tcp
+    ports:
+      # Exposing to localhost to be reachable by telegraf and scrutiny
+      - 127.0.0.1:8086:8086/tcp
     restart: unless-stopped
   # Redis
   redis:
@@ -115,8 +117,10 @@ services:
         ipv4_address: 172.18.2.114
       outline_network:
         ipv4_address: 172.18.2.123
+    # user: "${USERID}:${GROUPID}"
     volumes: # Maybe move to /dev/shm
-      - ${DATA_FOLDER}/Redis:/data
+      - ${DATA_FOLDER}/redis:/data
+      # - /etc/passwd:/etc/passwd:ro
     # ports:
     #   - 6379:6379/tcp
     restart: unless-stopped
@@ -130,8 +134,8 @@ services:
       mangatagger_network:
         ipv4_address: 172.18.2.82
     volumes:
-      - ${DATA_FOLDER}/MangaTagger/db:/data/db
-      - ${DATA_FOLDER}/MangaTagger/db/config:/data/configdb
+      - ${DATA_FOLDER}/mangataggerdb:/data/db
+      - ${DATA_FOLDER}/mangataggerdb/config:/data/configdb
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
@@ -139,8 +143,8 @@ services:
     restart: unless-stopped
 
 networks:
-  proxy_network:
-    external: true
+  # proxy_network:
+  #   external: true
   database_network:
     name: database_network
     ipam:

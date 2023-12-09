@@ -21,15 +21,15 @@ services:
       # - nextcloud
       - seafile
     volumes:
-      - ${CONFIG_FOLDER}/OnlyOffice/data:/var/log/onlyoffice
-      - ${CONFIG_FOLDER}/OnlyOffice/logs:/var/www/onlyoffice/Data
-      - ${CONFIG_FOLDER}/OnlyOffice/lib:/var/lib/onlyoffice
+      - ${CONFIG_FOLDER}/onlyoffice/data:/var/log/onlyoffice
+      - ${CONFIG_FOLDER}/onlyoffice/logs:/var/www/onlyoffice/Data
+      - ${CONFIG_FOLDER}/onlyoffice/lib:/var/lib/onlyoffice
       # Fonts
-      - ${CONFIG_FOLDER}/OnlyOffice/fonts:/usr/share/fonts/truetype/custom
+      - ${CONFIG_FOLDER}/onlyoffice/fonts:/usr/share/fonts/truetype/custom
       # Embedded databases
-      - ${CONFIG_FOLDER}/OnlyOffice/db:/var/lib/postgresql
-      - ${CONFIG_FOLDER}/OnlyOffice/rabbitmq:/var/lib/rabbitmq
-      - ${CONFIG_FOLDER}/OnlyOffice/redis:/var/lib/redis
+      - ${CONFIG_FOLDER}/onlyoffice/db:/var/lib/postgresql
+      - ${CONFIG_FOLDER}/onlyoffice/rabbitmq:/var/lib/rabbitmq
+      - ${CONFIG_FOLDER}/onlyoffice/redis:/var/lib/redis
       # - ${CONFIG_FOLDER}/OnlyOffice/config:/etc/onlyoffice/documentserver/  # Not working actually
     labels:
       - "traefik.enable=true"
@@ -74,7 +74,7 @@ services:
     # mem_limit: 2g
     user: ${USERID}:${GROUPID}
     volumes:
-      - ${DATA_FOLDER}/Elasticsearch:/usr/share/elasticsearch/data  # Requested, specifies the path to Elasticsearch data persistent store.
+      - ${DATA_FOLDER}/elasticsearch:/usr/share/elasticsearch/data  # Requested, specifies the path to Elasticsearch data persistent store.
     restart: unless-stopped
    
   seafile:
@@ -93,8 +93,10 @@ services:
       # 8080 - seafdav
       # 8082 - seafhttp
     volumes:
-      - ${DATA_FOLDER}/Seafile:/shared/seafile/
+      - ${DATA_FOLDER}/seafile:/shared/seafile/
+    user: 0:0
     environment:
+      # - NON_ROOT=true # Starting from version 10, it can run without root with the uid/gid 8000 inside
       - DB_HOST=mariadb
       - DB_ROOT_PASSWD=${MYSQL_ROOT_PASSWORD}  # Only required for Seafile to create the user and database it will use afterwards. Its user will be written in the config, after that it can be removed
       # If it doesn't work, remove databases seafile_db, seahub_db, ccnet_db and user 'seafile'@'%.%.%.%' and restart

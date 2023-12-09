@@ -9,9 +9,9 @@ services:
         ipv4_address: 172.18.1.101
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+      - ${CONFIG_FOLDER}/transmission/torrentfiles:/watch
       - ${DISK_ROOT}:/tv  # Official documentation recommends a single mapping for both downloads and media directories
-      - ${CONFIG_FOLDER}/Sonarr:/config
+      - ${CONFIG_FOLDER}/sonarr:/config
     ports:
       - 8989:8989/tcp # Web interface
     environment:
@@ -53,9 +53,9 @@ services:
         ipv4_address: 172.18.1.102
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+      - ${CONFIG_FOLDER}/transmission/torrentfiles:/watch
       - ${DISK_ROOT}:/movies
-      - ${CONFIG_FOLDER}/Radarr:/config
+      - ${CONFIG_FOLDER}/radarr:/config
     ports:
       - 7878:7878/tcp # Web interface
     environment:
@@ -96,9 +96,9 @@ services:
         ipv4_address: 172.18.1.103
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+      - ${CONFIG_FOLDER}/transmission/torrentfiles:/watch
       - ${DISK_ROOT}:/movies
-      - ${CONFIG_FOLDER}/Radarr4K:/config
+      - ${CONFIG_FOLDER}/radarr4k:/config
     ports:
       - 7879:7878/tcp # Web interface
     environment:
@@ -140,7 +140,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${DISK_ROOT}:/music
-      - ${CONFIG_FOLDER}/Lidarr:/config
+      - ${CONFIG_FOLDER}/lidarr:/config
     ports:
       - 8686:8686/tcp # Web interface
     environment:
@@ -181,14 +181,14 @@ services:
       proxy_network:
         ipv4_address: 172.18.1.105
     volumes:
-      - ${CONFIG_FOLDER}/Prowlarr:/config
+      - ${CONFIG_FOLDER}/prowlarr:/config
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 9696:9696/tcp # Web interface
     environment:
       - PUID=${USERID}
       - PGID=${GROUPID}
-      - UMASK=002
+      # - UMASK=002
     labels:
       - "traefik.enable=true"
       # Router for UI
@@ -224,7 +224,7 @@ services:
   #     - /etc/localtime:/etc/localtime:ro
   #     - ${CONFIG_FOLDER}/Jackett:/config
   #     - ${DISK_ROOT}:/disk_root
-  #     - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+  #     - ${CONFIG_FOLDER}/transmission/torrentfiles:/watch
   #     - ${DOWNLOAD_FOLDER}:/downloads
   #   ports:
   #     - 9117:9117/tcp # Web interface
@@ -295,10 +295,10 @@ services:
       proxy_network:
         ipv4_address: 172.18.1.106
     volumes:
-      - ${CONFIG_FOLDER}/Transmission:/config
+      - ${CONFIG_FOLDER}/transmission:/config
       - /etc/localtime:/etc/localtime:ro
       - ${DOWNLOAD_FOLDER}:/downloads
-      - ${CONFIG_FOLDER}/Transmission/torrentfiles:/watch
+      - ${CONFIG_FOLDER}/transmission/torrentfiles:/watch
     ports:
       # - 9091:9091/tcp # Web interface - No since we use Flood for that
       - 28531:51413/tcp # Random port ?
@@ -339,8 +339,8 @@ services:
     environment:
       - HOME=/config
     volumes:
-      - ${CONFIG_FOLDER}/Flood/config:/config
-      - ${CONFIG_FOLDER}/Flood/data:/data
+      - ${CONFIG_FOLDER}/flood/config:/config
+      - ${CONFIG_FOLDER}/flood/data:/data
       - /usr/bin/mediainfo:/usr/bin/mediainfo  # Should be installed on the system
     ports:
       - 3010:3010
@@ -367,7 +367,7 @@ services:
       proxy_network:
         ipv4_address: 172.18.1.107
     volumes:
-      - ${CONFIG_FOLDER}/JDownloader:/config
+      - ${CONFIG_FOLDER}/jdownloader:/config
       - /etc/localtime:/etc/localtime:ro
       - ${DOWNLOAD_FOLDER}/complete:/output
     ports:
@@ -423,9 +423,9 @@ services:
       proxy_network:
         ipv4_address: 172.18.1.109
     volumes:
-      - ${CONFIG_FOLDER}/Tautulli:/config
+      - ${CONFIG_FOLDER}/tautulli:/config
       - /etc/localtime:/etc/localtime:ro
-      - "${PLEX_LOGS_FOLDER}:/plex_logs"
+      - ${PLEX_LOGS_FOLDER}:/plex_logs:ro
     ports:
       - 8181:8181/tcp
     environment:
@@ -465,7 +465,7 @@ services:
       proxy_network:
         ipv4_address: 172.18.1.110
     volumes:
-      - ${CONFIG_FOLDER}/Overseerr:/app/config
+      - ${CONFIG_FOLDER}/overseerr:/app/config
     ports:
       - 5055:5055/tcp
     environment:
@@ -528,7 +528,7 @@ services:
         - ${MANGA_FOLDER}:/manga
         - ${LN_FOLDER}:/lightnovels
         - ${DISK_ROOT}/WDBlue4To:/data
-        - ${CONFIG_FOLDER}/Kavita:/kavita/config
+        - ${CONFIG_FOLDER}/kavita:/kavita/config
     user: ${USERID}:${GROUPID}
     ports:
       - 5066:5000
@@ -558,11 +558,11 @@ services:
     ports:
       - 6080:6080
     volumes:
-      - ${CONFIG_FOLDER}/FMD2/userdata:/app/FMD2/userdata
-      - ${CONFIG_FOLDER}/FMD2/modules:/app/FMD2/lua
-      - ${CONFIG_FOLDER}/FMD2/data:/app/FMD2/data
-      - ${CONFIG_FOLDER}/FMD2/wine/data:/config/.wine
-      - ${CONFIG_FOLDER}/FMD2/config:/config
+      - ${CONFIG_FOLDER}/fmd2/userdata:/app/FMD2/userdata
+      - ${CONFIG_FOLDER}/fmd2/modules:/app/FMD2/lua
+      - ${CONFIG_FOLDER}/fmd2/data:/app/FMD2/data
+      - ${CONFIG_FOLDER}/fmd2/wine/data:/config/.wine
+      - ${CONFIG_FOLDER}/fmd2/config:/config
       - ${DOWNLOAD_FOLDER}/complete/manga:/downloads
       # - ${CONFIG_FOLDER}/FMD2/config:/config
     labels:
@@ -621,10 +621,10 @@ services:
       - MANGA_TAGGER_LOGGING_JSONTCP=false
 
     volumes:
-      - ${CONFIG_FOLDER}/MangaTagger:/config
+      - ${CONFIG_FOLDER}/mangatagger:/config
       - ${MANGA_FOLDER}:/manga # directory manga-tagger move tagged files to
       - ${DOWNLOAD_FOLDER}/complete/manga:/downloads # directory manga-tagger watch
-      - ${CONFIG_FOLDER}/MangaTagger/MangaTaggerLib.py:/app/Manga-Tagger/MangaTaggerLib/MangaTaggerLib.py # Added my own modifications
+      - ${CONFIG_FOLDER}/mangatagger/MangaTaggerLib.py:/app/Manga-Tagger/MangaTaggerLib/MangaTaggerLib.py # Added my own modifications
     restart: unless-stopped
   # TubeSync
   tubesync:
@@ -636,7 +636,7 @@ services:
     ports:
       - 4848:4848
     volumes:
-      - ${CONFIG_FOLDER}/Tubesync:/config
+      - ${CONFIG_FOLDER}/tubesync:/config
       - ${DOWNLOAD_FOLDER}/complete:/downloads
     environment:
       - TZ=${TIMEZONE}
@@ -692,11 +692,29 @@ services:
       - PGID=${GROUPID}
       - TZ=${TIMEZONE}
     volumes:
-      - /sharedfolders/WDBlue4To/Kaizoku:/data
-      - ${CONFIG_FOLDER}/Kaizoku/config:/config
-      - ${CONFIG_FOLDER}/Kaizoku/logs:/logs
+      - /sharedfolders/WDBlue4To/kaizoku:/data
+      - ${CONFIG_FOLDER}/kaizoku/config:/config
+      - ${CONFIG_FOLDER}/kaizoku/logs:/logs
     ports:
       - '3968:3968'
+  # PyLoad - Direct download manager
+  # pyload-ng:
+  #   image: lscr.io/linuxserver/pyload-ng:latest
+  #   container_name: pyload-ng
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.117
+  #   environment:
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - TZ=${TIMEZONE}
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/pyload:/config
+  #     - ${DOWNLOAD_FOLDER}:/downloads
+  #   ports:
+  #     - 8464:8000
+  #     - 9666:9666 #optional
+  #   restart: unless-stopped
 
 networks:
   proxy_network:
