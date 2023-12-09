@@ -10,7 +10,7 @@ services:
       firefly_network:
         ipv4_address: 172.18.2.49
     volumes:
-      - ${CONFIG_FOLDER}/FireflyIII:/var/www/html/storage/upload
+      - ${CONFIG_FOLDER}/fireflyiii:/var/www/html/storage/upload
     ports:
       - 8668:8080/tcp
     environment:
@@ -32,7 +32,7 @@ services:
       bookstack_network:
         ipv4_address: 172.18.2.57
     volumes:
-      - ${CONFIG_FOLDER}/Bookstack:/config
+      - ${CONFIG_FOLDER}/bookstack:/config
     ports:
       - 6875:80/tcp
     environment:
@@ -80,10 +80,10 @@ services:
       gitea_network:
         ipv4_address: 172.18.2.65
     volumes:
-      - ${DATA_FOLDER}/Gitea:/git
-      - ${CONFIG_FOLDER}/Gitea:/data
+      - ${DATA_FOLDER}/gitea:/git
+      - ${CONFIG_FOLDER}/gitea:/data
       - /var/log/gitea:/var/log/gitea
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/localtime:/etc/localtime:ro
     ports:
     #   - 2222:22/tcp   # SSH 
       - 3001:3000/tcp # Web view
@@ -133,7 +133,7 @@ services:
       proxy_network:
         ipv4_address: 172.18.1.124
     volumes:
-      - ${CONFIG_FOLDER}/Vaultwarden:/data
+      - ${CONFIG_FOLDER}/vaultwarden:/data
       - /var/log/vaultwarden:/var/log/vaultwarden
     # ports:
     #   - 3012:3012/tcp # WS server
@@ -178,28 +178,28 @@ services:
     restart: unless-stopped
 
   # Code-server - Self-hosted web VSCode
-  code-server:
-    image: ghcr.io/linuxserver/code-server:version-v3.8.0
-    container_name: code-server
-    networks:
-      proxy_network:
-        ipv4_address: 172.18.1.125
-    volumes:
-      - ${CONFIG_FOLDER}/Code-server:/config
-      - /etc/localtime:/etc/localtime:ro
-      # - /var/run/docker.sock:/var/run/docker.sock # For docker development
-    ports:
-      - 8443:8443
-      - 41237:41237 # SSH
-    environment:
-      - HOME=/config
-      - PUID=${USERID}
-      - PGID=${GROUPID}
-      - TZ=${TIMEZONE}
-      - PASSWORD=${CODE_PASSWORD}
-      - SUDO_PASSWORD=${CODE_SUDO_PASSWORD}
-      - DOCKER_MODS=linuxserver/mods:universal-git|linuxserver/mods:code-server-python3|linuxserver/mods:code-server-python2|linuxserver/mods:code-server-php|linuxserver/mods:code-server-nodejs|linuxserver/mods:code-server-npmglobal|linuxserver/mods:code-server-golang|linuxserver/mods:code-server-dotnet|linuxserver/mods:code-server-docker
-    restart: unless-stopped
+  # code-server:
+  #   image: ghcr.io/linuxserver/code-server:version-v3.8.0
+  #   container_name: code-server
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.125
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/codeserver:/config
+  #     # - /etc/localtime:/etc/localtime:ro
+  #     # - /var/run/docker.sock:/var/run/docker.sock # For docker development
+  #   ports:
+  #     - 8443:8443
+  #     - 41237:41237 # SSH
+  #   environment:
+  #     - HOME=/config
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - TZ=${TIMEZONE}
+  #     - PASSWORD=${CODE_PASSWORD}
+  #     - SUDO_PASSWORD=${CODE_SUDO_PASSWORD}
+  #     - DOCKER_MODS=linuxserver/mods:universal-git|linuxserver/mods:code-server-python3|linuxserver/mods:code-server-python2|linuxserver/mods:code-server-php|linuxserver/mods:code-server-nodejs|linuxserver/mods:code-server-npmglobal|linuxserver/mods:code-server-golang|linuxserver/mods:code-server-dotnet|linuxserver/mods:code-server-docker
+  #   restart: unless-stopped
   # Tandoor - Recipes server
   tandoor:
     image: vabene1111/recipes:latest
@@ -210,8 +210,8 @@ services:
       tandoor_network:
         ipv4_address: 172.18.2.73
     volumes:
-      - ${CONFIG_FOLDER}/TandoorRecipes/mediafiles:/opt/recipes/mediafiles
-      - ${CONFIG_FOLDER}/TandoorRecipes/staticfiles:/opt/recipes/staticfiles
+      - ${CONFIG_FOLDER}/tandoorrecipes/mediafiles:/opt/recipes/mediafiles
+      - ${CONFIG_FOLDER}/tandoorrecipes/staticfiles:/opt/recipes/staticfiles
     ports:
       - 8753:8080/tcp
     environment:
@@ -232,8 +232,8 @@ services:
       proxy_network:
         ipv4_address: 172.18.1.127
     volumes:
-      - ${CONFIG_FOLDER}/Gotify:/app/data
-      - /etc/localtime:/etc/localtime:ro
+      - ${CONFIG_FOLDER}/gotify:/app/data
+      # - /etc/localtime:/etc/localtime:ro
     # ports:
     #   - 8800:8800/tcp
     environment:
@@ -260,9 +260,9 @@ services:
       immich_network:
         ipv4_address: 172.18.2.97
     volumes:
-      - ${DATA_FOLDER}/Photos:/usr/src/app/upload
+      - ${DATA_FOLDER}/photos:/usr/src/app/upload
     env_file:
-      - .env
+      - stack.env
     environment:
       - NODE_ENV=production
       - DB_HOSTNAME=postgres
@@ -294,7 +294,7 @@ services:
       immich_network:
         ipv4_address: 172.18.2.98
     volumes:
-      - ${DATA_FOLDER}/Photos:/usr/src/app/upload
+      - ${DATA_FOLDER}/photos:/usr/src/app/upload
     environment:
       - NODE_ENV=production
       - DB_HOSTNAME=postgres
@@ -325,8 +325,8 @@ services:
       immich_network:
         ipv4_address: 172.18.2.99
     volumes:
-      - ${DATA_FOLDER}/Photos:/usr/src/app/upload
-      - ${CONFIG_FOLDER}/Immich/model-cache:/cache
+      - ${DATA_FOLDER}/photos:/usr/src/app/upload
+      - ${CONFIG_FOLDER}/immich/model-cache:/cache
     environment:
       - NODE_ENV=production
       - DB_HOSTNAME=postgres
@@ -397,25 +397,25 @@ services:
       - ${CONFIG_FOLDER}/Immich/typesense:/data
     restart: unless-stopped
 
-  paperless-ngx:
-    image: linuxserver/paperless-ngx:latest
-    container_name: paperless-ngx
-    networks:
-      proxy_network:
-        ipv4_address: 172.18.1.129
-      paperless_network:
-        ipv4_address: 172.18.2.89
-    environment:
-      - PUID=${USERID}
-      - PGID=${GROUPID}
-      - TZ=${TIMEZONE}
-      - REDIS_URL=redis://redis:6379
-    volumes:
-      - ${CONFIG_FOLDER}/Paperless-ng:/config
-      - ${DATA_FOLDER}/Paperless-ng:/data
-    ports:
-      - 8089:8000
-    restart: unless-stopped
+  # paperless-ngx:
+  #   image: linuxserver/paperless-ngx:latest
+  #   container_name: paperless-ngx
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.129
+  #     paperless_network:
+  #       ipv4_address: 172.18.2.89
+  #   environment:
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - TZ=${TIMEZONE}
+  #     - REDIS_URL=redis://redis:6379
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/paperlessngx:/config
+  #     - ${DATA_FOLDER}/paperlessngx:/data
+  #   ports:
+  #     - 8089:8000
+  #   restart: unless-stopped
   # Memos - Note/memo server
   memos:
     image: ghcr.io/usememos/memos:latest
@@ -425,7 +425,7 @@ services:
         ipv4_address: 172.18.1.132
     user: ${USERID}:${GROUPID}
     volumes:
-      - ${CONFIG_FOLDER}/Memos:/var/opt/memos
+      - ${CONFIG_FOLDER}/memos:/var/opt/memos
     ports:
       - 5230:5230
     labels:
@@ -538,7 +538,7 @@ services:
     entrypoint: sh
     command: -c 'minio server /data --console-address ":9025"'
     volumes:
-      - ${DATA_FOLDER}/Minio:/data
+      - ${DATA_FOLDER}/minio:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/live"]
       interval: 30s
@@ -558,9 +558,22 @@ services:
       - "traefik.http.routers.minio-rtr.service=minio-svc"
       - "traefik.http.services.minio-svc.loadbalancer.server.port=9000"
     restart: unless-stopped
+  # Uptime-kuma - Status page
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.135
+    volumes:
+      - ${CONFIG_FOLDER}/uptimekuma:/app/data
+    ports:
+      - "13370:3001"
+    restart: always
 
 
-networks: # All these networks are created in the databases stack, which re
+
+networks: # All these networks are created in the databases stack, which links services to their databases
   proxy_network:
     external: true
   firefly_network:
