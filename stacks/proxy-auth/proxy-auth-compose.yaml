@@ -438,7 +438,7 @@ services:
     restart: unless-stopped
   # Homepage - Homepage for administration
   homepage:
-    image: ghcr.io/benphelps/homepage:latest
+    image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
     networks:
       proxy_network:
