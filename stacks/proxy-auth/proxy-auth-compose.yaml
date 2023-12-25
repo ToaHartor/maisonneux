@@ -50,12 +50,12 @@ services:
       - target: 80
         published: 80
         protocol: tcp
-        mode: bridge
+        mode: host
       # - 0.0.0.0:443:443
       - target: 443
         published: 443
         protocol: tcp
-        mode: bridge
+        mode: host
     security_opt:
       - "no-new-privileges:true"
     command:
