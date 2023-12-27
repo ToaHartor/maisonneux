@@ -266,6 +266,8 @@ services:
     networks:
       immich_network:
         ipv4_address: 172.18.2.97
+      proxy_network:
+        ipv4_address: 172.18.1.130
     volumes:
       - ${DATA_FOLDER}/photos:/usr/src/app/upload
     env_file:
@@ -288,9 +290,22 @@ services:
       # - OAUTH_SCOPE=   # Default to 'openid email profile'
       - OAUTH_AUTO_REGISTER=true
       - OAUT_BUTTON_TEXT="Login with Authentik"
-      - TYPESENSE_API_KEY=${IMMICH_TYPESENSE_API_KEY}
-    depends_on:
-      - typesense
+    labels:
+      - "traefik.enable=true"
+      # Web UI
+      ## HTTP Router
+      - "traefik.http.routers.immich-rtr.entrypoints=websecure"
+      - "traefik.http.routers.immich-rtr.rule=Host(`photos.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.immich-rtr.tls=true"
+      # - "traefik.http.routers.immich-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.immich-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.immich-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.immich-rtr.service=immich-svc"
+      - "traefik.http.services.immich-svc.loadbalancer.server.port=3001"
+    # ports:
+    #   - 2283:3001
     restart: unless-stopped
 
   immich-microservices:
@@ -320,9 +335,6 @@ services:
       # - OAUTH_SCOPE=   # Default to 'openid email profile'
       - OAUTH_AUTO_REGISTER=true
       - OAUT_BUTTON_TEXT="Login with Authentik"
-      - TYPESENSE_API_KEY=${IMMICH_TYPESENSE_API_KEY}
-    depends_on:
-      - typesense
     restart: unless-stopped
 
   immich-machine-learning:
@@ -343,86 +355,102 @@ services:
       - ENABLE_MAPBOX=false
       - JWT_SECRET=${IMMICH_JWT_SECRET}
       - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
-      - TYPESENSE_API_KEY=${IMMICH_TYPESENSE_API_KEY}
-    restart: unless-stopped
-
-  immich-web:
-    image: ghcr.io/immich-app/immich-web:release
-    entrypoint: ["/bin/sh", "./entrypoint.sh"]
-    container_name: immich_web
-    networks:
-      immich_network:
-        ipv4_address: 172.18.2.100
-    environment:
-      - ENABLE_MAPBOX=false
-      - JWT_SECRET=${IMMICH_JWT_SECRET}
-      - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
-    restart: unless-stopped
-
-  immich-proxy:
-    container_name: immich_proxy
-    image: ghcr.io/immich-app/immich-proxy:release
-    networks:
-      proxy_network:
-        ipv4_address: 172.18.1.130
-      immich_network:
-        ipv4_address: 172.18.2.101
-    ports:
-      - 2283:8080
-    logging:
-      driver: none
-    depends_on:
-      - immich-server
-    labels:
-      - "traefik.enable=true"
-      # Web UI
-      ## HTTP Router
-      - "traefik.http.routers.immich-rtr.entrypoints=websecure"
-      - "traefik.http.routers.immich-rtr.rule=Host(`photos.${DOMAIN_NAME}`)"
-      - "traefik.http.routers.immich-rtr.tls=true"
-      # - "traefik.http.routers.immich-rtr.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.immich-rtr.tls.options=tls-opts@file"
-      ## Middlewares
-      - "traefik.http.routers.immich-rtr.middlewares=chain-noauth@docker"
-      ## HTTP Services
-      - "traefik.http.routers.immich-rtr.service=immich-svc"
-      - "traefik.http.services.immich-svc.loadbalancer.server.port=8080"
     restart: unless-stopped
   
-  typesense:
-    container_name: immich_typesense
-    image: typesense/typesense:0.24.0
+  # Paperless-ngx - Document management
+  paperless-ngx:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless-ngx
     networks:
-      immich_network:
-        ipv4_address: 172.18.2.104
+      proxy_network:
+        ipv4_address: 172.18.1.129
+      paperless_network:
+        ipv4_address: 172.18.2.89
     environment:
-      - TYPESENSE_API_KEY=${IMMICH_TYPESENSE_API_KEY}
-      - TYPESENSE_DATA_DIR=/data
-    logging:
-      driver: none
+      - USERMAP_UID=${USERID}
+      - USERMAP_GID=${GROUPID}
+
+      - PAPERLESS_REDIS=redis://redis:6379
+      - PAPERLESS_TIKA_ENABLED=1
+      - PAPERLESS_TIKA_GOTENBERG_ENDPOINT=http://paperless-gotenberg:3000
+      - PAPERLESS_TIKA_ENDPOINT=http://paperless-tika:9998
+      # Additional languages
+      - PAPERLESS_OCR_LANGUAGES=jpn jpn-vert
+      - PAPERLESS_URL=https://paper.${DOMAIN_NAME}
+      - PAPERLESS_SECRET_KEY=${PAPERLESS_KEY}
+      - PAPERLESS_TIME_ZONE=Europe/Paris
+      - PAPERLESS_OCR_LANGUAGE=fra
+      - PAPERLESS_LOGGING_DIR=/var/log/paperless/
+      - PAPERLESS_FILENAME_FORMAT={created_year}/{correspondent}/{title}
+      # Login
+      - PAPERLESS_ENABLE_HTTP_REMOTE_USER=true
+      - PAPERLESS_HTTP_REMOTE_USER_HEADER_NAME=HTTP_X_AUTHENTIK_USERNAME
+      - PAPERLESS_LOGOUT_REDIRECT_URL=https://auth.${DOMAIN_NAME}/flows/-/default/invalidation/
     volumes:
-      - ${CONFIG_FOLDER}/Immich/typesense:/data
+      - ${CONFIG_FOLDER}/paperlessngx:/usr/src/paperless/data
+      - ${DATA_FOLDER}/paperlessngx:/usr/src/paperless/media
+      - /var/log/paperless:/var/log/paperless
+      # Export and import automatically
+      # - ./export:/usr/src/paperless/export
+      # - ./consume:/usr/src/paperless/consume
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.paperless-rtr.entrypoints=websecure"
+      - "traefik.http.routers.paperless-rtr.rule=Host(`paper.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.paperless-rtr.priority=99"
+      - "traefik.http.routers.paperless-rtr.tls=true"
+      # - "traefik.http.routers.paperless-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.paperless-rtr.tls.options=tls-opts@file"
+      ## API Router for apps
+      - "traefik.http.routers.paperless-api-rtr.entrypoints=websecure"
+      - "traefik.http.routers.paperless-api-rtr.rule=Host(`paper.${DOMAIN_NAME}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.paperless-api-rtr.priority=100"
+      - "traefik.http.routers.paperless-api-rtr.tls=true"
+      # - "traefik.http.routers.paperless-api-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.paperless-api-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      # Of course only expose this to intranet
+      - "traefik.http.routers.paperless-rtr.middlewares=local-ip-mw@docker,chain-forwardauth@docker"
+      - "traefik.http.routers.paperless-api-rtr.middlewares=local-ip-mw@docker,chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.paperless-rtr.service=paperless-svc"
+      - "traefik.http.routers.paperless-api-rtr.service=paperless-svc"
+      - "traefik.http.services.paperless-svc.loadbalancer.server.port=8000"
+
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-S", "--max-time", "2", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - 8089:8000
     restart: unless-stopped
 
-  # paperless-ngx:
-  #   image: linuxserver/paperless-ngx:latest
-  #   container_name: paperless-ngx
-  #   networks:
-  #     proxy_network:
-  #       ipv4_address: 172.18.1.129
-  #     paperless_network:
-  #       ipv4_address: 172.18.2.89
-  #   environment:
-  #     - PUID=${USERID}
-  #     - PGID=${GROUPID}
-  #     - TZ=${TIMEZONE}
-  #     - REDIS_URL=redis://redis:6379
-  #   volumes:
-  #     - ${CONFIG_FOLDER}/paperlessngx:/config
-  #     - ${DATA_FOLDER}/paperlessngx:/data
-  #   ports:
-  #     - 8089:8000
-  #   restart: unless-stopped
+  # Gotenberg
+  gotenberg:
+    image: docker.io/gotenberg/gotenberg:7.10
+    container_name: paperless-gotenberg
+    networks:
+      paperless_network:
+        ipv4_address: 172.18.2.91
+    # The gotenberg chromium route is used to convert .eml files. We do not
+    # want to allow external content like tracking pixels or even javascript.
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+    restart: unless-stopped
+
+  # Tika : 
+  tika:
+    image: ghcr.io/paperless-ngx/tika:latest
+    container_name: paperless-tika
+    networks:
+      paperless_network:
+        ipv4_address: 172.18.2.92
+    restart: unless-stopped
+
   # Memos - Note/memo server
   memos:
     image: ghcr.io/usememos/memos:latest
