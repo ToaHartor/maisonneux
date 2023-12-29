@@ -2,7 +2,7 @@ version: "3.9"
 services:
   # Varken, Plex/Arr/Overseerr collector
   varken:
-    image: boerderij/varken:github #! Clone the develop branch and build before
+    image: boerderij/varken:develop
     container_name: varken
     networks:
       proxy_network:
