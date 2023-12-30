@@ -152,6 +152,8 @@ services:
       - "traefik.http.middlewares.ratelimit-mw.ratelimit.burst=100"
       ## Compress
       - "traefik.http.middlewares.compress-mw.compress=true"
+      ## Local services routing only
+      - "traefik.http.middlewares.local-ip-mw.ipwhitelist.sourcerange=192.168.1.254/32,10.0.0.1/16"
       ## Secure headers
       - "traefik.http.middlewares.secureheaders-mw.headers.accessControlAllowMethods=GET,OPTIONS,PUT"
       - "traefik.http.middlewares.secureheaders-mw.headers.accessControlAllowOriginListRegex=https://([a-z]*\\.)?${DOMAIN_NAME}"
