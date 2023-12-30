@@ -509,13 +509,13 @@ services:
       - URL=https://wiki.${DOMAIN_NAME}
       - PORT=3852
 
-      - AWS_ACCESS_KEY_ID=${MINIO_ACCESS_KEY}
-      - AWS_SECRET_ACCESS_KEY=${MINIO_SECRET_KEY}
-      - AWS_REGION=local
+      - AWS_ACCESS_KEY_ID=${OUTLINE_BUCKET_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${OUTLINE_BUCKET_SECRET_KEY}
+      - AWS_REGION=${OUTLINE_BUCKET_REGION}
       # - AWS_S3_ACCELERATE_URL=
-      - AWS_S3_UPLOAD_BUCKET_URL=https://bucket.${DOMAIN_NAME}  # Should be accessible from outside, especially for image upload
-      - AWS_S3_UPLOAD_BUCKET_NAME=outline-bucket
-      - AWS_S3_UPLOAD_MAX_SIZE=26214400
+      - AWS_S3_UPLOAD_BUCKET_URL=https://bucket.${DOMAIN_NAME}  # Should be accessible from outside, especially for image display
+      - AWS_S3_UPLOAD_BUCKET_NAME=outline
+      - FILE_STORAGE_UPLOAD_MAX_SIZE=26214400
       # - AWS_S3_FORCE_PATH_STYLE=true
       # - AWS_S3_ACL=private
 
@@ -546,6 +546,8 @@ services:
       ## HTTP Services
       - "traefik.http.routers.outline-rtr.service=outline-svc"
       - "traefik.http.services.outline-svc.loadbalancer.server.port=3852"
+    volumes:
+      - ${CONFIG_FOLDER}/outline:/var/lib/outline/data
     depends_on:
       - minio
     restart: unless-stopped
@@ -561,15 +563,26 @@ services:
       outline_network:
         ipv4_address: 172.18.2.124
     # ports:
+    # Bucket
     #   - "9005:9000"
+    # Console
     #   - "9025:9025"
     environment:
-      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
-      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
-      - MINIO_DOMAIN=bucket.${DOMAIN_NAME}
-      - MINIO_BROWSER=off
+      - MINIO_ROOT_USER=${MINIO_ROOT_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_SECRET_KEY}
+      # - MINIO_DOMAIN=bucket.${DOMAIN_NAME}
+      - MINIO_BROWSER=on
       - MINIO_SERVER_URL=https://bucket.${DOMAIN_NAME}
+      # Console URL
+      - MINIO_BROWSER_REDIRECT_URL=https://s3.${DOMAIN_NAME}
       # - MINIO_API_CORS_ALLOW_ORIGIN=*.${DOMAIN_NAME},${DOMAIN_NAME}
+      # OIDC for bucket administration
+      - MINIO_IDENTITY_OPENID_CONFIG_URL=https://auth.${DOMAIN_NAME}/application/o/minio/.well-known/openid-configuration
+      - MINIO_IDENTITY_OPENID_CLIENT_ID=${MINIO_OAUTH_CLIENT_ID}
+      - MINIO_IDENTITY_OPENID_CLIENT_SECRET=${MINIO_OAUTH_CLIENT_SECRET}
+      - MINIO_IDENTITY_OPENID_CLAIM_USERINFO=https://auth.${DOMAIN_NAME}/application/o/userinfo/
+      - MINIO_IDENTITY_OPENID_DISPLAY_NAME=Authentik
+      - MINIO_IDENTITY_OPENID_SCOPES=openid,profile,email,minio # minio is a property mapping managed in Authentik
     entrypoint: sh
     command: -c 'minio server /data --console-address ":9025"'
     volumes:
@@ -581,7 +594,6 @@ services:
       retries: 3
     labels:
       - "traefik.enable=true"
-      # Web UI
       ## HTTP Router
       - "traefik.http.routers.minio-rtr.entrypoints=websecure"
       - "traefik.http.routers.minio-rtr.rule=Host(`bucket.${DOMAIN_NAME}`)"
@@ -592,6 +604,17 @@ services:
       ## HTTP Services
       - "traefik.http.routers.minio-rtr.service=minio-svc"
       - "traefik.http.services.minio-svc.loadbalancer.server.port=9000"
+      # Console
+      ## HTTP Router
+      - "traefik.http.routers.minio-console-rtr.entrypoints=websecure"
+      - "traefik.http.routers.minio-console-rtr.rule=Host(`s3.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.minio-console-rtr.tls=true"
+      - "traefik.http.routers.minio-console-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.minio-console-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.minio-console-rtr.service=minio-console-svc"
+      - "traefik.http.services.minio-console-svc.loadbalancer.server.port=9025"
     restart: unless-stopped
   # Uptime-kuma - Status page
   uptime-kuma:
