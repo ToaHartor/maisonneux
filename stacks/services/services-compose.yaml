@@ -650,6 +650,52 @@ services:
     #   - 0.0.0.0:3144:3000
     restart: always
 
+  # Gamevault - game distribution
+  gamevault:
+    container_name: gamevault
+    image: phalcode/gamevault-backend:latest
+    restart: unless-stopped
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.90
+      gamevault_network:
+        ipv4_address: 172.18.2.153
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - DB_SYSTEM=POSTGRESQL
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=gamevault
+      - DB_USERNAME=${GAMEVAULT_DB_USER}
+      - DB_PASSWORD=${GAMEVAULT_DB_PWD}
+      # The following line grants Admin Role to the account with this username upon registration.
+      - SERVER_ADMIN_USERNAME=${GAMEVAULT_ADMIN_USER}
+      # Uncomment and insert your RAWG API Key here if you have one (http://rawg.io/login?forward=developer)
+      - RAWG_API_KEY=${GAMEVAULT_RAWG_KEY}
+      - SERVER_ACCOUNT_ACTIVATION_DISABLED=true
+      - SERVER_MAX_DOWNLOAD_BANDWIDTH_IN_KBPS=100000
+    volumes:
+      # Mount the folder where your games are
+      - ${GAMEVAULT_DATA_FOLDER}/files:/files
+      # Mount the folder where GameVault should store its images
+      - ${GAMEVAULT_DATA_FOLDER}/images:/images
+    labels:
+      - "traefik.enable=true"
+      # Web UI
+      ## HTTP Router
+      - "traefik.http.routers.gamevault-rtr.entrypoints=websecure"
+      - "traefik.http.routers.gamevault-rtr.rule=Host(`games.${DOMAIN_NAME}`) && HeadersRegexp(`User-Agent`, `GameVault/*`)"
+      - "traefik.http.routers.gamevault-rtr.tls=true"
+      # - "traefik.http.routers.immich-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gamevault-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.gamevault-rtr.middlewares=local-ip-mw@docker,chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.gamevault-rtr.service=gamevault-svc"
+      - "traefik.http.services.gamevault-svc.loadbalancer.server.port=8080"
+    # ports:
+    #   - 18435:8080
 
 networks: # All these networks are created in the databases stack, which links services to their databases
   proxy_network:

@@ -98,6 +98,8 @@ Note*: Plex is not deployed with Docker here, to avoid any problems with hardwar
 |Database manager|Cloudbeaver|https://github.com/dbeaver/cloudbeaver|databases|Not exposed|
 |Document management|Paperless-ngx|https://github.com/paperless-ngx/paperless-ngx|services|Not exposed|
 |Notes/Memo|Memos|https://github.com/usememos/memos|services|OIDC|
+|Coding statistics|Wakapi|https://github.com/muety/wakapi|services|None|
+|Game distribution|Gamevault|https://github.com/Phalcode/gamevault-backend|services|None|
 
 ##### Monitoring
 |Name|Required by|Link|Stack|Auth provider in Authentik|
