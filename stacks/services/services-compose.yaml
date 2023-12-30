@@ -600,6 +600,8 @@ services:
     networks:
       proxy_network:
         ipv4_address: 172.18.1.135
+      docker_sock_network:
+        ipv4_address: 172.18.4.5
     volumes:
       - ${CONFIG_FOLDER}/uptimekuma:/app/data
     ports:
@@ -667,6 +669,10 @@ networks: # All these networks are created in the databases stack, which links s
   outline_network:
     external: true
   wakapi_network:
+    external: true
+  docker_sock_network:
+    external: true
+  gamevault_network:
     external: true
   database_network:
     external: true

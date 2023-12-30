@@ -37,6 +37,8 @@ services:
         ipv4_address: 172.18.3.1
       monit_network:
         ipv4_address: 172.18.2.20
+      docker_sock_network:
+        ipv4_address: 172.18.4.2
     volumes:
       # - /run/user/6969/docker.sock:/var/run/docker.sock:ro
       - ${CONFIG_FOLDER}/traefik/config:/config
@@ -458,8 +460,8 @@ services:
     container_name: socket-proxy
     image: ghcr.io/tecnativa/docker-socket-proxy:latest
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.8 # You can specify a static IP
+      docker_sock_network:
+        ipv4_address: 172.18.4.1
     # privileged: true # true for VM. False for unprivileged LXC container.
     ports:
     # Exposed internally, to make it available to metrics collecter like Telegraf, which are installed directly on the server
@@ -574,5 +576,12 @@ networks:
       config:
         - subnet: 172.18.3.0/24
           gateway: 172.18.3.254
+  docker_sock_network:
+    name: docker_sock_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.4.0/24
+          gateway: 172.18.4.254
   monit_network:
     external: true
