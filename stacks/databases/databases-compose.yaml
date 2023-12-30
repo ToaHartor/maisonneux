@@ -128,22 +128,22 @@ services:
     # ports:
     #   - 6379:6379/tcp
     restart: unless-stopped
-  # MongoDB for mangatagger
-  mangatagger-db: # you can use your own mongodb, edit the manga-tagger settings.json accordingly
+  # MongoDB for mangatagger, tachi
+  mongodb: # you can use your own mongodb, edit the manga-tagger settings.json accordingly
     image: mongo:latest
-    container_name: mangatagger-db
+    container_name: mongodb
     networks:
       database_network:
         ipv4_address: 172.18.2.6
       mangatagger_network:
         ipv4_address: 172.18.2.82
     volumes:
-      - ${DATA_FOLDER}/mangataggerdb:/data/db
-      - ${DATA_FOLDER}/mangataggerdb/config:/data/configdb
+      - ${DATA_FOLDER}/mongodb:/data/db
+      - ${DATA_FOLDER}/mongodb/config:/data/configdb
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
-      - MONGO_INITDB_DATABASE=${MONGO_INIT_DB}
+      # - MONGO_INITDB_DATABASE=${MONGO_INIT_DB}
     restart: unless-stopped
 
 networks:
