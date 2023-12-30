@@ -586,12 +586,12 @@ services:
     entrypoint: sh
     command: -c 'minio server /data --console-address ":9025"'
     volumes:
-      - ${DATA_FOLDER}/minio:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      - ${MINIO_DATA_FOLDER}:/data
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/live"]
+    #   interval: 30s
+    #   timeout: 20s
+    #   retries: 3
     labels:
       - "traefik.enable=true"
       ## HTTP Router
