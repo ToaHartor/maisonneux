@@ -101,6 +101,7 @@ Note*: Plex is not deployed with Docker here, to avoid any problems with hardwar
 |Notes/Memo|Memos|https://github.com/usememos/memos|services|OIDC|
 |Coding statistics|Wakapi|https://github.com/muety/wakapi|services|None|
 |Game distribution|Gamevault|https://github.com/Phalcode/gamevault-backend|services|None|
+|PDF multitool|Stirling-pdf|https://github.com/Stirling-Tools/Stirling-PDF|services|Not exposed|
 
 ##### Monitoring
 |Name|Required by|Link|Stack|Auth provider in Authentik|
