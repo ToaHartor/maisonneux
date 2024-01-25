@@ -134,7 +134,7 @@ services:
     restart: unless-stopped
   # Vaultwarden - Password manager
   vaultwarden:
-    image: vaultwarden/server:latest
+    image: ghcr.io/vaultwarden/server:latest
     container_name: vaultwarden
     networks:
       proxy_network:
@@ -216,7 +216,7 @@ services:
   #   restart: unless-stopped
   # Tandoor - Recipes server
   tandoor:
-    image: vabene1111/recipes:latest
+    image: ghcr.io/tandoorrecipes/recipes:latest
     container_name: tandoor
     networks:
       proxy_network:
@@ -240,7 +240,7 @@ services:
     restart: unless-stopped
   # Gotify - Notification server
   gotify:
-    image: gotify/server:latest
+    image: ghcr.io/gotify/server:latest
     container_name: gotify
     networks:
       proxy_network:
@@ -803,7 +803,7 @@ services:
     #   - 18435:8080
   # Stirling PDF - PDF multi tool
   stirling-pdf:
-    image: frooodle/s-pdf:latest
+    image: ghcr.io/stirling-tools/s-pdf:latest
     container_name: stirling-pdf
     networks:
       proxy_network:

@@ -2,7 +2,7 @@ version: "3.9"
 services:
   # Sonarr
   sonarr:
-    image: linuxserver/sonarr:develop
+    image: ghcr.io/linuxserver/sonarr:develop
     container_name: sonarr
     networks:
       proxy_network:
@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
   # Radarr
   radarr:
-    image: linuxserver/radarr:nightly
+    image: ghcr.io/linuxserver/radarr:nightly
     container_name: radarr
     networks:
       proxy_network:
@@ -99,7 +99,7 @@ services:
     restart: unless-stopped
   # Radarr for 4K movies
   radarr4k:
-    image: linuxserver/radarr:nightly
+    image: ghcr.io/linuxserver/radarr:nightly
     container_name: radarr4k
     networks:
       proxy_network:
@@ -152,7 +152,7 @@ services:
     restart: unless-stopped
   # Lidarr
   lidarr:
-    image: linuxserver/lidarr:nightly
+    image: ghcr.io/linuxserver/lidarr:nightly
     container_name: lidarr
     networks:
       proxy_network:
@@ -205,7 +205,7 @@ services:
   # Torrent indexers
   # Prowlarr
   prowlarr:
-    image: hotio/prowlarr:nightly
+    image: ghcr.io/hotio/prowlarr:nightly
     container_name: prowlarr
     networks:
       proxy_network:
@@ -329,7 +329,7 @@ services:
   #   restart: unless-stopped
   # Transmission - torrent
   transmission:
-    image: linuxserver/transmission:latest
+    image: ghcr.io/linuxserver/transmission:latest
     container_name: transmission
     networks:
       proxy_network:
@@ -477,7 +477,7 @@ services:
   # Had some problems to make it work with Authentik, when making a request to it, the request to another service will make Authentik loop
   # It was solved by deleting the provider and creating it again, checking that it was working and finally adding the scope mapping
   tautulli:
-    image: tautulli/tautulli:latest
+    image: ghcr.io/tautulli/tautulli:latest
     container_name: tautulli
     networks:
       proxy_network:

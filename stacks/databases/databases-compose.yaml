@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
   # MariaDB : Nextcloud, Gitea, FireflyIII, Bookstack
   mariadb:
-    image: linuxserver/mariadb:latest
+    image: ghcr.io/linuxserver/mariadb:latest
     container_name: mariadb
     networks:
       database_network:
