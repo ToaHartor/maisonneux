@@ -43,6 +43,16 @@ services:
       - "traefik.http.routers.sonarr-api-rtr.service=sonarr-svc"
       - "traefik.http.services.sonarr-svc.loadbalancer.server.port=8989"
       # - "traefik.http.services.sonarr-svc.loadbalancer.passHostHeader=true"
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=10"
+      - "homepage.name=Sonarr"
+      - "homepage.icon=sonarr.png"
+      - "homepage.href=https://tv.${DOMAIN_NAME}"
+      - "homepage.description=TV series management"
+      - "homepage.widget.type=sonarr"
+      - "homepage.widget.url=http://sonarr:8989"
+      - "homepage.widget.key=${SONARR_API_KEY}"
     restart: unless-stopped
   # Radarr
   radarr:
@@ -129,6 +139,16 @@ services:
       - "traefik.http.routers.radarr4k-rtr.service=radarr4k-svc"
       - "traefik.http.routers.radarr4k-api-rtr.service=radarr4k-svc"
       - "traefik.http.services.radarr4k-svc.loadbalancer.server.port=7878"
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=12"
+      - "homepage.name=Radarr 4K"
+      - "homepage.icon=radarr.png"
+      - "homepage.href=https://movies4k.${DOMAIN_NAME}"
+      - "homepage.description=4K movies management"
+      - "homepage.widget.type=radarr"
+      - "homepage.widget.url=http://radarr4k:7878"
+      - "homepage.widget.key=${RADARR4K_API_KEY}"
     restart: unless-stopped
   # Lidarr
   lidarr:
@@ -171,6 +191,16 @@ services:
       - "traefik.http.routers.lidarr-rtr.service=lidarr-svc"
       - "traefik.http.routers.lidarr-api-rtr.service=lidarr-svc"
       - "traefik.http.services.lidarr-svc.loadbalancer.server.port=8686"
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=13"
+      - "homepage.name=Lidarr"
+      - "homepage.icon=lidarr.png"
+      - "homepage.href=https://music.${DOMAIN_NAME}"
+      - "homepage.description=Music management"
+      - "homepage.widget.type=lidarr"
+      - "homepage.widget.url=http://lidarr:8686"
+      - "homepage.widget.key=${LIDARR_API_KEY}"
     restart: unless-stopped
   # Torrent indexers
   # Prowlarr
@@ -212,6 +242,16 @@ services:
       - "traefik.http.routers.prowlarr-rtr.service=prowlarr-svc"
       - "traefik.http.routers.prowlarr-api-rtr.service=prowlarr-svc"
       - "traefik.http.services.prowlarr-svc.loadbalancer.server.port=9696"
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=14"
+      - "homepage.name=Prowlarr"
+      - "homepage.icon=prowlarr.png"
+      - "homepage.href=https://indexer.${DOMAIN_NAME}"
+      - "homepage.description=Torrent indexer"
+      - "homepage.widget.type=prowlarr"
+      - "homepage.widget.url=http://prowlarr:9696"
+      - "homepage.widget.key=${PROWLARR_API_KEY}"
     restart: unless-stopped
   # Jackett
   # jackett:
@@ -357,6 +397,15 @@ services:
       - "traefik.http.routers.flood-rtr.middlewares=chain-forwardauth@docker"
       - "traefik.http.routers.flood-rtr.service=flood-svc"
       - "traefik.http.services.flood-svc.loadbalancer.server.port=3010"
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=23"
+      - "homepage.name=Flood"
+      - "homepage.icon=flood.png"
+      - "homepage.href=https://torrent.${DOMAIN_NAME}"
+      - "homepage.description=Torrent manager"
+      - "homepage.widget.type=flood"
+      - "homepage.widget.url=http://flood:3010"
     restart: unless-stopped
 
   # JDownloader2
@@ -392,6 +441,17 @@ services:
       ## HTTP Services
       - "traefik.http.routers.jdl-rtr.service=jdl-svc"
       - "traefik.http.services.jdl-svc.loadbalancer.server.port=5800"
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=22"
+      - "homepage.name=JDownloader"
+      - "homepage.icon=jdownloader.png"
+      - "homepage.href=https://ddl.${DOMAIN_NAME}"
+      - "homepage.description=Direct download manager"
+      - "homepage.widget.type=jdownloader"
+      - "homepage.widget.url=http://jdownloader:5800"
+      - "homepage.widget.username=${JD_USER}"
+      - "homepage.widget.password=${JD_PASSWORD}"
     restart: unless-stopped
   # API for Jdownloader for Organizr
   # myjd-api:
@@ -455,6 +515,16 @@ services:
       - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
       - "traefik.http.routers.tautulli-api-rtr.service=tautulli-svc"
       - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=5"
+      - "homepage.name=Tautulli"
+      - "homepage.icon=tautulli.png"
+      - "homepage.href=https://tautulli.${DOMAIN_NAME}"
+      - "homepage.description=Plex monitoring"
+      - "homepage.widget.type=tautulli"
+      - "homepage.widget.url=http://tautulli:8181"
+      - "homepage.widget.key=${TAUTULLI_API_KEY}"
     restart: unless-stopped
 
   # Overseerr - User content suggestions and requests for Plex
@@ -483,6 +553,16 @@ services:
       ## HTTP Services
       - "traefik.http.routers.overseerr-rtr.service=overseerr-svc"
       - "traefik.http.services.overseerr-svc.loadbalancer.server.port=5055"
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=15"
+      - "homepage.name=Overseerr"
+      - "homepage.icon=overseerr.png"
+      - "homepage.href=https://request.${DOMAIN_NAME}"
+      - "homepage.description=Media requesting"
+      - "homepage.widget.type=overseerr"
+      - "homepage.widget.url=http://overseerr:5055"
+      - "homepage.widget.key=${OVERSEERR_API_KEY}"
     restart: unless-stopped
 
   # Komga - Manga reader + server

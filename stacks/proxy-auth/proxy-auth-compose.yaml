@@ -187,8 +187,13 @@ services:
       - ${CONFIG_FOLDER}/adguard/work:/opt/adguardhome/work
       - ${CONFIG_FOLDER}/adguard/conf:/opt/adguardhome/conf
     ports:
+      # Setup
       - 3050:3000
-    # labels:
+      # Web
+      - 3051:80
+      # DNS
+      - 0.0.0.0:53:53/udp
+    labels:
     #   - "traefik.enable=true"
     #   ## HTTP Router
     #   - "traefik.http.routers.theme-park-rtr.priority=150"
@@ -202,6 +207,17 @@ services:
     #   ## HTTP Services
     #   - "traefik.http.routers.theme-park-rtr.service=theme-park-svc"
     #   - "traefik.http.services.theme-park-svc.loadbalancer.server.port=3000"
+    # Homepage config
+      - "homepage.group=Infrastructure"
+      - "homepage.weight=10"
+      - "homepage.name=Adguard"
+      - "homepage.icon=adguard-home.png"
+      - "homepage.href=http://10.0.0.1:3051"
+      - "homepage.description=DNS and Ad blocker"
+      - "homepage.widget.type=adguard"
+      - "homepage.widget.url=http://adguard:80"
+      - "homepage.widget.username=${ADGUARD_USER}"
+      - "homepage.widget.password=${ADGUARD_PASSWORD}"
     restart: unless-stopped
 
   authentik-server:
@@ -248,6 +264,16 @@ services:
       - "traefik.http.routers.authentik.middlewares=chain-noauth@docker"
       # Service
       - "traefik.http.services.authentik-svc.loadbalancer.server.port=9000"
+      # Homepage config
+      - "homepage.group=Infrastructure"
+      - "homepage.weight=5"
+      - "homepage.name=Authentik"
+      - "homepage.icon=authentik.png"
+      - "homepage.href=https://auth.${DOMAIN_NAME}"
+      - "homepage.description=Identity provider"
+      - "homepage.widget.type=authentik"
+      - "homepage.widget.url=https://auth.${DOMAIN_NAME}"
+      - "homepage.widget.key=${AUTHENTIK_API_KEY}"
     ports:
       - 9080:9000
     depends_on:

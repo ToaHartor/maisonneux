@@ -78,6 +78,17 @@ services:
       ## HTTP Services
       - "traefik.http.routers.grafana-rtr.service=grafana-svc"
       - "traefik.http.services.grafana-svc.loadbalancer.server.port=3000"
+      # Homepage config
+      - "homepage.group=Infrastructure"
+      - "homepage.weight=20"
+      - "homepage.name=Grafana"
+      - "homepage.icon=grafana.png"
+      - "homepage.href=https://graphs.${DOMAIN_NAME}"
+      - "homepage.description=Monitoring dashboards"
+      - "homepage.widget.type=grafana"
+      - "homepage.widget.url=http://grafana:3000"
+      - "homepage.widget.username=${GRAFANA_SERVICE_USER}"
+      - "homepage.widget.password=${GRAFANA_SERVICE_PASSWORD}"
     restart: unless-stopped
   # Loki - Log sourcing
   # loki:
@@ -146,6 +157,16 @@ services:
     #   - "/dev/sdh"
     # # NVME disks
     #   - "/dev/nvme0"  # SYS_ADMIN permission should be added
+    labels:
+      # Homepage config
+      - "homepage.group=Infrastructure"
+      - "homepage.weight=11"
+      - "homepage.name=Scrutiny"
+      - "homepage.icon=scrutiny.png"
+      - "homepage.href=http://10.0.0.1:8809"
+      - "homepage.description=Disk monitoring"
+      - "homepage.widget.type=scrutiny"
+      - "homepage.widget.url=http://scrutiny:8080"
     restart: unless-stopped
   # Prometheus - Metrics aggregator
   prometheus:

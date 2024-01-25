@@ -182,6 +182,13 @@ services:
       ## HTTP Services
       - "traefik.http.routers.vaultwarden-ws-rtr.service=vaultwarden-ws-svc"
       - "traefik.http.services.vaultwarden-ws-svc.loadbalancer.server.port=3012"
+      # Homepage config
+      - "homepage.group=Services"
+      - "homepage.weight=1"
+      - "homepage.name=Vaultwarden"
+      - "homepage.icon=vaultwarden.png"
+      - "homepage.href=https://vault.${DOMAIN_NAME}"
+      - "homepage.description=Password manager"
     restart: unless-stopped
 
   # Code-server - Self-hosted web VSCode
@@ -304,6 +311,16 @@ services:
       ## HTTP Services
       - "traefik.http.routers.immich-rtr.service=immich-svc"
       - "traefik.http.services.immich-svc.loadbalancer.server.port=3001"
+      # Homepage config
+      - "homepage.group=Services"
+      - "homepage.weight=10"
+      - "homepage.name=Immich"
+      - "homepage.icon=immich.png"
+      - "homepage.href=https://photos.${DOMAIN_NAME}"
+      - "homepage.description=Photo server"
+      - "homepage.widget.type=immich"
+      - "homepage.widget.url=http://immich_server:3001"
+      - "homepage.widget.key=${IMMICH_API_KEY}"
     # ports:
     #   - 2283:3001
     restart: unless-stopped
@@ -417,6 +434,16 @@ services:
       - "traefik.http.routers.paperless-rtr.service=paperless-svc"
       - "traefik.http.routers.paperless-api-rtr.service=paperless-svc"
       - "traefik.http.services.paperless-svc.loadbalancer.server.port=8000"
+        # Homepage config
+      - "homepage.group=Services"
+      - "homepage.weight=11"
+      - "homepage.name=Paperless-ngx"
+      - "homepage.icon=paperless-ngx.png"
+      - "homepage.href=https://paper.${DOMAIN_NAME}"
+      - "homepage.description=Document manager"
+      - "homepage.widget.type=paperlessngx"
+      - "homepage.widget.url=http://paperless-ngx:8000"
+      - "homepage.widget.key=${PAPERLESS_API_KEY}"
 
     healthcheck:
       test: ["CMD", "curl", "-fs", "-S", "--max-time", "2", "http://localhost:8000"]
@@ -546,6 +573,13 @@ services:
       ## HTTP Services
       - "traefik.http.routers.outline-rtr.service=outline-svc"
       - "traefik.http.services.outline-svc.loadbalancer.server.port=3852"
+      # Homepage config
+      - "homepage.group=Services"
+      - "homepage.weight=8"
+      - "homepage.name=Outline"
+      - "homepage.icon=outline.png"
+      - "homepage.href=https://wiki.${DOMAIN_NAME}"
+      - "homepage.description=Documentation server"
     volumes:
       - ${CONFIG_FOLDER}/outline:/var/lib/outline/data
     depends_on:
