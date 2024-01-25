@@ -549,6 +549,8 @@ services:
     networks:
       proxy_network:
         ipv4_address: 172.18.1.20
+      docker_sock_network:
+        ipv4_address: 172.18.4.6
     environment:
       - COLLECTIONS=crowdsecurity/traefik 
         crowdsecurity/http-cve 
@@ -556,7 +558,9 @@ services:
         crowdsecurity/iptables crowdsecurity/linux 
         crowdsecurity/nginx crowdsecurity/sshd
         LePresidente/grafana LePresidente/gitea
-        Dominic-Wagner/vaultwarden
+        Dominic-Wagner/vaultwarden firix/authentik
+        LePresidente/adguardhome timokoessler/uptime-kuma
+        gauth-fr/immich
       - PUID=${USERID}
       - GID=${GROUPID}
 
