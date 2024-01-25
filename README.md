@@ -105,6 +105,7 @@ Note*: Plex is not deployed with Docker here, to avoid any problems with hardwar
 |Coding statistics|Wakapi|<https://github.com/muety/wakapi>|services|None|
 |Game distribution|Gamevault|<https://github.com/Phalcode/gamevault-backend>|services|None|
 |PDF multitool|Stirling-pdf|<https://github.com/Stirling-Tools/Stirling-PDF>|services|Not exposed|
+|Bookmark management|Linkwarden|<https://github.com/linkwarden/linkwarden>|services|OIDC|
 
 ### Monitoring
 

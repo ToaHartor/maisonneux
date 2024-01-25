@@ -817,6 +817,49 @@ services:
       - DOCKER_ENABLE_SECURITY=false
     ports:
       - '8653:8080'
+  
+  # Linkwarden - Link saver
+  linkwarden:
+    image: ghcr.io/linkwarden/linkwarden:latest
+    container_name: linkwarden
+    networks:
+      - proxy_network
+      - linkwarden_network
+    environment:
+      - NEXTAUTH_SECRET=${LINKWARDEN_NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=https://links.${DOMAIN_NAME}/api/v1/auth
+      - DATABASE_URL=postgresql://${LINKWARDEN_PSQL_USER}:${LINKWARDEN_PSQL_PASS}@postgres:5432/linkwarden
+      - NEXT_PUBLIC_DISABLE_REGISTRATION=true
+      - NEXT_PUBLIC_CREDENTIALS_ENABLED=false
+      - DISABLE_NEW_SSO_USERS=false
+      # OAuth with Authentik
+      - NEXT_PUBLIC_AUTHENTIK_ENABLED=true
+      - AUTHENTIK_CUSTOM_NAME=Authentik
+      - AUTHENTIK_ISSUER=https://auth.${DOMAIN_NAME}/application/o/linkwarden
+      - AUTHENTIK_CLIENT_ID=${LINKWARDEN_OAUTH_ID}
+      - AUTHENTIK_CLIENT_SECRET=${LINKWARDEN_OAUTH_SECRET}
+      # SMTP Settings
+      # - NEXT_PUBLIC_EMAIL_PROVIDER=
+      # - EMAIL_FROM=
+      # - EMAIL_SERVER=
+    volumes:
+      - ${CONFIG_FOLDER}/linkwarden:/data/data
+    labels:
+      - "traefik.enable=true"
+      # Web UI
+      ## HTTP Router
+      - "traefik.http.routers.linkwarden-rtr.entrypoints=websecure"
+      - "traefik.http.routers.linkwarden-rtr.rule=Host(`links.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.linkwarden-rtr.tls=true"
+      - "traefik.http.routers.linkwarden-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.linkwarden-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.linkwarden-rtr.service=linkwarden-svc"
+      - "traefik.http.services.linkwarden-svc.loadbalancer.server.port=3000"
+    # ports:
+    #   - 3000:3000
+    restart: unless-stopped
 
 networks: # All these networks are created in the databases stack, which links services to their databases
   proxy_network:
@@ -840,6 +883,8 @@ networks: # All these networks are created in the databases stack, which links s
   docker_sock_network:
     external: true
   gamevault_network:
+    external: true
+  linkwarden_network:
     external: true
   database_network:
     external: true
