@@ -88,6 +88,7 @@ Note*: Plex is not deployed with Docker here, to avoid any problems with hardwar
 |Finances manager|Firefly III|https://github.com/firefly-iii/firefly-iii|services|Not exposed|
 |Documentation/Wiki|Bookstack|https://github.com/BookStackApp/BookStack|services|OIDC|
 |Documentation/Wiki|Outline|https://github.com/outline/outline|services|OIDC|
+|Spreadsheet Server|Grist|https://github.com/gristlabs/grist-core|services|OIDC|
 |Git/Code repository server|Gitea|https://github.com/go-gitea/gitea|services|OIDC|
 |Password manager|Vaultwarden|https://github.com/dani-garcia/vaultwarden|services|None|
 |Coding server|Code-server|https://github.com/coder/code-server|services|Not exposed|

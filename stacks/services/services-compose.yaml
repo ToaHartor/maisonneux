@@ -616,6 +616,54 @@ services:
       - "traefik.http.routers.minio-console-rtr.service=minio-console-svc"
       - "traefik.http.services.minio-console-svc.loadbalancer.server.port=9025"
     restart: unless-stopped
+
+  
+  # Grist - Spreadsheets, to be integrated to Outline
+  grist:
+    image: gristlabs/grist
+    container_name: grist
+    networks:
+      proxy_network:
+        ipv4_address: 172.18.1.137
+      outline_network:
+        ipv4_address: 172.18.2.125
+    environment:
+      - GRIST_SINGLE_ORG=grist  # alternatively, GRIST_ORG_IN_PATH: "true" for multi-team operation
+      - GRIST_DEFAULT_EMAIL=${ADMIN_EMAIL}  # Set the email of your admin here, corresponding to the admin of the IDC
+      - GRIST_ALLOWED_HOSTS=wiki.${DOMAIN_NAME}
+      - APP_HOME_URL=https://grist.${DOMAIN_NAME}
+      - GRIST_HIDE_UI_ELEMENTS=billing
+      - GRIST_LIST_PUBLIC_SITES=false
+      - GRIST_MAX_UPLOAD_ATTACHMENT_MB=10
+      - GRIST_MAX_UPLOAD_IMPORT_MB=300
+      - GRIST_ORG_IN_PATH=false
+      - GRIST_FORCE_LOGIN=true
+      - GRIST_SUPPORT_ANON=false
+      - GRIST_TELEMETRY_LEVEL=off
+      - REDIS_URL=redis://redis:6379
+      - GRIST_SANDBOX_FLAVOR=gvisor
+      # OIDC with Authentik
+      - GRIST_OIDC_IDP_ISSUER=https://auth.${DOMAIN_NAME}/application/o/grist/.well-known/openid-configuration
+      - GRIST_OIDC_IDP_CLIENT_ID=${GRIST_OIDC_ID}
+      - GRIST_OIDC_IDP_CLIENT_SECRET=${GRIST_OIDC_SECRET}
+      # - GRIST_OIDC_IDP_SCOPES=
+    # ports:
+    #   - "8484:8484"
+    volumes:
+      - ${CONFIG_FOLDER}/grist:/persist
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.grist-rtr.entrypoints=websecure"
+      - "traefik.http.routers.grist-rtr.rule=Host(`grist.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.grist-rtr.tls=true"
+      - "traefik.http.routers.grist-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.grist-rtr.middlewares=chain-noauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.grist-rtr.service=grist-svc"
+      - "traefik.http.services.grist-svc.loadbalancer.server.port=8484"
+    restart: unless-stopped
   # Uptime-kuma - Status page
   uptime-kuma:
     image: louislam/uptime-kuma:latest
