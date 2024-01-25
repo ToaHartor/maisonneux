@@ -134,7 +134,7 @@ services:
     restart: unless-stopped
   # Vaultwarden - Password manager
   vaultwarden:
-    image: ghcr.io/vaultwarden/server:latest
+    image: ghcr.io/dani-garcia/vaultwarden:latest
     container_name: vaultwarden
     networks:
       proxy_network:
