@@ -447,15 +447,28 @@ services:
     networks:
       proxy_network:
         ipv4_address: 172.18.1.7
-    ports:
-      - 10500:3000
+      docker_sock_network:
+        ipv4_address: 172.18.4.4
     volumes:
       - ${CONFIG_FOLDER}/homepage:/app/config # Make sure your local config directory exists
       # - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations
       - /srv:/disks
     environment:
-      PUID: ${USERID}
-      PGID: ${GROUPID}
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.homepage-rtr.entrypoints=websecure"
+      - "traefik.http.routers.homepage-rtr.rule=Host(`home.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.homepage-rtr.tls=true"
+      - "traefik.http.routers.homepage-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      # Only expose this to intranet
+      - "traefik.http.routers.homepage-rtr.middlewares=local-ip-mw@docker,chain-forwardauth@docker"
+      ## HTTP Services
+      - "traefik.http.routers.homepage-rtr.service=homepage-svc"
+      - "traefik.http.services.homepage-svc.loadbalancer.server.port=3000"
     restart: unless-stopped
   # Docker Socket Proxy
   socket-proxy:
