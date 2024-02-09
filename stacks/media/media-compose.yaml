@@ -17,6 +17,11 @@ services:
     environment:
       - PUID=${USERID}
       - PGID=${GROUPID}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8989/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       # Router for UI
@@ -71,6 +76,11 @@ services:
     environment:
       - PUID=${USERID}
       - PGID=${GROUPID}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7878/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       # Router for UI
@@ -114,6 +124,11 @@ services:
     environment:
       - PUID=${USERID}
       - PGID=${GROUPID}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7878/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       # Router for UI
@@ -166,6 +181,11 @@ services:
     environment:
       - PUID=${USERID}
       - PGID=${GROUPID}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8686/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       # Router for UI
@@ -219,6 +239,11 @@ services:
       - PUID=${USERID}
       - PGID=${GROUPID}
       # - UMASK=002
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9696/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       # Router for UI
@@ -351,6 +376,12 @@ services:
       - PASS=${TRANSMISSION_PASS} #optional
       # - WHITELIST=iplist #optional
       # - HOST_WHITELIST=dnsnane list #optional
+    healthcheck:
+      test: ["CMD-SHELL", "netstat -ant | grep 0.0.0.0:9091 | grep -c LISTEN || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     labels:
       - "traefik.enable=true"
       ## HTTP Router for the RPC endpoint (has authentication included), only matches if the transmission session id is included, might be removed later
@@ -384,6 +415,11 @@ services:
       - /usr/bin/mediainfo:/usr/bin/mediainfo  # Should be installed on the system
     ports:
       - 3010:3010
+    healthcheck:
+      test: ["CMD", "wget", "http://localhost:3010/", "-qO", "/dev/null"]  
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -427,6 +463,12 @@ services:
       - DISPLAY_WIDTH=1680
       - USER_ID=${USERID}
       - GROUP_ID=${GROUPID}
+    healthcheck:
+      test: ["CMD-SHELL", "netstat -ant | grep 0.0.0.0:5800 | grep -c LISTEN || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -540,6 +582,11 @@ services:
       - 5055:5055/tcp
     environment:
       - TZ=${TIMEZONE}
+    healthcheck:
+      test: ["CMD", "wget", "http://localhost:5055/api/v1/status", "-qO", "/dev/null"]  
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -609,7 +656,12 @@ services:
         - ${LN_FOLDER}:/lightnovels
         - ${DISK_ROOT}/WDBlue4To:/data
         - ${CONFIG_FOLDER}/kavita:/kavita/config
-    user: ${USERID}:${GROUPID}
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:5000"]
+        interval: 300s
+        retries: 3
+        start_period: 30s
+        timeout: 15s
     ports:
       - 5066:5000
     restart: unless-stopped
@@ -751,6 +803,11 @@ services:
       - XTEVE_API=1
       - XTEVE_PORT=8953
       - XTEVE_DEBUG=0
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8953/", "-o", "/dev/null"]  
+      interval: 30s
+      timeout: 10s
+      retries: 5
     ports:
       - 8953:8953
     restart: unless-stopped

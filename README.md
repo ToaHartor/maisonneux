@@ -19,7 +19,7 @@ Issues are not opened, as I'm not supposed to give support for the softwares/Doc
 
 ## TO-DO List
 
-- [ ] Health checks in compose
+- [X] Health checks in compose
 - [ ] Finish Adguard config
 - [ ] Backup setup (Kopia ?)
 - [X] Migration to InfluxDB 2

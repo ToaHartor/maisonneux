@@ -11,6 +11,11 @@ services:
       #   ipv4_address: 172.18.1.10
     volumes:
       - ${CONFIG_FOLDER}/cloudbeaver:/opt/cloudbeaver/workspace
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf localhost:8978/status | grep -c '\"health\":\"ok\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     ports:
       - 8978:8978/tcp
     restart: unless-stopped
@@ -41,6 +46,11 @@ services:
       - TZ=${TIMEZONE}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DIR=/config
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "--silent"]
+      interval: 30s
+      retries: 3
+      timeout: 30s
     restart: unless-stopped
 
   # PostgreSQL - Tandoor/Immich
@@ -73,6 +83,11 @@ services:
       - POSTGRES_USER=${PG_ROOT_USER}
       - POSTGRES_PASSWORD=${PG_ROOT_PASSWORD}
       - TZ=${TIMEZONE}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_ROOT_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   # InfluxDB2 - Time series database for monitoring
@@ -102,6 +117,11 @@ services:
       - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_INIT_PASSWORD}
       - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_INIT_ORG}
       - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_INIT_BUCKET}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8086/ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
     ports:
       # Exposing to localhost to be reachable by telegraf and scrutiny
       - 127.0.0.1:8086:8086/tcp
@@ -129,6 +149,12 @@ services:
       # - /etc/passwd:/etc/passwd:ro
     # ports:
     #   - 6379:6379/tcp
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG || exit 1"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
     restart: unless-stopped
   # MongoDB for mangatagger, tachi
   mongodb: # you can use your own mongodb, edit the manga-tagger settings.json accordingly
@@ -139,6 +165,12 @@ services:
         ipv4_address: 172.18.2.6
       mangatagger_network:
         ipv4_address: 172.18.2.82
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'db.stats().ok' | mongosh localhost:27017/test --quiet || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
     volumes:
       - ${DATA_FOLDER}/mongodb:/data/db
       - ${DATA_FOLDER}/mongodb/config:/data/configdb

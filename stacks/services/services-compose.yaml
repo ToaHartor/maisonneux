@@ -62,6 +62,12 @@ services:
 
       - SESSION_LIFETIME=1440  # Session lifetime (mins)
       # - OIDC_DUMP_USER_DETAILS=true
+    # Example output {"database":true,"cache":true,"session":true}
+    healthcheck:
+      test: ["CMD-SHELL", "[ $(curl -sf http://localhost:80/status | grep -o 'false' | wc -l) -eq 0 ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -118,6 +124,11 @@ services:
       - USER_UID=${USERID}
       - USER_GID=${GROUPID}
       - USER=git
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/healthz | grep -c '^  \"status\": \"pass\",$' > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -262,6 +273,12 @@ services:
     networks:
       proxy_network:
         ipv4_address: 172.18.1.128
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000", "-o", "/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     ports:
       - 8095:8000
     restart: unless-stopped
@@ -297,6 +314,11 @@ services:
       # - OAUTH_SCOPE=   # Default to 'openid email profile'
       - OAUTH_AUTO_REGISTER=true
       - OAUT_BUTTON_TEXT="Login with Authentik"
+    healthcheck:
+      test: ["CMD-SHELL", "[ $(pidof immich_server | wc -w) -eq 1 ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       # Web UI
@@ -334,6 +356,12 @@ services:
         ipv4_address: 172.18.2.98
     volumes:
       - ${DATA_FOLDER}/photos:/usr/src/app/upload
+    # Find running process 
+    healthcheck:
+      test: ["CMD-SHELL", "[ $(pidof immich_microservices | wc -w) -eq 1 ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     environment:
       - NODE_ENV=production
       - DB_HOSTNAME=postgres
@@ -363,6 +391,12 @@ services:
     volumes:
       - ${DATA_FOLDER}/photos:/usr/src/app/upload
       - ${CONFIG_FOLDER}/immich/model-cache:/cache
+    # 2 python processes should be running
+    healthcheck:
+      test: ["CMD-SHELL", "[ $(pidof python | wc -w) -eq 2 ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     environment:
       - NODE_ENV=production
       - DB_HOSTNAME=postgres
@@ -410,6 +444,11 @@ services:
       # Export and import automatically
       # - ./export:/usr/src/paperless/export
       # - ./consume:/usr/src/paperless/consume
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "-S", "--max-time", "2", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -463,6 +502,11 @@ services:
         ipv4_address: 172.18.2.91
     # The gotenberg chromium route is used to convert .eml files. We do not
     # want to allow external content like tracking pixels or even javascript.
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     command:
       - "gotenberg"
       - "--chromium-disable-javascript=true"
@@ -476,6 +520,11 @@ services:
     networks:
       paperless_network:
         ipv4_address: 172.18.2.92
+    healthcheck:
+      test: ["CMD-SHELL", "[ $(ps x | awk '{ print $5 }' | grep -c 'java') -eq 2 ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     restart: unless-stopped
 
   # Memos - Note/memo server
@@ -490,6 +539,11 @@ services:
       - ${CONFIG_FOLDER}/memos:/var/opt/memos
     ports:
       - 5230:5230
+    healthcheck:
+      test: ["CMD-SHELL", "wget http://localhost:5230/healthz -qO- | grep -c 'Service ready.' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       # Web UI
@@ -560,6 +614,11 @@ services:
       - MAXIMUM_IMPORT_SIZE=5120000
     # ports:
     #   - "3852:3852"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3852/_health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       # Web UI
@@ -621,11 +680,11 @@ services:
     command: -c 'minio server /data --console-address ":9025"'
     volumes:
       - ${MINIO_DATA_FOLDER}:/data
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/live"]
-    #   interval: 30s
-    #   timeout: 20s
-    #   retries: 3
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -685,6 +744,11 @@ services:
     #   - "8484:8484"
     volumes:
       - ${CONFIG_FOLDER}/grist:/persist
+    healthcheck:
+      test: ["CMD-SHELL", "[ $(ps x | awk '{ print $5 }' | grep -c 'node') -eq 1 ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -736,6 +800,12 @@ services:
       WAKAPI_PUBLIC_URL: "https://wakapi.${DOMAIN_NAME}"
       WAKAPI_ALLOW_SIGNUP: false
       # WAKAPI_DISABLE_FRONTPAGE: true
+    # Healthcheck endpoint returns =1 for 2 services
+    healthcheck:
+      test: ["CMD-SHELL", "[ $(wget -qO- http://localhost:3000/api/health | grep -c '=1') -eq 2 ]"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
     labels:
       - "traefik.enable=true"
       # Web UI
@@ -815,6 +885,11 @@ services:
 #      - /location/of/logs:/logs/
     environment:
       - DOCKER_ENABLE_SECURITY=false
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/v1/info/status | grep -q 'UP' && curl -sfL http://localhost:8080/ | grep -qv 'Please sign in' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     ports:
       - '8653:8080'
   
@@ -844,6 +919,12 @@ services:
       # - EMAIL_SERVER=
     volumes:
       - ${CONFIG_FOLDER}/linkwarden:/data/data
+    # Since no command could be used easily to find if the process was running, the following command (https://unix.stackexchange.com/a/494978) was used to check if the port 3000 is open and used by a running process
+    healthcheck:
+      test: find /proc -lname "socket:\[$(cat /proc/net/* | awk -F " " '{print $2 ":" $10 }' | grep -i `printf "%x:" 3000` | head -n 1 | awk -F ":" '{print $3}')\]" 2> /dev/null | head -n 1 | awk -F "/" '{print "PID="$3}' | grep -c PID || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       # Web UI

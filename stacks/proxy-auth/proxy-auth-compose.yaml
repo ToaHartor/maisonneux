@@ -64,6 +64,9 @@ services:
       - "--api=true"
       - "--api.dashboard=true"
       - "--global.sendAnonymousUsage=false"
+      # Ping for healthchecks
+      - "--ping=true"
+      - "--ping.manualRouting=false"
       # Logs
       - "--log.level=INFO"
       - "--log.filePath=/logs/traefik.log"
@@ -175,6 +178,11 @@ services:
     # For Plex : https://www.reddit.com/r/Traefik/comments/dc2pn7/how_to_direct_traefik_v2_to_nondocker_services/
     depends_on:
       - socket-proxy
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
     restart: always
   
   adguard:
@@ -218,6 +226,11 @@ services:
       - "homepage.widget.url=http://adguard:80"
       - "homepage.widget.username=${ADGUARD_USER}"
       - "homepage.widget.password=${ADGUARD_PASSWORD}"
+    healthcheck:
+      test: ["CMD-SHELL", "/bin/netstat -pant | /bin/grep -c 53 || exit 1"]
+      interval: 45s
+      timeout: 30s
+      retries: 3
     restart: unless-stopped
 
   authentik-server:
@@ -323,7 +336,6 @@ services:
         ipv4_address: 172.18.3.5
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-      start_period: 20s
       interval: 30s
       retries: 5
       timeout: 5s
@@ -345,7 +357,6 @@ services:
         ipv4_address: 172.18.3.6
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      start_period: 20s
       interval: 30s
       retries: 5
       timeout: 3s
@@ -422,6 +433,11 @@ services:
     # ports:
     #   - 8080:80
     #   - 4443:443
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:80 > /dev/null || exit 1"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -541,6 +557,11 @@ services:
       - SYSTEM=0
       - TASKS=1 # Portainer
       - VOLUMES=1 # Portainer
+    healthcheck:
+      test: ["CMD", "nc", "-vzn", "localhost", "2375"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
     restart: unless-stopped
   # CrowdSec - Open-source & collaborative security IPS
   crowdsec:
@@ -583,6 +604,11 @@ services:
       - /var/log/crowdsec:/var/log/crowdsec:ro
       - ${CONFIG_FOLDER}/crowdsec/data:/var/lib/crowdsec/data
       - ${CONFIG_FOLDER}/crowdsec/config:/etc/crowdsec
+    healthcheck:  
+      test: ["CMD", "cscli", "version"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
     ports: 
     - 10808:8080
     restart: unless-stopped

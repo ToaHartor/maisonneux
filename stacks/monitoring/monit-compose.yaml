@@ -15,6 +15,11 @@ services:
     environment:
       - PUID=${USERID}
       - PGID=${GROUPID}
+    healthcheck:
+      test: ["CMD-SHELL", "ps | awk '{ print $4 \" \" $5}' | grep -c '^python3 /app/Varken.py$' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
   # Grafana
   grafana:
@@ -30,6 +35,11 @@ services:
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 3000:3000
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "localhost:3000/api/health"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
     environment:
       - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
       - GF_ANALYTICS_REPORTING_ENABLED=false
@@ -140,7 +150,7 @@ services:
     environment:
       - SCRUTINY_WEB_INFLUXDB_HOST=influxdb
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/api/health"]
       interval: 5s
       timeout: 10s
       retries: 20
@@ -186,6 +196,11 @@ services:
       - '--storage.tsdb.path=/prometheus'
     ports:
       - 9090:9090
+    healthcheck:
+      test: ["CMD", "wget", "http://localhost:9090", "-qO", "/dev/null"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
     depends_on:
       - mimir
     restart: always

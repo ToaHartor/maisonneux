@@ -48,12 +48,17 @@ services:
     restart: unless-stopped
 
   memcached:
-    image: memcached:1.6
+    image: memcached:1.6-alpine
     container_name: seafile-memcached
     entrypoint: memcached -m 256
     networks:
       cloud_network:
         ipv4_address: 172.18.2.38
+    healthcheck:
+      test: ["CMD-SHELL", "echo stats | nc 127.0.0.1 11211 > /dev/null || exit 1"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
     restart: unless-stopped
   
   # Elasticsearch for Seafile - Pro version only
@@ -110,6 +115,11 @@ services:
     depends_on:
       - memcached
       # - elasticsearch # Pro version only
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost/", "-sf"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
     labels:
       - "traefik.enable=true"
       # Seafile main
