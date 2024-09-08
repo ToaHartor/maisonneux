@@ -5,12 +5,11 @@ services:
     image: ghcr.io/linuxserver/sonarr:develop
     container_name: sonarr
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.101
+      - proxy_network
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIG_FOLDER}/transmission/torrentfiles:/watch
-      - ${DISK_ROOT}:/tv  # Official documentation recommends a single mapping for both downloads and media directories
+      - ${DISK_ROOT}:/tv # Official documentation recommends a single mapping for both downloads and media directories
       - ${CONFIG_FOLDER}/sonarr:/config
     ports:
       - 8989:8989/tcp # Web interface
@@ -26,7 +25,7 @@ services:
       - "traefik.enable=true"
       # Router for UI
       # - "traefik.http.routers.sonarr-rtr.rule=Host(`media.${DOMAIN_NAME}`) && PathPrefix(`/tv`)" # And don't forget to add the subfolder option in sonarr
-      - "traefik.http.routers.sonarr-rtr.rule=Host(`tv.${DOMAIN_NAME}`)" 
+      - "traefik.http.routers.sonarr-rtr.rule=Host(`tv.${DOMAIN_NAME}`)"
       - "traefik.http.routers.sonarr-rtr.entrypoints=websecure"
       - "traefik.http.routers.sonarr-rtr.priority=99"
       - "traefik.http.routers.sonarr-rtr.tls=true"
@@ -64,8 +63,7 @@ services:
     image: ghcr.io/linuxserver/radarr:nightly
     container_name: radarr
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.102
+      - proxy_network
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIG_FOLDER}/transmission/torrentfiles:/watch
@@ -106,14 +104,23 @@ services:
       - "traefik.http.routers.radarr-rtr.service=radarr-svc"
       - "traefik.http.routers.radarr-api-rtr.service=radarr-svc"
       - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=11"
+      - "homepage.name=Radarr"
+      - "homepage.icon=radarr.png"
+      - "homepage.href=https://movies.${DOMAIN_NAME}"
+      - "homepage.description=Movies management"
+      - "homepage.widget.type=radarr"
+      - "homepage.widget.url=http://radarr:7878"
+      - "homepage.widget.key=${RADARR_API_KEY}"
     restart: unless-stopped
   # Radarr for 4K movies
   radarr4k:
     image: ghcr.io/linuxserver/radarr:nightly
     container_name: radarr4k
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.103
+      - proxy_network
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIG_FOLDER}/transmission/torrentfiles:/watch
@@ -170,8 +177,7 @@ services:
     image: ghcr.io/linuxserver/lidarr:nightly
     container_name: lidarr
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.104
+      - proxy_network
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${DISK_ROOT}:/music
@@ -228,8 +234,7 @@ services:
     image: ghcr.io/hotio/prowlarr:nightly
     container_name: prowlarr
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.105
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/prowlarr:/config
       - /etc/localtime:/etc/localtime:ro
@@ -357,8 +362,7 @@ services:
     image: ghcr.io/linuxserver/transmission:latest
     container_name: transmission
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.106
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/transmission:/config
       - /etc/localtime:/etc/localtime:ro
@@ -377,7 +381,11 @@ services:
       # - WHITELIST=iplist #optional
       # - HOST_WHITELIST=dnsnane list #optional
     healthcheck:
-      test: ["CMD-SHELL", "netstat -ant | grep 0.0.0.0:9091 | grep -c LISTEN || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "netstat -ant | grep 0.0.0.0:9091 | grep -c LISTEN || exit 1"
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -403,20 +411,26 @@ services:
     image: jesec/flood:master
     container_name: flood
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.131
+      - proxy_network
     user: ${USERID}:${GROUPID}
-    command: --auth none --port 3010 --allowedpath /data --trurl http://transmission:9091/transmission/rpc --truser ${TRANSMISSION_USER} --trpass ${TRANSMISSION_PASS} #--baseuri /transmission 
     environment:
       - HOME=/config
+      # - FLOOD_OPTION_host=127.0.0.1
+      - FLOOD_OPTION_port=3010
+      - FLOOD_OPTION_allowedpath=/data
+      - FLOOD_OPTION_auth=none
+      # - FLOOD_OPTION_baseuri=/transmission
+      - FLOOD_OPTION_trurl=http://transmission:9091/transmission/rpc
+      - FLOOD_OPTION_truser=${TRANSMISSION_USER}
+      - FLOOD_OPTION_trpass=${TRANSMISSION_PASS}
     volumes:
       - ${CONFIG_FOLDER}/flood/config:/config
       - ${CONFIG_FOLDER}/flood/data:/data
-      - /usr/bin/mediainfo:/usr/bin/mediainfo  # Should be installed on the system
+      - /usr/bin/mediainfo:/usr/bin/mediainfo # Should be installed on the system -> apt install mediainfo
     ports:
       - 3010:3010
     healthcheck:
-      test: ["CMD", "wget", "http://localhost:3010/", "-qO", "/dev/null"]  
+      test: ["CMD", "wget", "http://flood:3010/", "-qO", "/dev/null"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -424,9 +438,8 @@ services:
       - "traefik.enable=true"
       ## HTTP Router
       - "traefik.http.routers.flood-rtr.priority=90"
-      - "traefik.http.routers.flood-rtr.entrypoints=websecure"
-      # - "traefik.http.routers.flood-rtr.rule=Host(`dl.${DOMAIN_NAME}`) && PathPrefix(`/transmission`)"
       - "traefik.http.routers.flood-rtr.rule=Host(`torrent.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.flood-rtr.entrypoints=websecure"
       - "traefik.http.routers.flood-rtr.tls=true"
       # - "traefik.http.routers.flood-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.flood-rtr.tls.options=tls-opts@file"
@@ -441,7 +454,7 @@ services:
       - "homepage.href=https://torrent.${DOMAIN_NAME}"
       - "homepage.description=Torrent manager"
       - "homepage.widget.type=flood"
-      - "homepage.widget.url=http://flood:3010"
+      - "homepage.widget.url=http://flood:3010/"
     restart: unless-stopped
 
   # JDownloader2
@@ -449,8 +462,7 @@ services:
     image: jlesage/jdownloader-2:latest
     container_name: jdownloader
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.107
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/jdownloader:/config
       - /etc/localtime:/etc/localtime:ro
@@ -464,7 +476,11 @@ services:
       - USER_ID=${USERID}
       - GROUP_ID=${GROUPID}
     healthcheck:
-      test: ["CMD-SHELL", "netstat -ant | grep 0.0.0.0:5800 | grep -c LISTEN || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "netstat -ant | grep 0.0.0.0:5800 | grep -c LISTEN || exit 1"
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -515,6 +531,7 @@ services:
   #     - PASS=${JD_PASSWORD}
   #     - DEVICE=JDownloader
   #   restart: unless-stopped
+
   # Tautulli - Plex monitoring
   # Had some problems to make it work with Authentik, when making a request to it, the request to another service will make Authentik loop
   # It was solved by deleting the provider and creating it again, checking that it was working and finally adding the scope mapping
@@ -522,12 +539,11 @@ services:
     image: ghcr.io/tautulli/tautulli:latest
     container_name: tautulli
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.109
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/tautulli:/config
       - /etc/localtime:/etc/localtime:ro
-      - ${PLEX_LOGS_FOLDER}:/plex_logs:ro
+      - ${PLEXMEDIASERVER_FOLDER}/Library/Application Support/Plex Media Server/Logs:/plex_logs:ro
     ports:
       - 8181:8181/tcp
     environment:
@@ -535,6 +551,7 @@ services:
       - PGID=${GROUPID}
       - TZ=${TIMEZONE}
     labels:
+      # Traefik
       - "traefik.enable=true"
       ## HTTP Router
       - "traefik.http.routers.tautulli-rtr.entrypoints=websecure"
@@ -574,8 +591,7 @@ services:
     image: sctx/overseerr:latest
     container_name: overseerr
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.110
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/overseerr:/app/config
     ports:
@@ -583,7 +599,14 @@ services:
     environment:
       - TZ=${TIMEZONE}
     healthcheck:
-      test: ["CMD", "wget", "http://localhost:5055/api/v1/status", "-qO", "/dev/null"]  
+      test:
+        [
+          "CMD",
+          "wget",
+          "http://localhost:5055/api/v1/status",
+          "-qO",
+          "/dev/null"
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -643,25 +666,38 @@ services:
   #     - "traefik.http.routers.komga-rtr.service=komga-svc"
   #     - "traefik.http.services.komga-svc.loadbalancer.server.port=8568"
   #   restart: unless-stopped
-  
+
   # Kavita - book/manga server
   kavita:
-    image: kizaing/kavita:latest
+    image: jvmilazz0/kavita:latest
     container_name: kavita
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.215
+      - proxy_network
     volumes:
-        - ${MANGA_FOLDER}:/manga
-        - ${LN_FOLDER}:/lightnovels
-        - ${DISK_ROOT}/WDBlue4To:/data
-        - ${CONFIG_FOLDER}/kavita:/kavita/config
+      - ${KAVITA_LIBRARIES_FOLDER}:/libraries
+      # - ${MANGA_FOLDER}:/manga
+      # - ${LN_FOLDER}:/lightnovels
+      - ${DISK_ROOT}/WDBlue4To:/data # ${SOURCE_DIR}
+      - ${CONFIG_FOLDER}/kavita:/kavita/config
+    # user: ${USERID}:${GROUPID}
     healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:5000"]
-        interval: 300s
-        retries: 3
-        start_period: 30s
-        timeout: 15s
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 300s
+      retries: 3
+      start_period: 30s
+      timeout: 15s
+    labels:
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=20"
+      - "homepage.name=Kavita"
+      - "homepage.icon=kavita.png"
+      - "homepage.href=http://10.0.0.1:5066"
+      - "homepage.description=Book and manga server"
+      - "homepage.widget.type=kavita"
+      - "homepage.widget.url=http://kavita:5000"
+      - "homepage.widget.username=${KAVITA_SERVICE_USER}"
+      - "homepage.widget.password=${KAVITA_SERVICE_PASSWORD}"
     ports:
       - 5066:5000
     restart: unless-stopped
@@ -763,8 +799,7 @@ services:
     image: ghcr.io/meeb/tubesync:latest
     container_name: tubesync
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.113
+      - proxy_network
     ports:
       - 4848:4848
     volumes:
@@ -793,8 +828,7 @@ services:
     image: dnsforge/xteve:latest
     container_name: xteve
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.115
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/xTeve:/home/xteve/conf
     environment:
@@ -804,7 +838,7 @@ services:
       - XTEVE_PORT=8953
       - XTEVE_DEBUG=0
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8953/", "-o", "/dev/null"]  
+      test: ["CMD", "curl", "-sf", "http://localhost:8953/", "-o", "/dev/null"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -855,7 +889,7 @@ services:
 
 networks:
   proxy_network:
-    external: true  # Created in the nginx compose
+    external: true # Created in the proxy compose
   mangatagger_network:
     external: true
   kaizoku_network:

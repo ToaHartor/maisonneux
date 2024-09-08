@@ -28,22 +28,18 @@ services:
   #   restart: unless-stopped
   # Traefik - Reverse proxy
   traefik:
-    image: traefik:latest
+    image: traefik:2.11.3
     container_name: traefik
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.1
-      auth_network:
-        ipv4_address: 172.18.3.1
-      monit_network:
-        ipv4_address: 172.18.2.20
-      docker_sock_network:
-        ipv4_address: 172.18.4.2
+      - proxy_network
+      - auth_network
+      - monit_network
+      - docker_sock_network
     volumes:
       # - /run/user/6969/docker.sock:/var/run/docker.sock:ro
       - ${CONFIG_FOLDER}/traefik/config:/config
       - ${CONFIG_FOLDER}/traefik/certificates:/letsencrypt
-      - /var/log/traefik:/logs
+      - ${LOGS_FOLDER}/traefik:/logs
     ports:
       # Dashboard, only exposed on this interface if api.insecure=true
       # - 0.0.0.0:18080:8080
@@ -156,7 +152,7 @@ services:
       ## Compress
       - "traefik.http.middlewares.compress-mw.compress=true"
       ## Local services routing only
-      - "traefik.http.middlewares.local-ip-mw.ipwhitelist.sourcerange=192.168.1.254/32,10.0.0.1/16"
+      - "traefik.http.middlewares.local-ip-mw.ipallowlist.sourcerange=192.168.1.254/32,10.0.0.1/16"
       ## Secure headers
       - "traefik.http.middlewares.secureheaders-mw.headers.accessControlAllowMethods=GET,OPTIONS,PUT"
       - "traefik.http.middlewares.secureheaders-mw.headers.accessControlAllowOriginListRegex=https://([a-z]*\\.)?${DOMAIN_NAME}"
@@ -189,8 +185,7 @@ services:
     image: adguard/adguardhome:latest
     container_name: adguard
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.3
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/adguard/work:/opt/adguardhome/work
       - ${CONFIG_FOLDER}/adguard/conf:/opt/adguardhome/conf
@@ -237,10 +232,8 @@ services:
     image: ghcr.io/goauthentik/server:latest
     container_name: authentik_server
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.2
-      auth_network:
-        ipv4_address: 172.18.3.2
+      - proxy_network
+      - auth_network
     command: server
     environment:
       - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
@@ -253,7 +246,7 @@ services:
       - AUTHENTIK_AUTHENTIK__GEOIP=/geoip/GeoLite2-City.mmdb
       - AUTHENTIK_ERROR_REPORTING__ENABLED=false
       - AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true
-      - AUTHENTIK_LOG_LEVEL=debug # If a specific log level is needed
+      - AUTHENTIK_LOG_LEVEL=info # If a specific log level is needed
       - AUTHENTIK_HOST=https://auth.${DOMAIN_NAME}
       - AUTHENTIK_HOST_BROWSER=https://auth.${DOMAIN_NAME}
       - AUTHENTIK_OUTPOSTS__DISCOVER=false
@@ -298,8 +291,7 @@ services:
     image: ghcr.io/goauthentik/server:latest
     container_name: authentik_worker
     networks:
-      auth_network:
-        ipv4_address: 172.18.3.3
+      - auth_network
     command: worker
     environment:
       - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
@@ -312,7 +304,7 @@ services:
       - AUTHENTIK_AUTHENTIK__GEOIP=/geoip/GeoLite2-City.mmdb
       - AUTHENTIK_ERROR_REPORTING__ENABLED=false
       - AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true
-      - AUTHENTIK_LOG_LEVEL=debug
+      - AUTHENTIK_LOG_LEVEL=info
       - AUTHENTIK_OUTPOSTS__DISCOVER=false
     # user: root
     volumes:
@@ -332,8 +324,7 @@ services:
     image: postgres:12-alpine
     container_name: postgres_authentik
     networks:
-      auth_network:
-        ipv4_address: 172.18.3.5
+      - auth_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 30s
@@ -353,8 +344,7 @@ services:
     image: redis:alpine
     container_name: redis_authentik
     networks:
-      auth_network:
-        ipv4_address: 172.18.3.6
+      - auth_network
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
       interval: 30s
@@ -368,8 +358,7 @@ services:
     image: maxmindinc/geoipupdate:latest
     container_name: geoip_authentik
     networks:
-      auth_network:
-        ipv4_address: 172.18.3.7
+      - auth_network
     volumes:
       - ${CONFIG_FOLDER}/authentik/geoip:/usr/share/GeoIP
     environment:
@@ -385,8 +374,7 @@ services:
     image: organizr/organizr:latest
     container_name: organizr
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.5
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/organizr:/config
       # - /etc/localtime:/etc/localtime:ro
@@ -418,11 +406,10 @@ services:
     restart: unless-stopped
   # Theme.park - Theme suite for docker services
   theme-park:
-    image: ghcr.io/gilbn/theme.park
+    image: ghcr.io/themepark-dev/theme.park:develop
     container_name: theme-park
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.6
+      - proxy_network
     environment:
       - PUID=${USERID}
       - PGID=${GROUPID}
@@ -487,14 +474,12 @@ services:
     image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.7
-      docker_sock_network:
-        ipv4_address: 172.18.4.4
+      - proxy_network
+      - docker_sock_network
     volumes:
       - ${CONFIG_FOLDER}/homepage:/app/config # Make sure your local config directory exists
       # - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations
-      - /srv:/disks
+      - /mnt:/disks:ro
     environment:
       - PUID=${USERID}
       - PGID=${GROUPID}
@@ -517,14 +502,13 @@ services:
     container_name: socket-proxy
     image: ghcr.io/tecnativa/docker-socket-proxy:latest
     networks:
-      docker_sock_network:
-        ipv4_address: 172.18.4.1
+      - docker_sock_network
     # privileged: true # true for VM. False for unprivileged LXC container.
     ports:
     # Exposed internally, to make it available to metrics collecter like Telegraf, which are installed directly on the server
     - "127.0.0.1:2375:2375"
     volumes:
-      - "/run/user/6969/docker.sock:/var/run/docker.sock"
+      - "/var/run/docker.sock:/var/run/docker.sock"
     environment:
       - LOG_LEVEL=info # debug,info,notice,warning,err,crit,alert,emerg
       ## Variables match the URL prefix (i.e. AUTH blocks access to /auth/* parts of the API, etc.).
@@ -538,14 +522,14 @@ services:
       # Security critical
       - AUTH=0
       - SECRETS=0
-      - POST=1 # Watchtower
+      - POST=1 # Watchtower, Ofelia
       # Not always needed
       - BUILD=0
       - COMMIT=0
       - CONFIGS=0
       - CONTAINERS=1 # Traefik, portainer, etc., Homepage
       - DISTRIBUTION=0
-      - EXEC=0
+      - EXEC=1 # Ofelia
       - IMAGES=1 # Portainer
       - INFO=1 # Portainer
       - NETWORKS=1 # Portainer
@@ -568,10 +552,8 @@ services:
     image: ghcr.io/crowdsecurity/crowdsec:latest
     container_name: crowdsec
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.20
-      docker_sock_network:
-        ipv4_address: 172.18.4.6
+      - proxy_network
+      - docker_sock_network
     environment:
       - COLLECTIONS=crowdsecurity/traefik 
         crowdsecurity/http-cve 
@@ -599,9 +581,9 @@ services:
       # PGSQL?: https://hub.crowdsec.net/author/crowdsecurity/collections/pgsql
 
     volumes:
-      - /var/log:/logs:ro # System logs
-      - /var/log/auth.log:/var/log/auth.log:ro
-      - /var/log/crowdsec:/var/log/crowdsec:ro
+      - ${LOGS_FOLDER}:/logs:ro # System logs
+      # - /var/log/auth.log:/var/log/auth.log:ro
+      # - /var/log/crowdsec:/var/log/crowdsec:ro
       - ${CONFIG_FOLDER}/crowdsec/data:/var/lib/crowdsec/data
       - ${CONFIG_FOLDER}/crowdsec/config:/etc/crowdsec
     healthcheck:  
@@ -617,14 +599,34 @@ services:
     image: fbonalair/traefik-crowdsec-bouncer
     container_name: bouncer_traefik
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.21
+      - proxy_network
     environment:
       - CROWDSEC_BOUNCER_API_KEY=${CROWDSEC_BOUNCER_API_KEY}
       - CROWDSEC_AGENT_HOST=crowdsec:8080
       - GIN_MODE=release
     depends_on:
       - crowdsec
+    restart: unless-stopped
+
+  # Ofelia - Job scheduler
+  scheduler:
+    container_name: ofelia
+    image: mcuadros/ofelia:latest
+    networks:
+      - docker_sock_network
+      - tachi_network
+    command: daemon --docker
+    environment:
+      - DOCKER_HOST=tcp://socket-proxy:2375
+    healthcheck:  
+      test: ["CMD-SHELL", "ps | awk '{ print $4 }' | grep -c '^/usr/bin/ofelia$' || exit 1"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
+    labels:
+      - "ofelia.enabled=true"
+    depends_on:
+      - socket-proxy
     restart: unless-stopped
 
 volumes:

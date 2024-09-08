@@ -5,10 +5,8 @@ services:
     image: fireflyiii/core:latest
     container_name: fireflyIII
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.121
-      firefly_network:
-        ipv4_address: 172.18.2.49
+      - proxy_network
+      - firefly_network
     volumes:
       - ${CONFIG_FOLDER}/fireflyiii:/var/www/html/storage/upload
     ports:
@@ -31,13 +29,11 @@ services:
 
   # Bookstack - Docs server
   bookstack:
-    image: linuxserver/bookstack:latest
+    image: ghcr.io/linuxserver/bookstack:latest
     container_name: bookstack
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.122
-      bookstack_network:
-        ipv4_address: 172.18.2.57
+      - proxy_network
+      - bookstack_network
     volumes:
       - ${CONFIG_FOLDER}/bookstack:/config
     ports:
@@ -60,11 +56,15 @@ services:
       - OIDC_ISSUER=https://auth.${DOMAIN_NAME}/application/o/bookstack/
       - OIDC_ISSUER_DISCOVER=true
 
-      - SESSION_LIFETIME=1440  # Session lifetime (mins)
+      - SESSION_LIFETIME=1440 # Session lifetime (mins)
       # - OIDC_DUMP_USER_DETAILS=true
     # Example output {"database":true,"cache":true,"session":true}
     healthcheck:
-      test: ["CMD-SHELL", "[ $(curl -sf http://localhost:80/status | grep -o 'false' | wc -l) -eq 0 ]"]
+      test:
+        [
+          "CMD-SHELL",
+          "[ $(curl -sf http://localhost:80/status | grep -o 'false' | wc -l) -eq 0 ]"
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -88,17 +88,15 @@ services:
     image: gitea/gitea:latest
     container_name: gitea
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.123
-      gitea_network:
-        ipv4_address: 172.18.2.65
+      - proxy_network
+      - gitea_network
     volumes:
       - ${DATA_FOLDER}/gitea:/git
       - ${CONFIG_FOLDER}/gitea:/data
       - /var/log/gitea:/var/log/gitea
       # - /etc/localtime:/etc/localtime:ro
     ports:
-    #   - 2222:22/tcp   # SSH 
+      #   - 2222:22/tcp   # SSH
       - 3001:3000/tcp # Web view
     environment:
       - DISABLE_REGISTRATION=true
@@ -111,11 +109,11 @@ services:
       - GITEA__database__PASSWD=${GITEA_DB_PASSWORD}
       - GITEA__database__LOG_SQL=false
       # Logs
-      - GITEA__log__ROOT_PATH=/var/log/gitea
-      - GITEA__log__MODE=console,file
+      # - GITEA__log__ROOT_PATH=/var/log/gitea
+      - GITEA__log__MODE=console #,file
       - GITEA__log__LEVEL=Info
-      - GITEA__log__ENABLE_ACCESS_LOG=true
-      - GITEA__log__ACCESS=file  # Stored in $ROOT_PATH/access.log
+      # - GITEA__log__ENABLE_ACCESS_LOG=true
+      # - GITEA__log__ACCESS=console #file  # Stored in $ROOT_PATH/access.log
 
       - ROOT_URL=https://git.${DOMAIN_NAME}/
       - DOMAIN=${DOMAIN_NAME}
@@ -125,7 +123,11 @@ services:
       - USER_GID=${GROUPID}
       - USER=git
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/healthz | grep -c '^  \"status\": \"pass\",$' > /dev/null || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          'curl -sf http://localhost:3000/api/healthz | grep -c ''^  "status": "pass",$'' > /dev/null || exit 1'
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -148,8 +150,7 @@ services:
     image: ghcr.io/dani-garcia/vaultwarden:latest
     container_name: vaultwarden
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.124
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/vaultwarden:/data
       - /var/log/vaultwarden:/var/log/vaultwarden
@@ -158,12 +159,12 @@ services:
     #   - 8888:8888/tcp # Web page
     environment:
       # Logs to be collected by Crowdsec
-      - LOG_FILE=/var/log/vaultwarden/vaultwarden.log
+      # - LOG_FILE=/var/log/vaultwarden/vaultwarden.log
       - LOG_LEVEL=info
       - EXTENDED_LOGGING=true
       - ROCKET_CLI_COLORS=false
       - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
-      - INVITATIONS_ALLOWED=false
+      - INVITATIONS_ALLOWED=true
       - SIGNUPS_ALLOWED=false
       - SHOW_PASSWORD_HINT=false
       - ROCKET_PORT=8888
@@ -226,53 +227,52 @@ services:
   #     - DOCKER_MODS=linuxserver/mods:universal-git|linuxserver/mods:code-server-python3|linuxserver/mods:code-server-python2|linuxserver/mods:code-server-php|linuxserver/mods:code-server-nodejs|linuxserver/mods:code-server-npmglobal|linuxserver/mods:code-server-golang|linuxserver/mods:code-server-dotnet|linuxserver/mods:code-server-docker
   #   restart: unless-stopped
   # Tandoor - Recipes server
-  tandoor:
-    image: ghcr.io/tandoorrecipes/recipes:latest
-    container_name: tandoor
-    networks:
-      proxy_network:
-        ipv4_address: 172.18.1.126
-      tandoor_network:
-        ipv4_address: 172.18.2.73
-    volumes:
-      - ${CONFIG_FOLDER}/tandoorrecipes/mediafiles:/opt/recipes/mediafiles
-      - ${CONFIG_FOLDER}/tandoorrecipes/staticfiles:/opt/recipes/staticfiles
-    ports:
-      - 8753:8080/tcp
-    environment:
-      - DEBUG=0
-      - SECRET_KEY=${TANDOOR_KEY}
-      - DB_ENGINE=django.db.backends.postgresql
-      - POSTGRES_DB=${TANDOOR_DB}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PASSWORD=${TANDOOR_DB_PASSWORD}
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=${TANDOOR_DB_USER}
-    restart: unless-stopped
+  # tandoor:
+  #   image: ghcr.io/tandoorrecipes/recipes:latest
+  #   container_name: tandoor
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.126
+  #     tandoor_network:
+  #       ipv4_address: 172.18.2.73
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/tandoorrecipes/mediafiles:/opt/recipes/mediafiles
+  #     - ${CONFIG_FOLDER}/tandoorrecipes/staticfiles:/opt/recipes/staticfiles
+  #   ports:
+  #     - 8753:8080/tcp
+  #   environment:
+  #     - DEBUG=0
+  #     - SECRET_KEY=${TANDOOR_KEY}
+  #     - DB_ENGINE=django.db.backends.postgresql
+  #     - POSTGRES_DB=${TANDOOR_DB}
+  #     - POSTGRES_HOST=postgres
+  #     - POSTGRES_PASSWORD=${TANDOOR_DB_PASSWORD}
+  #     - POSTGRES_PORT=5432
+  #     - POSTGRES_USER=${TANDOOR_DB_USER}
+  #   restart: unless-stopped
   # Gotify - Notification server
-  gotify:
-    image: ghcr.io/gotify/server:latest
-    container_name: gotify
-    networks:
-      proxy_network:
-        ipv4_address: 172.18.1.127
-    volumes:
-      - ${CONFIG_FOLDER}/gotify:/app/data
-      # - /etc/localtime:/etc/localtime:ro
-    # ports:
-    #   - 8800:8800/tcp
-    environment:
-      - GOTIFY_DATABASE_CONNECTION=data/gotify.db
-      - GOTIFY_DATABASE_DIALECT=sqlite3
-      - GOTIFY_SERVER_PORT=8800
-    restart: unless-stopped
+  # gotify:
+  #   image: ghcr.io/gotify/server:latest
+  #   container_name: gotify
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.127
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/gotify:/app/data
+  #     # - /etc/localtime:/etc/localtime:ro
+  #   # ports:
+  #   #   - 8800:8800/tcp
+  #   environment:
+  #     - GOTIFY_DATABASE_CONNECTION=data/gotify.db
+  #     - GOTIFY_DATABASE_DIALECT=sqlite3
+  #     - GOTIFY_SERVER_PORT=8800
+  #   restart: unless-stopped
   # CyberChef
   cyberchef:
     image: mpepping/cyberchef:latest
     container_name: cyberchef
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.128
+      - proxy_network
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8000", "-o", "/dev/null"]
       interval: 30s
@@ -286,14 +286,13 @@ services:
   immich-server:
     image: ghcr.io/immich-app/immich-server:release
     container_name: immich_server
-    entrypoint: ["/bin/sh", "./start-server.sh"]
+    # entrypoint: ["/bin/sh", "./start-server.sh"]
     networks:
-      immich_network:
-        ipv4_address: 172.18.2.97
-      proxy_network:
-        ipv4_address: 172.18.1.130
+      - immich_network
+      - proxy_network
     volumes:
       - ${DATA_FOLDER}/photos:/usr/src/app/upload
+      - /etc/localtime:/etc/localtime:ro
     env_file:
       - stack.env
     environment:
@@ -315,7 +314,7 @@ services:
       - OAUTH_AUTO_REGISTER=true
       - OAUT_BUTTON_TEXT="Login with Authentik"
     healthcheck:
-      test: ["CMD-SHELL", "[ $(pidof immich_server | wc -w) -eq 1 ]"]
+      test: ["CMD-SHELL", "[ $(pidof immich | wc -w) -eq 1 ]"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -343,54 +342,71 @@ services:
       - "homepage.widget.type=immich"
       - "homepage.widget.url=http://immich_server:3001"
       - "homepage.widget.key=${IMMICH_API_KEY}"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu
+                - compute
+                - video
     # ports:
     #   - 2283:3001
     restart: unless-stopped
 
-  immich-microservices:
-    image: ghcr.io/immich-app/immich-server:release
-    entrypoint: ["/bin/sh", "./start-microservices.sh"]
-    container_name: immich_microservices
-    networks:
-      immich_network:
-        ipv4_address: 172.18.2.98
-    volumes:
-      - ${DATA_FOLDER}/photos:/usr/src/app/upload
-    # Find running process 
-    healthcheck:
-      test: ["CMD-SHELL", "[ $(pidof immich_microservices | wc -w) -eq 1 ]"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    environment:
-      - NODE_ENV=production
-      - DB_HOSTNAME=postgres
-      - DB_USERNAME=${IMMICH_DB_USER}
-      - DB_PASSWORD=${IMMICH_DB_PASS}
-      - DB_DATABASE_NAME=${IMMICH_DB}
-      - REDIS_HOSTNAME=redis
-      - ENABLE_MAPBOX=false
-      - JWT_SECRET=${IMMICH_JWT_SECRET}
-      - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
-      # OAuth settings : https://immich.app/docs/usage/oauth
-      - OAUTH_ENABLED=true
-      - OAUTH_ISSUER_URL=https://auth.${DOMAIN_NAME}/application/o/immich/
-      - OAUTH_CLIENT_ID=${IMMICH_OAUTH_ID}
-      - OAUTH_CLIENT_SECRET=${IMMICH_OAUTH_SECRET}
-      # - OAUTH_SCOPE=   # Default to 'openid email profile'
-      - OAUTH_AUTO_REGISTER=true
-      - OAUT_BUTTON_TEXT="Login with Authentik"
-    restart: unless-stopped
+  # immich-microservices:
+  #   image: ghcr.io/immich-app/immich-server:release
+  #   entrypoint: ["/bin/sh", "./start-microservices.sh"]
+  #   container_name: immich_microservices
+  #   networks:
+  #     - immich_network
+  #   volumes:
+  #     - ${DATA_FOLDER}/photos:/usr/src/app/upload
+  #   # Find running process
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "[ $(pidof immich_microservices | wc -w) -eq 1 ]"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #   environment:
+  #     - NODE_ENV=production
+  #     - DB_HOSTNAME=postgres
+  #     - DB_USERNAME=${IMMICH_DB_USER}
+  #     - DB_PASSWORD=${IMMICH_DB_PASS}
+  #     - DB_DATABASE_NAME=${IMMICH_DB}
+  #     - REDIS_HOSTNAME=redis
+  #     - ENABLE_MAPBOX=false
+  #     - JWT_SECRET=${IMMICH_JWT_SECRET}
+  #     - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
+  #     # OAuth settings : https://immich.app/docs/usage/oauth
+  #     - OAUTH_ENABLED=true
+  #     - OAUTH_ISSUER_URL=https://auth.${DOMAIN_NAME}/application/o/immich/
+  #     - OAUTH_CLIENT_ID=${IMMICH_OAUTH_ID}
+  #     - OAUTH_CLIENT_SECRET=${IMMICH_OAUTH_SECRET}
+  #     # - OAUTH_SCOPE=   # Default to 'openid email profile'
+  #     - OAUTH_AUTO_REGISTER=true
+  #     - OAUT_BUTTON_TEXT="Login with Authentik"
+  #   restart: unless-stopped
 
   immich-machine-learning:
     image: ghcr.io/immich-app/immich-machine-learning:release
     container_name: immich_machine_learning
     networks:
-      immich_network:
-        ipv4_address: 172.18.2.99
+      - immich_network
     volumes:
       - ${DATA_FOLDER}/photos:/usr/src/app/upload
       - ${CONFIG_FOLDER}/immich/model-cache:/cache
+    # Add CUDA extension (1.94.0)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu
     # 2 python processes should be running
     healthcheck:
       test: ["CMD-SHELL", "[ $(pidof python | wc -w) -eq 2 ]"]
@@ -407,16 +423,14 @@ services:
       - JWT_SECRET=${IMMICH_JWT_SECRET}
       - VITE_SERVER_ENDPOINT=https://photos.${DOMAIN_NAME}/api
     restart: unless-stopped
-  
+
   # Paperless-ngx - Document management
   paperless-ngx:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     container_name: paperless-ngx
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.129
-      paperless_network:
-        ipv4_address: 172.18.2.89
+      - proxy_network
+      - paperless_network
     environment:
       - USERMAP_UID=${USERID}
       - USERMAP_GID=${GROUPID}
@@ -427,16 +441,21 @@ services:
       - PAPERLESS_TIKA_ENDPOINT=http://paperless-tika:9998
       # Additional languages
       - PAPERLESS_OCR_LANGUAGES=jpn jpn-vert
+      # Enable if invalidating pdf signatures is not a problem
+      - 'PAPERLESS_OCR_USER_ARGS={"invalidate_digital_signatures": true}'
       - PAPERLESS_URL=https://paper.${DOMAIN_NAME}
       - PAPERLESS_SECRET_KEY=${PAPERLESS_KEY}
-      - PAPERLESS_TIME_ZONE=Europe/Paris
+      - PAPERLESS_TIME_ZONE=${TIMEZONE}
       - PAPERLESS_OCR_LANGUAGE=fra
-      - PAPERLESS_LOGGING_DIR=/var/log/paperless/
+      # Default admin user/password, useful for init
+      # - PAPERLESS_ADMIN_USER=admin
+      # - PAPERLESS_ADMIN_PASSWORD=admin
+      # - PAPERLESS_LOGGING_DIR=/var/log/paperless/
       - PAPERLESS_FILENAME_FORMAT={created_year}/{correspondent}/{title}
       # Login
-      - PAPERLESS_ENABLE_HTTP_REMOTE_USER=true
-      - PAPERLESS_HTTP_REMOTE_USER_HEADER_NAME=HTTP_X_AUTHENTIK_USERNAME
-      - PAPERLESS_LOGOUT_REDIRECT_URL=https://auth.${DOMAIN_NAME}/flows/-/default/invalidation/
+      # - PAPERLESS_ENABLE_HTTP_REMOTE_USER=true
+      # - PAPERLESS_HTTP_REMOTE_USER_HEADER_NAME=HTTP_X_AUTHENTIK_USERNAME
+      # - PAPERLESS_LOGOUT_REDIRECT_URL=https://auth.${DOMAIN_NAME}/flows/-/default/invalidation/
     volumes:
       - ${CONFIG_FOLDER}/paperlessngx:/usr/src/paperless/data
       - ${DATA_FOLDER}/paperlessngx:/usr/src/paperless/media
@@ -445,7 +464,8 @@ services:
       # - ./export:/usr/src/paperless/export
       # - ./consume:/usr/src/paperless/consume
     healthcheck:
-      test: ["CMD", "curl", "-sf", "-S", "--max-time", "2", "http://localhost:8000"]
+      test:
+        ["CMD", "curl", "-sf", "-S", "--max-time", "2", "http://localhost:8000"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -483,12 +503,6 @@ services:
       - "homepage.widget.type=paperlessngx"
       - "homepage.widget.url=http://paperless-ngx:8000"
       - "homepage.widget.key=${PAPERLESS_API_KEY}"
-
-    healthcheck:
-      test: ["CMD", "curl", "-fs", "-S", "--max-time", "2", "http://localhost:8000"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     ports:
       - 8089:8000
     restart: unless-stopped
@@ -498,8 +512,7 @@ services:
     image: docker.io/gotenberg/gotenberg:7.10
     container_name: paperless-gotenberg
     networks:
-      paperless_network:
-        ipv4_address: 172.18.2.91
+      - paperless_network
     # The gotenberg chromium route is used to convert .eml files. We do not
     # want to allow external content like tracking pixels or even javascript.
     healthcheck:
@@ -513,15 +526,15 @@ services:
       - "--chromium-allow-list=file:///tmp/.*"
     restart: unless-stopped
 
-  # Tika : 
+  # Tika :
   tika:
     image: ghcr.io/paperless-ngx/tika:latest
     container_name: paperless-tika
     networks:
-      paperless_network:
-        ipv4_address: 172.18.2.92
+      - paperless_network
     healthcheck:
-      test: ["CMD-SHELL", "[ $(ps x | awk '{ print $5 }' | grep -c 'java') -eq 2 ]"]
+      test:
+        ["CMD-SHELL", "[ $(ps x | awk '{ print $5 }' | grep -c 'java') -eq 2 ]"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -532,21 +545,23 @@ services:
     image: ghcr.io/usememos/memos:latest
     container_name: memos
     networks:
-      proxy_network: 
-        ipv4_address: 172.18.1.132
+      - proxy_network
     user: ${USERID}:${GROUPID}
     volumes:
       - ${CONFIG_FOLDER}/memos:/var/opt/memos
     ports:
       - 5230:5230
     healthcheck:
-      test: ["CMD-SHELL", "wget http://localhost:5230/healthz -qO- | grep -c 'Service ready.' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget http://localhost:5230/healthz -qO- | grep -c 'Service ready.' || exit 1"
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
     labels:
       - "traefik.enable=true"
-      # Web UI
       ## HTTP Router
       - "traefik.http.routers.memos-rtr.entrypoints=websecure"
       - "traefik.http.routers.memos-rtr.rule=Host(`memos.${DOMAIN_NAME}`)"
@@ -564,10 +579,8 @@ services:
     image: outlinewiki/outline:latest
     container_name: outline
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.133
-      outline_network:
-        ipv4_address: 172.18.2.121
+      - proxy_network
+      - outline_network
     environment:
       # https://github.com/outline/outline/blob/main/.env.sample
       # https://github.com/outline/outline/discussions/3437
@@ -594,7 +607,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${OUTLINE_BUCKET_SECRET_KEY}
       - AWS_REGION=${OUTLINE_BUCKET_REGION}
       # - AWS_S3_ACCELERATE_URL=
-      - AWS_S3_UPLOAD_BUCKET_URL=https://bucket.${DOMAIN_NAME}  # Should be accessible from outside, especially for image display
+      - AWS_S3_UPLOAD_BUCKET_URL=https://bucket.${DOMAIN_NAME} # Should be accessible from outside, especially for image display
       - AWS_S3_UPLOAD_BUCKET_NAME=outline
       - FILE_STORAGE_UPLOAD_MAX_SIZE=26214400
       # - AWS_S3_FORCE_PATH_STYLE=true
@@ -608,17 +621,17 @@ services:
       - OIDC_USERNAME_CLAIM=preferred_username
       - OIDC_DISPLAY_NAME=Authentik
       - OIDC_SCOPES=openid profile email
-      
+
       - LOG_LEVEL=info
       - WEB_CONCURRENCY=1
       - MAXIMUM_IMPORT_SIZE=5120000
     # ports:
     #   - "3852:3852"
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:3852/_health"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
+    # healthcheck:
+    #   test: ["CMD", "curl", "-sf", "http://localhost:3852/_health"]
+    #   interval: 15s
+    #   timeout: 10s
+    #   retries: 5
     labels:
       - "traefik.enable=true"
       # Web UI
@@ -644,17 +657,14 @@ services:
     depends_on:
       - minio
     restart: unless-stopped
-  # Minio - Bucket storage for Outline
+  # Minio - Bucket storage
   minio:
-    image: minio/minio
+    image: minio/minio:RELEASE.2024-03-10T02-53-48Z # fix minio version across cluster to be able to do replication
     container_name: minio
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.134
-      database_network:
-        ipv4_address: 172.18.2.7
-      outline_network:
-        ipv4_address: 172.18.2.124
+      - proxy_network
+      - database_network
+      - outline_network
     # ports:
     # Bucket
     #   - "9005:9000"
@@ -710,19 +720,16 @@ services:
       - "traefik.http.services.minio-console-svc.loadbalancer.server.port=9025"
     restart: unless-stopped
 
-  
   # Grist - Spreadsheets, to be integrated to Outline
   grist:
     image: gristlabs/grist
     container_name: grist
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.137
-      outline_network:
-        ipv4_address: 172.18.2.125
+      - proxy_network
+      - outline_network
     environment:
-      - GRIST_SINGLE_ORG=grist  # alternatively, GRIST_ORG_IN_PATH: "true" for multi-team operation
-      - GRIST_DEFAULT_EMAIL=${ADMIN_EMAIL}  # Set the email of your admin here, corresponding to the admin of the IDC
+      - GRIST_SINGLE_ORG=grist # alternatively, GRIST_ORG_IN_PATH: "true" for multi-team operation
+      - GRIST_DEFAULT_EMAIL=${ADMIN_EMAIL} # Set the email of your admin here, corresponding to the admin of the IDC
       - GRIST_ALLOWED_HOSTS=wiki.${DOMAIN_NAME}
       - APP_HOME_URL=https://grist.${DOMAIN_NAME}
       - GRIST_HIDE_UI_ELEMENTS=billing
@@ -745,7 +752,8 @@ services:
     volumes:
       - ${CONFIG_FOLDER}/grist:/persist
     healthcheck:
-      test: ["CMD-SHELL", "[ $(ps x | awk '{ print $5 }' | grep -c 'node') -eq 1 ]"]
+      test:
+        ["CMD-SHELL", "[ $(ps x | awk '{ print $5 }' | grep -c 'node') -eq 1 ]"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -767,25 +775,21 @@ services:
     image: louislam/uptime-kuma:latest
     container_name: uptime-kuma
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.135
-      docker_sock_network:
-        ipv4_address: 172.18.4.5
+      - proxy_network
+      - docker_sock_network
     volumes:
       - ${CONFIG_FOLDER}/uptimekuma:/app/data
     ports:
       - "13370:3001"
     restart: always
-  
+
   # Wakapi - programming statistics
   wakapi:
     image: ghcr.io/muety/wakapi:latest
     container_name: wakapi
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.136
-      wakapi_network:
-        ipv4_address: 172.18.2.137
+      - proxy_network
+      - wakapi_network
     environment:
       # See README.md and config.default.yml for all config options
       WAKAPI_PASSWORD_SALT: "${WAKAPI_PWD_SALT}"
@@ -802,7 +806,11 @@ services:
       # WAKAPI_DISABLE_FRONTPAGE: true
     # Healthcheck endpoint returns =1 for 2 services
     healthcheck:
-      test: ["CMD-SHELL", "[ $(wget -qO- http://localhost:3000/api/health | grep -c '=1') -eq 2 ]"]
+      test:
+        [
+          "CMD-SHELL",
+          "[ $(wget -qO- http://localhost:3000/api/health | grep -c '=1') -eq 2 ]"
+        ]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -831,10 +839,8 @@ services:
     image: phalcode/gamevault-backend:latest
     restart: unless-stopped
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.90
-      gamevault_network:
-        ipv4_address: 172.18.2.153
+      - proxy_network
+      - gamevault_network
     environment:
       - PUID=${USERID}
       - PGID=${GROUPID}
@@ -855,6 +861,8 @@ services:
       - ${GAMEVAULT_DATA_FOLDER}/files:/files
       # Mount the folder where GameVault should store its images
       - ${GAMEVAULT_DATA_FOLDER}/images:/images
+      - ${GAMEVAULT_DATA_FOLDER}/logs:/logs
+      - ${GAMEVAULT_DATA_FOLDER}/db:/db
     labels:
       - "traefik.enable=true"
       # Web UI
@@ -876,23 +884,26 @@ services:
     image: ghcr.io/stirling-tools/s-pdf:latest
     container_name: stirling-pdf
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.91
+      - proxy_network
     volumes:
       - ${CONFIG_FOLDER}/stirling-pdf/training-data:/usr/share/tesseract-ocr/5/tessdata #Required for extra OCR languages
       - ${CONFIG_FOLDER}/stirling-pdf/configs:/configs
-#      - /location/of/customFiles:/customFiles/
-#      - /location/of/logs:/logs/
+    #      - /location/of/customFiles:/customFiles/
+    #      - /location/of/logs:/logs/
     environment:
       - DOCKER_ENABLE_SECURITY=false
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/v1/info/status | grep -q 'UP' && curl -sfL http://localhost:8080/ | grep -qv 'Please sign in' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:8080/api/v1/info/status | grep -q 'UP' && curl -sfL http://localhost:8080/ | grep -qv 'Please sign in' || exit 1"
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
     ports:
-      - '8653:8080'
-  
+      - "8653:8080"
+
   # Linkwarden - Link saver
   linkwarden:
     image: ghcr.io/linkwarden/linkwarden:latest
@@ -910,7 +921,7 @@ services:
       # OAuth with Authentik
       - NEXT_PUBLIC_AUTHENTIK_ENABLED=true
       - AUTHENTIK_CUSTOM_NAME=Authentik
-      - AUTHENTIK_ISSUER=https://auth.${DOMAIN_NAME}/application/o/linkwarden
+      - AUTHENTIK_ISSUER=https://auth.${DOMAIN_NAME}/application/o/linkwarden/
       - AUTHENTIK_CLIENT_ID=${LINKWARDEN_OAUTH_ID}
       - AUTHENTIK_CLIENT_SECRET=${LINKWARDEN_OAUTH_SECRET}
       # SMTP Settings

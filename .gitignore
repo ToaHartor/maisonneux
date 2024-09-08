@@ -3,3 +3,6 @@
 stacks/test
 
 .vscode
+
+# Tmp folder for build artefacts
+tmp/*

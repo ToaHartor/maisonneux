@@ -5,10 +5,8 @@ services:
     image: ghcr.io/boerderij/varken:develop
     container_name: varken
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.151
-      monit_network:
-        ipv4_address: 172.18.2.18
+      - proxy_network
+      - monit_network
     volumes:
       - ${CONFIG_FOLDER}/varken:/config
       - /etc/localtime:/etc/localtime:ro
@@ -26,10 +24,8 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.150
-      monit_network:
-        ipv4_address: 172.18.2.17
+      - proxy_network
+      - monit_network
     volumes:
       - ${CONFIG_FOLDER}/grafana:/var/lib/grafana
       - /etc/localtime:/etc/localtime:ro
@@ -75,7 +71,6 @@ services:
       - GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH=contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'
     labels:
       - "traefik.enable=true"
-
       ## HTTP Router
       - "traefik.http.routers.grafana-rtr.entrypoints=websecure"
       - "traefik.http.routers.grafana-rtr.rule=Host(`graphs.${DOMAIN_NAME}`)"
@@ -135,16 +130,11 @@ services:
     container_name: scrutiny
     image: ghcr.io/analogj/scrutiny:master-web  # Replace with master-omnibus to have the collector and the interface
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.152
-      monit_network:
-        ipv4_address: 172.18.2.21
+      - proxy_network
+      - monit_network
   #   cap_add:
   #     - SYS_RAWIO
   #     - SYS_ADMIN # For NVME data collection
-    ports:
-      - "0.0.0.0:5668:8080" # webapp
-      # - "8808:8086" # influxDB admin
     volumes:
       - ${CONFIG_FOLDER}/scrutiny:/opt/scrutiny/config
     environment:
@@ -177,16 +167,17 @@ services:
       - "homepage.description=Disk monitoring"
       - "homepage.widget.type=scrutiny"
       - "homepage.widget.url=http://scrutiny:8080"
+    ports:
+      - "0.0.0.0:5668:8080" # webapp
+      # - "8808:8086" # influxDB admin
     restart: unless-stopped
   # Prometheus - Metrics aggregator
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.153
-      monit_network:
-        ipv4_address: 172.18.2.24
+      - proxy_network
+      - monit_network
     volumes:
       - ${CONFIG_FOLDER}/prometheus/config/:/etc/prometheus/
       - ${CONFIG_FOLDER}/prometheus/data/:/prometheus/
@@ -238,8 +229,7 @@ services:
     image: grafana/mimir:latest
     container_name: mimir
     networks:
-      monit_network:
-        ipv4_address: 172.18.2.26
+      - monit_network
     command: 
       - '--config.file=/etc/mimir.yaml'
       # - '--querier.query-store-after'
@@ -251,6 +241,12 @@ services:
       - ${CONFIG_FOLDER}/mimir/data:/data
     # depends_on: 
       # - minio-monit
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ready | grep -c 'ready'"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
+      start_period: 10s 
     restart: unless-stopped
   
 

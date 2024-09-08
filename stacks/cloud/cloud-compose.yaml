@@ -5,10 +5,8 @@ services:
     image: onlyoffice/documentserver:latest
     container_name: onlyoffice
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.202
-      cloud_network:
-        ipv4_address: 172.18.2.34
+      - proxy_network
+      - cloud_network
     ports:
       - 9980:80
     stdin_open: true
@@ -31,6 +29,11 @@ services:
       - ${CONFIG_FOLDER}/onlyoffice/rabbitmq:/var/lib/rabbitmq
       - ${CONFIG_FOLDER}/onlyoffice/redis:/var/lib/redis
       # - ${CONFIG_FOLDER}/OnlyOffice/config:/etc/onlyoffice/documentserver/  # Not working actually
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:80/healthcheck | grep -c 'true' > /dev/null || exit 1"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
     labels:
       - "traefik.enable=true"
       ## HTTP Router
@@ -52,8 +55,7 @@ services:
     container_name: seafile-memcached
     entrypoint: memcached -m 256
     networks:
-      cloud_network:
-        ipv4_address: 172.18.2.38
+      - cloud_network
     healthcheck:
       test: ["CMD-SHELL", "echo stats | nc 127.0.0.1 11211 > /dev/null || exit 1"]
       interval: 30s
@@ -89,19 +91,17 @@ services:
     # image: docker.seadrive.org/seafileltd/seafile-pro-mc:latest
     container_name: seafile
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.203
-      cloud_network:
-        ipv4_address: 172.18.2.37
+      - proxy_network
+      - cloud_network
     ports:
       - 8857:80
       # 8080 - seafdav
       # 8082 - seafhttp
     volumes:
       - ${DATA_FOLDER}/seafile:/shared/seafile/
-    user: 0:0
+    # user: 0:0
     environment:
-      # - NON_ROOT=true # Starting from version 10, it can run without root with the uid/gid 8000 inside
+      - NON_ROOT=true # Starting from version 10, it can run without root with the uid/gid 8000 inside
       - DB_HOST=mariadb
       # - DB_ROOT_PASSWD=${MYSQL_ROOT_PASSWORD}  # Only required for Seafile to create the user and database it will use afterwards. Its user will be written in the config, after that it can be removed
       # If it doesn't work, remove databases seafile_db, seahub_db, ccnet_db and user 'seafile'@'%.%.%.%' and restart
