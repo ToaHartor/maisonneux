@@ -1,0 +1,17 @@
+extends: default
+
+ignore: |
+  tmp/
+  stacks/
+# ignore-from-file: .gitignore
+rules:
+  line-length: disable
+  document-start:
+    present: false
+  braces:
+    max-spaces-inside: 1
+  indentation:
+    spaces: 2
+    indent-sequences: true
+  comments:
+    min-spaces-from-content: 1
