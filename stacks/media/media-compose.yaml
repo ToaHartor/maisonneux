@@ -1,5 +1,118 @@
 version: "3.9"
 services:
+  # Jellyfin - Media server
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    networks:
+      - proxy_network
+    volumes:
+      - ${JELLYFIN_DATA}/jellyfin:/config
+      - /dev/shm:/transcode
+      - ${DISK_ROOT}:/media
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+      - TZ=${TIMEZONE}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      # - JELLYFIN_PublishedServerUrl=http://example.com
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8096/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - 8096:8096
+      # - 8920:8920 #optional
+      # - 7359:7359/udp #optional
+      # - 1900:1900/udp #optional
+    labels:
+      - "traefik.enable=true"
+      ## HTTP
+      - "traefik.http.routers.jellyfin-rtr.rule=Host(`jellyfin.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.jellyfin-rtr.entrypoints=websecure"
+      - "traefik.http.routers.jellyfin-rtr.tls=true"
+      # - "traefik.http.routers.jellyfin-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.jellyfin-rtr.tls.options=tls-opts@file"
+      ## Middlewares
+      - "traefik.http.routers.jellyfin-rtr.middlewares=chain-noauth@docker" # local-ip-mw@docker,
+      ## HTTP Services
+      - "traefik.http.routers.jellyfin-rtr.service=jellyfin-svc"
+      - "traefik.http.services.jellyfin-svc.loadbalancer.server.port=8096"
+    restart: unless-stopped
+    # devices:
+    #   - /dev/dri:/dev/dri
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+  # Plex - Media server
+  plex:
+    container_name: plex
+    image: lscr.io/linuxserver/plex:latest
+    networks:
+      - proxy_network
+    ports:
+      - 32400:32400
+      # - 8324:8324/tcp
+      # - 32469:32469/tcp
+      # - 1900:1900/udp
+      # - 32410:32410/udp
+      # - 32412:32412/udp
+      # - 32413:32413/udp
+      # - 32414:32414/udp
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-sf",
+          "http://localhost:32400/web/index.html",
+          "-o",
+          "/dev/null",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    environment:
+      - TZ=${TIMEZONE}
+      # - PLEX_CLAIM=<claimToken>
+      - PUID=113
+      - PGID=117
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - VERSION=plexpass
+    volumes:
+      - ${PLEXMEDIASERVER_FOLDER}:/config # Path to ./plexmediaserver/
+      - /dev/shm:/transcode
+      - ${DISK_ROOT}:/sharedfolders
+    # devices:
+    #   - /dev/dri:/dev/dri
+    restart: unless-stopped
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    labels:
+      - "traefik.enable=true"
+      # Router for UI
+      - "traefik.http.routers.plex-rtr.rule=Host(`plex.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.plex-rtr.entrypoints=websecure"
+      - "traefik.http.routers.plex-rtr.tls=true"
+      # - "traefik.http.routers.plex-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.plex-rtr.tls.options=tls-opts@file"
+      # Middleware
+      - "traefik.http.middlewares.plex-redirect.redirectregex.regex=^https://plex.${DOMAIN_NAME}/+$"
+      - "traefik.http.middlewares.plex-redirect.redirectregex.replacement=https://plex.${DOMAIN_NAME}/web/index.html"
+      - "traefik.http.routers.plex-rtr.middlewares=chain-forwardauth-plex@docker,plex-redirect@docker,plex-theme@docker"
+      # Service
+      - "traefik.http.routers.plex-rtr.service=plex-svc"
+      - "traefik.http.services.plex-svc.loadbalancer.server.port=32400"
   # Sonarr
   sonarr:
     image: ghcr.io/linuxserver/sonarr:develop
