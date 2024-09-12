@@ -63,6 +63,7 @@ services:
       - wakapi_network
       - gamevault_network
       - linkwarden_network
+      - maybe_network
     volumes:
       - ${DATA_FOLDER}/postgres:/var/lib/postgresql/data
       # - /etc/localtime:/etc/localtime:ro
@@ -271,3 +272,10 @@ networks:
       config:
         - subnet: 172.18.2.176/29
           gateway: 172.18.2.182
+  maybe_network:
+    name: maybe_network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.2.184/29
+          gateway: 172.18.2.190

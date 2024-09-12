@@ -952,6 +952,52 @@ services:
     # ports:
     #   - 3000:3000
     restart: unless-stopped
+  # Homeassistant
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    networks:
+      - proxy_network
+    volumes:
+      - ${CONFIG_FOLDER}/homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8123/", "-o", "/dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - 8123:8123
+    restart: unless-stopped
+  # Maybe finance - Finance app
+  maybe-finance:
+    image: ghcr.io/maybe-finance/maybe:latest
+    container_name: maybe-finance
+    networks:
+      - proxy_network
+      - maybe_network
+    volumes:
+      - ${CONFIG_FOLDER}/maybe:/rails/storage
+    # env_file:
+    #   - .env
+    environment:
+      - "PORT=9956"
+      # SYNTH_API_KEY:
+      - "SECRET_KEY_BASE=${MAYBE_SECRET_KEY}"
+      - "SELF_HOSTING_ENABLED=true"
+      - "REQUIRE_INVITE_CODE=false" # true
+      # APP_DOMAIN=maybe.${DOMAIN_NAME}
+      - "RAILS_FORCE_SSL=false"
+      - "RAILS_ASSUME_SSL=false"
+      - "GOOD_JOB_EXECUTION_MODE=async"
+      # DB settings
+      - "DB_HOST=postgres"
+      - "DB_PORT=5432"
+      - "POSTGRES_USER=${MAYBE_DB_USER}"
+      - "POSTGRES_PASSWORD=${MAYBE_DB_PASSWORD}"
+    ports:
+      - 9956:9956
+    restart: unless-stopped
 
 networks: # All these networks are created in the databases stack, which links services to their databases
   proxy_network:
@@ -977,6 +1023,8 @@ networks: # All these networks are created in the databases stack, which links s
   gamevault_network:
     external: true
   linkwarden_network:
+    external: true
+  maybe_network:
     external: true
   database_network:
     external: true
