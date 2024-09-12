@@ -1,0 +1,66 @@
+# see https://helmfile.readthedocs.io/en/latest/#configuration
+# environments:
+#   default:
+
+releases:
+  - name: maisonneux
+    chart: ./maisonneux
+    namespace: maisonneux
+    atomic: false
+    cleanupOnFail: false
+    createNamespace: true
+    historyMax: 10
+    timeout: 1800
+    recreatePods: false
+    force: false
+    wait: true
+    values:
+      - values/private/cluster.yaml
+      # - values/subcharts/redis.yaml
+    # waitForJobs: false
+    needs:
+      - postgres/cnpg
+      - redis/redis
+  # Databases
+  - name: cnpg
+    chart: cnpg/cloudnative-pg
+    namespace: postgres
+    version: 0.22.0
+    createNamespace: true
+    # Disable validation as it has to install CRDs
+    disableOpenAPIValidation: true
+    disableValidationOnInstall: true
+    disableValidation: true
+    wait: true
+    values:
+      - values/subcharts/cnpg.yaml
+  # see https://artifacthub.io/packages/helm/bitnami/redis
+  - name: redis
+    chart: bitnami/redis
+    namespace: redis
+    version: 20.0.5
+    createNamespace: true
+    # disableOpenAPIValidation: true
+    # disableValidationOnInstall: true
+    # disableValidation: true
+    # wait: true
+    values:
+      - values/subcharts/redis.yaml
+  # MariaDB operator chart
+  - name: mariadb
+    chart: mariadb-operator/mariadb-operator
+    namespace: mariadb
+    version: 0.30.0
+    createNamespace: true
+    values:
+      - values/subcharts/mariadb.yaml
+
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+  - name: traefik
+    url: https://traefik.github.io/charts
+  - name: cnpg
+    url: https://cloudnative-pg.github.io/charts
+  - name: mariadb-operator
+    url: https://helm.mariadb.com/mariadb-operator

@@ -1,0 +1,9 @@
+cnpg:
+  nodeSelector:
+    kubernetes.io/hostname: "c0"
+  image:
+    repository: "ghcr.io/cloudnative-pg/cloudnative-pg"
+    tag:
+    # pullPolicy:
+  crds:
+    create: true # by default

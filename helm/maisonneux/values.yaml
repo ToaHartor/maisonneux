@@ -1,0 +1,19 @@
+# Config for traefik helm chart
+traefik:
+  deployment:
+    kind: DaemonSet
+
+# Redis
+redis:
+  namespaceOverride: redis
+  master:
+    count: 1
+    persistence: &redis_persistence
+      enabled: true
+
+  replica:
+    replicaCount: 2
+    persistence: *redis_persistence
+
+storage:
+  persistentClassName: standard
