@@ -814,99 +814,165 @@ services:
     ports:
       - 5066:5000
     restart: unless-stopped
-      
-      #Uncomment if you want to implement healthchecks
-      #healthcheck:
-      #   test: curl --fail http://localhost:5000 || exit 1
-      #   interval: 300s
-      #   retries: 3
-      #   start_period: 30s
-      #   timeout: 15s
 
-
-  # FMD2 - Free Manga Downloader 2
-  fmd2:
-    image: banhcanh/docker-fmd2
-    container_name: fmd2
+  # Suwayomi - Tachiyomi on server as downloader
+  suwayomi:
+    image: ghcr.io/suwayomi/tachidesk:preview
+    container_name: suwayomi
     networks:
-      proxy_network:
-        ipv4_address: 172.18.1.112
+      - proxy_network
     environment:
-      - PUID=${USERID}
-      - PGID=${GROUPID}
       - TZ=${TIMEZONE}
-      - UMASK=022 #optional
-    ports:
-      - 6080:6080
+      - DEBUG=false
+      - BIND_IP=0.0.0.0
+      - BIND_PORT=4567
+      - WEB_UI_CHANNEL=bundled
+      - SOCKS_PROXY_ENABLED=false
+      - DOWNLOAD_AS_CBZ=true
+      # - AUTO_DOWNLOAD_CHAPTERS=true
+      - AUTO_DOWNLOAD_EXCLUDE_UNREAD=false
+      - UPDATE_EXCLUDE_UNREAD=false
+      - UPDATE_EXCLUDE_STARTED=false
+      - UPDATE_EXCLUDE_COMPLETED=false
+      # - UPDATE_INTERVAL=12
+      - EXTENSION_REPOS=["https://github.com/keiyoushi/extensions/tree/repo/"]
+      - UPDATE_MANGA_INFO=true
+      - MAX_SOURCES_IN_PARALLEL=6
+      - BASIC_AUTH_ENABLED=false
+      - BASIC_AUTH_USERNAME=manga
+      - BASIC_AUTH_PASSWORD=hello123
     volumes:
-      - ${CONFIG_FOLDER}/fmd2/userdata:/app/FMD2/userdata
-      - ${CONFIG_FOLDER}/fmd2/modules:/app/FMD2/lua
-      - ${CONFIG_FOLDER}/fmd2/data:/app/FMD2/data
-      - ${CONFIG_FOLDER}/fmd2/wine/data:/config/.wine
-      - ${CONFIG_FOLDER}/fmd2/config:/config
-      - ${DOWNLOAD_FOLDER}/complete/manga:/downloads
-      # - ${CONFIG_FOLDER}/FMD2/config:/config
+      # /suwayomi/downloads = ${SUWAYOMI_DL_PATH}
+      - ${DISK_ROOT}/WDBlue4To/suwayomi/downloads:/home/suwayomi/.local/share/Tachidesk/downloads
+      - ${CONFIG_FOLDER}/suwayomi:/home/suwayomi/.local/share/Tachidesk
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4567", "-o", "/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     labels:
-      - "traefik.enable=true"
-      ## HTTP Router
-      - "traefik.http.routers.fmd2-rtr.entrypoints=websecure"
-      - "traefik.http.routers.fmd2-rtr.rule=Host(`fmd.${DOMAIN_NAME}`)"
-      - "traefik.http.routers.fmd2-rtr.tls=true"
-      # - "traefik.http.routers.fmd2-rtr.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.fmd2-rtr.tls.options=tls-opts@file"
-      ## Middlewares
-      - "traefik.http.routers.fmd2-rtr.middlewares=chain-forwardauth@docker"
-      ## HTTP Services
-      - "traefik.http.routers.fmd2-rtr.service=fmd2-svc"
-      - "traefik.http.services.fmd2-svc.loadbalancer.server.port=6080"
-    restart: unless-stopped
-  # Manga Tagger
-  mangatagger:
-    image: banhcanh/manga-tagger
-    container_name: mangatagger
+      # Homepage config
+      - "homepage.group=Media"
+      - "homepage.weight=21"
+      - "homepage.name=Suwayomi"
+      # - "homepage.icon=suwayomi.png"
+      - "homepage.href=http://10.0.0.1:4567"
+      - "homepage.description=Manga downloader"
+    ports:
+      - "4567:4567"
+    restart: on-failure:3
+
+  # Komf - Metadata engine for Komga/Kavita
+  komf:
+    image: sndxr/komf:latest
+    container_name: komf
     networks:
-      mangatagger_network:
-        ipv4_address: 172.18.2.81
+      - proxy_network
+    ports:
+      - "8085:8085"
+    user: "${USERID}:${GROUPID}"
     environment:
-      - PUID=${USERID}
-      - PGID=${GROUPID}
-      - TZ=${TIMEZONE}
-      - UMASK=022 #optional
-
-      - MANGA_TAGGER_DEBUG_MODE=false
-
-      - MANGA_TAGGER_IMAGE_COVER=true
-      - MANGA_TAGGER_ADULT_RESULT=true
-
-      - MANGA_TAGGER_DRY_RUN=false
-      - MANGA_TAGGER_DB_INSERT=false
-      - MANGA_TAGGER_RENAME_FILE=false
-      - MANGA_TAGGER_WRITE_COMICINFO=false
-
-      - MANGA_TAGGER_THREADS=8
-      - MANGA_TAGGER_MAX_QUEUE_SIZE=0
-
-      - MANGA_TAGGER_DB_NAME=${MONGO_INIT_DB}
-      - MANGA_TAGGER_DB_HOST_ADDRESS=mangatagger-db
-      - MANGA_TAGGER_DB_PORT=27017
-      - MANGA_TAGGER_DB_USERNAME=${MONGO_ROOT_USER}
-      - MANGA_TAGGER_DB_PASSWORD=${MONGO_ROOT_PASSWORD}
-      - MANGA_TAGGER_DB_AUTH_SOURCE=admin
-      - MANGA_TAGGER_DB_SELECTION_TIMEOUT=10000
-
-      - MANGA_TAGGER_LOGGING_LEVEL=info
-      - MANGA_TAGGER_LOGGING_CONSOLE=true
-      - MANGA_TAGGER_LOGGING_FILE=true
-      - MANGA_TAGGER_LOGGING_JSON=false
-      - MANGA_TAGGER_LOGGING_TCP=false
-      - MANGA_TAGGER_LOGGING_JSONTCP=false
-
+      - KOMF_KAVITA_BASE_URI=http://kavita:5000
+      - KOMF_KAVITA_API_KEY=${KAVITA_API_KEY}
+      - KOMF_METADATA_PROVIDERS_MAL_CLIENT_ID=${KOMF_MAL_CLIENT_ID}
+      - KOMF_LOG_LEVEL=INFO
+      - TZ=${TIMEZONE} # set the same timezone as your Kavita instance if you want Kavita event listener to work properly
+    healthcheck:
+      test:
+        ["CMD-SHELL", "[ $(ps x | awk '{ print $5 }' | grep -c 'java') -eq 1 ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     volumes:
-      - ${CONFIG_FOLDER}/mangatagger:/config
-      - ${MANGA_FOLDER}:/manga # directory manga-tagger move tagged files to
-      - ${DOWNLOAD_FOLDER}/complete/manga:/downloads # directory manga-tagger watch
-      - ${CONFIG_FOLDER}/mangatagger/MangaTaggerLib.py:/app/Manga-Tagger/MangaTaggerLib/MangaTaggerLib.py # Added my own modifications
+      - ${CONFIG_FOLDER}/komf:/config # path to directory with application.yml and database file
+      # To be able to write the file,
+      - ${DISK_ROOT}/WDBlue4To/suwayomi/downloads:/data/suwayomi/downloads # ${SOURCE_DIR}/suwayomi
     restart: unless-stopped
+
+  # # FMD2 - Free Manga Downloader 2
+  # fmd2:
+  #   image: banhcanh/docker-fmd2
+  #   container_name: fmd2
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.112
+  #   environment:
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - TZ=${TIMEZONE}
+  #     - UMASK=022 #optional
+  #   ports:
+  #     - 6080:6080
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/fmd2/userdata:/app/FMD2/userdata
+  #     - ${CONFIG_FOLDER}/fmd2/modules:/app/FMD2/lua
+  #     - ${CONFIG_FOLDER}/fmd2/data:/app/FMD2/data
+  #     - ${CONFIG_FOLDER}/fmd2/wine/data:/config/.wine
+  #     - ${CONFIG_FOLDER}/fmd2/config:/config
+  #     - ${DOWNLOAD_FOLDER}/complete/manga:/downloads
+  #     # - ${CONFIG_FOLDER}/FMD2/config:/config
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Router
+  #     - "traefik.http.routers.fmd2-rtr.entrypoints=websecure"
+  #     - "traefik.http.routers.fmd2-rtr.rule=Host(`fmd.${DOMAIN_NAME}`)"
+  #     - "traefik.http.routers.fmd2-rtr.tls=true"
+  #     # - "traefik.http.routers.fmd2-rtr.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.fmd2-rtr.tls.options=tls-opts@file"
+  #     ## Middlewares
+  #     - "traefik.http.routers.fmd2-rtr.middlewares=chain-forwardauth@docker"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.fmd2-rtr.service=fmd2-svc"
+  #     - "traefik.http.services.fmd2-svc.loadbalancer.server.port=6080"
+  #   restart: unless-stopped
+  # # Manga Tagger
+  # mangatagger:
+  #   image: banhcanh/manga-tagger
+  #   container_name: mangatagger
+  #   networks:
+  #     mangatagger_network:
+  #       ipv4_address: 172.18.2.81
+  #   environment:
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - TZ=${TIMEZONE}
+  #     - UMASK=022 #optional
+
+  #     - MANGA_TAGGER_DEBUG_MODE=false
+
+  #     - MANGA_TAGGER_IMAGE_COVER=true
+  #     - MANGA_TAGGER_ADULT_RESULT=true
+
+  #     - MANGA_TAGGER_DRY_RUN=false
+  #     - MANGA_TAGGER_DB_INSERT=false
+  #     - MANGA_TAGGER_RENAME_FILE=false
+  #     - MANGA_TAGGER_WRITE_COMICINFO=false
+
+  #     - MANGA_TAGGER_THREADS=8
+  #     - MANGA_TAGGER_MAX_QUEUE_SIZE=0
+
+  #     - MANGA_TAGGER_DB_NAME=${MANGATAGGER_DB}
+  #     - MANGA_TAGGER_DB_HOST_ADDRESS=mongodb
+  #     - MANGA_TAGGER_DB_PORT=27017
+  #     - MANGA_TAGGER_DB_USERNAME=${MANGATAGGER_USER}
+  #     - MANGA_TAGGER_DB_PASSWORD=${MANGATAGGER_PWD}
+  #     - MANGA_TAGGER_DB_AUTH_SOURCE=${MANGATAGGER_DB}
+  #     - MANGA_TAGGER_DB_SELECTION_TIMEOUT=10000
+
+  #     - MANGA_TAGGER_LOGGING_LEVEL=info
+  #     - MANGA_TAGGER_LOGGING_CONSOLE=true
+  #     - MANGA_TAGGER_LOGGING_FILE=true
+  #     - MANGA_TAGGER_LOGGING_JSON=false
+  #     - MANGA_TAGGER_LOGGING_TCP=false
+  #     - MANGA_TAGGER_LOGGING_JSONTCP=false
+
+  #   volumes:
+  #     - ${CONFIG_FOLDER}/mangatagger:/config
+  #     - ${MANGA_FOLDER}:/manga # directory manga-tagger move tagged files to
+  #     - ${DOWNLOAD_FOLDER}/complete/manga:/downloads # directory manga-tagger watch
+  #     - ${CONFIG_FOLDER}/mangatagger/MangaTaggerLib.py:/app/Manga-Tagger/MangaTaggerLib/MangaTaggerLib.py # Added my own modifications
+  #   restart: unless-stopped
   # TubeSync
   tubesync:
     image: ghcr.io/meeb/tubesync:latest
@@ -959,28 +1025,28 @@ services:
       - 8953:8953
     restart: unless-stopped
   # Kaizoku - Manga download manager
-  kaizoku:
-    container_name: kaizoku
-    image: ghcr.io/oae/kaizoku:latest
-    networks:
-      proxy_network:
-        ipv4_address: 172.18.1.116
-      kaizoku_network:
-        ipv4_address: 172.18.2.113
-    environment:
-      - DATABASE_URL=postgresql://${KAIZOKU_DB_USER}:${KAIZOKU_DB_PASS}@postgres:5432/${KAIZOKU_DB}
-      - KAIZOKU_PORT=3968
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - PUID=${USERID}
-      - PGID=${GROUPID}
-      - TZ=${TIMEZONE}
-    volumes:
-      - /sharedfolders/WDBlue4To/kaizoku:/data
-      - ${CONFIG_FOLDER}/kaizoku/config:/config
-      - ${CONFIG_FOLDER}/kaizoku/logs:/logs
-    ports:
-      - '3968:3968'
+  # kaizoku:
+  #   container_name: kaizoku
+  #   image: ghcr.io/oae/kaizoku:latest
+  #   networks:
+  #     proxy_network:
+  #       ipv4_address: 172.18.1.116
+  #     kaizoku_network:
+  #       ipv4_address: 172.18.2.113
+  #   environment:
+  #     - DATABASE_URL=postgresql://${KAIZOKU_DB_USER}:${KAIZOKU_DB_PASS}@postgres:5432/${KAIZOKU_DB}
+  #     - KAIZOKU_PORT=3968
+  #     - REDIS_HOST=redis
+  #     - REDIS_PORT=6379
+  #     - PUID=${USERID}
+  #     - PGID=${GROUPID}
+  #     - TZ=${TIMEZONE}
+  #   volumes:
+  #     - /sharedfolders/WDBlue4To/kaizoku:/data
+  #     - ${CONFIG_FOLDER}/kaizoku/config:/config
+  #     - ${CONFIG_FOLDER}/kaizoku/logs:/logs
+  #   ports:
+  #     - '3968:3968'
   # PyLoad - Direct download manager
   # pyload-ng:
   #   image: lscr.io/linuxserver/pyload-ng:latest
