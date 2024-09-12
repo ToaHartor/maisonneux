@@ -14,7 +14,11 @@ services:
       - PUID=${USERID}
       - PGID=${GROUPID}
     healthcheck:
-      test: ["CMD-SHELL", "ps | awk '{ print $4 \" \" $5}' | grep -c '^python3 /app/Varken.py$' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          'ps | awk ''{ print $4 " " $5}'' | grep -c ''^python3 /app/Varken.py$'' || exit 1',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -125,16 +129,16 @@ services:
   #   restart: unless-stopped
 
   # Scrutiny - Disk monitoring and alerting
-  # The collector 
+  # The collector
   scrutiny:
     container_name: scrutiny
-    image: ghcr.io/analogj/scrutiny:master-web  # Replace with master-omnibus to have the collector and the interface
+    image: ghcr.io/analogj/scrutiny:master-web # Replace with master-omnibus to have the collector and the interface
     networks:
       - proxy_network
       - monit_network
-  #   cap_add:
-  #     - SYS_RAWIO
-  #     - SYS_ADMIN # For NVME data collection
+    #   cap_add:
+    #     - SYS_RAWIO
+    #     - SYS_ADMIN # For NVME data collection
     volumes:
       - ${CONFIG_FOLDER}/scrutiny:/opt/scrutiny/config
     environment:
@@ -182,9 +186,9 @@ services:
       - ${CONFIG_FOLDER}/prometheus/config/:/etc/prometheus/
       - ${CONFIG_FOLDER}/prometheus/data/:/prometheus/
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--log.level=info'
-      - '--storage.tsdb.path=/prometheus'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--log.level=info"
+      - "--storage.tsdb.path=/prometheus"
     ports:
       - 9090:9090
     healthcheck:
@@ -230,8 +234,8 @@ services:
     container_name: mimir
     networks:
       - monit_network
-    command: 
-      - '--config.file=/etc/mimir.yaml'
+    command:
+      - "--config.file=/etc/mimir.yaml"
       # - '--querier.query-store-after'
       # - '--querier.query-ingesters-within'
       # - '--blocks-storage.bucket-store.ignore-blocks-within'
@@ -239,16 +243,16 @@ services:
       - ${CONFIG_FOLDER}/mimir/mimir.yaml:/etc/mimir.yaml
       - ${CONFIG_FOLDER}/mimir/alertmanager-fallback-config.yaml:/etc/alertmanager-fallback-config.yaml
       - ${CONFIG_FOLDER}/mimir/data:/data
-    # depends_on: 
-      # - minio-monit
+    # depends_on:
+    # - minio-monit
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ready | grep -c 'ready'"]
+      test:
+        ["CMD-SHELL", "wget -qO- http://localhost:8080/ready | grep -c 'ready'"]
       interval: 30s
       retries: 3
       timeout: 10s
-      start_period: 10s 
+      start_period: 10s
     restart: unless-stopped
-  
 
 networks:
   proxy_network:

@@ -20,7 +20,7 @@ services:
       - DB_PORT=3306
       - DB_USERNAME=${FIREFLY_DB_USER}
     restart: unless-stopped
-  
+
   ## Firefly III - data importer
   
 
@@ -63,7 +63,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "[ $(curl -sf http://localhost:80/status | grep -o 'false' | wc -l) -eq 0 ]"
+          "[ $(curl -sf http://localhost:80/status | grep -o 'false' | wc -l) -eq 0 ]",
         ]
       interval: 30s
       timeout: 10s
@@ -126,7 +126,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'curl -sf http://localhost:3000/api/healthz | grep -c ''^  "status": "pass",$'' > /dev/null || exit 1'
+          'curl -sf http://localhost:3000/api/healthz | grep -c ''^  "status": "pass",$'' > /dev/null || exit 1',
         ]
       interval: 30s
       timeout: 10s
@@ -555,7 +555,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget http://localhost:5230/healthz -qO- | grep -c 'Service ready.' || exit 1"
+          "wget http://localhost:5230/healthz -qO- | grep -c 'Service ready.' || exit 1",
         ]
       interval: 30s
       timeout: 10s
@@ -809,7 +809,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "[ $(wget -qO- http://localhost:3000/api/health | grep -c '=1') -eq 2 ]"
+          "[ $(wget -qO- http://localhost:3000/api/health | grep -c '=1') -eq 2 ]",
         ]
       interval: 30s
       timeout: 20s
@@ -886,7 +886,7 @@ services:
     networks:
       - proxy_network
     volumes:
-      - ${CONFIG_FOLDER}/stirling-pdf/training-data:/usr/share/tesseract-ocr/5/tessdata #Required for extra OCR languages
+      - ${CONFIG_FOLDER}/stirling-pdf/training-data:/usr/share/tesseract-ocr/5/tessdata # Required for extra OCR languages
       - ${CONFIG_FOLDER}/stirling-pdf/configs:/configs
     #      - /location/of/customFiles:/customFiles/
     #      - /location/of/logs:/logs/
@@ -896,7 +896,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -sf http://localhost:8080/api/v1/info/status | grep -q 'UP' && curl -sfL http://localhost:8080/ | grep -qv 'Please sign in' || exit 1"
+          "curl -sf http://localhost:8080/api/v1/info/status | grep -q 'UP' && curl -sfL http://localhost:8080/ | grep -qv 'Please sign in' || exit 1",
         ]
       interval: 30s
       timeout: 10s

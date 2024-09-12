@@ -384,7 +384,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "netstat -ant | grep 0.0.0.0:9091 | grep -c LISTEN || exit 1"
+          "netstat -ant | grep 0.0.0.0:9091 | grep -c LISTEN || exit 1",
         ]
       interval: 30s
       timeout: 5s
@@ -479,7 +479,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "netstat -ant | grep 0.0.0.0:5800 | grep -c LISTEN || exit 1"
+          "netstat -ant | grep 0.0.0.0:5800 | grep -c LISTEN || exit 1",
         ]
       interval: 30s
       timeout: 5s
@@ -605,7 +605,7 @@ services:
           "wget",
           "http://localhost:5055/api/v1/status",
           "-qO",
-          "/dev/null"
+          "/dev/null",
         ]
       interval: 30s
       timeout: 10s

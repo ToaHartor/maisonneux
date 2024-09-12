@@ -30,7 +30,11 @@ services:
       - ${CONFIG_FOLDER}/onlyoffice/redis:/var/lib/redis
       # - ${CONFIG_FOLDER}/OnlyOffice/config:/etc/onlyoffice/documentserver/  # Not working actually
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:80/healthcheck | grep -c 'true' > /dev/null || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:80/healthcheck | grep -c 'true' > /dev/null || exit 1",
+        ]
       interval: 30s
       retries: 3
       timeout: 10s
@@ -57,12 +61,13 @@ services:
     networks:
       - cloud_network
     healthcheck:
-      test: ["CMD-SHELL", "echo stats | nc 127.0.0.1 11211 > /dev/null || exit 1"]
+      test:
+        ["CMD-SHELL", "echo stats | nc 127.0.0.1 11211 > /dev/null || exit 1"]
       interval: 30s
       retries: 3
       timeout: 10s
     restart: unless-stopped
-  
+
   # Elasticsearch for Seafile - Pro version only
   # elasticsearch:
   #   image: elasticsearch:7.16.2
@@ -83,7 +88,7 @@ services:
   #   volumes:
   #     - ${DATA_FOLDER}/elasticsearch:/usr/share/elasticsearch/data  # Requested, specifies the path to Elasticsearch data persistent store.
   #   restart: unless-stopped
-   
+
   seafile:
     # Community edition
     image: seafileltd/seafile-mc:latest
@@ -105,10 +110,10 @@ services:
       - DB_HOST=mariadb
       # - DB_ROOT_PASSWD=${MYSQL_ROOT_PASSWORD}  # Only required for Seafile to create the user and database it will use afterwards. Its user will be written in the config, after that it can be removed
       # If it doesn't work, remove databases seafile_db, seahub_db, ccnet_db and user 'seafile'@'%.%.%.%' and restart
-      - TIME_ZONE=${TIMEZONE}  # Optional, default is UTC. Should be uncomment and set to your local time zone.
+      - TIME_ZONE=${TIMEZONE} # Optional, default is UTC. Should be uncomment and set to your local time zone.
       - SEAFILE_ADMIN_EMAIL=${SEAFILE_ADMIN_EMAIL} # Specifies Seafile admin user, default is 'me@example.com'.
       - SEAFILE_ADMIN_PASSWORD=${SEAFILE_ADMIN_PASSWORD} # Specifies Seafile admin password, default is 'asecret'.
-      - SEAFILE_SERVER_LETSENCRYPT=false   # Not using HTTPS since it will be behind Traefik
+      - SEAFILE_SERVER_LETSENCRYPT=false # Not using HTTPS since it will be behind Traefik
       - SEAFILE_SERVER_HOSTNAME=cloud.${DOMAIN_NAME} # Specifies your host name if https is enabled.
       - SEAFILE_SERVICE_URL=https://cloud.${DOMAIN_NAME}
       - SEAFILE_FILE_SERVER_ROOT=https://cloud.${DOMAIN_NAME}/seafhttp
@@ -121,6 +126,14 @@ services:
       retries: 3
       timeout: 10s
     labels:
+      # Homepage config
+      - "homepage.group=Services"
+      - "homepage.weight=5"
+      - "homepage.name=Seafile"
+      - "homepage.icon=seafile.png"
+      - "homepage.href=https://cloud.${DOMAIN_NAME}"
+      - "homepage.description=File hosting server"
+      # Traefik
       - "traefik.enable=true"
       # Seafile main
       ## HTTP Router
@@ -225,7 +238,6 @@ networks:
   #     # Nextcloud special headers
   #     - "traefik.http.middlewares.nextcloud-mw.headers.customFrameOptionsValue=allow-from https://${DOMAIN_NAME}"
   #     - "traefik.http.middlewares.nextcloud-mw.headers.contentSecurityPolicy=frame-ancestors 'self' ${DOMAIN_NAME} *.${DOMAIN_NAME}"
-      
   #     - "traefik.http.middlewares.nextcloud-mw.headers.stsSeconds=155520011"
   #     - "traefik.http.middlewares.nextcloud-mw.headers.stsIncludeSubdomains=true"
   #     - "traefik.http.middlewares.nextcloud-mw.headers.stsPreload=true"
@@ -241,7 +253,7 @@ networks:
   #     - "traefik.http.middlewares.nextcloud-mw.headers.referrerPolicy=same-origin"
   #     - "traefik.http.middlewares.nextcloud-mw.headers.permissionsPolicy=camera=(), microphone=(), geolocation=(), payment=(), usb=(), vr=()"
   #     - "traefik.http.middlewares.nextcloud-mw.headers.customResponseHeaders.X-Robots-Tag=none,noarchive,nosnippet,notranslate,noimageindex,"
-  #     - "traefik.http.middlewares.nextcloud-mw.headers.customResponseHeaders.server=" 
+  #     - "traefik.http.middlewares.nextcloud-mw.headers.customResponseHeaders.server="
   #     # Nextcloud webdav redirect middleware
   #     - "traefik.http.middlewares.nextcloud-redirect.redirectregex.regex=/.well-known/(card|cal)dav"
   #     - "traefik.http.middlewares.nextcloud-redirect.redirectregex.replacement=/remote.php/dav/"

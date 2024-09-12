@@ -13,7 +13,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'curl -sf localhost:8978/status | grep -c ''"health":"ok"'' || exit 1'
+          'curl -sf localhost:8978/status | grep -c ''"health":"ok"'' || exit 1',
         ]
       interval: 30s
       timeout: 10s
@@ -148,7 +148,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "echo 'db.stats().ok' | mongosh localhost:27017/test --quiet || exit 1"
+          "echo 'db.stats().ok' | mongosh localhost:27017/test --quiet || exit 1",
         ]
       interval: 30s
       timeout: 10s

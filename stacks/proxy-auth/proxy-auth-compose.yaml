@@ -87,7 +87,7 @@ services:
       - "--providers.file.directory=/config"
       - "--providers.file.watch=true"
       - "--providers.docker=true"
-      - "--providers.docker.endpoint=tcp://socket-proxy:2375"  # unix:///var/run/docker.sock
+      - "--providers.docker.endpoint=tcp://socket-proxy:2375" # unix:///var/run/docker.sock
       - "--providers.docker.exposedByDefault=false"
       - "--providers.docker.network=proxy_network"
       # HTTP to HTTPS redirection
@@ -130,9 +130,9 @@ services:
       # API service
       - "traefik.http.routers.traefik-rtr.service=api@internal"
       ## Healthcheck/ping
-      #- "traefik.http.routers.ping.rule=Host(`traefik.$DOMAINNAME_SHB`) && Path(`/ping`)"
-      #- "traefik.http.routers.ping.tls=true"
-      #- "traefik.http.routers.ping.service=ping@internal"
+      # - "traefik.http.routers.ping.rule=Host(`traefik.$DOMAINNAME_SHB`) && Path(`/ping`)"
+      # - "traefik.http.routers.ping.tls=true"
+      # - "traefik.http.routers.ping.service=ping@internal"
       ## Middleware chains
       - "traefik.http.middlewares.chain-forwardauth.chain.middlewares=secureheaders-mw,authentik-mw" # ratelimit-mw,compress-mw
       - "traefik.http.middlewares.chain-forwardauth-plex.chain.middlewares=secureheaders-mw,authentik-plex-mw"
@@ -170,7 +170,7 @@ services:
       - "traefik.http.middlewares.secureheaders-mw.headers.referrerPolicy=strict-origin"
       - "traefik.http.middlewares.secureheaders-mw.headers.permissionsPolicy=camera=(), microphone=(), geolocation=(), payment=(), usb=(), vr=()"
       - "traefik.http.middlewares.secureheaders-mw.headers.customResponseHeaders.X-Robots-Tag=none,noarchive,nosnippet,notranslate,noimageindex,"
-      - "traefik.http.middlewares.secureheaders-mw.headers.customResponseHeaders.server=" 
+      - "traefik.http.middlewares.secureheaders-mw.headers.customResponseHeaders.server="
     # For Plex : https://www.reddit.com/r/Traefik/comments/dc2pn7/how_to_direct_traefik_v2_to_nondocker_services/
     depends_on:
       - socket-proxy
@@ -180,7 +180,7 @@ services:
       retries: 3
       timeout: 10s
     restart: always
-  
+
   adguard:
     image: adguard/adguardhome:latest
     container_name: adguard
@@ -197,20 +197,20 @@ services:
       # DNS
       - 0.0.0.0:53:53/udp
     labels:
-    #   - "traefik.enable=true"
-    #   ## HTTP Router
-    #   - "traefik.http.routers.theme-park-rtr.priority=150"
-    #   - "traefik.http.routers.theme-park-rtr.entrypoints=websecure"
-    #   - "traefik.http.routers.theme-park-rtr.rule=Host(`ads.${DOMAIN_NAME}`)"
-    #   - "traefik.http.routers.theme-park-rtr.tls=true"
-    # #   - "traefik.http.routers.theme-park-rtr.tls.certresolver=letsencrypt"
-    #   - "traefik.http.routers.theme-park-rtr.tls.options=tls-opts@file"
-    #   ## Middlewares
-    #   - "traefik.http.routers.theme-park-rtr.middlewares=chain-noauth@docker"
-    #   ## HTTP Services
-    #   - "traefik.http.routers.theme-park-rtr.service=theme-park-svc"
-    #   - "traefik.http.services.theme-park-svc.loadbalancer.server.port=3000"
-    # Homepage config
+      #   - "traefik.enable=true"
+      #   ## HTTP Router
+      #   - "traefik.http.routers.theme-park-rtr.priority=150"
+      #   - "traefik.http.routers.theme-park-rtr.entrypoints=websecure"
+      #   - "traefik.http.routers.theme-park-rtr.rule=Host(`ads.${DOMAIN_NAME}`)"
+      #   - "traefik.http.routers.theme-park-rtr.tls=true"
+      # #   - "traefik.http.routers.theme-park-rtr.tls.certresolver=letsencrypt"
+      #   - "traefik.http.routers.theme-park-rtr.tls.options=tls-opts@file"
+      #   ## Middlewares
+      #   - "traefik.http.routers.theme-park-rtr.middlewares=chain-noauth@docker"
+      #   ## HTTP Services
+      #   - "traefik.http.routers.theme-park-rtr.service=theme-park-svc"
+      #   - "traefik.http.services.theme-park-svc.loadbalancer.server.port=3000"
+      # Homepage config
       - "homepage.group=Infrastructure"
       - "homepage.weight=10"
       - "homepage.name=Adguard"
@@ -380,7 +380,7 @@ services:
       # - /etc/localtime:/etc/localtime:ro
       # - ${CONFIG_FOLDER}/Tautulli/newsletters:/newsletter # For tautulli newsletters, needs fix
     ports:
-    #   - 443:443/tcp
+      #   - 443:443/tcp
       - 0.0.0.0:4080:80/tcp
     environment:
       - branch=v2-master
@@ -388,7 +388,7 @@ services:
       - PUID=${USERID}
       - PGID=${GROUPID}
     labels:
-    # https://github.com/causefx/Organizr/issues/1240
+      # https://github.com/causefx/Organizr/issues/1240
       - "traefik.enable=true"
       ## HTTP Router
       - "traefik.http.routers.organizr-rtr.priority=100"
@@ -439,32 +439,32 @@ services:
       ## HTTP Services
       - "traefik.http.routers.theme-park-rtr.service=theme-park-svc"
       - "traefik.http.services.theme-park-svc.loadbalancer.server.port=80"
-    # Theme middlewares
-    ## Organizr
+      # Theme middlewares
+      ## Organizr
       - "traefik.http.middlewares.organizr-theme.plugin.theme-park.app=organizr"
       - "traefik.http.middlewares.organizr-theme.plugin.theme-park.theme=${APP_THEME}"
       - "traefik.http.middlewares.organizr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
-    ## Sonarr
+      ## Sonarr
       - "traefik.http.middlewares.sonarr-theme.plugin.theme-park.app=sonarr"
       - "traefik.http.middlewares.sonarr-theme.plugin.theme-park.theme=${APP_THEME}"
       - "traefik.http.middlewares.sonarr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
-    ## Radarr
+      ## Radarr
       - "traefik.http.middlewares.radarr-theme.plugin.theme-park.app=radarr"
       - "traefik.http.middlewares.radarr-theme.plugin.theme-park.theme=${APP_THEME}"
       - "traefik.http.middlewares.radarr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
-    ## Lidarr
+      ## Lidarr
       - "traefik.http.middlewares.lidarr-theme.plugin.theme-park.app=lidarr"
       - "traefik.http.middlewares.lidarr-theme.plugin.theme-park.theme=${APP_THEME}"
       - "traefik.http.middlewares.lidarr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
-    ## Prowlarr
+      ## Prowlarr
       - "traefik.http.middlewares.prowlarr-theme.plugin.theme-park.app=prowlarr"
       - "traefik.http.middlewares.prowlarr-theme.plugin.theme-park.theme=${APP_THEME}"
       - "traefik.http.middlewares.prowlarr-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
-    ## Tautulli
+      ## Tautulli
       - "traefik.http.middlewares.tautulli-theme.plugin.theme-park.app=tautulli"
       - "traefik.http.middlewares.tautulli-theme.plugin.theme-park.theme=${APP_THEME}"
       - "traefik.http.middlewares.tautulli-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
-    ## Plex
+      ## Plex
       - "traefik.http.middlewares.plex-theme.plugin.theme-park.app=plex"
       - "traefik.http.middlewares.plex-theme.plugin.theme-park.theme=${APP_THEME}"
       - "traefik.http.middlewares.plex-theme.plugin.theme-park.baseUrl=https://${DOMAIN_NAME}/themepark"
@@ -505,8 +505,8 @@ services:
       - docker_sock_network
     # privileged: true # true for VM. False for unprivileged LXC container.
     ports:
-    # Exposed internally, to make it available to metrics collecter like Telegraf, which are installed directly on the server
-    - "127.0.0.1:2375:2375"
+      # Exposed internally, to make it available to metrics collecter like Telegraf, which are installed directly on the server
+      - "127.0.0.1:2375:2375"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     environment:
@@ -555,10 +555,10 @@ services:
       - proxy_network
       - docker_sock_network
     environment:
-      - COLLECTIONS=crowdsecurity/traefik 
-        crowdsecurity/http-cve 
-        crowdsecurity/whitelist-good-actors 
-        crowdsecurity/iptables crowdsecurity/linux 
+      - COLLECTIONS=crowdsecurity/traefik
+        crowdsecurity/http-cve
+        crowdsecurity/whitelist-good-actors
+        crowdsecurity/iptables crowdsecurity/linux
         crowdsecurity/nginx crowdsecurity/sshd
         LePresidente/grafana LePresidente/gitea
         Dominic-Wagner/vaultwarden firix/authentik
@@ -586,13 +586,13 @@ services:
       # - /var/log/crowdsec:/var/log/crowdsec:ro
       - ${CONFIG_FOLDER}/crowdsec/data:/var/lib/crowdsec/data
       - ${CONFIG_FOLDER}/crowdsec/config:/etc/crowdsec
-    healthcheck:  
+    healthcheck:
       test: ["CMD", "cscli", "version"]
       interval: 30s
       retries: 3
       timeout: 10s
-    ports: 
-    - 10808:8080
+    ports:
+      - 10808:8080
     restart: unless-stopped
   # Crowdsec Traefik Bouncer
   crowdsec-traefik-bouncer:
@@ -618,8 +618,12 @@ services:
     command: daemon --docker
     environment:
       - DOCKER_HOST=tcp://socket-proxy:2375
-    healthcheck:  
-      test: ["CMD-SHELL", "ps | awk '{ print $4 }' | grep -c '^/usr/bin/ofelia$' || exit 1"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "ps | awk '{ print $4 }' | grep -c '^/usr/bin/ofelia$' || exit 1",
+        ]
       interval: 30s
       retries: 3
       timeout: 10s
@@ -636,15 +640,15 @@ volumes:
 networks:
   proxy_network:
     # external: true
-     name: proxy_network
-     ipam:
+    name: proxy_network
+    ipam:
       driver: default
       config:
         - subnet: 172.18.1.0/24
           gateway: 172.18.1.254
   auth_network:
-     name: auth_network
-     ipam:
+    name: auth_network
+    ipam:
       driver: default
       config:
         - subnet: 172.18.3.0/24
