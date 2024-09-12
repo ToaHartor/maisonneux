@@ -14,7 +14,7 @@ The main operations (cluster and VM provisioning) are performed using the `Makef
 
 ## Repository organization
 
-- `docker-compose/` contains the former stacks I used to manage my microservices
+- `docker-compose/` contains the former stacks I used to manage my microservices. See [this page](docker-compose/README.md) for to see the list of microservices deployed.
 - `helm/` contains the Helm charts used to deploy the microservices in K8s
 - `scripts/` contains scripts used to setup environment, check health of services or build images
 - `terraform/` contains a multi-environment . Static environment deploys static VMs and LXCs (such as the storage VM), and K8s environment deploys a Kubernetes cluster. See [this page](terraform/README.md) for more informations.
