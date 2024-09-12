@@ -1,6 +1,6 @@
-# Masking test folder for stacks
+# Masking test folder for docker compose stacks
 
-stacks/test
+docker-compose/test
 
 .vscode
 
