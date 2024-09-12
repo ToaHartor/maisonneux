@@ -48,11 +48,13 @@ tf-upgrade:
 
 # Terraform commands, argument is workspaces, and commands are detected in ifeq filter
 $(WORKSPACES):
+# make tf-plan <ws>
 ifeq (tf-plan,$(filter tf-plan,$(MAKECMDGOALS)))
 	@cd terraform && \
 	tofu workspace select $@ && \
 	tofu plan -out $@.tfplan -var-file='$@/config.tfvars'
 endif
+# make tf-apply <ws>
 ifeq (tf-apply,$(filter tf-apply,$(MAKECMDGOALS)))
 	@cd terraform && \
 	tofu workspace select $@ && \
@@ -61,11 +63,13 @@ ifeq (tf-apply,$(filter tf-apply,$(MAKECMDGOALS)))
 		cd terraform && tofu output -raw talosconfig >../tmp/talosconfig.yml && tofu output -raw kubeconfig >../tmp/kubeconfig.yml; \
 	fi
 endif
+# make tf-destroy <ws>
 ifeq (tf-destroy,$(filter tf-destroy,$(MAKECMDGOALS)))
 	@cd terraform && \
 	tofu workspace select $@ && \
 	tofu apply -destroy
 endif
+# make tf-init <ws>
 ifeq (tf-init,$(filter tf-init,$(MAKECMDGOALS)))
 	@cd terraform && \
 	tofu workspace select $@ && \
