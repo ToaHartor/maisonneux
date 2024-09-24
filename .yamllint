@@ -2,7 +2,7 @@ extends: default
 
 ignore: |
   tmp/
-  stacks/
+  docker-compose/
 # ignore-from-file: .gitignore
 rules:
   line-length: disable
