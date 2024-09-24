@@ -28,7 +28,7 @@ services:
   #   restart: unless-stopped
   # Traefik - Reverse proxy
   traefik:
-    image: traefik:2.11.3
+    image: traefik:v2
     container_name: traefik
     networks:
       - proxy_network
