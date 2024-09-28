@@ -1,9 +1,15 @@
-cnpg:
-  nodeSelector:
-    kubernetes.io/hostname: "c0"
-  image:
-    repository: "ghcr.io/cloudnative-pg/cloudnative-pg"
-    tag:
-    # pullPolicy:
-  crds:
-    create: true # by default
+# https://artifacthub.io/packages/helm/cloudnative-pg/cloudnative-pg
+
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""
+
+tolerations:
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+image:
+  repository: "ghcr.io/cloudnative-pg/cloudnative-pg"
+  tag:
+  # pullPolicy:
+crds:
+  create: true # by default

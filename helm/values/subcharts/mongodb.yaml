@@ -1,0 +1,11 @@
+# see https://github.com/mongodb/helm-charts/blob/main/charts/community-operator/values.yaml
+operator:
+  replicas: 1
+  watchNamespace: mongodb
+# Default
+# registry:
+#   agent: quay.io/mongodb
+#   versionUpgradeHook: quay.io/mongodb
+#   readinessProbe: quay.io/mongodb
+#   operator: quay.io/mongodb
+#   pullPolicy: Always
