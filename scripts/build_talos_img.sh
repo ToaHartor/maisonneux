@@ -25,6 +25,9 @@ talos_spin_extension_tag="v0.15.0@sha256:0ec7613913960c95413699a46745a788d4c2277
 piraeus_operator_version="2.5.2"
 
 
+# see https://github.com/siderolabs/extensions/pkgs/container/iscsi-tools
+talos_iscsi_tools_tag="v0.1.5@sha256:9ca66809dcd794b9313c1a5bafe4f648de8c0af03a4148e4a82722e378fd62e0"
+
 # see https://www.talos.dev/v1.7/talos-guides/install/boot-assets/
 # see https://www.talos.dev/v1.7/advanced/metal-network-configuration/
 # see Profile type at https://github.com/siderolabs/talos/blob/v1.7.6/pkg/imager/profile/profile.go#L22-L45
@@ -285,6 +288,7 @@ input:
     imageRef: ghcr.io/siderolabs/installer:$talos_version_tag  # or \$nvidia_installer_custom_image
   systemExtensions:
     - imageRef: ghcr.io/siderolabs/qemu-guest-agent:$talos_qemu_guest_agent_extension_tag
+    - imageRef: ghcr.io/siderolabs/iscsi-tools:$talos_iscsi_tools_tag
     # - imageRef: ghcr.io/siderolabs/drbd:$talos_drbd_extension_tag
     # - imageRef: ghcr.io/siderolabs/spin:$talos_spin_extension_tag
 output:

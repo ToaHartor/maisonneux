@@ -42,6 +42,57 @@ locals {
     },
   ]
   cilium_external_lb_manifest = join("---\n", [for d in local.cilium_external_lb_manifests : yamlencode(d)])
+
+  # https://artifacthub.io/packages/helm/cilium/cilium
+  cilium_chart_values = {
+    ipam = {
+      mode = "cluster-pool" # "kubernetes"
+      operator = {
+        clusterPoolIPv4MaskSize = 24
+        clusterPoolIPv4PodCIDRList = var.cluster_pod_cidr
+      }
+    }
+    k8s = {
+      requireIPv4PodCIDR = true
+    }
+    securityContext = {
+      capabilities = {
+        ciliumAgent = ["CHOWN","KILL","NET_ADMIN","NET_RAW","IPC_LOCK","SYS_ADMIN","SYS_RESOURCE","DAC_OVERRIDE","FOWNER","SETGID","SETUID"]
+        cleanCiliumState = ["NET_ADMIN","SYS_ADMIN","SYS_RESOURCE"]
+      }
+    }
+    cgroup = {
+      autoMount = {
+        enabled = false
+      }
+      hostRoot = "/sys/fs/cgroup"
+    }
+    k8sServiceHost = "localhost"
+    k8sServicePort = local.common_machine_config.machine.features.kubePrism.port
+    kubeProxyReplacement = true
+    # ipv4NativeRoutingCIDR = var.cluster_pod_cidr
+    l2announcements = {
+      enabled = true
+    }
+    devices = ["eth0"]
+    ingressController = {
+      enabled = true
+      default = true
+      loadbalancerMode = "shared"
+      enforceHttps = false
+    }
+    envoy = {
+      enabled = true
+    }
+    hubble = {
+      relay = {
+        enabled = true
+      }
+      ui = {
+        enabled = true
+      }
+    }
+  }
 }
 
 // see https://www.talos.dev/v1.7/kubernetes-guides/network/deploying-cilium/#method-4-helm-manifests-inline-install
@@ -58,79 +109,8 @@ data "helm_template" "cilium" {
   repository = "https://helm.cilium.io"
   chart      = "cilium"
   # renovate: datasource=helm depName=cilium registryUrl=https://helm.cilium.io
-  version      = "1.16.0"
+  version      = "1.16.1"
   kube_version = var.kubernetes_version
   api_versions = []
-  set {
-    name  = "ipam.mode"
-    value = "kubernetes"
-  }
-  set {
-    name  = "securityContext.capabilities.ciliumAgent"
-    value = "{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}"
-  }
-  set {
-    name  = "securityContext.capabilities.cleanCiliumState"
-    value = "{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}"
-  }
-  set {
-    name  = "cgroup.autoMount.enabled"
-    value = "false"
-  }
-  set {
-    name  = "cgroup.hostRoot"
-    value = "/sys/fs/cgroup"
-  }
-  set {
-    name  = "k8sServiceHost"
-    value = "localhost"
-  }
-  set {
-    name  = "k8sServicePort"
-    value = local.common_machine_config.machine.features.kubePrism.port
-  }
-  set {
-    name  = "kubeProxyReplacement"
-    value = "true"
-  }
-  set {
-    name  = "ipv4NativeRoutingCIDR"
-    value = var.cluster_pod_cidr
-  }
-  set {
-    name  = "l2announcements.enabled"
-    value = "true"
-  }
-  set {
-    name  = "devices"
-    value = "{eth0}"
-  }
-  set {
-    name  = "ingressController.enabled"
-    value = "true"
-  }
-  set {
-    name  = "ingressController.default"
-    value = "true"
-  }
-  set {
-    name  = "ingressController.loadbalancerMode"
-    value = "shared"
-  }
-  set {
-    name  = "ingressController.enforceHttps"
-    value = "false"
-  }
-  set {
-    name  = "envoy.enabled"
-    value = "true"
-  }
-  set {
-    name  = "hubble.relay.enabled"
-    value = "true"
-  }
-  set {
-    name  = "hubble.ui.enabled"
-    value = "true"
-  }
+  values = [yamlencode(local.cilium_chart_values)]
 }
