@@ -3,27 +3,13 @@ set -euo pipefail
 
 # see https://github.com/siderolabs/talos/releases
 # renovate: datasource=github-releases depName=siderolabs/talos
-talos_version="1.7.6"
+talos_version="1.8.0"
 # https://github.com/siderolabs/pkgs/tags
-talos_pkg_branch="release-1.7"
+talos_pkg_branch="release-1.8"
 
 # see https://github.com/siderolabs/extensions/pkgs/container/qemu-guest-agent
 # see https://github.com/siderolabs/extensions/tree/main/guest-agents/qemu-guest-agent
-talos_qemu_guest_agent_extension_tag="8.2.2@sha256:e8020f513f891896fd3bb506c7af8a763a3c70b063e4901caaad073b5e6e0815"
-
-# see https://github.com/siderolabs/extensions/pkgs/container/drbd
-# see https://github.com/siderolabs/extensions/tree/main/storage/drbd
-# see https://github.com/LINBIT/drbd
-talos_drbd_extension_tag="9.2.8-v1.7.6@sha256:acd871c1367ce94121689d069fd563c54ca0edac8698325f34a41dd3456eceea"
-
-# see https://github.com/siderolabs/extensions/pkgs/container/spin
-# see https://github.com/siderolabs/extensions/tree/main/container-runtime/spin
-talos_spin_extension_tag="v0.15.0@sha256:0ec7613913960c95413699a46745a788d4c22776942c2d24ebd0457f11e6be33"
-
-# see https://github.com/piraeusdatastore/piraeus-operator/releases
-# renovate: datasource=github-releases depName=piraeusdatastore/piraeus-operator
-piraeus_operator_version="2.5.2"
-
+talos_qemu_guest_agent_extension_tag="9.1.0@sha256:cd8154036a0711f6f0a2ec9d6ce8539219d0e46a78e0eca22598d4d884f3f52c"
 
 # see https://github.com/siderolabs/extensions/pkgs/container/iscsi-tools
 talos_iscsi_tools_tag="v0.1.5@sha256:9ca66809dcd794b9313c1a5bafe4f648de8c0af03a4148e4a82722e378fd62e0"
@@ -277,6 +263,7 @@ secureboot: false
 version: $talos_version_tag
 customization:
   extraKernelArgs:
+    - console=ttyS0
     - net.ifnames=0
     # - net.core.bpf_jit_harden=1
 input:
@@ -289,8 +276,6 @@ input:
   systemExtensions:
     - imageRef: ghcr.io/siderolabs/qemu-guest-agent:$talos_qemu_guest_agent_extension_tag
     - imageRef: ghcr.io/siderolabs/iscsi-tools:$talos_iscsi_tools_tag
-    # - imageRef: ghcr.io/siderolabs/drbd:$talos_drbd_extension_tag
-    # - imageRef: ghcr.io/siderolabs/spin:$talos_spin_extension_tag
 output:
   kind: image
   imageOptions:

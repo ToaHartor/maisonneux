@@ -109,7 +109,7 @@ data "helm_template" "cilium" {
   repository = "https://helm.cilium.io"
   chart      = "cilium"
   # renovate: datasource=helm depName=cilium registryUrl=https://helm.cilium.io
-  version      = "1.16.1"
+  version      = "1.16.2"
   kube_version = var.kubernetes_version
   api_versions = []
   values = [yamlencode(local.cilium_chart_values)]
