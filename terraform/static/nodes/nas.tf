@@ -40,8 +40,8 @@ resource "proxmox_virtual_environment_vm" "nas" {
 
   cpu {
     # affinity     = null
-    # architecture = "x86_64"
-    cores = 16
+    architecture = "x86_64"
+    cores        = 16
     # flags        = []
     # hotplugged   = 0
     # limit        = 0
@@ -95,7 +95,7 @@ resource "proxmox_virtual_environment_vm" "nas" {
 
   hostpci {
     device   = "hostpci0"
-    id       = "0000:07:00.0"
+    id       = "0000:08:00.0"
     mapping  = null
     mdev     = "nvidia-47"
     pcie     = false

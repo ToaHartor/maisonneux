@@ -11,7 +11,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   node_name     = "datacenter"
   vm_id         = 101
 
-  on_boot = true
+  on_boot = false
 
   boot_order = ["scsi0"]
 
@@ -30,7 +30,11 @@ resource "proxmox_virtual_environment_vm" "truenas" {
 
   lifecycle {
     ignore_changes = [
-      mac_addresses
+      mac_addresses,
+      on_boot,
+      reboot,
+      migrate,
+      stop_on_destroy,
     ]
   }
 
@@ -50,6 +54,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   #   interface = "ide2"
   # }
 
+  # OS disk
   disk {
     backup       = false
     discard      = "ignore"
@@ -58,6 +63,19 @@ resource "proxmox_virtual_environment_vm" "truenas" {
     interface    = "scsi0"
     iothread     = true
     size         = 32
+    ssd          = true
+  }
+
+  # Apps
+  disk {
+    backup       = false
+    discard      = "ignore"
+    datastore_id = "local-lvm"
+    file_format  = "raw"
+    interface    = "scsi1"
+    iothread     = true
+    size         = 32
+    ssd          = true
   }
 
   efi_disk {
@@ -68,9 +86,10 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   }
 
   cpu {
-    cores   = 4
-    sockets = 1
-    type    = "host"
+    architecture = "x86_64"
+    cores        = 4
+    sockets      = 1
+    type         = "host"
   }
 
   memory {
@@ -80,7 +99,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   # Pass LSI card to the VM
   hostpci {
     device = "hostpci0"
-    id     = "0000:03:00" # 1000:0087
+    id     = "0000:04:00" # 1000:0087
     rombar = true
     pcie   = false
   }
@@ -133,12 +152,41 @@ resource "proxmox_virtual_environment_firewall_rules" "truenas_inbound" {
     log     = "info"
   }
 
+  # MinIO
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "MinIO API"
+    dport   = "9000"
+    proto   = "tcp"
+    log     = "info"
+  }
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "MinIO front"
+    dport   = "9002"
+    proto   = "tcp"
+    log     = "info"
+  }
+
+  # iSCSI
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "iSCSI"
+    source  = "192.168.1.221,192.168.1.225,192.168.1.226"
+    dport   = "3260"
+    proto   = "tcp"
+    log     = "info"
+  }
+
   # NFS
   rule {
     type    = "in"
     action  = "ACCEPT"
     comment = "NFS share TCP"
-    source  = "192.168.1.47,192.168.1.100"
+    source  = "192.168.1.47,192.168.1.201"
     dport   = "111,724,2049"
     proto   = "tcp"
     log     = "info"
@@ -148,7 +196,7 @@ resource "proxmox_virtual_environment_firewall_rules" "truenas_inbound" {
     type    = "in"
     action  = "ACCEPT"
     comment = "NFS share UDP"
-    source  = "192.168.1.47,192.168.1.100"
+    source  = "192.168.1.47,192.168.1.201"
     dport   = "111,2049"
     proto   = "udp"
     log     = "info"

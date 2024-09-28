@@ -1,4 +1,4 @@
-// Outputs from module k8s
+# Outputs from module k8s
 
 output "talosconfig" {
   value     = (terraform.workspace == "k8s") ? module.k8scluster[0].talosconfig : ""

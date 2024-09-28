@@ -178,3 +178,41 @@ variable "proxmox_vm_storage" {
   type        = string
   default     = "data"
 }
+
+# Truenas settings
+variable "truenas_vm_host" {
+  type        = string
+  description = "TrueNAS VM host (or IP)"
+  default     = ""
+}
+
+variable "truenas_vm_port" {
+  type        = number
+  description = "TrueNAS VM interface port (default 80)"
+  default     = 80
+}
+
+variable "truenas_vm_apikey" {
+  type        = string
+  description = "TrueNAS VM API key"
+  default     = ""
+}
+
+# MinIO
+variable "minio_access_key" {
+  type        = string
+  description = "TrueNAS VM host (or IP)"
+  default     = ""
+}
+
+variable "minio_secret_key" {
+  type        = string
+  description = "TrueNAS VM interface port (default 80)"
+  default     = ""
+}
+
+variable "minio_port" {
+  type        = number
+  description = "MinIO access port"
+  default     = 9000
+}

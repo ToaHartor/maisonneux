@@ -33,12 +33,12 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
     version = "v2.0"
   }
   efi_disk {
-    datastore_id = "local-lvm"
+    datastore_id = var.proxmox_vm_storage
     file_format  = "raw"
     type         = "4m"
   }
   disk {
-    datastore_id = "local-lvm"
+    datastore_id = var.proxmox_vm_storage
     interface    = "scsi0"
     iothread     = true
     ssd          = true

@@ -58,6 +58,21 @@ locals {
     },
   ]
   cert_manager_ingress_ca_manifest = join("---\n", [for d in local.cert_manager_ingress_ca_manifests : yamlencode(d)])
+
+  cert_manager_values = {
+    crds = {
+      # NB installCRDs is generally not recommended, BUT since this
+      #    is a development cluster we YOLO it.
+      enabled = true
+      keep    = true
+    }
+    livenessProbe = {
+      enabled = true
+    }
+    # prometheus = {
+    #   enabled = true
+    # }
+  }
 }
 
 # NB YOU CANNOT INSTALL MULTIPLE INSTANCES OF CERT-MANAGER IN A CLUSTER.
@@ -76,18 +91,5 @@ data "helm_template" "cert_manager" {
   version      = "1.15.3"
   kube_version = var.kubernetes_version
   api_versions = []
-  # NB installCRDs is generally not recommended, BUT since this
-  #    is a development cluster we YOLO it.
-  set {
-    name  = "crds.enabled"
-    value = "true"
-  }
-  set {
-    name  = "crds.keep"
-    value = "true"
-  }
-  set {
-    name  = "livenessProbe.enabled"
-    value = "true"
-  }
+  values       = [yamlencode(local.cert_manager_values)]
 }

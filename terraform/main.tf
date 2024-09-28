@@ -40,9 +40,7 @@ module "k8scluster" {
   cluster_subnet                                   = var.cluster_subnet
   cluster_pod_cidr                                 = var.cluster_pod_cidr
   cluster_node_network_first_controller_hostnum    = var.cluster_node_network_first_controller_hostnum
-  cluster_node_network_controller_mac_addr_prefix  = var.cluster_node_network_controller_mac_addr_prefix
   cluster_node_network_first_worker_hostnum        = var.cluster_node_network_first_worker_hostnum
-  cluster_node_network_worker_mac_addr_prefix      = var.cluster_node_network_worker_mac_addr_prefix
   cluster_node_network_load_balancer_first_hostnum = var.cluster_node_network_load_balancer_first_hostnum
   cluster_node_network_load_balancer_last_hostnum  = var.cluster_node_network_load_balancer_last_hostnum
   ingress_domain                                   = var.ingress_domain
@@ -50,6 +48,12 @@ module "k8scluster" {
   cluster_os_storage                               = var.cluster_os_storage
   proxmox_api_endpoint                             = var.proxmox_api_endpoint
   proxmox_vm_storage                               = var.proxmox_vm_storage
+  truenas_vm_host                                  = var.truenas_vm_host
+  truenas_vm_port                                  = var.truenas_vm_port
+  truenas_vm_apikey                                = var.truenas_vm_apikey
+  minio_access_key                                 = var.minio_access_key
+  minio_secret_key                                 = var.minio_secret_key
+  minio_port                                       = var.minio_port
 }
 
 terraform {
