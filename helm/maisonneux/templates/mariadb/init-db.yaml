@@ -1,0 +1,96 @@
+# Create all required users, we also consider that database names are the same as user names
+{{- $root := .Values -}}
+{{- range $user := list "fireflyiii" "gitea" "seafile" -}}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $user }}-mariadb-password
+  namespace: {{ $root.mariadb.namespace }}
+type: Opaque
+data:
+  password: {{ template "generate-secret" (dict "Values" $root "SecretNamespace" $root.mariadb.namespace "SecretName" (printf "%s-mariadb-password" $user) "SecretEntry" "password") }}
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: {{ $user }}
+  namespace: {{ $root.mariadb.namespace }}
+spec:
+  mariaDbRef:
+    name: mariadb-galera
+  passwordSecretKeyRef:
+    name: {{ $user }}-mariadb-password
+    key: password
+  maxUserConnections: 20
+  host: "%"
+  cleanupPolicy: Delete
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: {{ $user }}
+  namespace: {{ $root.mariadb.namespace }}
+spec:
+  mariaDbRef:
+    name: mariadb-galera
+  characterSet: utf8
+  collate: utf8_general_ci
+  # cleanupPolicy: Skip # Keep database even if resource is deleted (e.g. uninstall)
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: "grant-{{ $user }}-mariadb"
+  namespace: {{ $root.mariadb.namespace }}
+spec:
+  mariaDbRef:
+    name: mariadb-galera
+  privileges:
+    - "ALL PRIVILEGES"
+  database: {{ $user }}
+  # table: "*"
+  host: "%"
+  username: {{ $user }}
+  grantOption: false
+  # cleanupPolicy: Delete
+  requeueInterval: 30s
+  retryInterval: 5s
+---
+{{- end -}}
+
+# Seafile additional databases (seafile main database is already created before)
+{{- range $database := list "seahub-db" "ccnet-db" -}}
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: {{ $database }}
+  namespace: {{ $root.mariadb.namespace }}
+spec:
+  mariaDbRef:
+    name: mariadb-galera
+  characterSet: utf8
+  collate: utf8_general_ci
+  # cleanupPolicy: Skip # Keep database even if resource is deleted (e.g. uninstall)
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: "grant-{{ $database }}-mariadb"
+  namespace: {{ $root.mariadb.namespace }}
+spec:
+  mariaDbRef:
+    name: mariadb-galera
+  privileges:
+    - "ALL PRIVILEGES"
+  database: {{ $database }}
+  # table: "*"
+  host: "%"
+  username: "seafile"
+  grantOption: false
+  # cleanupPolicy: Delete
+  requeueInterval: 30s
+  retryInterval: 5s
+---
+{{- end -}}

@@ -1,22 +1,31 @@
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: MariaDB
 metadata:
-  name: mariadb
-  namespace: mariadb
+  # Name of the app.kubernetes.io/instance
+  name: mariadb-galera
+  namespace: {{ .Values.mariadb.namespace }}
 spec:
+  mariaDbRef:
+    name: mariadb-galera
+  # image: docker.mariadb.com/enterprise-server:10.6
+  # imagePullPolicy: IfNotPresent
+  # imagePullSecrets:
+  #   - name: registry
+  #   - name: another-registry
   replicas: 3
   replicasAllowEvenNumber: false
-  # TODO : Correct password generation
+
   rootPasswordSecretKeyRef:
-    name: mariadb-root
+    name: mariadb-root-secret
     key: password
-    generate: true
+    generate: false
   username: mariadb
 
   passwordSecretKeyRef:
-    name: mariadb-password
+    name: mariadb-root-secret
     key: password
-    generate: true
+    generate: false
+
   database: mariadb
 
   port: 3306
@@ -50,31 +59,36 @@ spec:
   #     operator: "Exists"
   #     effect: "NoSchedule"
 
-  replication:
+  # Config file reference
+  myCnfConfigMapKeyRef:
+    name: mariadb-conf
+    key: my.cnf
+
+  galera:
     enabled: true
     primary:
-      podIndex: 0
       automaticFailover: true
-    replica:
-      waitPoint: AfterSync
-      gtid: CurrentPos
-      replPasswordSecretKeyRef:
-        name: mariadb
-        key: password
-      connectionTimeout: 10s
-      connectionRetries: 10
-      syncTimeout: 10s
-    syncBinlog: true
-    probesEnabled: true
+    config:
+      reuseStorageVolume: true
+    recovery:
+      enabled: true
 
-  myCnf: |
-    [mariadb]
-    bind-address=*
-    default_storage_engine=InnoDB
-    binlog_format=row
-    innodb_autoinc_lock_mode=2
-    innodb_buffer_pool_size=1024M
-    max_allowed_packet=256M
+  # replication:
+  #   enabled: true
+  #   primary:
+  #     podIndex: 0
+  #     automaticFailover: true
+  #   replica:
+  #     waitPoint: AfterSync
+  #     gtid: CurrentPos
+  #     replPasswordSecretKeyRef:
+  #       name: mariadb
+  #       key: password
+  #     connectionTimeout: 10s
+  #     connectionRetries: 10
+  #     syncTimeout: 10s
+  #   syncBinlog: true
+  #   probesEnabled: true
 
   # Probes
   livenessProbe:
@@ -88,9 +102,13 @@ spec:
   # Resources
   resources:
     requests:
-      cpu: 100m
+      cpu: 80m
       memory: 128Mi
     limits:
-      memory: 1Gi
+      memory: 256Mi
   metrics:
     enabled: true
+    # passwordSecretKeyRef:
+    #   generate: true
+    #   key: password
+    #   name: mariadb-metrics-password
