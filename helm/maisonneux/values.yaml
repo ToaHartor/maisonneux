@@ -3,6 +3,21 @@ traefik:
   deployment:
     kind: DaemonSet
 
+mariadb:
+  namespace: mariadb
+
+mongodb:
+  namespace: mongodb
+
+postgres:
+  namespace: postgres
+
+certmanager:
+  domains:
+    - example.com
+  # Choose either staging or production
+  cert_profile: staging
+
 # Redis
 redis:
   namespaceOverride: redis

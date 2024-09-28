@@ -1,2 +1,4 @@
 # Ignore downloaded charts
 *.tgz
+# Do not commit those env files
+env/*.yaml

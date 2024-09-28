@@ -1,0 +1,6 @@
+certmanager:
+  domains: {{ .Values.domains }}
+  cert_profile: {{ .Values.certmanager.ca }}
+
+storage:
+  persistentClassName: {{ .Values.storage.fastdata }}
