@@ -147,6 +147,25 @@ data "talos_machine_configuration" "controller" {
             ])
           },
           {
+            name = "democratic-csi-truenas-iscsi"
+            contents = join("---\n", [
+              data.helm_template.democratic_csi_truenas_iscsi.manifest,
+            ])
+          },
+
+          # {
+          #   name = "democratic-csi-truenas-nfs"
+          #   contents = join("---\n", [
+          #     data.helm_template.democratic_csi_truenas_nfs.manifest,
+          #   ])
+          # },
+          {
+            name = "csi-s3"
+            contents = join("---\n", [
+              data.helm_template.csi_s3.manifest,
+            ])
+          },
+          {
             name = "cilium"
             contents = join("---\n", [
               data.helm_template.cilium.manifest,
