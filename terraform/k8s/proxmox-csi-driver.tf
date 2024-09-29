@@ -22,6 +22,10 @@ locals {
       }
     ]
     node = {
+      nodeSelector = {
+        # It will work only with Talos CCM, remove it overwise
+        "node.cloudprovider.kubernetes.io/platform" = "nocloud"
+      }
       tolerations = [
         {
           operator = "Exists"
@@ -29,7 +33,7 @@ locals {
       ]
     }
     nodeSelector = {
-      "node-role\\.kubernetes\\.io/control-plane" = ""
+      "node-role.kubernetes.io/control-plane" = ""
     }
 
     tolerations = [
