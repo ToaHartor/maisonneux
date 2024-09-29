@@ -22,7 +22,6 @@ locals {
       }
     ]
     node = {
-      nodeSelector = ""
       tolerations = [
         {
           operator = "Exists"
@@ -48,7 +47,7 @@ data "helm_template" "proxmox_csi" {
   repository   = "oci://ghcr.io/sergelogvinov/charts"
   chart        = "proxmox-csi-plugin"
   # Version from https://github.com/sergelogvinov/proxmox-csi-plugin/blob/main/charts/proxmox-csi-plugin/Chart.yaml
-  version      = "0.2.12"
+  version      = "0.2.13"
   kube_version = var.kubernetes_version
   api_versions = []
   values       = [yamlencode(local.proxmox_csi_values)]
