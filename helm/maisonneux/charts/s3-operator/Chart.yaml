@@ -1,0 +1,7 @@
+apiVersion: v2
+appVersion: 0.8.0
+description: A Helm chart for deploying an operator to manage S3 resources (eg buckets,
+  policies)
+name: s3-operator
+type: application
+version: 0.5.5
