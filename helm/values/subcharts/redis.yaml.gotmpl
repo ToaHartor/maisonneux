@@ -1,25 +1,33 @@
 # Reference in https://artifacthub.io/packages/helm/bitnami/redis
-# redis:
 auth:
   enabled: false
+architecture: replication
 namespaceOverride: redis
 # existingConfigmap:
 # image:
 #   registry:
 #   pullPolicy:
+# networkPolicy:
+#   enabled: true
+#   ingressNSMatchLabels:
+#     redis: external
+#   ingressNSPodMatchLabels:
+#     redis-client: true
 # Sentinel config
-sentinel:
-  enabled: true
-  startupProbe:
-    enabled: true
-  livenessProbe:
-    enabled: true
-  readinessProbe:
-    enabled: true
-  quorum: 3
+# sentinel:
+#   enabled: false
+#   redisShutdownWaitFailover: true
+#   automateClusterRecovery: true
+#   startupProbe:
+#     enabled: true
+#   livenessProbe:
+#     enabled: true
+#   readinessProbe:
+#     enabled: true
+#   quorum: 2
 
 global:
-  defaultStorageClass: proxmox-data-ext4
+  defaultStorageClass: {{ .Values.storage.fastdata }}
 
 metrics:
   enabled: true
@@ -32,7 +40,7 @@ autoscaling:
 master:
   kind: StatefulSet
   count: 1 # More than one is not supported
-  configuration:
+  # configuration:
   startupProbe:
     enabled: true
   livenessProbe:
@@ -61,8 +69,8 @@ master:
 # Replica pods config : access with read-only operations (redis-replicas.redis.svc.cluster.local)
 replica:
   kind: StatefulSet
-  replicaCount: 3
-  configuration:
+  replicaCount: 2
+  # configuration:
   startupProbe:
     enabled: true
   livenessProbe:

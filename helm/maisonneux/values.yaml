@@ -3,6 +3,123 @@ traefik:
   deployment:
     kind: DaemonSet
 
+# Config for authentik helm chart
+# https://artifacthub.io/packages/helm/goauthentik/authentik
+authentik:
+  s3:
+    secretName: &authentik-s3-secret authentik-s3user
+    bucketName: &authentik-bucket authentik
+    endpoint: &authentik-bucket-endpoint https://s3.example.com:9000
+    customDomain: &authentik-custom-domain s3.example.com:9000/authentik
+  authentik:
+    log_level: debug
+    secret_key: TODO
+    error_reporting:
+      enabled: false
+    postgresql:
+      host: authentik-psql-rw.maisonneux.svc.cluster.local
+      name: authentik
+      user: file:///postgres-creds/username
+      password: file:///postgres-creds/password
+    redis:
+      host: redis-master.redis.svc.cluster.local
+  blueprints:
+    configMaps:
+      - authentik-blueprint
+  global:
+    # https://docs.goauthentik.io/docs/installation/storage-s3
+    env:
+      - name: AUTHENTIK_BOOTSTRAP_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: password
+            name: authentik-akadmin-secret
+      - name: AUTHENTIK_STORAGE__MEDIA__BACKEND
+        value: s3
+      - name: AUTHENTIK_STORAGE__MEDIA__S3__ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            key: accessKey
+            name: *authentik-s3-secret
+      - name: AUTHENTIK_STORAGE__MEDIA__S3__SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            key: secretKey
+            name: *authentik-s3-secret
+      - name: AUTHENTIK_STORAGE__MEDIA__S3__BUCKET_NAME
+        value: *authentik-bucket
+      - name: AUTHENTIK_STORAGE__MEDIA__S3__ENDPOINT
+        value: *authentik-bucket-endpoint
+      - name: AUTHENTIK_STORAGE__MEDIA__S3__CUSTOM_DOMAIN
+        value: *authentik-custom-domain
+      - name: AUTHENTIK_STORAGE__MEDIA__S3__SECURE_URLS
+        value: "true"
+  server:
+    replicas: 1
+    ingress:
+      ingressClassName: traefik
+      enabled: true
+      hosts:
+        - auth.example.com
+    volumes:
+      - name: postgres-creds
+        secret:
+          secretName: &authentik-db-secret authentik-psql-secret
+    volumeMounts:
+      - name: postgres-creds
+        mountPath: /postgres-creds
+        readOnly: true
+  worker:
+    replicas: 1
+    volumes:
+      - name: postgres-creds
+        secret:
+          secretName: *authentik-db-secret
+    volumeMounts:
+      - name: postgres-creds
+        mountPath: /postgres-creds
+        readOnly: true
+  # Disable included postgres and redis
+  postgres:
+    enabled: false
+  redis:
+    enabled: false
+
+s3-operator:
+  crds:
+    install: true
+    keep: false
+
+  controllerManager:
+    replicas: 1
+    # manager:
+    #   resources:
+    #     limits:
+    #       cpu:
+    #       memory:
+    #     requests:
+    #       cpu:
+    #       memory:
+    manager:
+      extraArgs:
+        - --useSsl=false
+
+  s3:
+    endpointUrl: localhost:9000
+    existingSecret: minio-external-secret
+
+    deletion:
+      bucket: false
+      path: false
+      policy: true
+      s3user: true
+
+    overrideExistingSecret: true
+
+  minio:
+    accessKey: externalAccessKey
+    secretKey: externalSecretKey
+
 mariadb:
   namespace: mariadb
 

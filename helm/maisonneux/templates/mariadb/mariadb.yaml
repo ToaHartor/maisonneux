@@ -5,6 +5,8 @@ metadata:
   name: mariadb-galera
   namespace: {{ .Values.mariadb.namespace }}
 spec:
+  updateStrategy:
+    autoUpdateDataPlane: true
   mariaDbRef:
     name: mariadb-galera
   # image: docker.mariadb.com/enterprise-server:10.6

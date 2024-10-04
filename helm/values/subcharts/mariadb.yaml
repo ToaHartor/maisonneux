@@ -4,6 +4,9 @@
 #   serviceMonitor:
 #     enabled: true
 
+crds:
+  enabled: true
+
 nodeSelector:
   node-role.kubernetes.io/control-plane: ""
 

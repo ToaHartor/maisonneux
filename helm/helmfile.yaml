@@ -26,7 +26,6 @@ releases:
     wait: true
     values:
       - values/subcharts/maisonneux.yaml.gotmpl
-      # - values/subcharts/redis.yaml
     # waitForJobs: false
     needs:
       - postgres/cnpg
@@ -55,12 +54,12 @@ releases:
     # disableValidation: true
     # wait: true
     values:
-      - values/subcharts/redis.yaml
+      - values/subcharts/redis.yaml.gotmpl
   # MariaDB operator chart
   - name: mariadb
     chart: mariadb-operator/mariadb-operator
     namespace: mariadb
-    version: 0.31.0
+    version: 0.33.0
     createNamespace: true
     wait: true
     values:
@@ -97,3 +96,7 @@ repositories:
     url: https://mongodb.github.io/helm-charts
   - name: cert-manager-webhook-ovh
     url: https://aureq.github.io/cert-manager-webhook-ovh
+  - name: authentik
+    url: https://charts.goauthentik.io/
+  # - name: inseefrlab
+  #   url: https://inseefrlab.github.io/helm-charts

@@ -5,14 +5,12 @@ dependencies:
   - name: traefik
     version: 30.1.0
     repository: https://traefik.github.io/charts
-# A chart can be either an 'application' or a 'library' chart.
-#
-# Application charts are a collection of templates that can be packaged into versioned archives
-# to be deployed.
-#
-# Library charts provide useful utilities or functions for the chart developer. They're included as
-# a dependency of application charts to inject those utilities and functions into the rendering
-# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+  - name: s3-operator
+    version: 0.5.5
+    # repository: https://inseefrlab.github.io/helm-charts
+  - name: authentik
+    version: 2024.8.3
+    repository: https://charts.goauthentik.io/
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
