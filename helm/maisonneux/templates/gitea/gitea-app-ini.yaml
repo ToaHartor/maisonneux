@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-app-ini
+data:
+  # server: |
+  #   ENABLE_PPROF=true
+  database: |
+    DB_TYPE=postgres
+    HOST={{ .Values.gitea.globalConfig.db.host }}
+    NAME=gitea
+    USER=gitea
+  queue:
+    TYPE=redis
+    CONN_STR=redis://{{ .Values.gitea.globalConfig.redis.url }}/0
+  storage: |
+    STORAGE_TYPE=minio
+    SERVE_DIRECT=false
+    MINIO_ENDPOINT={{ .Values.gitea.globalConfig.s3.endpoint }}
+    MINIO_BUCKET={{ .Values.gitea.globalConfig.s3.bucketName }}
+    MINIO_USE_SSL=false
+    MINIO_INSECURE_SKIP_VERIFY=true
+  service: |
+    DISABLE_REGISTRATION=true

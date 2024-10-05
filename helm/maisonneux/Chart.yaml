@@ -11,6 +11,10 @@ dependencies:
   - name: authentik
     version: 2024.8.3
     repository: https://charts.goauthentik.io/
+    # Check gitea chart version from the repository
+  - name: gitea
+    version: 10.4.1
+    repository: https://dl.gitea.com/charts/
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes

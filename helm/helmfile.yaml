@@ -100,3 +100,5 @@ repositories:
     url: https://charts.goauthentik.io/
   # - name: inseefrlab
   #   url: https://inseefrlab.github.io/helm-charts
+  - name: gitea
+    url: https://dl.gitea.com/charts/
