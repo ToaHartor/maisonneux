@@ -2,7 +2,7 @@ WORKSPACES=$(shell find terraform/terraform.tfstate.d/* -type d -exec basename {
 HELM_ENVS=dev prod
 MAKEFLAGS += -rR
 
-.PHONY: talos-img cluster-health use-context tools tf-plan tf-apply tf-init tf-destroy $(WORKSPACES)
+.PHONY: local-git talos-img cluster-health use-context tools tf-plan tf-apply tf-init tf-destroy $(WORKSPACES)
 
 cluster-health:
 	sh scripts/check_cluster_health.sh
@@ -12,6 +12,9 @@ talos-img:
 
 tools:
 	sh scripts/install_tools.sh
+
+local-git:
+	sh scripts/init_local_dev_gitea.sh
 
 use-context:
 	@mkdir -p ~/.kube
