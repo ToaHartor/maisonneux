@@ -1,0 +1,26 @@
+# Stack for local GitOps : Gitea + renovate ?
+# This should not be exposed on the Internet
+services:
+  gitea:
+    image: gitea/gitea:latest-rootless
+    container_name: ${GITEA_INSTANCE_NAME:-local_gitea}
+    volumes:
+      - ${REPO_PATH:-.}/tmp/gitea/data:/var/lib/gitea
+      - ${REPO_PATH:-.}/tmp/gitea/config:/etc/gitea
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 2222:2222/tcp # SSH
+      - 3000:3000/tcp # Web view
+    user: "1000"
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - SECRET_KEY=secretkey
+
+      - SSH_EXPOSE_ANONYMOUS=true
+
+      - USER=git
+
+      - GITEA__database__DB_TYPE=sqlite3
+    restart: "unless-stopped"
