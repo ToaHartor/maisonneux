@@ -16,7 +16,7 @@ tools:
 use-context:
 	@mkdir -p ~/.kube
 	@mkdir -p ~/.talos
-	@kubectl config delete-context admin@k8s
+	@kubectl config delete-context admin@k8s || true
 	@cp -rf tmp/talosconfig.yml ~/.talos/config
 	@cp -rf tmp/kubeconfig.yml ~/.kube/config
 	@chmod 700 ~/.kube/config
