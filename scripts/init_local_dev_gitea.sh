@@ -81,4 +81,4 @@ echo "Setting git localorigin remote to our local git"
 git remote set-url localorigin "$GIT_PUSH_REPOSITORY" || git remote add localorigin "$GIT_PUSH_REPOSITORY"
 
 echo "Local Gitea deployed successfully !"
-echo "Now create a new branch or use an existing one then define its remote repo to localorigin
+echo "Now create a new branch or use an existing one then define its remote repo to localorigin"
