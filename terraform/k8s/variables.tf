@@ -1,3 +1,34 @@
+# Common variables
+variable "proxmox_api_endpoint" {
+  type        = string
+  description = "Proxmox cluster API endpoint with https"
+}
+
+variable "proxmox_api_token" {
+  type        = string
+  description = "Proxmox API token bpg proxmox provider with ID and token"
+}
+
+variable "proxmox_root_user" {
+  type        = string
+  description = "Proxmox cluster API endpoint with https"
+}
+
+variable "proxmox_root_password" {
+  type        = string
+  description = "Proxmox API token bpg proxmox provider with ID and token"
+}
+
+variable "proxmox_private_key_path" {
+  type        = string
+  description = "Private key path to log onto Proxmox via SSH"
+}
+
+variable "proxmox_node_name" {
+  type        = string
+  description = "Proxmox node name"
+}
+
 # see https://github.com/siderolabs/talos/releases
 # see https://www.talos.dev/v1.7/introduction/support-matrix/
 variable "talos_version" {
@@ -135,11 +166,6 @@ variable "proxmox_vm_storage" {
   description = "Storage name in Proxmox for PVC usage"
   type        = string
   default     = "data"
-}
-
-variable "proxmox_api_endpoint" {
-  type        = string
-  description = "Proxmox cluster API endpoint with https"
 }
 
 # Truenas settings

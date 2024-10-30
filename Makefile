@@ -1,4 +1,4 @@
-WORKSPACES=$(shell find terraform/terraform.tfstate.d/* -type d -exec basename {} \;)
+WORKSPACES=$(shell find terraform/* -maxdepth 0 -type d -not -path 'terraform/env' -exec basename {} \;)
 HELM_ENVS=dev prod
 MAKEFLAGS += -rR
 
@@ -55,41 +55,37 @@ endif
 
 .PHONY: tf-plan tf-apply tf-destroy tf-init tf-upgrade tf-output
 
-# Terraform operations
-tf-upgrade:
-	@cd terraform && \
-	tofu init -upgrade
-
-tf-output:
-	@cd terraform && \
-	tofu output -json >../tmp/datavalue.json
-
 # Terraform commands, argument is workspaces, and commands are detected in ifeq filter
 $(WORKSPACES):
 # make tf-plan <ws>
 ifeq (tf-plan,$(filter tf-plan,$(MAKECMDGOALS)))
-	@cd terraform && \
-	tofu workspace select $@ && \
-	tofu plan -out $@.tfplan -var-file='$@/config.tfvars'
+	@cd terraform/$@ && \
+	tofu plan -out $@.tfplan -var-file='config.tfvars' -var-file='../env/credentials.tfvars' 
 endif
 # make tf-apply <ws>
 ifeq (tf-apply,$(filter tf-apply,$(MAKECMDGOALS)))
-	@cd terraform && \
-	tofu workspace select $@ && \
+	@cd terraform/$@ && \
 	tofu apply $@.tfplan
 	@if [ "$@" = "k8s" ]; then \
-		cd terraform && tofu output -raw talosconfig >../tmp/talosconfig.yml && tofu output -raw kubeconfig >../tmp/kubeconfig.yml; \
+		cd terraform/k8s && tofu output -raw talosconfig >../../tmp/talosconfig.yml && tofu output -raw kubeconfig >../../tmp/kubeconfig.yml; \
 	fi
 endif
 # make tf-destroy <ws>
 ifeq (tf-destroy,$(filter tf-destroy,$(MAKECMDGOALS)))
-	@cd terraform && \
-	tofu workspace select $@ && \
+	@cd terraform/$@ && \
 	tofu apply -destroy
 endif
 # make tf-init <ws>
 ifeq (tf-init,$(filter tf-init,$(MAKECMDGOALS)))
-	@cd terraform && \
-	tofu workspace select $@ && \
+	@cd terraform/$@ && \
 	tofu init -lockfile=readonly
 endif
+ifeq (tf-upgrade,$(filter tf-upgrade,$(MAKECMDGOALS)))
+	@cd terraform/$@ && \
+	tofu init -upgrade
+endif
+ifeq (tf-output,$(filter tf-output,$(MAKECMDGOALS)))
+	@cd terraform/$@ && \
+	tofu output -json >../../tmp/datavalue.json
+endif
+	
