@@ -3,7 +3,7 @@ resource "proxmox_virtual_environment_file" "talos" {
   datastore_id = "local"
   node_name    = "datacenter"
   source_file {
-    path      = "../tmp/talos/talos-${var.talos_version}.qcow2"
+    path      = "../../tmp/talos/talos-${var.talos_version}.qcow2"
     file_name = "talos-${var.talos_version}.img"
   }
 }

@@ -59,6 +59,9 @@ endif
 $(WORKSPACES):
 # make tf-plan <ws>
 ifeq (tf-plan,$(filter tf-plan,$(MAKECMDGOALS)))
+	@if [ "$@" = "fluxcd" ]; then \
+		sed -i -E "s/flux_git_remote_domain(\s+)\=(\s+)\"(.*)\"/flux_git_remote_domain\1\=\2\"$$(sh scripts/get_dev_machine_ip.sh)\"/" terraform/fluxcd/config.tfvars; \
+	fi
 	@cd terraform/$@ && \
 	tofu plan -out $@.tfplan -var-file='config.tfvars' -var-file='../env/credentials.tfvars' 
 endif
@@ -73,7 +76,7 @@ endif
 # make tf-destroy <ws>
 ifeq (tf-destroy,$(filter tf-destroy,$(MAKECMDGOALS)))
 	@cd terraform/$@ && \
-	tofu apply -destroy
+	tofu apply -destroy -var-file='config.tfvars' -var-file='../env/credentials.tfvars'
 endif
 # make tf-init <ws>
 ifeq (tf-init,$(filter tf-init,$(MAKECMDGOALS)))

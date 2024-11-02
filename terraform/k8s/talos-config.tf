@@ -70,7 +70,7 @@ locals {
             name = "PodSecurity"
             configuration = {
               exemptions = {
-                namespaces = ["cert-manager"]
+                namespaces = ["cert-manager", "flux-system"]
               }
             }
           }
