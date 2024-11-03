@@ -27,6 +27,21 @@ locals {
           branch = var.flux_git_branch
         }
         interval = "1m"
+        ignore   = <<EOF
+# Ignore all folders, but include the ones with cluster resources
+./*
+# Cluster folders include
+!./clusters
+!./apps
+!./core
+!./platform
+!./system
+EOF
+      }
+    }
+    kustomization = {
+      spec = {
+        path = "./clusters/staging"
       }
     }
   }
