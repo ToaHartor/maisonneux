@@ -256,7 +256,7 @@ fi;
     # - imageRef: $repo/nvidia-container-toolkit:$container_toolkit_tag
     # - imageRef: $repo/nonfree-kmod-nvidia:$nvidia_ext_tag
 
-cat >"tmp/talos/talos-$talos_version.yml" <<EOF
+cat >"tmp/talos/talos-$talos_version.yaml" <<EOF
 arch: amd64
 platform: nocloud
 secureboot: false
@@ -291,7 +291,7 @@ docker run --rm -i \
 --privileged \
 --network host \
 "ghcr.io/siderolabs/imager:$talos_version_tag" \
-- < "tmp/talos/talos-$talos_version.yml"
+- < "tmp/talos/talos-$talos_version.yaml"
 img_path="tmp/talos/talos-$talos_version.qcow2"
 qemu-img convert -O qcow2 tmp/talos/nocloud-amd64.raw $img_path
 qemu-img info $img_path

@@ -11,6 +11,10 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "2.33.0"
     }
+    local = {
+      source  = "hashicorp/local"
+      version = "2.5.2"
+    }
   }
 }
 
@@ -29,19 +33,23 @@ locals {
         interval = "1m"
         ignore   = <<EOF
 # Ignore all folders, but include the ones with cluster resources
-./*
+/*
 # Cluster folders include
-!./clusters
-!./apps
-!./core
-!./platform
-!./system
+!/clusters/production
+!/apps/
+!/core/
+!/platform/
+!/system/
+# Remove flux-system as well
+clusters/**/flux-system/"
 EOF
       }
     }
     kustomization = {
       spec = {
-        path = "./clusters/staging"
+        prune = true
+        force = true
+        path  = "./clusters/production" # TODO :variable with environment
       }
     }
   }
@@ -64,6 +72,24 @@ resource "kubernetes_secret" "flux_git_credentials" {
   data = {
     "username" = var.flux_git_user
     "password" = var.flux_git_token
+  }
+}
+
+data "local_sensitive_file" "proxmox_csi_creds_file" {
+  filename = "${path.module}/../../tmp/proxmoxcsi.yaml"
+}
+
+resource "kubernetes_secret" "proxmox_csi_creds" {
+  # Count = 1 if production env
+  # count = 1
+  metadata {
+    name      = "proxmox-csi-creds"
+    namespace = "kube-system"
+  }
+  type = "Opaque"
+
+  data = {
+    "config.yaml" = data.local_sensitive_file.proxmox_csi_creds_file.content
   }
 }
 

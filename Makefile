@@ -26,8 +26,8 @@ use-context:
 	@mkdir -p ~/.kube
 	@mkdir -p ~/.talos
 	@kubectl config delete-context admin@k8s || true
-	@cp -rf tmp/talosconfig.yml ~/.talos/config
-	@cp -rf tmp/kubeconfig.yml ~/.kube/config
+	@cp -rf tmp/talosconfig.yaml ~/.talos/config
+	@cp -rf tmp/kubeconfig.yaml ~/.kube/config
 	@chmod 700 ~/.kube/config
 	@kubectl config use-context admin@k8s
 
@@ -70,7 +70,9 @@ ifeq (tf-apply,$(filter tf-apply,$(MAKECMDGOALS)))
 	@cd terraform/$@ && \
 	tofu apply $@.tfplan
 	@if [ "$@" = "k8s" ]; then \
-		cd terraform/k8s && tofu output -raw talosconfig >../../tmp/talosconfig.yml && tofu output -raw kubeconfig >../../tmp/kubeconfig.yml; \
+		cd terraform/k8s && tofu output -raw talosconfig >../../tmp/talosconfig.yaml && \
+		tofu output -raw kubeconfig >../../tmp/kubeconfig.yaml && \
+		tofu output -raw proxmox_csi_account >../../tmp/proxmoxcsi.yaml; \
 	fi
 endif
 # make tf-destroy <ws>

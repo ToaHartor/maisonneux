@@ -15,3 +15,8 @@ output "controllers" {
 output "workers" {
   value = join(",", [for node in local.worker_nodes : node.address])
 }
+
+output "proxmox_csi_account" {
+  value     = yamlencode(local.proxmox_csi_cluster)
+  sensitive = true
+}
