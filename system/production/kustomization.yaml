@@ -4,3 +4,4 @@ namespace: kube-system
 resources:
   - ../base/csi-proxmox
   - ../base/reloader
+  - ../base/cert-manager
