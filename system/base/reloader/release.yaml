@@ -1,0 +1,21 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: reloader
+  namespace: kube-system
+spec:
+  releaseName: reloader
+  chart:
+    spec:
+      chart: reloader
+      version: "1.1.0"
+      sourceRef:
+        kind: HelmRepository
+        name: reloader
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    reloader:
+      autoReloadAll: false

@@ -29,6 +29,8 @@ Each directory represents a deployment stage, contains a folder for production a
 - `core/` : Ingress, Identity provider
 - `apps/` : Mostly internet facing apps
 
+FluxCD reads the files in `clusters/{env}` then each describing a deployment stage points to a folder containing a Kustomization referencing the common .yaml files and eventual particularities.
+
 ## Issues
 
 Issues are not opened, as I'm not supposed to give support for the softwares/technologies I'm using. For that, please refer to their own repositories or forums. However, I'm open to any advice and discussion in the Discussion section.
