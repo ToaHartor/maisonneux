@@ -140,31 +140,24 @@ data "talos_machine_configuration" "controller" {
           ]
         }
         inlineManifests = [
-          {
-            name = "csi-proxmox"
-            contents = join("---\n", [
-              data.helm_template.proxmox_csi.manifest,
-            ])
-          },
-          {
-            name = "democratic-csi-truenas-iscsi"
-            contents = join("---\n", [
-              data.helm_template.democratic_csi_truenas_iscsi.manifest,
-            ])
-          },
-
+          # {
+          #   name = "democratic-csi-truenas-iscsi"
+          #   contents = join("---\n", [
+          #     data.helm_template.democratic_csi_truenas_iscsi.manifest,
+          #   ])
+          # },
           # {
           #   name = "democratic-csi-truenas-nfs"
           #   contents = join("---\n", [
           #     data.helm_template.democratic_csi_truenas_nfs.manifest,
           #   ])
           # },
-          {
-            name = "csi-s3"
-            contents = join("---\n", [
-              data.helm_template.csi_s3.manifest,
-            ])
-          },
+          # {
+          #   name = "csi-s3"
+          #   contents = join("---\n", [
+          #     data.helm_template.csi_s3.manifest,
+          #   ])
+          # },
           {
             name = "cilium"
             contents = join("---\n", [
@@ -178,32 +171,6 @@ data "talos_machine_configuration" "controller" {
           #     data.helm_template.nvidia_device_plugin.manifest,
           #   ])
           # },
-          {
-            name = "cert-manager"
-            contents = join("---\n", [
-              yamlencode({
-                apiVersion = "v1"
-                kind       = "Namespace"
-                metadata = {
-                  name = "cert-manager"
-                }
-              }),
-              data.helm_template.cert_manager.manifest,
-              "# Source cert-manager.tf\n${local.cert_manager_ingress_ca_manifest}",
-            ])
-          },
-          {
-            name     = "cert-manager-csi-driver"
-            contents = data.helm_template.cert_manager_csi_driver.manifest
-          },
-          {
-            name     = "trust-manager"
-            contents = data.helm_template.trust_manager.manifest
-          },
-          {
-            name     = "reloader"
-            contents = data.helm_template.reloader.manifest
-          }
         ],
       },
     }),
