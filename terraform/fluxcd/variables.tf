@@ -27,3 +27,20 @@ variable "flux_git_remote_port" {
 variable "flux_git_repository" {
   type = string
 }
+
+
+# MinIO
+variable "minio_access_key" {
+  type        = string
+  description = "External MinIO admin access key"
+}
+
+variable "minio_secret_key" {
+  type        = string
+  description = "External MinIO admin secret key"
+}
+
+variable "minio_access_url" {
+  type        = string
+  description = "External MinIO access URL (format 'localhost:9000')"
+}

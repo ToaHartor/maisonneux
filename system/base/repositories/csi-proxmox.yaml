@@ -2,7 +2,7 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: csi-proxmox
-  namespace: kube-system
+  namespace: flux-system
 spec:
   type: "oci"
   interval: 5m

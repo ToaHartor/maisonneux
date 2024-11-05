@@ -1,0 +1,58 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: s3-operator
+  namespace: flux-system
+spec:
+  releaseName: s3-operator
+  targetNamespace: operators
+  chart:
+    spec:
+      chart: s3-operator
+      version: "0.5.5"
+      sourceRef:
+        kind: HelmRepository
+        name: inseefrlab
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: minio-endpoint-url
+      valuesKey: url
+      targetPath: s3.endpointUrl
+
+  values:
+    crds:
+      install: true
+      keep: false # true for persistency
+
+    controllerManager:
+      replicas: 1
+      # manager:
+      #   resources:
+      #     limits:
+      #       cpu:
+      #       memory:
+      #     requests:
+      #       cpu:
+      #       memory:
+      manager:
+        extraArgs:
+          - --useSsl=false
+
+    s3:
+      # endpointUrl: localhost:9000
+      existingSecret: minio-external-secret
+
+      # accessKey:
+      # secretKey:
+
+      deletion:
+        bucket: false
+        path: false
+        policy: true
+        s3user: true
+
+      overrideExistingSecret: true
