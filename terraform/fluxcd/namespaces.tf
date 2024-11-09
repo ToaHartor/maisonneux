@@ -4,8 +4,8 @@ resource "kubernetes_namespace" "flux_system" {
   }
 }
 
-resource "kubernetes_namespace" "operators" {
+resource "kubernetes_namespace" "external_secrets" {
   metadata {
-    name = "operators"
+    name = "external-secrets"
   }
 }

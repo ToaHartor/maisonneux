@@ -5,3 +5,4 @@ resources:
   - csi-proxmox.yaml
   - stakater-charts.yaml
   - inseefrlab.yaml
+  - mittwald.yaml

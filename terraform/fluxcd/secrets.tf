@@ -33,7 +33,7 @@ resource "kubernetes_secret" "proxmox_csi_creds" {
 resource "kubernetes_secret" "minio_external_secret" {
   metadata {
     name      = "minio-external-secret"
-    namespace = kubernetes_namespace.operators.metadata[0].name
+    namespace = kubernetes_namespace.external_secrets.metadata[0].name
   }
   type = "Opaque"
 
