@@ -4,3 +4,4 @@ resources:
   - ../base/secret-generator
   - ../base/s3-operator
   - ../base/cloudnative-pg
+  - ../base/mariadb-operator

@@ -8,3 +8,4 @@ resources:
   - mittwald.yaml
   - external-secrets.yaml
   - cnpg.yaml
+  - mariadb-operator.yaml
