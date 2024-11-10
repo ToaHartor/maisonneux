@@ -24,6 +24,8 @@ spec:
       targetPath: s3.endpointUrl
 
   values:
+    # see https://github.com/InseeFrLab/helm-charts/tree/master/charts/s3-operator
+    # see https://github.com/InseeFrLab/helm-charts/blob/master/charts/s3-operator/values.yaml
     crds:
       install: true
       keep: false # true for persistency

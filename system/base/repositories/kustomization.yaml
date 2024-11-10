@@ -7,3 +7,4 @@ resources:
   - inseefrlab.yaml
   - mittwald.yaml
   - external-secrets.yaml
+  - cnpg.yaml
