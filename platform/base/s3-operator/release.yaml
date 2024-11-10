@@ -15,6 +15,7 @@ spec:
         name: inseefrlab
   interval: 50m
   install:
+    createNamespace: true
     remediation:
       retries: 3
   valuesFrom:
