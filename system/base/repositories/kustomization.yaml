@@ -9,3 +9,4 @@ resources:
   - external-secrets.yaml
   - cnpg.yaml
   - mariadb-operator.yaml
+  - mongodb.yaml
