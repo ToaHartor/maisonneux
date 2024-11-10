@@ -4,6 +4,7 @@ resources:
   - ../base/repositories
   - ../base/csi-proxmox
   - ../base/reloader
+  - ../base/external-secrets
   - ../base/cert-manager
   - ../base/cert-manager-csi-driver
   - ../base/trust-manager

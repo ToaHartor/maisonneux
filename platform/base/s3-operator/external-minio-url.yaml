@@ -1,0 +1,22 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: minio-endpoint-url
+  namespace: flux-system
+spec:
+  data:
+    - secretKey: url
+      remoteRef:
+        key: external-secrets
+        property: minio_url
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: external-secrets
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    template:
+      data:
+        url: '{{ .url }}'
+      engineVersion: v2

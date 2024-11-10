@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - ../base/repositories
   - ../base/reloader
+  - ../base/external-secrets
   - ../base/cert-manager
   - ../base/cert-manager-csi-driver
   - ../base/trust-manager

@@ -6,3 +6,4 @@ resources:
   - stakater-charts.yaml
   - inseefrlab.yaml
   - mittwald.yaml
+  - external-secrets.yaml

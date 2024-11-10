@@ -30,16 +30,19 @@ resource "kubernetes_secret" "proxmox_csi_creds" {
   }
 }
 
-resource "kubernetes_secret" "minio_external_secret" {
+resource "kubernetes_secret" "external_secrets" {
   metadata {
-    name      = "minio-external-secret"
+    name      = "external-secrets"
     namespace = kubernetes_namespace.external_secrets.metadata[0].name
   }
   type = "Opaque"
 
   data = {
-    S3_ACCESS_KEY = var.minio_access_key
-    S3_SECRET_KEY = var.minio_secret_key
+    minio = {
+      url        = var.minio_access_url
+      access_key = var.minio_access_key
+      secret_key = var.minio_secret_key
+    }
   }
 }
 
