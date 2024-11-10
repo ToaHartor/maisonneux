@@ -7,8 +7,8 @@ spec:
   data:
     - secretKey: url
       remoteRef:
-        key: external-secrets
-        property: minio_url
+        key: external-minio-secrets
+        property: url
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
