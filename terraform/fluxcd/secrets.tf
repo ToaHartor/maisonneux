@@ -38,22 +38,8 @@ resource "kubernetes_secret" "external_secrets" {
   type = "Opaque"
 
   data = {
-    minio = {
-      url        = var.minio_access_url
-      access_key = var.minio_access_key
-      secret_key = var.minio_secret_key
-    }
-  }
-}
-
-resource "kubernetes_secret" "minio_endpoint_url" {
-  metadata {
-    name      = "minio-endpoint-url"
-    namespace = kubernetes_namespace.flux_system.metadata[0].name
-  }
-  type = "Opaque"
-
-  data = {
-    url = var.minio_access_url
+    minio_url        = var.minio_access_url
+    minio_access_key = var.minio_access_key
+    minio_secret_key = var.minio_secret_key
   }
 }
