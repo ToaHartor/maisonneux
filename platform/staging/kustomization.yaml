@@ -7,3 +7,8 @@ resources:
   - ../base/cloudnative-pg
   - ../base/mariadb-operator
   - ../base/mongodb
+  - ../base/cert-manager-webhook-ovh
+patches:
+  - path: cert-manager-ovh-values.yaml
+    target:
+      kind: HelmRelease

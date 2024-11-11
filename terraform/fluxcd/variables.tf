@@ -1,3 +1,11 @@
+# General
+
+variable "admin_email" {
+  type        = string
+  description = "Email of cluster admin (used for Let's encrypt)"
+}
+
+
 # Fluxcd credentials
 
 variable "flux_git_user" {
@@ -43,4 +51,26 @@ variable "minio_secret_key" {
 variable "minio_access_url" {
   type        = string
   description = "External MinIO access URL (format 'localhost:9000')"
+}
+
+# OVH
+
+variable "ovh_endpoint_name" {
+  type        = string
+  description = "Endpoint name for OVH challenge (e.g. ovh-eu)"
+}
+
+variable "ovh_application_key" {
+  type        = string
+  description = "OVH application key"
+}
+
+variable "ovh_application_secret" {
+  type        = string
+  description = "OVH application secret"
+}
+
+variable "ovh_consumer_key" {
+  type        = string
+  description = "OVH consumer key"
 }

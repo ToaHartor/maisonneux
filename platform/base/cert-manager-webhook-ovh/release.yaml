@@ -1,0 +1,36 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager-webhook-ovh
+  namespace: flux-system
+spec:
+  releaseName: cert-manager-webhook-ovh
+  targetNamespace: cert-manager
+  chart:
+    spec:
+      chart: cert-manager-webhook-ovh
+      version: "0.7.0"
+      sourceRef:
+        kind: HelmRepository
+        name: cert-manager-webhook-ovh
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: cert-manager-ovh-values-secrets
+      valuesKey: email
+      targetPath: issuers[0].email
+    - kind: Secret
+      name: cert-manager-ovh-values-secrets
+      valuesKey: endpointName
+      targetPath: issuers[0].ovhEndpointName
+  values:
+    configVersion: 0.0.1
+    certmanager:
+      namespace: cert-manager
+      serviceAccountName: cert-manager
+    # Issuer configured in production/staging
+    # issuers:

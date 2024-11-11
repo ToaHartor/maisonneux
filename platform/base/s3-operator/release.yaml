@@ -20,7 +20,7 @@ spec:
       retries: 3
   valuesFrom:
     - kind: Secret
-      name: minio-endpoint-url
+      name: s3-operator-values-secrets
       valuesKey: url
       targetPath: s3.endpointUrl
 

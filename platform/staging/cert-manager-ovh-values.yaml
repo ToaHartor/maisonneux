@@ -1,0 +1,26 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager-webhook-ovh
+  namespace: flux-system
+spec:
+  interval: 50m
+  values:
+    issuers:
+      - name: letsencrypt-staging
+        acmeServerUrl: https://acme-staging-v02.api.letsencrypt.org/directory
+        create: true
+        kind: ClusterIssuer
+        # Completed in valuesFrom
+        # email: admin@example.com
+        # ovhEndpointName: ovh-eu
+        ovhAuthenticationRef:
+          applicationKeyRef:
+            name: external-ovh-secrets
+            key: applicationSecret
+          applicationSecretRef:
+            name: external-ovh-secrets
+            key: applicationSecret
+          consumerKeyRef:
+            name: external-ovh-secrets
+            key: consumerKey

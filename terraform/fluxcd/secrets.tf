@@ -43,3 +43,19 @@ resource "kubernetes_secret" "external_minio_secrets" {
     secret_key = var.minio_secret_key
   }
 }
+
+resource "kubernetes_secret" "external_ovh_secrets" {
+  metadata {
+    name      = "external-ovh-secrets"
+    namespace = kubernetes_namespace.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    admin_email        = var.admin_email
+    endpoint_name      = var.ovh_endpoint_name
+    application_key    = var.ovh_application_key
+    application_secret = var.ovh_application_secret
+    consumer_key       = var.ovh_consumer_key
+  }
+}
