@@ -1,4 +1,4 @@
-WORKSPACES=$(shell find terraform/* -maxdepth 0 -type d -not -path 'terraform/env' -exec basename {} \;)
+WORKSPACES=static k8s fluxcd-production fluxcd-staging
 HELM_ENVS=dev prod
 MAKEFLAGS += -rR
 
@@ -59,38 +59,25 @@ endif
 $(WORKSPACES):
 # make tf-plan <ws>
 ifeq (tf-plan,$(filter tf-plan,$(MAKECMDGOALS)))
-	@if [ "$@" = "fluxcd" ]; then \
-		sed -i -E "s/flux_git_remote_domain(\s+)\=(\s+)\"(.*)\"/flux_git_remote_domain\1\=\2\"$$(sh scripts/get_dev_machine_ip.sh)\"/" terraform/fluxcd/config.tfvars; \
-	fi
-	@cd terraform/$@ && \
-	tofu plan -out $@.tfplan -var-file='config.tfvars' -var-file='../env/credentials.tfvars' 
+	sh scripts/make/tf-plan.sh $@
 endif
+
 # make tf-apply <ws>
 ifeq (tf-apply,$(filter tf-apply,$(MAKECMDGOALS)))
-	@cd terraform/$@ && \
-	tofu apply $@.tfplan
-	@if [ "$@" = "k8s" ]; then \
-		cd terraform/k8s && tofu output -raw talosconfig >../../tmp/talosconfig.yaml && \
-		tofu output -raw kubeconfig >../../tmp/kubeconfig.yaml && \
-		tofu output -raw proxmox_csi_account >../../tmp/proxmoxcsi.yaml; \
-	fi
+	sh scripts/make/tf-apply.sh $@
 endif
 # make tf-destroy <ws>
 ifeq (tf-destroy,$(filter tf-destroy,$(MAKECMDGOALS)))
-	@cd terraform/$@ && \
-	tofu apply -destroy -var-file='config.tfvars' -var-file='../env/credentials.tfvars'
+	sh scripts/make/tf-destroy.sh $@
 endif
 # make tf-init <ws>
 ifeq (tf-init,$(filter tf-init,$(MAKECMDGOALS)))
-	@cd terraform/$@ && \
-	tofu init -lockfile=readonly
+	sh scripts/make/tf-init.sh $@
 endif
 ifeq (tf-upgrade,$(filter tf-upgrade,$(MAKECMDGOALS)))
-	@cd terraform/$@ && \
-	tofu init -upgrade
+	sh scripts/make/tf-upgrade.sh $@
 endif
 ifeq (tf-output,$(filter tf-output,$(MAKECMDGOALS)))
-	@cd terraform/$@ && \
-	tofu output -json >../../tmp/datavalue.json
+	sh scripts/make/tf-output.sh $@
 endif
 	
