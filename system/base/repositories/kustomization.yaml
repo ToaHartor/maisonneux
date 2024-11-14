@@ -11,3 +11,4 @@ resources:
   - mariadb-operator.yaml
   - mongodb.yaml
   - cert-manager-webhook-ovh.yaml
+  - traefik.yaml

@@ -8,6 +8,7 @@ resources:
   - ../base/mariadb-operator
   - ../base/mongodb
   - ../base/cert-manager-webhook-ovh
+  - ../base/traefik
 patches:
   - path: cert-manager-ovh-values.yaml
     target:
