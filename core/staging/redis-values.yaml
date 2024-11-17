@@ -1,0 +1,10 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: redis
+  namespace: flux-system
+spec:
+  interval: 50m
+  values:
+    global:
+      defaultStorageClass: default

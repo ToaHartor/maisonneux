@@ -12,3 +12,4 @@ resources:
   - mongodb.yaml
   - cert-manager-webhook-ovh.yaml
   - traefik.yaml
+  - bitnami.yaml
