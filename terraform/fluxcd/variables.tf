@@ -5,6 +5,17 @@ variable "admin_email" {
   description = "Email of cluster admin (used for Let's encrypt)"
 }
 
+variable "main_domain" {
+  type        = string
+  description = "Main domain name"
+}
+
+variable "second_domain" {
+  type        = string
+  description = "Secondary domain name"
+  default     = ""
+}
+
 
 # Fluxcd credentials
 

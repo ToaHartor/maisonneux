@@ -35,7 +35,7 @@ locals {
 # Ignore all folders, but include the ones with cluster resources
 /*
 # Cluster folders include
-!/clusters/production
+!/clusters/${terraform.workspace}
 !/apps/
 !/core/
 !/platform/
@@ -49,7 +49,7 @@ EOF
       spec = {
         prune = true
         force = true
-        path  = "./clusters/production" # TODO :variable with environment
+        path  = "./clusters/${terraform.workspace}"
       }
     }
   }

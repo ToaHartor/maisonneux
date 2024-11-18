@@ -38,7 +38,6 @@ resource "kubernetes_secret" "external_minio_secrets" {
   type = "Opaque"
 
   data = {
-    url        = var.minio_access_url
     access_key = var.minio_access_key
     secret_key = var.minio_secret_key
   }
@@ -57,5 +56,17 @@ resource "kubernetes_secret" "external_ovh_secrets" {
     application_key    = var.ovh_application_key
     application_secret = var.ovh_application_secret
     consumer_key       = var.ovh_consumer_key
+  }
+}
+
+resource "kubernetes_config_map" "general_config" {
+  metadata {
+    name      = "general-config"
+    namespace = kubernetes_namespace.flux_system.metadata[0].name
+  }
+  data = {
+    "minio_url"        = var.minio_access_url
+    "main_domain"      = var.main_domain
+    "secondary_domain" = var.second_domain
   }
 }

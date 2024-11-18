@@ -18,11 +18,6 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
-  valuesFrom:
-    - kind: Secret
-      name: s3-operator-values-secrets
-      valuesKey: url
-      targetPath: s3.endpointUrl
 
   values:
     # see https://github.com/InseeFrLab/helm-charts/tree/master/charts/s3-operator
@@ -46,7 +41,7 @@ spec:
           - --useSsl=false
 
     s3:
-      # endpointUrl: localhost:9000
+      endpointUrl: ${minio_url}
       existingSecret: minio-external-secret
 
       # accessKey:

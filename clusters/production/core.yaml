@@ -13,3 +13,8 @@ spec:
   path: ./core/production
   prune: true
   wait: true
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: general-config
+        optional: false
