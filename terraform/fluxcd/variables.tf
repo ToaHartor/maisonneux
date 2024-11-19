@@ -16,6 +16,12 @@ variable "second_domain" {
   default     = ""
 }
 
+variable "storage" {
+  type = object({
+    fastdata = string
+  })
+  description = "Storage classes name (in k8s)"
+}
 
 # Fluxcd credentials
 

@@ -25,6 +25,9 @@ spec:
       enabled: false
     architecture: replication
 
+    global:
+      defaultStorageClass: ${fastdata_storage}
+
     metrics:
       enabled: true
 

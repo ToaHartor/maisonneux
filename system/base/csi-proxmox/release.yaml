@@ -22,7 +22,7 @@ spec:
     existingConfigSecret: proxmox-csi-creds
     
     storageClass:
-      - name: proxmox-data-ext4
+      - name: ${fastdata_storage}
         storage: fastdata-raw
         reclaimPolicy: Delete
         fstype: ext4

@@ -68,5 +68,7 @@ resource "kubernetes_config_map" "general_config" {
     "minio_url"        = var.minio_access_url
     "main_domain"      = var.main_domain
     "secondary_domain" = var.second_domain
+    "fastdata_storage" = var.storage.fastdata
   }
 }
+
