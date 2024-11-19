@@ -40,6 +40,8 @@ locals {
 !/core/
 !/platform/
 !/system/
+# Include helm charts folder as well
+!/helm/
 # Remove flux-system as well
 clusters/**/flux-system/"
 EOF

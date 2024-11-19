@@ -1,0 +1,14 @@
+apiVersion: v2
+name: authentik
+description: A Helm chart for Kubernetes
+dependencies:
+  - name: authentik
+    version: &version 2024.10.2
+    repository: https://charts.goauthentik.io/
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - cloudnative-pg
+    # - s3-operator
+    # - redis
+    # - traefik
+version: *version
