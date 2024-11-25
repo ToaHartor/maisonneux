@@ -1,0 +1,36 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: tekton-operator
+  namespace: flux-system
+spec:
+  interval: 10m
+  ref:
+    tag: v0.74.0
+  url: http://github.com/tektoncd/operator
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tekton-operator
+  namespace: flux-system
+spec:
+  releaseName: tekton-operator
+  targetNamespace: tekton
+  # Target 
+  chart:
+    spec:
+      chart: charts/tekton-operator
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: tekton-operator
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  values:
+    # see https://github.com/tektoncd/operator/blob/main/charts/tekton-operator/values.yaml
+    installCRDs: true # TODO : proper CRDs install before actual helm release

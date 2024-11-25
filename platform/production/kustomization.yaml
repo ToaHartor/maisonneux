@@ -9,6 +9,7 @@ resources:
   - ../base/mongodb
   - ../base/cert-manager-webhook-ovh
   - ../base/traefik
+  - ../base/tekton-operator
 patches:
   - path: cert-manager-ovh-values.yaml
     target:
