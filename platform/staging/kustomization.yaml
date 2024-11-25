@@ -10,6 +10,7 @@ resources:
   - ../base/cert-manager-webhook-ovh
   - ../base/traefik
   - ../base/tekton-operator
+  - ../base/redis
 patches:
   - path: cert-manager-ovh-values.yaml
     target:
