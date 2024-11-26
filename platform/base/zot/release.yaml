@@ -1,0 +1,98 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zot
+  namespace: flux-system
+spec:
+  releaseName: zot
+  targetNamespace: internal-ci
+  dependsOn:
+    - name: s3-operator # Required for persistency
+  chart:
+    spec:
+      chart: zot
+      # Check version https://github.com/project-zot/helm-charts/releases
+      version: "0.1.65"
+      sourceRef:
+        kind: HelmRepository
+        name: project-zot
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # see https://github.com/project-zot/helm-charts/blob/main/charts/zot/values.yaml
+    replicaCount: 1
+    # persistence: false
+
+    # pvc:
+    #   create: true
+    #   storage: 1Gi
+    #   storageClassName: ${fastdata_storage}
+    env:
+      - name: "AWS_ACCESS_KEY_ID"
+        valueFrom:
+          secretKeyRef:
+            name: &s3user zot-s3user
+            key: accessKey
+      - name: "AWS_SECRET_ACCESS_KEY"
+        valueFrom:
+          secretKeyRef:
+            name: *s3user
+            key: secretKey
+  
+    mountConfig: true
+    configFiles:
+      # Config example from https://github.com/project-zot/zot/tree/main/examples
+      config.json: |-
+        {
+          "distSpecVersion": "1.1.0",
+          "storage": {
+            "rootDirectory": "/tmp/zot/s3",
+            "dedupe": true,
+            "remoteCache": false,
+            "gc": true,
+            "gcDelay": "2h",
+            "gcInterval": "24h",
+            "storageDriver": {
+              "name": "s3",
+              "region": "auto",
+              "regionendpoint": "http://${minio_url}",
+              "bucket": "zot",
+              "forcepathstyle": true,
+              "secure": false,
+              "skipverify": false
+            }
+          },
+          "http": {
+              "address": "0.0.0.0",
+              "port": "5000",
+              "compat": ["docker2s2"]
+          },
+          "extensions": {
+            "ui": {
+              "enable": true
+            },
+            "search": {
+              "enable": true
+            },
+            "metrics": {
+              "enable": true,
+              "prometheus": {
+                "path": "/metrics"
+              }
+            },
+            "scrub": {
+              "interval": "24h"
+            }
+          },
+          "log": { "level": "debug" }
+        }
+    
+    metrics:
+      enabled: true
+      # TODO : enable when monitoring stack is installed
+      # serviceMonitor:
+      #   enabled: true

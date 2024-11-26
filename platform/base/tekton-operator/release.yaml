@@ -17,6 +17,8 @@ metadata:
 spec:
   releaseName: tekton-operator
   targetNamespace: internal-ci
+  dependsOn:
+    - name: zot # We need a registry to start pushing our container images
   # Target 
   chart:
     spec:

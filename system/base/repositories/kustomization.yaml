@@ -13,3 +13,4 @@ resources:
   - cert-manager-webhook-ovh.yaml
   - traefik.yaml
   - bitnami.yaml
+  - project-zot.yaml

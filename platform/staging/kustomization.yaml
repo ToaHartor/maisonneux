@@ -11,6 +11,7 @@ resources:
   - ../base/traefik
   - ../base/tekton-operator
   - ../base/redis
+  - ../base/zot
 patches:
   - path: cert-manager-ovh-values.yaml
     target:

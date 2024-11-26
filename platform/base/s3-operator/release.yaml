@@ -53,4 +53,5 @@ spec:
         policy: true
         s3user: true
 
-      overrideExistingSecret: true
+      s3user:
+        overrideExistingSecret: true
