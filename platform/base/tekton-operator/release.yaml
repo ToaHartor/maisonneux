@@ -16,7 +16,7 @@ metadata:
   namespace: flux-system
 spec:
   releaseName: tekton-operator
-  targetNamespace: tekton
+  targetNamespace: internal-ci
   # Target 
   chart:
     spec:
@@ -34,3 +34,5 @@ spec:
   values:
     # see https://github.com/tektoncd/operator/blob/main/charts/tekton-operator/values.yaml
     installCRDs: true # TODO : proper CRDs install before actual helm release
+    operator:
+      defaultTargetNamespace: internal-ci
