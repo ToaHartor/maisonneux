@@ -69,6 +69,8 @@ resource "kubernetes_config_map" "general_config" {
     "main_domain"      = var.main_domain
     "secondary_domain" = var.second_domain
     "fastdata_storage" = var.storage.fastdata
+    "git_repo_url"     = local.flux_sync_helm_values.gitRepository.spec.url
+    "git_branch"       = var.flux_git_branch
   }
 }
 

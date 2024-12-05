@@ -1,0 +1,75 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: dockerbuild
+  namespace: internal-ci
+  annotations:
+    tekton.dev/payload-validation: "false"
+spec:
+  serviceAccountName: tekton-eventlistener-sa
+  # namespaceSelector:
+  #   matchNames:
+  #     - internal-ci
+  triggers:
+    # Trigger def
+    - name: dockerbuild
+      # interceptors:
+      #   # Interceptor def
+      #   - name: "validate webhook from "
+      #     ref:
+      #       name: "webhook"
+      #     # params:
+      #     # - name: "secretRef"
+      #     #   value:
+      #     #     secretName: github-secret
+      #     #     secretKey: secretToken
+      #     # - name: "eventTypes"
+      #     #   value: ["pull_request"]
+      #   - ref:
+      #       name: cel
+      #     params:
+      #       # We add/remove fields from the webhook
+      #       - name: overlay
+      #         value: "header.pouet"
+            
+      # bindings:
+      #   # TriggerBinding def
+      # - name: pouet
+      #   value: $(body.head_commit.id)
+      template:
+        # TriggerTemplate def
+        spec:
+          resourcetemplates:
+            - apiVersion: tekton.dev/v1beta1
+              kind: PipelineRun
+              metadata:
+                generateName: dockerbuild-run-
+              spec:
+                pipelineRef:
+                  name: dockerbuild
+                podTemplate:
+                  securityContext:
+                    fsGroup: 65532
+                workspaces:
+                - name: shared-data
+                  volumeClaimTemplate:
+                    spec:
+                      accessModes:
+                      - ReadWriteOnce
+                      resources:
+                        requests:
+                          storage: 1Gi
+                      storageClassName: ${fastdata_storage}
+                # - name: docker-credentials
+                #   secret:
+                #     secretName: docker-credentials
+                params:
+                - name: repo-url
+                  value: ${git_repo_url}
+                - name: repo-branch
+                  value: ${git_branch}
+                - name: dockerfile-path
+                  value: docker/apps/asphyxia
+                - name: image-reference
+                  value: zot.internal-ci.svc.cluster.local:5000/testowner/app:version
+    

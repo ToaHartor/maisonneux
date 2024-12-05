@@ -1,0 +1,30 @@
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: tekton-pipeline-webhook-dockerbuild
+  namespace: internal-ci
+spec:
+  type: generic
+  # EventListener url is el-$eventlistener_name.$namespace.cluster.local
+  address: http://el-dockerbuild.internal-ci.svc.cluster.local:8080/
+  # secretRef:
+    # # No secret as it may become visible on check
+    # name: tekton-webhook-token
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: tekton-pipeline-webhook-dockerbuild
+  namespace: internal-ci
+spec:
+  providerRef:
+    name: tekton-pipeline-webhook-dockerbuild
+  # eventSeverity: error
+  eventSources:
+    # Watch reconciliation for stage platform to build before core stage
+    - kind: Kustomization
+      name: platform
+      namespace: flux-system
+  # TODO : choose which event to monitor, either exclude or include
+  inclusionList:
+    - "Reconciliation finished in .*"
