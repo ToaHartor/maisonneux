@@ -25,12 +25,9 @@ spec:
   values:
     # see https://github.com/project-zot/helm-charts/blob/main/charts/zot/values.yaml
     replicaCount: 1
-    # persistence: false
-
-    # pvc:
-    #   create: true
-    #   storage: 1Gi
-    #   storageClassName: ${fastdata_storage}
+    service:
+      type: NodePort
+      nodePort: 32000
     env:
       - name: "AWS_ACCESS_KEY_ID"
         valueFrom:

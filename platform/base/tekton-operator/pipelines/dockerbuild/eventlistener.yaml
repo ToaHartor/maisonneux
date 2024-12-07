@@ -65,9 +65,9 @@ spec:
                 #     secretName: docker-credentials
                 params:
                 - name: repo-url
-                  value: ${git_repo_url}
+                  value: ${git_repo_url} # Completed by fluxcd
                 - name: repo-branch
-                  value: ${git_branch}
+                  value: ${git_branch} # Completed by fluxcd
                 - name: dockerfile-path
                   value: docker/apps/asphyxia
                 - name: image-reference
