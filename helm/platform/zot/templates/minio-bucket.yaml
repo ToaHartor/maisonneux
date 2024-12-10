@@ -3,7 +3,7 @@ apiVersion: s3.onyxia.sh/v1alpha1
 kind: Bucket
 metadata:
   name: zot-bucket
-  namespace: internal-ci
+  namespace: {{ .Release.Namespace }}
 spec:
   # Bucket name (on S3 server, as opposed to the name of the CR)
   name: zot
@@ -16,7 +16,7 @@ apiVersion: s3.onyxia.sh/v1alpha1
 kind: Policy
 metadata:
   name: &name zot-bucket-policy
-  namespace: internal-ci
+  namespace: {{ .Release.Namespace }}
 spec:
   # Policy name (on S3 server, as opposed to the name of the CR)
   name: *name
@@ -51,7 +51,7 @@ apiVersion: s3.onyxia.sh/v1alpha1
 kind: S3User
 metadata:
   name: &name zot-s3user
-  namespace: internal-ci
+  namespace: {{ .Release.Namespace }}
 spec:
   accessKey: *name
   policies:
