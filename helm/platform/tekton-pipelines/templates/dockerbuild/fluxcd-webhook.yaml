@@ -26,5 +26,5 @@ spec:
       name: flux-system-testapp
       namespace: flux-system
   # TODO : choose which event to monitor, either exclude or include
-  inclusionList:
-    - "packaged 'testapp' chart with version .*"
+  # inclusionList:
+  #   - "packaged 'testapp' chart with version .*"

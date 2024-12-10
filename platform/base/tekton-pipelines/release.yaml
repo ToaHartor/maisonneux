@@ -25,8 +25,8 @@ spec:
   values:
     # Propagate fluxcd values to the chart
     repository:
-      url: ${repo_url}
-      branch: ${repo_branch}
+      url: ${git_repo_url}
+      branch: ${git_branch}
     registry:
       url: zot.internal-ci.svc.cluster.local:5000
     storage:
