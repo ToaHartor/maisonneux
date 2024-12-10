@@ -1,3 +1,4 @@
+# Create all namespaces for future deployments here
 apiVersion: v1
 kind: Namespace
 metadata:

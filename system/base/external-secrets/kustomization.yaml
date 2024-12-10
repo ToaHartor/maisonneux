@@ -4,7 +4,7 @@ resources:
   # CRDs deployment
   - deployment-crds.yaml
 
-  # Operator deployment with Helm release*
+  # Operator deployment with Helm release
   - release.yaml
 
   # Role setup to allow the local ClusterSecretStore to operate
