@@ -2,11 +2,11 @@ apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Provider
 metadata:
   name: tekton-pipeline-webhook-dockerbuild
-  namespace: internal-ci
+  namespace: {{ .Release.Namespace }}
 spec:
   type: generic
   # EventListener url is el-$eventlistener_name.$namespace.svc.cluster.local
-  address: http://el-dockerbuild.internal-ci.svc.cluster.local:8080/
+  address: "http://el-dockerbuild.{{ .Release.Namespace }}.svc.cluster.local:8080/"
   # secretRef:
     # # No secret as it may become visible on check
     # name: tekton-webhook-token
@@ -15,7 +15,7 @@ apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Alert
 metadata:
   name: tekton-pipeline-webhook-dockerbuild
-  namespace: internal-ci
+  namespace: {{ .Release.Namespace }}
 spec:
   providerRef:
     name: tekton-pipeline-webhook-dockerbuild

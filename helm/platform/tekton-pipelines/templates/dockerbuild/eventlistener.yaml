@@ -2,7 +2,7 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
 metadata:
   name: dockerbuild
-  namespace: internal-ci
+  namespace: {{ .Release.Namespace }}
   annotations:
     tekton.dev/payload-validation: "false"
 spec:
@@ -59,17 +59,17 @@ spec:
                       resources:
                         requests:
                           storage: 1Gi
-                      storageClassName: ${fastdata_storage}
+                      storageClassName: {{ .Values.storage.className }}
                 # - name: docker-credentials
                 #   secret:
                 #     secretName: docker-credentials
                 params:
                 - name: repo-url
-                  value: ${git_repo_url} # Completed by fluxcd
+                  value: {{ .Values.repository.url }}
                 - name: repo-branch
-                  value: ${git_branch} # Completed by fluxcd
+                  value: {{ .Values.repository.branch }}
                 - name: dockerfile-path
                   value: docker/apps/asphyxia
                 - name: image-reference
-                  value: zot.internal-ci.svc.cluster.local:5000/testowner/app:version
+                  value: "{{ .Values.registry.url }}/testowner/app:version"
     

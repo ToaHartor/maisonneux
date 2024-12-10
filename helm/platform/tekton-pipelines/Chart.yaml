@@ -1,0 +1,10 @@
+apiVersion: v2
+name: tekton-pipelines
+description: Helm chart containing Tekton pipelines for the cluster
+# dependencies:
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - tekton-operator
+    # - zot
+    # - kubernetes-secret-generator
+    # - fluxcd
+version: 0.0.1

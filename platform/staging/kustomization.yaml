@@ -9,6 +9,7 @@ resources:
   - ../base/cert-manager-webhook-ovh
   - ../base/traefik
   - ../base/tekton-operator
+  - ../base/tekton-pipelines
   - ../base/redis
   - ../base/zot
 patches:

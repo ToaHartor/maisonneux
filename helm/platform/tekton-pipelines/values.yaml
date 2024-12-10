@@ -1,0 +1,9 @@
+repository:
+  url: http://example.com/myrepo
+  branch: main
+
+registry:
+  url: example.com:5000
+
+storage:
+  className: default
