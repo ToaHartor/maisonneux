@@ -22,9 +22,9 @@ spec:
   # eventSeverity: error
   eventSources:
     # Watch reconciliation for target helmrelease and build while deploying it. Timeout will also be increased for it.
-    - kind: HelmRelease
-      name: testapp
+    - kind: HelmChart
+      name: flux-system-testapp
       namespace: flux-system
   # TODO : choose which event to monitor, either exclude or include
   inclusionList:
-    - "packaged '.*' chart with version '.*'"
+    - "packaged 'testapp' chart with version .*"
