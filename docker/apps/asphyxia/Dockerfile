@@ -1,6 +1,6 @@
 FROM node:22-alpine3.20
 
-RUN apk add unzip curl 
+RUN apk add unzip curl libc6-compat
 
 RUN addgroup --gid 2000 asphyxia && \
     adduser --ingroup asphyxia --uid 2000 --no-create-home --disabled-password --gecos "" asphyxia
@@ -19,9 +19,9 @@ RUN chown -R 2000:2000 .
 
 USER asphyxia
 
-ENV ASPHYXIA_PORT 8083
+ENV ASPHYXIA_PORT=8083
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3\
     CMD curl -sf -A "Mozilla/5.0" http://localhost:$ASPHYXIA_PORT -o /dev/null || exit 1
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "./docker-entrypoint.sh"]

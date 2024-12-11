@@ -17,4 +17,4 @@ spec:
     spec:
       containers:
       - name: testapp
-        image: localhost:32000/testowner/app:0.0.0
+        image: localhost:32000/testowner/app:0.0.0.b

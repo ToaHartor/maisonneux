@@ -71,5 +71,5 @@ spec:
                 - name: dockerfile-path
                   value: docker/apps/asphyxia
                 - name: image-reference
-                  value: "{{ .Values.registry.url }}/testowner/app:0.0.0"
+                  value: "{{ .Values.registry.url }}/testowner/app:0.0.0.b"
     
