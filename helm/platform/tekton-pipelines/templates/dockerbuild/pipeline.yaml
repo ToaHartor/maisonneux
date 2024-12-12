@@ -10,11 +10,11 @@ spec:
   params:
   - name: repo-url
     type: string
-  - name: repo-branch
+  - name: revision
     type: string
   - name: dockerfile-path
     type: string
-  - name: image-reference
+  - name: image-registry
     type: string
   workspaces:
   - name: shared-data
@@ -37,16 +37,39 @@ spec:
     - name: url
       value: $(params.repo-url)
     - name: revision
-      value: $(params.repo-branch)
+      value: $(params.revision)
+  # Retrieve image metadata from helm values
+  # Output: yq
+  - name: get-image-meta
+    runAfter:
+      - fetch-source
+    taskRef:
+      resolver: bundles
+      params:
+        - name: bundle
+          value: gcr.io/tekton-releases/catalog/upstream/yq:0.4
+        - name: name
+          value: yq
+        - name: kind
+          value: Task
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+    - name: SCRIPT
+      value: |
+        #! /bin/bash
+        echo -n "$(/usr/bin/yq '.images.testapp.image' ./helm/apps/testapp/values.yaml):$(/usr/bin/yq '.images.testapp.tag' ./helm/apps/testapp/values.yaml)" | tee $(results.yq.path)
   # Build the Docker image(s) and push to registry
   - name: kaniko
     params:
       - name: CONTEXT
         value: $(params.dockerfile-path)
       - name: IMAGE
-        value: $(params.image-reference)
+        # results.yq contains image:tag
+        value: "$(params.image-registry)/$(tasks.get-image-meta.results.yq)"
     runAfter:
-      - fetch-source
+      - get-image-meta
     taskRef:
       resolver: bundles
       params:

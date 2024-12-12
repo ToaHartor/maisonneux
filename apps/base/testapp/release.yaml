@@ -6,16 +6,14 @@ metadata:
 spec:
   releaseName: testapp
   targetNamespace: testapp
-  # Target 
   chart:
     spec:
       chart: helm/apps/testapp
       interval: 12h
-      # version: "2024.10.2"
       sourceRef:
         kind: GitRepository
         name: flux-system
-      reconcileStrategy: Revision
+      reconcileStrategy: ChartVersion
   interval: 50m
   install:
     createNamespace: true

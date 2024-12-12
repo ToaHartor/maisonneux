@@ -7,35 +7,24 @@ metadata:
     tekton.dev/payload-validation: "false"
 spec:
   serviceAccountName: tekton-eventlistener-sa
-  # namespaceSelector:
-  #   matchNames:
-  #     - internal-ci
   triggers:
     # Trigger def
     - name: dockerbuild
       # interceptors:
       #   # Interceptor def
-      #   - name: "validate webhook from "
-      #     ref:
-      #       name: "webhook"
-      #     # params:
-      #     # - name: "secretRef"
-      #     #   value:
-      #     #     secretName: github-secret
-      #     #     secretKey: secretToken
-      #     # - name: "eventTypes"
-      #     #   value: ["pull_request"]
       #   - ref:
       #       name: cel
       #     params:
-      #       # We add/remove fields from the webhook
-      #       - name: overlay
-      #         value: "header.pouet"
-            
+      #       # Transform the revision from FluxCD event to the actual commit SHA
+      #       # Sadly, not commit sha is available in the webhook
+      #       - name: "overlays"
+      #         value: 
+      #           - key: commit_sha
+      #             expression: body
       # bindings:
       #   # TriggerBinding def
-      # - name: pouet
-      #   value: $(body.head_commit.id)
+      #   - name: commit-sha
+      #     value: $(extensions.commit_sha)
       template:
         # TriggerTemplate def
         spec:
@@ -66,10 +55,10 @@ spec:
                 params:
                 - name: repo-url
                   value: {{ .Values.repository.url }}
-                - name: repo-branch
+                - name: revision
                   value: {{ .Values.repository.branch }}
                 - name: dockerfile-path
                   value: docker/apps/asphyxia
-                - name: image-reference
-                  value: "{{ .Values.registry.url }}/testowner/app:0.0.0.b"
+                - name: image-registry
+                  value: {{ .Values.registry.url }}
     
