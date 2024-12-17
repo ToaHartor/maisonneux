@@ -1,6 +1,6 @@
 apiVersion: v2
 name: authentik
-description: A Helm chart for Kubernetes
+description: Authentik Helm chart with additional resources
 dependencies:
   - name: authentik
     version: &version 2024.10.2

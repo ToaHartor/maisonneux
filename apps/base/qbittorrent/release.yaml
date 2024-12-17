@@ -1,0 +1,47 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: qbittorrent
+  namespace: flux-system
+spec:
+  releaseName: qbittorrent
+  targetNamespace: media
+  chart:
+    spec:
+      chart: qbittorrent
+      # Version from https://artifacthub.io/packages/helm/gabe565/qbittorrent
+      version: "0.4.0"
+      sourceRef:
+        kind: HelmRepository
+        name: gabe565
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/gabe565/charts/blob/main/charts/qbittorrent/values.yaml
+  # see https://github.com/bjw-s/helm-charts/blob/main/charts/library/common/values.yaml
+  values:
+    # configMaps:
+    #   config:
+    #     enabled: true
+    env:
+      TZ: Europe/Paris
+      PUID: 1000 # User ID, should have the rights on the NFS share and the dataset
+      PGID: 1000 # Group ID
+      DOCKER_MODS: ghcr.io/gabe565/linuxserver-mod-vuetorrent
+    persistence:
+      config:
+        enabled: true
+        retain: true
+        storageClass: "${fastdata_storage}"
+        accessMode: ReadWriteOnce
+        size: 1Gi
+      downloads:
+        enabled: true
+        type: nfs
+        server: 192.168.1.203
+        path: /mnt/raw-18tb-media/test-qbittorrent
+      vuetorrent:
+        enabled: true
+        type: emptyDir

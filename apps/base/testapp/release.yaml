@@ -1,22 +1,22 @@
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
-metadata:
-  name: testapp
-  namespace: flux-system
-spec:
-  releaseName: testapp
-  targetNamespace: testapp
-  chart:
-    spec:
-      chart: helm/apps/testapp
-      interval: 12h
-      sourceRef:
-        kind: GitRepository
-        name: flux-system
-      reconcileStrategy: ChartVersion
-  interval: 50m
-  install:
-    createNamespace: true
-    remediation:
-      retries: 3
+# apiVersion: helm.toolkit.fluxcd.io/v2
+# kind: HelmRelease
+# metadata:
+#   name: testapp
+#   namespace: flux-system
+# spec:
+#   releaseName: testapp
+#   targetNamespace: testapp
+#   chart:
+#     spec:
+#       chart: helm/apps/testapp
+#       interval: 12h
+#       sourceRef:
+#         kind: GitRepository
+#         name: flux-system
+#       reconcileStrategy: ChartVersion
+#   interval: 50m
+#   install:
+#     createNamespace: true
+#     remediation:
+#       retries: 3
   # values:
