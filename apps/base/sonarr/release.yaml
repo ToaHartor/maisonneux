@@ -1,0 +1,33 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sonarr
+  namespace: flux-system
+spec:
+  releaseName: sonarr
+  targetNamespace: media
+  chart:
+    spec:
+      # chart: sonarr
+      # # Version from https://github.com/truecharts/public/blob/master/charts/stable/sonarr/Chart.yaml
+      # version: "23.3.1"
+      # sourceRef:
+      #   kind: HelmRepository
+      #   name: truecharts
+      chart: helm/apps/sonarr
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        # namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/sonarr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/sonarr/
+  values:
+    storage:
+      persistentClassName: ${fastdata_storage}

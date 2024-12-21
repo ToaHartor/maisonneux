@@ -1,0 +1,12 @@
+apiVersion: v2
+name: sonarr
+description: Custom helm wrapper for Sonarr Helm chart
+dependencies:
+  - name: sonarr
+    # Version from https://github.com/truecharts/public/blob/master/charts/stable/sonarr/Chart.yaml
+    version: "23.3.1"
+    repository: oci://tccr.io/truecharts
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - cloudnative-pg
+version: 0.0.1

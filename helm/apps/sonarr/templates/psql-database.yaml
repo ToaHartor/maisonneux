@@ -1,0 +1,47 @@
+# See https://cloudnative-pg.io/documentation/1.19/samples/cluster-example-full.yaml
+# See https://cloudnative-pg.io/documentation/1.19/samples/
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Values.database.resourceName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+
+  superuserSecret:
+    name: psql-admin-secret
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__MAINDB }}
+      owner: {{ .Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__USER }}
+      secret:
+        name: sonarr-psql-secret
+      postInitSQL:
+        # Log database creation
+        - CREATE DATABASE {{ .Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__LOGDB }} OWNER {{ .Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__USER }};
+
+  managed:
+    services:
+      # No need since our database is
+      disabledDefaultServices: ["ro", "r"]
+
+  # resources:
+  #   requests:
+  #     memory: "64m"
+  #     cpu: 50m
+  #   limits:
+  #     memory: "256m"
+  #     cpu: 250m
+  # Require 1Gi of space
+  storage:
+    size: 1Gi
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: {{ .Values.storage.persistentClassName }}
+      volumeMode: Filesystem

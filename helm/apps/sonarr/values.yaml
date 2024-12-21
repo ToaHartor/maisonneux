@@ -1,0 +1,57 @@
+storage:
+  persistentClassName: default
+
+database:
+  resourceName: sonarr-psql
+
+sonarr:
+  # see https://github.com/truecharts/public/blob/master/charts/stable/sonarr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/sonarr/
+
+  # namespace: ""
+  workload:
+    main:
+      podSpec:
+        initContainers:
+          waitpsql:
+            enabled: true
+            type: init
+            image:
+              repository: docker.io/library/busybox
+              tag: latest
+              pullPolicy: IfNotPresent
+            command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: sonarr-psql-rw # service name for psql rw operations
+              POD_NAMESPACE: media
+        containers:
+          main:
+            env:
+              SONARR__AUTH__APIKEY:
+                secretKeyRef:
+                  name: sonarr-api-key
+                  key: SONARR__AUTH__APIKEY
+                  expandObjectName: false
+              SONARR__AUTH__METHOD: External
+              SONARR__APP__INSTANCENAME: Sonarr
+              SONARR__APP__THEME: dark
+              SONARR__AUTH__REQUIRED: DisabledForLocalAddresses
+              SONARR__LOG__LEVEL: info
+              SONARR__UPDATE__BRANCH: develop
+              SONARR__POSTGRES__HOST: sonarr-psql-rw.media.svc.cluster.local
+              SONARR__POSTGRES__PORT: "5432"
+              SONARR__POSTGRES__USER: sonarr
+              SONARR__POSTGRES__PASSWORD:
+                secretKeyRef:
+                  name: sonarr-psql-secret
+                  key: password
+                  expandObjectName: false
+              SONARR__POSTGRES__MAINDB: sonarr_main
+              SONARR__POSTGRES__LOGDB: sonarr_log
+  persistence:
+    config:
+      enabled: true
+      type: emptyDir
+  metrics:
+    main:
+      enabled: false # TODO : true when monitoring stack deployed
