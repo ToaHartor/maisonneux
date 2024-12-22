@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: cloudnative-pg
-      version: "0.22.1"
+      version: "0.23.0-rc1" # "0.22.1"
       sourceRef:
         kind: HelmRepository
         name: cnpg
@@ -20,6 +20,7 @@ spec:
 
   values:
     # https://artifacthub.io/packages/helm/cloudnative-pg/cloudnative-pg
+    # Schedule operator on control plane
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
 
