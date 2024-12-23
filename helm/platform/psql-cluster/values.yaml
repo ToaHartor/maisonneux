@@ -1,0 +1,7 @@
+storage:
+  persistentClassName: default
+
+database:
+  users:
+    - authentik
+    - sonarr

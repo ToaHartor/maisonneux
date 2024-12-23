@@ -4,6 +4,7 @@ resources:
   - ../base/secret-generator
   - ../base/s3-operator
   - ../base/cloudnative-pg
+  - ../base/postgres-db
   - ../base/mariadb-operator
   - ../base/mongodb
   - ../base/cert-manager-webhook-ovh

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sonarr-api-key
+  namespace: media
+  annotations:
+    secret-generator.v1.mittwald.de/autogenerate: SONARR__AUTH__APIKEY
+    secret-generator.v1.mittwald.de/length: "32"
+    secret-generator.v1.mittwald.de/encoding: hex
+type: Opaque
+data: {}

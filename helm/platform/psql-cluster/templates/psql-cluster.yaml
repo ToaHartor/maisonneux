@@ -3,26 +3,36 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: authentik-psql
+  name: psql-cluster
   namespace: {{ .Release.Namespace }}
 spec:
-  instances: 1
+  instances: 3
   primaryUpdateStrategy: unsupervised
 
   superuserSecret:
     name: psql-admin-secret
 
-  bootstrap:
-    initdb:
-      database: {{ .Values.authentik.authentik.postgresql.name }}
-      owner: authentik # should be the same in the secret
-      secret:
-        name: authentik-psql-secret
+  # bootstrap:
+  #   initdb:
+  #     database: psql # Dummy
+  #     owner: psql # should be the same in the secret
+  #     secret:
+  #       name: authentik-psql-secret
 
   managed:
     services:
-      # No need since our database is
+      # No need since our database is 
       disabledDefaultServices: ["ro", "r"]
+    roles:
+      {{- range $user := .Values.database.users }}
+      - name: {{ $user }}
+        ensure: present
+        comment: {{ $user }} database user
+        login: true
+        superuser: false
+        passwordSecret:
+          name: {{ $user }}-psql-secret
+      {{- end }}
 
   # resources:
   #   requests:

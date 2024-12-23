@@ -1,0 +1,27 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: psql-cluster
+  namespace: flux-system
+spec:
+  releaseName: psql-cluster
+  targetNamespace: postgres
+  dependsOn:
+    - name: cloudnative-pg
+  chart:
+    spec:
+      chart: helm/platform/psql-cluster
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+
+  values:
+    storage:
+      persistentClassName: ${fastdata_storage}
+    

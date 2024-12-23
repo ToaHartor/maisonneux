@@ -1,8 +1,12 @@
 storage:
   persistentClassName: default
 
+namespaces:
+  postgresNamespace: &psqlNs postgres
+
 database:
-  resourceName: sonarr-psql
+  clusterName: psql-cluster
+  clusterSecretName: postgres-secrets
 
 sonarr:
   # see https://github.com/truecharts/public/blob/master/charts/stable/sonarr/values.yaml
@@ -22,8 +26,8 @@ sonarr:
               pullPolicy: IfNotPresent
             command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
             env:
-              POD_NAME: sonarr-psql-rw # service name for psql rw operations
-              POD_NAMESPACE: media
+              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAMESPACE: *psqlNs
         containers:
           main:
             env:
@@ -38,7 +42,7 @@ sonarr:
               SONARR__AUTH__REQUIRED: DisabledForLocalAddresses
               SONARR__LOG__LEVEL: info
               SONARR__UPDATE__BRANCH: develop
-              SONARR__POSTGRES__HOST: sonarr-psql-rw.media.svc.cluster.local
+              SONARR__POSTGRES__HOST: psql-cluster-rw.postgres.svc.cluster.local
               SONARR__POSTGRES__PORT: "5432"
               SONARR__POSTGRES__USER: sonarr
               SONARR__POSTGRES__PASSWORD:
@@ -46,8 +50,8 @@ sonarr:
                   name: sonarr-psql-secret
                   key: password
                   expandObjectName: false
-              SONARR__POSTGRES__MAINDB: sonarr_main
-              SONARR__POSTGRES__LOGDB: sonarr_log
+              SONARR__POSTGRES__MAINDB: sonarr-main
+              SONARR__POSTGRES__LOGDB: sonarr-log
   persistence:
     config:
       enabled: true

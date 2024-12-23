@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: {{ .Values.authentik.authentik.postgresql.name }}
+  namespace: {{ .Values.namespaces.postgresNamespace }}
+spec:
+  name: {{ .Values.authentik.authentik.postgresql.name }}
+  ensure: present
+  owner: authentik
+  cluster:
+    name: {{ .Values.database.clusterName }}

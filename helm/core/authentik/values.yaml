@@ -4,6 +4,14 @@ s3:
   endpoint: &authentik-bucket-endpoint "http://localhost:9000"
   customDomain: &authentik-custom-domain "localhost:9000/authentik"
 
+namespaces:
+  postgresNamespace: postgres
+  secretsNamespace: external-secrets
+
+database:
+  clusterName: psql-cluster
+  clusterSecretName: postgres-secrets
+
 storage:
   persistentClassName: default
 
@@ -14,7 +22,7 @@ authentik:
     error_reporting:
       enabled: false
     postgresql:
-      host: authentik-psql-rw.authentik.svc.cluster.local
+      host: psql-cluster-rw.postgres.svc.cluster.local
       name: authentik
       user: file:///postgres-creds/username
       password: file:///postgres-creds/password

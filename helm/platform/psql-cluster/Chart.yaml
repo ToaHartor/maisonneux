@@ -1,0 +1,5 @@
+apiVersion: v2
+name: psql-cluster
+description: Helm chart provisioning Postgres cluster with 
+# Implicit dependencies : cloudnative-pg
+version: 0.0.1
