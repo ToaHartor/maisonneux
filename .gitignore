@@ -2,7 +2,7 @@
 
 docker-compose/test
 
-.vscode
+.vscode/settings.json
 
 # Tmp folder for build artefacts
 tmp/*

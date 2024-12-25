@@ -9,12 +9,13 @@ export REPO_PATH=$(dirname $(dirname $(realpath "$0")))
 
 # Shut down instance if it exists
 echo "Stopping running instance"
-docker compose -f dev/docker-compose.yaml down || true
+make stop-devenv || true
 
 # Remove persistent data from old instances
-rm -rf tmp/gitea
+sudo rm -rf tmp/gitea
 mkdir -p tmp/gitea/data
-mkdir -p tmp/gitea/config
+mkdir -p tmp/gitea/git
+sudo chown -R 525287:525287 tmp/gitea
 
 # export reused variables, use GitHub info for Gitea
 # export GITEA_USER_EMAIL=$(git config --list | grep "user.email" | cut -d"=" -f2)
@@ -27,9 +28,12 @@ export GITEA_NAME="localdev"
 export GITEA_INSTANCE_NAME="dev_gitea"
 
 echo "Starting the local gitea stack"
-docker compose -f dev/docker-compose.yaml up -d
+make start-devenv
+# ensure everything has the right permissions again
+sudo chown -R 525287:525287 tmp/gitea
 
-gitea_addr="$(docker port "$GITEA_INSTANCE_NAME" 3000 | head -1)"
+gitea_addr="$(podman port "$GITEA_INSTANCE_NAME" 3000 | head -1)"
+# gitea_addr=localhost:3000
 gitea_url="http://$gitea_addr"
 gitea_local_repo_name="maisonneux-local"
 
@@ -40,7 +44,7 @@ GITEA_URL="$gitea_url" bash -euc 'while [ -z "$(wget -qO- "$GITEA_URL/api/v1/ver
 export GIT_PUSH_REPOSITORY="http://$GITEA_USERNAME:$GITEA_PASSWORD@$gitea_addr/$GITEA_USERNAME/${gitea_local_repo_name}.git"
 
 # Create admin user used for pushes
-docker exec --user git "$GITEA_INSTANCE_NAME" gitea admin user create \
+podman exec --user git "$GITEA_INSTANCE_NAME" gitea admin user create \
     --admin \
     --email "$GITEA_USER_EMAIL" \
     --username "$GITEA_USERNAME" \

@@ -2,17 +2,18 @@
 # This should not be exposed on the Internet
 services:
   gitea:
-    image: gitea/gitea:latest-rootless
+    image: docker.io/gitea/gitea:latest # -rootless
+    # userns_mode: "keep-id:uid=1000,gid=1000"
     container_name: ${GITEA_INSTANCE_NAME:-local_gitea}
     volumes:
-      - ${REPO_PATH:-.}/tmp/gitea/data:/var/lib/gitea
-      - ${REPO_PATH:-.}/tmp/gitea/config:/etc/gitea
+      - ${REPO_PATH:-.}/tmp/gitea/data:/data/gitea:z
+      - ${REPO_PATH:-.}/tmp/gitea/git:/data/git:z
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 2222:2222/tcp # SSH
       - 3000:3000/tcp # Web view
-    user: "1000"
+    # user: "0"
     environment:
       - USER_UID=1000
       - USER_GID=1000

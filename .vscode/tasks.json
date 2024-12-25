@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Start/stop dev stack when opening project folder",
+        "type": "shell",
+        "command": "./scripts/autostart_dev.sh",
+        "presentation": {
+          "reveal": "silent",
+          "close": true
+        },
+        "runOptions": { "runOn": "folderOpen" }
+      }
+    ]
+  }

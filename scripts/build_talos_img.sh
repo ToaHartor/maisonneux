@@ -284,7 +284,7 @@ output:
   outFormat: raw
 EOF
 
-docker run --rm -i \
+sudo podman run --rm -i \
 -v $PWD/tmp/talos:/secureboot:ro \
 -v $PWD/tmp/talos:/out \
 -v /dev:/dev \

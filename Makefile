@@ -17,7 +17,7 @@ local-git:
 	sh scripts/init_local_dev_gitea.sh
 
 stop-devenv:
-	docker compose -f dev/docker-compose.yaml down
+	sh scripts/stop_devenv.sh
 
 start-devenv:
 	sh scripts/start_devenv.sh
