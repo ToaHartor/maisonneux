@@ -4,3 +4,4 @@ resources:
   - ../base/testapp
   - ../base/qbittorrent
   - ../base/sonarr
+  - ../base/vaultwarden

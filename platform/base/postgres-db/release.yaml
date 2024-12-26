@@ -24,4 +24,9 @@ spec:
   values:
     storage:
       persistentClassName: ${fastdata_storage}
+    database:
+      users:
+        - authentik
+        - sonarr
+        - vaultwarden
     

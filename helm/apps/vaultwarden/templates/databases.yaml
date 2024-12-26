@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: vaultwarden
+  namespace: {{ .Values.namespaces.postgresNamespace }}
+spec:
+  name: {{ .Values.database.databaseTable }}
+  ensure: present
+  owner: vaultwarden
+  cluster:
+    name: {{ .Values.database.clusterName }}

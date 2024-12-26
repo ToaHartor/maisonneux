@@ -1,0 +1,12 @@
+apiVersion: v2
+name: vaultwarden
+description: Custom helm wrapper for Vaultwarden Helm chart
+dependencies:
+  - name: vaultwarden
+    # Version from https://github.com/truecharts/public/blob/master/charts/premium/vaultwarden/Chart.yaml
+    version: "28.4.5"
+    repository: oci://tccr.io/truecharts
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - cloudnative-pg
+version: 0.0.1

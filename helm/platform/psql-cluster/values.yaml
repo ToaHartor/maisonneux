@@ -3,5 +3,4 @@ storage:
 
 database:
   users:
-    - authentik
-    - sonarr
+    - default
