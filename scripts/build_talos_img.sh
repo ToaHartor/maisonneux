@@ -3,9 +3,9 @@ set -euo pipefail
 
 # see https://github.com/siderolabs/talos/releases
 # renovate: datasource=github-releases depName=siderolabs/talos
-talos_version="1.8.1"
+talos_version="1.9.1"
 # https://github.com/siderolabs/pkgs/tags
-talos_pkg_branch="release-1.8"
+talos_pkg_branch="release-1.9"
 
 # see https://github.com/siderolabs/extensions/pkgs/container/qemu-guest-agent
 # see https://github.com/siderolabs/extensions/tree/main/guest-agents/qemu-guest-agent
