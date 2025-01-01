@@ -17,4 +17,11 @@ if [ "${FLUXCD_ENV}" != "" ]; then \
     popd
 fi
 cd terraform/${TF_FOLDER}
-tofu output -json >../../tmp/datavalue.json
+# If targetting k8s, we extract values only from nodes deployment
+if [ "$1" = "k8s" ]; then
+    pushd nodes
+        tofu output -json >../../../tmp/datavalue_${TF_FOLDER}.json
+    popd
+else
+    tofu output -json >../../tmp/datavalue_${TF_FOLDER}.json
+fi

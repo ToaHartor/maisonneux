@@ -1,17 +1,40 @@
-resource "proxmox_virtual_environment_file" "talos" {
+# Local built image
+# resource "proxmox_virtual_environment_file" "talos" {
+#   content_type = "iso"
+#   datastore_id = "local"
+#   node_name    = var.proxmox_node_name
+#   source_file {
+#     path      = "../../../tmp/talos/talos-${var.talos_version}.qcow2"
+#     file_name = "talos-${var.talos_version}.img"
+#   }
+# }
+
+data "http" "talos_factory_schematic_id" {
+  url    = "https://factory.talos.dev/schematics"
+  method = "POST"
+
+  request_headers = {
+    Content-type = "text/x-yaml"
+  }
+  request_body = file("../../../scripts/talos_schematic.yaml")
+}
+
+resource "proxmox_virtual_environment_download_file" "talos_nocloud_image" {
   content_type = "iso"
   datastore_id = "local"
-  node_name    = "datacenter"
-  source_file {
-    path      = "../../tmp/talos/talos-${var.talos_version}.qcow2"
-    file_name = "talos-${var.talos_version}.img"
-  }
+  node_name    = var.proxmox_node_name
+
+  file_name               = "talos-${var.talos_version}-nocloud-amd64.img"
+  url                     = "https://factory.talos.dev/image/${jsondecode(data.http.talos_factory_schematic_id.response_body).id}/v${var.talos_version}/nocloud-amd64.raw.gz"
+  decompression_algorithm = "gz"
+  overwrite               = false
 }
+
 
 resource "proxmox_virtual_environment_vm" "k8s-controller" {
   count           = var.controller_count
   name            = local.controller_nodes[count.index].name
-  node_name       = "datacenter"
+  node_name       = var.proxmox_node_name
   tags            = sort(["terraform", "talos", "k8s", "controller"])
   stop_on_destroy = true
   bios            = "ovmf"
@@ -53,7 +76,7 @@ resource "proxmox_virtual_environment_vm" "k8s-controller" {
     discard      = "on"
     size         = var.cluster_os_storage
     file_format  = "raw"
-    file_id      = proxmox_virtual_environment_file.talos.id
+    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
   }
   agent {
     enabled = true
@@ -78,6 +101,11 @@ resource "proxmox_virtual_environment_vm" "k8s-controller" {
   #   rombar   = true
   #   xvga     = true
   # }
+  lifecycle {
+    ignore_changes = [
+      disk[0].file_id
+    ]
+  }
 }
 
 data "talos_machine_configuration" "controller" {
@@ -158,13 +186,13 @@ data "talos_machine_configuration" "controller" {
           #     data.helm_template.csi_s3.manifest,
           #   ])
           # },
-          {
-            name = "cilium"
-            contents = join("---\n", [
-              data.helm_template.cilium.manifest,
-              "# Source cilium.tf\n${local.cilium_external_lb_manifest}",
-            ])
-          },
+          # {
+          #   name = "cilium"
+          #   contents = join("---\n", [
+          #     data.helm_template.cilium.manifest,
+          #     "# Source cilium.tf\n${local.cilium_external_lb_manifest}",
+          #   ])
+          # },
           # {
           #   name = "nvidia-device-plugin"
           #   contents = join("---\n", [yamlencode(local.nvidia_runtime_resource),

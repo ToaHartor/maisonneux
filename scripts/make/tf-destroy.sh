@@ -19,4 +19,16 @@ if [ "${FLUXCD_ENV}" != "" ]; then \
     popd
 fi
 cd terraform/${TF_FOLDER}
-tofu apply -destroy -var-file="${TF_CONFIG_VARS_FILE}" -var-file='../env/credentials.tfvars'
+# Destroying both folders in k8s
+if [ "$1" = "k8s" ]; then
+    pushd nodes
+        echo "Destroying cluster..."
+        tofu apply -destroy -var-file="../${TF_CONFIG_VARS_FILE}" -var-file='../../env/credentials.tfvars'
+    popd
+    pushd charts
+        echo "Removing tfstate in charts folder"
+        rm terraform.tfstate*
+    popd
+else
+    tofu apply -destroy -var-file="${TF_CONFIG_VARS_FILE}" -var-file='../env/credentials.tfvars'
+fi

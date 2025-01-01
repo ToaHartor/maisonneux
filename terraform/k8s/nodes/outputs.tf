@@ -4,7 +4,7 @@ output "talosconfig" {
 }
 
 output "kubeconfig" {
-  value     = data.talos_cluster_kubeconfig.talos.kubeconfig_raw
+  value     = talos_cluster_kubeconfig.talos.kubeconfig_raw
   sensitive = true
 }
 
@@ -14,6 +14,10 @@ output "controllers" {
 
 output "workers" {
   value = join(",", [for node in local.worker_nodes : node.address])
+}
+
+output "kubeprism_port" {
+  value = local.common_machine_config.machine.features.kubePrism.port
 }
 
 output "proxmox_csi_account" {

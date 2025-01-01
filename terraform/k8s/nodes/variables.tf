@@ -1,4 +1,3 @@
-# Common variables
 variable "proxmox_api_endpoint" {
   type        = string
   description = "Proxmox cluster API endpoint with https"
@@ -29,12 +28,17 @@ variable "proxmox_node_name" {
   description = "Proxmox node name"
 }
 
+variable "proxmox_cluster_name" {
+  type        = string
+  description = "Proxmox cluster name"
+}
+
 # see https://github.com/siderolabs/talos/releases
 # see https://www.talos.dev/v1.7/introduction/support-matrix/
 variable "talos_version" {
   type = string
   # renovate: datasource=github-releases depName=siderolabs/talos
-  default = "1.8.1"
+  default = "1.9.1"
   validation {
     condition     = can(regex("^\\d+(\\.\\d+)+", var.talos_version))
     error_message = "Must be a version number."
@@ -46,7 +50,7 @@ variable "talos_version" {
 variable "kubernetes_version" {
   type = string
   # renovate: datasource=github-releases depName=siderolabs/kubelet
-  default = "1.31.1"
+  default = "1.31.3"
   validation {
     condition     = can(regex("^\\d+(\\.\\d+)+", var.kubernetes_version))
     error_message = "Must be a version number."
@@ -166,38 +170,4 @@ variable "proxmox_vm_storage" {
   description = "Storage name in Proxmox for PVC usage"
   type        = string
   default     = "data"
-}
-
-# Truenas settings
-variable "truenas_vm_host" {
-  type        = string
-  description = "TrueNAS VM host (or IP)"
-}
-
-variable "truenas_vm_port" {
-  type        = number
-  description = "TrueNAS VM interface port (default 80)"
-  default     = 80
-}
-
-variable "truenas_vm_apikey" {
-  type        = string
-  description = "TrueNAS VM API key"
-}
-
-# MinIO
-variable "minio_access_key" {
-  type        = string
-  description = "TrueNAS VM host (or IP)"
-}
-
-variable "minio_secret_key" {
-  type        = string
-  description = "TrueNAS VM interface port (default 80)"
-}
-
-variable "minio_port" {
-  type        = number
-  description = "MinIO access port"
-  default     = 9000
 }

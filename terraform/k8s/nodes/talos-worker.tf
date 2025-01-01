@@ -2,7 +2,7 @@
 resource "proxmox_virtual_environment_vm" "k8s-worker" {
   count           = var.worker_count
   name            = local.worker_nodes[count.index].name
-  node_name       = "datacenter"
+  node_name       = var.proxmox_node_name
   tags            = sort(["terraform", "talos", "k8s", "worker"])
   stop_on_destroy = true
   bios            = "ovmf"
@@ -45,7 +45,7 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
     discard      = "on"
     size         = var.cluster_os_storage
     file_format  = "raw"
-    file_id      = proxmox_virtual_environment_file.talos.id
+    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
   }
 
   agent {
@@ -60,6 +60,12 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
         gateway = var.cluster_node_network_gateway
       }
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      disk[0].file_id
+    ]
   }
 }
 

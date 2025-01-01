@@ -14,4 +14,14 @@ if [ "${FLUXCD_ENV}" != "" ]; then \
     TF_FOLDER="fluxcd"
 fi
 cd terraform/${TF_FOLDER}
-tofu init -lockfile=readonly
+
+if [ "$1" = "k8s" ]; then
+    pushd charts
+        tofu init -lockfile=readonly
+    popd
+    pushd nodes
+        tofu init -lockfile=readonly
+    popd
+else
+    tofu init -lockfile=readonly
+fi

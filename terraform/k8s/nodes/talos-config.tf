@@ -26,6 +26,11 @@ locals {
           enabled = true
           port    = 7445
         }
+        hostDNS = {
+          enabled              = true
+          forwardKubeDNSToHost = false # Disable it as it conflicts with cilium's bpf.masquerade option
+          # resolveMemberNames   = true
+        }
       }
       # For metrics server
       kubelet = {
@@ -36,9 +41,12 @@ locals {
       }
       # Labels for csi-proxmox-driver
       nodeLabels = {
-        "topology.kubernetes.io/region" = "datacenter" # Proxmox cluster name
-        "topology.kubernetes.io/zone"   = "datacenter" # Proxmox node name
+        "topology.kubernetes.io/region" = var.proxmox_cluster_name
+        "topology.kubernetes.io/zone"   = var.proxmox_node_name
       }
+      # nodeTaints = {
+      #   "node.cilium.io/agent-not-ready" = "true:NoSchedule" # Taint nodes for cilium to check if it controls the node
+      # }
     }
     cluster = {
       # see https://www.talos.dev/v1.7/talos-guides/discovery/
@@ -56,9 +64,12 @@ locals {
       }
       network = {
         cni = {
-          name = "none"
+          name = "none" # As we install Cilium after
         }
+        dnsDomain  = "cluster.local"
+        podSubnets = [var.cluster_pod_cidr]
       }
+      # Disable because of cilium
       proxy = {
         disabled = true
       }
@@ -88,7 +99,7 @@ data "talos_client_configuration" "talos" {
 }
 
 // see https://registry.terraform.io/providers/siderolabs/talos/0.5.0/docs/data-sources/cluster_kubeconfig
-data "talos_cluster_kubeconfig" "talos" {
+resource "talos_cluster_kubeconfig" "talos" {
   client_configuration = talos_machine_secrets.talos.client_configuration
   endpoint             = local.controller_nodes[0].address
   node                 = local.controller_nodes[0].address

@@ -6,7 +6,7 @@ locals {
         insecure     = true
         token_id     = split("=", proxmox_virtual_environment_user_token.kubernetes_csi_token.value)[0]
         token_secret = split("=", proxmox_virtual_environment_user_token.kubernetes_csi_token.value)[1]
-        region       = "datacenter"
+        region       = var.proxmox_cluster_name
       }
     ]
   }
