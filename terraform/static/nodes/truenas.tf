@@ -202,6 +202,27 @@ resource "proxmox_virtual_environment_firewall_rules" "truenas_inbound" {
     log     = "info"
   }
 
+  ## NFS for k8s cluster
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "NFS share TCP for k8s"
+    source  = "192.168.1.221-192.168.1.228"
+    dport   = "111,724,2049"
+    proto   = "tcp"
+    log     = "info"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "NFS share UDP for k8s"
+    source  = "192.168.1.221-192.168.1.228"
+    dport   = "111,2049"
+    proto   = "udp"
+    log     = "info"
+  }
+
 
   rule {
     type    = "in"
