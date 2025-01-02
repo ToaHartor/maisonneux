@@ -1,0 +1,57 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: wakapi
+  namespace: flux-system
+spec:
+  releaseName: wakapi
+  targetNamespace: services
+  chart:
+    spec:
+      chart: wakapi
+      # Version from https://github.com/andreymaznyak/wakapi-helm-chart/blob/main/src/wakapi/Chart.yaml
+      version: "2.0.1"
+      sourceRef:
+        kind: HelmRepository
+        name: wakapi
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: wakapi-password-salt
+      valuesKey: passwordSalt
+      targetPath: wakapi_config.security.password_salt
+    - kind: Secret
+      name: wakapi-psql-secret
+      valuesKey: username
+      targetPath: wakapi_config.db.user
+    - kind: Secret
+      name: wakapi-psql-secret
+      valuesKey: password
+      targetPath: wakapi_config.db.password
+  # see https://github.com/andreymaznyak/wakapi-helm-chart/blob/main/src/wakapi/values.yaml
+  values:
+    persistence:
+      enabled: false
+
+    exposeMetrics: false
+    wakapi_config:
+      env: prod
+
+
+      db:
+        host: psql-cluster.postgres.svc.cluster.local
+        port: 5432
+        user: # Injected in release
+        password: # Injected in release
+        name: wakapi # database name
+        dialect: postgres
+
+      security:
+        password_salt: # Injected in release
+        insecure_cookies: false # You need to set this to 'true' when on localhost
+        allow_signup: false
+        expose_metrics: false

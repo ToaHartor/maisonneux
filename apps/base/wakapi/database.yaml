@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: wakapi
+  namespace: postgres
+spec:
+  name: wakapi
+  ensure: present
+  owner: wakapi
+  cluster:
+    name: psql-cluster
