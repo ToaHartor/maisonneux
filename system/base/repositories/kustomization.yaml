@@ -15,4 +15,3 @@ resources:
   - bitnami.yaml
   - gabe565.yaml
   - truecharts.yaml
-  - wakapi.yaml

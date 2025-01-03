@@ -1,3 +1,15 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: wakapi
+  namespace: flux-system
+spec:
+  interval: 12h
+  ref:
+    branch: main
+    commit: 165fa9f9de794ab8ea7af4417d3cce7ed8d391b8
+  url: https://github.com/andreymaznyak/wakapi-helm-chart
+---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -8,20 +20,18 @@ spec:
   targetNamespace: services
   chart:
     spec:
-      chart: wakapi
+      chart: src/wakapi
       # Version from https://github.com/andreymaznyak/wakapi-helm-chart/blob/main/src/wakapi/Chart.yaml
-      version: "2.0.0"
+      # version: "2.0.0"
       sourceRef:
-        kind: HelmRepository
+        kind: GitRepository
         name: wakapi
+      reconcileStrategy: Revision
   interval: 50m
   install:
     createNamespace: true
     remediation:
       retries: 3
-  test:
-    enable: true
-    ignoreFailure: true
   valuesFrom:
     - kind: Secret
       name: wakapi-password-salt
@@ -37,21 +47,17 @@ spec:
       targetPath: wakapi_config.db.password
   # see https://github.com/andreymaznyak/wakapi-helm-chart/blob/main/src/wakapi/values.yaml
   values:
-    nameOverride: wakapi
-
     image:
-      repository: ghcr.io/muety/wakapi
+      # repository: ghcr.io/muety/wakapi
       tag: "2.12.3@sha256:16ac23159dba05255a1ea3e45b4decab106acb159c21183ae389eb71ba923d42"
     persistence:
       enabled: false
-    serviceAccount:
-      create: true
     exposeMetrics: false
     wakapi_config:
       env: prod
 
       db:
-        host: psql-cluster.postgres.svc.cluster.local
+        host: psql-cluster-rw.postgres.svc.cluster.local
         port: 5432
         user: # Injected in release
         password: # Injected in release
