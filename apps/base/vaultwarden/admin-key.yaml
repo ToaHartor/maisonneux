@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: vaultwarden-admin-key
-  namespace: flux-system
+  namespace: services
   annotations:
     secret-generator.v1.mittwald.de/autogenerate: secretKey
     secret-generator.v1.mittwald.de/length: "50"

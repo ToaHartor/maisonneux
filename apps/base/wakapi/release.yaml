@@ -2,10 +2,10 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: wakapi
-  namespace: flux-system
+  namespace: services
 spec:
   releaseName: wakapi
-  targetNamespace: services
+  # targetNamespace: services
   chart:
     spec:
       chart: helm/apps/wakapi
@@ -13,7 +13,7 @@ spec:
       sourceRef:
         kind: GitRepository
         name: flux-system
-        # namespace: flux-system
+        namespace: flux-system
       reconcileStrategy: Revision
   interval: 50m
   install:
@@ -39,9 +39,7 @@ spec:
       db:
         host: psql-cluster-rw.postgres.svc.cluster.local
         port: 5432
-        user: # Injected in release
-        password: # Injected in release
-        name: wakapi # database name
+        name: wakapi
       insecure_cookies: false # You need to set this to 'true' when on localhost
       allow_signup: false
       expose_metrics: false

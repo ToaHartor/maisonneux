@@ -2,10 +2,10 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: qbittorrent
-  namespace: flux-system
+  namespace: media
 spec:
   releaseName: qbittorrent
-  targetNamespace: media
+  # targetNamespace: media
   chart:
     spec:
       chart: qbittorrent
@@ -14,6 +14,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: gabe565
+        namespace: flux-system
   interval: 50m
   install:
     createNamespace: true
@@ -22,6 +23,7 @@ spec:
   # see https://github.com/gabe565/charts/blob/main/charts/qbittorrent/values.yaml
   # see https://github.com/bjw-s/helm-charts/blob/main/charts/library/common/values.yaml
   values:
+    # TODO : configure with configMap if possible
     # configMaps:
     #   config:
     #     enabled: true

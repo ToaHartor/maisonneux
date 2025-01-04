@@ -2,10 +2,10 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: cloudnative-pg
-  namespace: flux-system
+  namespace: operators
 spec:
   releaseName: cloudnative-pg
-  targetNamespace: operators
+  # targetNamespace: operators
   chart:
     spec:
       chart: cloudnative-pg
@@ -13,6 +13,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: cnpg
+        namespace: flux-system
   interval: 50m
   install:
     remediation:

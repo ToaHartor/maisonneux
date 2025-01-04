@@ -28,9 +28,9 @@ authentik:
       password: file:///postgres-creds/password
     redis:
       host: redis-master.redis.svc.cluster.local
-  blueprints:
-    configMaps:
-      - authentik-blueprint
+  # blueprints:
+  #   configMaps:
+  #     - authentik-blueprint
   global:
     env:
       - name: AUTHENTIK_BOOTSTRAP_PASSWORD

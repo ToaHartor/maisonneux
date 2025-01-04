@@ -2,10 +2,10 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: cert-manager-webhook-ovh
-  namespace: flux-system
+  namespace: cert-manager
 spec:
   releaseName: cert-manager-webhook-ovh
-  targetNamespace: cert-manager
+  # targetNamespace: cert-manager
   chart:
     spec:
       chart: cert-manager-webhook-ovh
@@ -13,6 +13,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: cert-manager-webhook-ovh
+        namespace: flux-system
   interval: 50m
   install:
     createNamespace: true

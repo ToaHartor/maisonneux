@@ -6,6 +6,7 @@ metadata:
 spec:
   dependsOn:
     - name: external-secrets-crds
+      namespace: flux-system
   wait: true
   interval: 10m
   path: ./system/base/external-secrets/crs

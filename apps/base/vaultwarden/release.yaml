@@ -2,10 +2,10 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: vaultwarden
-  namespace: flux-system
+  namespace: services
 spec:
   releaseName: vaultwarden
-  targetNamespace: services
+  # targetNamespace: services
   chart:
     spec:
       # chart: vaultwarden
@@ -18,7 +18,7 @@ spec:
       sourceRef:
         kind: GitRepository
         name: flux-system
-        # namespace: flux-system
+        namespace: flux-system
       reconcileStrategy: Revision
   interval: 50m
   install:

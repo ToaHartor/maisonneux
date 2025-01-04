@@ -2,10 +2,10 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: sonarr
-  namespace: flux-system
+  namespace: media
 spec:
   releaseName: sonarr
-  targetNamespace: media
+  # targetNamespace: media
   chart:
     spec:
       # chart: sonarr
@@ -19,7 +19,7 @@ spec:
       sourceRef:
         kind: GitRepository
         name: flux-system
-        # namespace: flux-system
+        namespace: flux-system
       reconcileStrategy: Revision
   interval: 50m
   install:

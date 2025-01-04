@@ -2,10 +2,10 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: authentik
-  namespace: flux-system
+  namespace: authentik
 spec:
   releaseName: authentik
-  targetNamespace: authentik
+  # targetNamespace: authentik
   # Target 
   chart:
     spec:
@@ -15,6 +15,7 @@ spec:
       sourceRef:
         kind: GitRepository
         name: flux-system
+        namespace: flux-system
       reconcileStrategy: Revision
   interval: 50m
   install:
@@ -34,8 +35,11 @@ spec:
     authentik:
       # authentik:
       #   secret_key: replaced by valueFrom
-      blueprints:
-        configMaps:
+      # blueprints:
+      #   configMaps:
+      #     - main_config.yaml
+      #   secrets:
+      #     - config.yaml
       
       server:
         ingress:

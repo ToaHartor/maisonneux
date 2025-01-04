@@ -1,4 +1,4 @@
-# Create all namespaces for future deployments here
+# Create namespaces that are shared by multiple apps
 apiVersion: v1
 kind: Namespace
 metadata:

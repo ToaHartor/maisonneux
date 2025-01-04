@@ -13,13 +13,14 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: tekton-operator
-  namespace: flux-system
+  namespace: internal-ci
 spec:
   releaseName: tekton-operator
-  targetNamespace: internal-ci
+  # targetNamespace: internal-ci
   dependsOn:
     - name: zot # We need a registry to start pushing our container images
     - name: kubernetes-secret-generator # As we generate tokens for tekton
+      namespace: kube-system
   # Target 
   chart:
     spec:
@@ -28,6 +29,7 @@ spec:
       sourceRef:
         kind: GitRepository
         name: tekton-operator
+        namespace: flux-system
       reconcileStrategy: Revision
   interval: 50m
   install:
