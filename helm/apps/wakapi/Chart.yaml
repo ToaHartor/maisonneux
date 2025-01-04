@@ -1,0 +1,9 @@
+apiVersion: v2
+name: wakapi
+description: Custom helm chart, based on andreymaznyak/wakapi-helm-chart
+# dependencies:
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - cloudnative-pg
+version: 0.0.1
+appVersion: 2.12.3

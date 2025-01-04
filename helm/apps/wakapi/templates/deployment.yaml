@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wakapi
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      {{- include "selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    #   annotations:
+      labels:
+        {{- include "selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        capabilities:
+          drop:
+          - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: {{ .Release.Name }}
+          # securityContext:
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            # Values from https://github.com/muety/wakapi?tab=readme-ov-file#-configuration-options
+            - name: ENVIRONMENT
+              value: prod
+            - name: WAKAPI_PORT
+              value: "{{ .Values.config.port }}"
+            - name: WAKAPI_PUBLIC_URL
+              value: "{{ .Values.config.public_url }}"
+            - name: WAKAPI_ALLOW_SIGNUP
+              value: "{{ .Values.config.allow_signup }}"
+            - name: WAKAPI_EXPORT_METRICS
+              value: "{{ .Values.config.export_metrics }}"
+            - name: WAKAPI_INSECURE_COOKIES
+              value: "{{ .Values.config.insecure_cookies }}"
+            - name: WAKAPI_PASSWORD_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: wakapi-password-salt
+                  key: passwordSalt
+            - name: WAKAPI_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: wakapi-psql-secret
+                  key: username
+            - name: WAKAPI_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wakapi-psql-secret
+                  key: password
+            - name: WAKAPI_DB_HOST
+              value: "{{ .Values.config.db.host }}"
+            - name: WAKAPI_DB_PORT
+              value: "{{ .Values.config.db.port }}"
+            - name: WAKAPI_DB_TYPE
+              value: postgres
+            - name: WAKAPI_DB_NAME
+              value: "{{ .Values.config.db.name }}"
+            # Set wakapi mail settings
+            - name: WAKAPI_MAIL_ENABLED
+              value: "false"
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
