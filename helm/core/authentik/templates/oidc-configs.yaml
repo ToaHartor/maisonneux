@@ -1,0 +1,7 @@
+{{- $root := . -}}
+{{- range $blueprint := .Values.authentik.blueprints.configMaps -}}
+{{- if $appname := regexFind "authentik-oidc-([a-zA-Z0-9]+)-bp" $blueprint -}}
+---
+{{ include "common.authentik-oidc" (dict "ApplicationName" $appname "Namespace" $root.Release.Namespace "RedirectUri" "https://test.example.com") }}
+{{- end -}}
+{{- end -}}

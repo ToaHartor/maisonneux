@@ -35,8 +35,10 @@ spec:
     authentik:
       # authentik:
       #   secret_key: replaced by valueFrom
-      # blueprints:
-      #   configMaps:
+      blueprints:
+        configMaps:
+          # List of configs to generate here, with the format "authentik-oidc-{app name}-bp"
+          - authentik-oidc-test-bp
       #     - main_config.yaml
       #   secrets:
       #     - config.yaml
