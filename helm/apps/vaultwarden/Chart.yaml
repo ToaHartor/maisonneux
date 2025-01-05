@@ -6,6 +6,9 @@ dependencies:
     # Version from https://github.com/truecharts/public/blob/master/charts/premium/vaultwarden/Chart.yaml
     version: "28.4.5"
     repository: oci://tccr.io/truecharts
+  - name: common
+    version: "0.0.1"
+    repository: "file://../../library/common"
     # Other implicit dependencies are installed before this chart by fluxcd :
     # - kubernetes-secret-generator
     # - cloudnative-pg

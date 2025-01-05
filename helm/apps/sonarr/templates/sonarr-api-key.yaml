@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: sonarr-api-key
-  namespace: media
+  namespace: {{ .Release.Namespace }}
   annotations:
     secret-generator.v1.mittwald.de/autogenerate: SONARR__AUTH__APIKEY
     secret-generator.v1.mittwald.de/length: "32"

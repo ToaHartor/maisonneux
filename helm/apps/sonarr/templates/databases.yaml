@@ -1,16 +1,5 @@
 {{- $root := . -}}
 {{- range $db := list .Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__MAINDB .Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__LOGDB -}}
 ---
-apiVersion: postgresql.cnpg.io/v1
-kind: Database
-metadata:
-  name: {{ $db }}
-  namespace: {{ $root.Values.namespaces.postgresNamespace }}
-spec:
-  name: {{ $db }}
-  ensure: present
-  owner: {{ $root.Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__USER }}
-  cluster:
-    name: {{ $root.Values.database.clusterName }}
----
+{{ include "common.psqldb" (dict "DatabaseNamespace" $root.Values.namespaces.postgresNamespace "DatabaseName" $db "DatabaseOwner" $root.Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__USER "PsqlClusterName" $root.Values.database.clusterName) }}
 {{- end -}}
