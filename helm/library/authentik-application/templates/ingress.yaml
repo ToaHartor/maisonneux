@@ -1,0 +1,29 @@
+{{- if and .Values.blueprint.provider.enabled (eq .Values.blueprint.provider.type "proxy") .Values.blueprint.provider.proxy.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "authentik-application.fullname" . }}
+  labels:
+    {{- include "authentik-application.labels" . | nindent 4 }}
+  {{- with .Values.blueprint.provider.proxy.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.blueprint.provider.proxy.ingress.domain | quote }}
+      http:
+        paths:
+          - path: "/outpost.goauthentik.io/"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.blueprint.provider.proxy.ingress.backend | quote }}
+                port:
+                  name: http
+  {{- with .Values.blueprint.provider.proxy.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -36,16 +36,53 @@ spec:
       # authentik:
       #   secret_key: replaced by valueFrom
       blueprints:
-        configMaps:
-          # List of configs to generate here, with the format "authentik-oidc-{app name}-bp"
-          - authentik-oidc-test-bp
+        secrets:
+      #     # List of configs for our applications. It should match the following pattern : "authentik-{auth type}-{app name}-bp"
+      #     - authentik-oidc-test-bp
       #     - main_config.yaml
       #   secrets:
       #     - config.yaml
+
+      global:
+        volumeMounts:
+          - name: sidecar-blueprints
+            mountPath: /blueprints/sidecar
+
+        volumes:
+          - name: sidecar-blueprints
+            emptyDir: {}
       
       server:
+        serviceAccountName: authentik
         ingress:
           hosts:
             - auth.${main_domain}
+      
+      worker:
+        serviceAccountName: authentik
+        extraContainers:
+        - name: sidecar-blueprints
+          image: "ghcr.io/kiwigrid/k8s-sidecar:1.28.4"
+          env:
+            - name: "FOLDER"
+              value: "/blueprints/sidecar"
+            - name: "LABEL"
+              value: "goauthentik_blueprint"
+            - name: "LABEL_VALUE"
+              value: "1"
+            # - name: "NAMESPACE"
+            #   value: "ALL"
+            - name: "RESOURCE"
+              value: "both"
+            - name: "UNIQUE_FILENAMES"
+              value: "true"
+          volumeMounts:
+            - name: sidecar-blueprints
+              mountPath: /blueprints/sidecar
+      
+      serviceAccount:
+        create: true
+
     storage:
       persistentClassName: ${fastdata_storage}
+      

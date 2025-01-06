@@ -1,0 +1,15 @@
+{{- with get . "root" }}
+- model: authentik_providers_proxy.ProxyProvider
+  id: {{ .Values.blueprint.provider.name | default (include "authentik-application.fullname" .) }}
+  identifiers:
+    name: {{ .Values.blueprint.provider.name | default (include "authentik-application.fullname" .) }}
+  state: present
+  attrs:
+    authorization_flow: !Find [authentik_flows.flow, [slug, {{ .Values.blueprint.provider.authorizationFlow }}]]
+    mode: "forward_single"
+    {{- with .Values.blueprint.provider.proxy }}
+    external_host: {{ .externalHost | quote }}
+    skip_path_regex: {{ .skipPathRegex | quote }}
+    cookie_domain: {{ .cookieDomain | quote }}
+    {{- end }}
+{{- end }}{{/* end with of get-root */}}
