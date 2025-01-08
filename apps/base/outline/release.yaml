@@ -1,0 +1,56 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: outline
+  namespace: services
+spec:
+  releaseName: outline
+  dependsOn:
+    # Wait for OIDC config creation
+    - name: outline-oidc
+  chart:
+    spec:
+      chart: helm/apps/outline
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  values:
+    storage:
+      persistentClassName: ${fastdata_storage}
+    
+    outline:
+      workload:
+        main:
+          podSpec:
+            containers:
+              main:
+                env:
+                  OIDC_CLIENT_ID:
+                    secretKeyRef:
+                      # {oidc-release-name}-{chart-name}
+                      name: outline-oidc-authentik-application
+                      key: clientID
+                      expandObjectName: false
+                  OIDC_CLIENT_SECRET:
+                    secretKeyRef:
+                      name: outline-oidc-authentik-application
+                      key: clientSecret
+                      expandObjectName: false
+                  OIDC_AUTH_URI: https://auth.${main_domain}/application/o/authorize/
+                  OIDC_TOKEN_URI: https://auth.${main_domain}/application/o/token/
+                  OIDC_USERINFO_URI: https://auth.${main_domain}/application/o/userinfo/
+                  OIDC_USERNAME_CLAIM: preferred_username
+                  OIDC_DISPLAY_NAME: Authentik
+                  OIDC_SCOPES: openid profile email
+      
+      redis:
+        creds:
+          url: redis://redis-master.redis.svc.cluster.local:6379

@@ -6,3 +6,4 @@ resources:
   - ../base/sonarr
   - ../base/vaultwarden
   - ../base/wakapi
+  - ../base/outline

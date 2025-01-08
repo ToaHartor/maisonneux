@@ -1,0 +1,109 @@
+storage:
+  persistentClassName: default
+
+namespaces:
+  postgresNamespace: &psqlNs postgres
+
+database:
+  clusterName: psql-cluster
+  clusterSecretName: postgres-secrets
+  databaseName: outline
+
+outline:
+  # see https://github.com/truecharts/public/blob/master/charts/stable/outline/values.yaml
+  # see documentation https://truecharts.org/charts/stable/outline/
+  # namespace: ""
+  s3:
+    secretName: outline-s3user
+    bucketName: outline
+    endpoint: "http://localhost:9000"
+    customDomain: "localhost:9000/outline"
+  workload:
+    main:
+      podSpec:
+        initContainers:
+          1-migratedb:
+            env:
+              DATABASE_URL:
+                secretKeyRef:
+                  name: outline-psql-secret
+                  key: connectionUrl
+                  expandObjectName: false
+              REDIS_URL:
+                secretKeyRef:
+                  name: outline-secrets
+                  key: REDIS_CUSTOM_URL
+                  expandObjectName: false
+              SECRET_KEY:
+                secretKeyRef:
+                  name: outline-secrets
+                  key: SECRET_KEY
+                  expandObjectName: false
+              UTILS_SECRET:
+                secretKeyRef:
+                  name: outline-secrets
+                  key: UTILS_SECRET
+                  expandObjectName: false
+              
+        containers:
+          main:
+            env:
+              NODE_ENV: production
+              
+              PGSSLMODE: disable
+
+              DATABASE_URL:
+                secretKeyRef:
+                  name: outline-psql-secret
+                  key: connectionUrl
+                  expandObjectName: false
+              REDIS_URL:
+                secretKeyRef:
+                  name: outline-secrets
+                  key: REDIS_CUSTOM_URL
+                  expandObjectName: false
+              SECRET_KEY:
+                secretKeyRef:
+                  name: outline-secrets
+                  key: SECRET_KEY
+                  expandObjectName: false
+              UTILS_SECRET:
+                secretKeyRef:
+                  name: outline-secrets
+                  key: UTILS_SECRET
+                  expandObjectName: false
+
+              AWS_ACCESS_KEY_ID:
+                secretKeyRef:
+                  name: "{{ .Values.s3.secretName }}"
+                  key: accessKey
+                  expandObjectName: false
+              AWS_SECRET_ACCESS_KEY:
+                secretKeyRef:
+                  name: "{{ .Values.s3.secretName }}"
+                  key: secretKey
+                  expandObjectName: false
+              # AWS_REGION: 
+              # AWS_S3_ACCELERATE_URL:
+              AWS_S3_UPLOAD_BUCKET_URL: https://bucket.example.com # Should be accessible from outside, especially for image display
+              AWS_S3_UPLOAD_BUCKET_NAME: "{{ .Values.s3.bucketName }}"
+              FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
+              # AWS_S3_FORCE_PATH_STYLE: true
+              # AWS_S3_ACL: private
+
+              LOG_LEVEL: info
+              WEB_CONCURRENCY: "1"
+              MAXIMUM_IMPORT_SIZE: "5120000"
+  # Disable cnpg and redis deployments as we use our own
+  redis:
+    enabled: false
+    creds:
+      url: redis://redis:6379 # Url is also needed 
+  cnpg:
+    main:
+      enabled: false
+
+  persistence:
+    data:
+      enabled: true
+      type: emptyDir

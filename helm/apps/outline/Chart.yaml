@@ -1,0 +1,18 @@
+apiVersion: v2
+name: outline
+description: Custom helm wrapper for Outline Helm chart
+dependencies:
+  - name: outline
+    # Version from https://github.com/truecharts/public/blob/master/charts/stable/outline/Chart.yaml
+    version: "14.14.0"
+    repository: oci://tccr.io/truecharts
+  - name: common
+    version: "0.0.1"
+    repository: "file://../../library/common"
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - cloudnative-pg
+    # - redis
+    # - s3-operator
+version: 0.0.1
+appVersion: 0.81.1
