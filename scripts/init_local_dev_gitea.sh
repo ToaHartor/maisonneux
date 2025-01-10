@@ -33,7 +33,6 @@ make start-devenv
 sudo chown -R 525287:525287 tmp/gitea
 
 gitea_addr="$(podman port "$GITEA_INSTANCE_NAME" 3000 | head -1)"
-# gitea_addr=localhost:3000
 gitea_url="http://$gitea_addr"
 gitea_local_repo_name="maisonneux-local"
 
@@ -74,6 +73,64 @@ curl \
     -H 'Content-Type: application/json' \
     -d "{\"name\": \"$gitea_local_repo_name\"}" \
     "$gitea_url/api/v1/user/repos" \
+    | jq \
+    > /dev/null
+
+
+# Prepare renovate folder
+mkdir -p tmp/renovate
+
+export RENOVATE_USERNAME="renovate"
+export RENOVATE_NAME='Renovate Bot'
+export RENOVATE_PASSWORD="password"
+
+podman exec --user git "$GITEA_INSTANCE_NAME" gitea admin user create \
+    --admin \
+    --email "$RENOVATE_USERNAME@example.com" \
+    --username "$RENOVATE_USERNAME" \
+    --password "$RENOVATE_PASSWORD" \
+    --must-change-password=false
+curl \
+    --silent \
+    --show-error \
+    --fail-with-body \
+    -u "$RENOVATE_USERNAME:$RENOVATE_PASSWORD" \
+    -X 'PATCH' \
+    -H 'Accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d "{\"full_name\":\"$RENOVATE_NAME\"}" \
+    "$gitea_url/api/v1/user/settings" \
+    | jq \
+    > /dev/null
+
+# create the user personal access token for renovate
+# see https://docs.gitea.io/en-us/api-usage/
+# see https://docs.gitea.io/en-us/oauth2-provider/#scopes
+# see https://try.gitea.io/api/swagger#/user/userCreateToken
+echo "Creating Gitea $RENOVATE_USERNAME user personal access token..."
+curl \
+    --silent \
+    --show-error \
+    --fail-with-body \
+    -u "$RENOVATE_USERNAME:$RENOVATE_PASSWORD" \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"name": "renovate", "scopes": ["read:user", "write:issue", "write:repository"]}' \
+    "$gitea_url/api/v1/users/$RENOVATE_USERNAME/tokens" \
+    | jq -r .sha1 \
+    >tmp/renovate/renovate-gitea-token.txt
+
+# try the token.
+echo "Trying the Gitea $RENOVATE_USERNAME user personal access token for renovate..."
+RENOVATE_TOKEN="$(cat tmp/renovate/renovate-gitea-token.txt)"
+export RENOVATE_TOKEN
+curl \
+    --silent \
+    --show-error \
+    --fail-with-body \
+    -H "Authorization: token $RENOVATE_TOKEN" \
+    -H 'Accept: application/json' \
+    "$gitea_url/api/v1/version" \
     | jq \
     > /dev/null
 

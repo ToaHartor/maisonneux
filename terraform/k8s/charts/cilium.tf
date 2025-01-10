@@ -187,10 +187,9 @@ resource "helm_release" "cilium" {
   name       = "cilium"
   repository = "https://helm.cilium.io"
   chart      = "cilium"
-  # renovate: datasource=helm depName=cilium registryUrl=https://helm.cilium.io
-  version = "1.16.4" # 1.16.5 has issues => https://github.com/cilium/cilium/issues/36761
-  values  = [yamlencode(local.cilium_chart_values)]
-  wait    = false # Do not wait for resources as the chart is designed like this
+  version    = "1.16.4" # 1.16.5 has issues => https://github.com/cilium/cilium/issues/36761
+  values     = [yamlencode(local.cilium_chart_values)]
+  wait       = false # Do not wait for resources as the chart is designed like this
 
 }
 

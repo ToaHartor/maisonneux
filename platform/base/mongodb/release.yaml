@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: community-operator
-      # Check version https://github.com/mongodb/mongodb-kubernetes-operator/releases
+      # renovate: datasource=helm depName=community-operator registryUrl=https://mongodb.github.io/helm-charts
       version: "0.11.0"
       sourceRef:
         kind: HelmRepository

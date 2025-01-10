@@ -11,6 +11,7 @@ spec:
   chart:
     spec:
       chart: cert-manager-csi-driver
+      # renovate: datasource=helm depName=cert-manager-csi-driver registryUrl=https://charts.jetstack.io
       version: "0.10.1"
       sourceRef:
         kind: HelmRepository

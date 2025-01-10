@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: traefik
+      # renovate: datasource=helm depName=traefik registryUrl=https://traefik.github.io/charts
       version: "33.0.0"
       sourceRef:
         kind: HelmRepository

@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: proxmox-csi-plugin
+      # renovate: datasource=docker depName=proxmox-csi-plugin registryUrl=oci://ghcr.io/sergelogvinov/charts
       version: "0.2.13"
       sourceRef:
         kind: HelmRepository

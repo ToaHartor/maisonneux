@@ -10,6 +10,7 @@ spec:
     spec:
       chart: qbittorrent
       # Version from https://artifacthub.io/packages/helm/gabe565/qbittorrent
+      # renovate: datasource=docker depName=qbittorrent registryUrl=oci://ghcr.io/gabe565/charts
       version: "0.4.0"
       sourceRef:
         kind: HelmRepository

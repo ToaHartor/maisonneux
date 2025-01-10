@@ -7,6 +7,7 @@ dependencies:
     version: "14.14.0"
     repository: oci://tccr.io/truecharts
   - name: common
+    # renovate: datasource=local-dependency
     version: "0.0.1"
     repository: "file://../../library/common"
     # Other implicit dependencies are installed before this chart by fluxcd :

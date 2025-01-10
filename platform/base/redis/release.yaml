@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: redis
+      # renovate: datasource=helm depName=redis registryUrl=https://charts.bitnami.com/bitnami
       version: "20.3.0"
       sourceRef:
         kind: HelmRepository

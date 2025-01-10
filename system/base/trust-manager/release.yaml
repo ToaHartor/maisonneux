@@ -11,6 +11,7 @@ spec:
   chart:
     spec:
       chart: trust-manager
+      # renovate: datasource=helm depName=trust-manager registryUrl=https://charts.jetstack.io
       version: "0.13.0"
       sourceRef:
         kind: HelmRepository
