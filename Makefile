@@ -2,7 +2,7 @@ WORKSPACES=static k8s fluxcd-production fluxcd-staging
 HELM_ENVS=dev prod
 MAKEFLAGS += -rR
 
-.PHONY: start-devenv stop-devenv local-git talos-img cluster-health use-context tools tf-plan tf-apply tf-init tf-destroy $(WORKSPACES)
+.PHONY: start-devenv stop-devenv local-git talos-img cluster-health use-context tools tf-plan tf-apply tf-init tf-destroy dry-renovate renovate $(WORKSPACES)
 
 cluster-health:
 	sh scripts/check_cluster_health.sh
@@ -21,6 +21,13 @@ stop-devenv:
 
 start-devenv:
 	sh scripts/start_devenv.sh
+
+# Renovate
+renovate:
+	sh scripts/run_renovate.sh
+
+dry-renovate:
+	sh scripts/run_renovate.sh --dry-run
 
 use-context:
 	@mkdir -p ~/.kube
