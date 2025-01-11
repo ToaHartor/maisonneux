@@ -15,7 +15,7 @@ terraform {
     # see https://registry.terraform.io/providers/hashicorp/random
     random = {
       source  = "hashicorp/random"
-      version = "3.6.2"
+      version = "3.6.3"
     }
 
     http = {
