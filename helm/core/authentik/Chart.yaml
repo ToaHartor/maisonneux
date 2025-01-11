@@ -3,7 +3,7 @@ name: authentik
 description: Authentik Helm chart with additional resources
 dependencies:
   - name: authentik
-    version: &version "2024.10.2"
+    version: &version "2024.12.2"
     repository: https://charts.goauthentik.io/
   - name: common
     version: "0.0.1"
