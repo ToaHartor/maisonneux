@@ -10,7 +10,7 @@ spec:
     spec:
       chart: cert-manager-webhook-ovh
       # renovate: datasource=helm depName=cert-manager-webhook-ovh registryUrl=https://aureq.github.io/cert-manager-webhook-ovh
-      version: "0.7.0"
+      version: "0.7.3"
       sourceRef:
         kind: HelmRepository
         name: cert-manager-webhook-ovh
