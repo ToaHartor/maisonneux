@@ -7,3 +7,4 @@ resources:
   - ../base/vaultwarden
   - ../base/wakapi
   - ../base/outline
+  - ../base/stirlingpdf

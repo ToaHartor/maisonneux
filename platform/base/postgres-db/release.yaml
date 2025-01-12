@@ -33,4 +33,5 @@ spec:
         - vaultwarden
         - wakapi
         - outline
+        - stirling
     

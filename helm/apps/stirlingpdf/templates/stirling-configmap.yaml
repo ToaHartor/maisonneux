@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stirling-config
+  namespace: {{ .Release.Namespace }}
+data:
+  DOCKER_ENABLE_SECURITY: "true"
+  SYSTEM_GOOGLEVISIBILITY: "false"
+  SYSTEM_ENABLEANALYTICS: "false"
+  SECURITY_ENABLELOGIN: "true"

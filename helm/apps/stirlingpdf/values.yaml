@@ -1,0 +1,38 @@
+namespaces:
+  postgresNamespace: &psqlNs postgres
+
+database:
+  clusterName: psql-cluster
+  clusterSecretName: postgres-secrets
+  databaseName: stirlingpdf
+  databaseOwner: stirling
+
+stirling-pdf-chart:
+  # envs:
+    # - name: SYSTEM_DATASOURCE_ENABLECUSTOMDATABASE
+    #   value: "true"
+    # - name: SYSTEM_DATASOURCE_CUSTOMDATABASEURL
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: stirling-psql-secret
+    #       key: connectionUrl
+    # - name: SYSTEM_DATASOURCE_USERNAME
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: stirling-psql-secret
+    #       key: username
+    # - name: SYSTEM_DATASOURCE_PASSWORD
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: stirling-psql-secret
+    #       key: password
+  envsFrom:
+    - secretRef:
+        name: stirling-psql-secret
+    - configMapRef:
+        name: stirling-config
+  ingress:
+    enabled: false
+
+  serviceMonitor:
+    enabled: false
