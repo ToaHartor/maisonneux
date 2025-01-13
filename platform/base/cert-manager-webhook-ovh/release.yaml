@@ -34,5 +34,5 @@ spec:
     certmanager:
       namespace: cert-manager
       serviceAccountName: cert-manager
-    # Issuer configured in production/staging
-    # issuers:
+    replicas: 2
+    # Issuer configured in production/staging kustomization.yaml

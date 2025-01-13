@@ -17,7 +17,7 @@ spec:
         ovhAuthenticationRef:
           applicationKeyRef:
             name: external-ovh-secrets
-            key: applicationSecret
+            key: applicationKey
           applicationSecretRef:
             name: external-ovh-secrets
             key: applicationSecret

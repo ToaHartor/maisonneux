@@ -65,6 +65,7 @@ resource "kubernetes_config_map" "general_config" {
     namespace = kubernetes_namespace.flux_system.metadata[0].name
   }
   data = {
+    "environment"      = terraform.workspace
     "minio_url"        = var.minio_access_url
     "main_domain"      = var.main_domain
     "secondary_domain" = var.second_domain

@@ -6,6 +6,9 @@ metadata:
 spec:
   releaseName: traefik
   # targetNamespace: traefik
+  dependsOn:
+    - name: cert-manager-webhook-ovh
+      namespace: cert-manager
   chart:
     spec:
       chart: traefik
@@ -24,3 +27,13 @@ spec:
   values:
     deployment:
       kind: DaemonSet
+    
+    # service:
+    #   loadBalancerClass: io.cilium/node
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+    additionalArguments:
+      - "--providers.kubernetescrd.allowCrossNamespace=true"
+      - "--providers.kubernetesingress.ingressclass=traefik"
+      - "--providers.kubernetesingress.ingressendpoint.publishedservice=traefik/traefik"
