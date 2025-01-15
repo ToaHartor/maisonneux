@@ -7,6 +7,7 @@ s3:
 namespaces:
   postgresNamespace: postgres
   secretsNamespace: external-secrets
+  traefikNamespace: traefik
 
 database:
   clusterName: psql-cluster
@@ -14,6 +15,10 @@ database:
 
 storage:
   persistentClassName: default
+
+ingress:
+  host: auth.example.com
+  certSecret: ingress-tls
 
 authentik:
   authentik:
@@ -62,7 +67,7 @@ authentik:
     replicas: 1
     ingress:
       ingressClassName: traefik
-      enabled: true
+      enabled: false
       hosts:
         - auth.example.com
     volumes:

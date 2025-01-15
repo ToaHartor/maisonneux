@@ -4,5 +4,7 @@ metadata:
   name: traefik
   namespace: flux-system
 spec:
+  # type: oci
   interval: 10m
+  # url: oci://ghcr.io/traefik/helm
   url: https://traefik.github.io/charts

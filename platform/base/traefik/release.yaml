@@ -5,10 +5,11 @@ metadata:
   namespace: traefik
 spec:
   releaseName: traefik
-  # targetNamespace: traefik
   dependsOn:
     - name: cert-manager-webhook-ovh
       namespace: cert-manager
+    - name: traefik-crds
+      namespace: traefik
   chart:
     spec:
       chart: traefik
@@ -20,6 +21,7 @@ spec:
         namespace: flux-system
   interval: 50m
   install:
+    crds: "Skip" # as we install it in a separate release before
     createNamespace: true
     remediation:
       retries: 3
@@ -30,10 +32,216 @@ spec:
     
     # service:
     #   loadBalancerClass: io.cilium/node
+    logs:
+      general:
+        level: "DEBUG"
+      access:
+        enabled: true
+
+    ingressClass:
+      name: traefik
+    providers:
+      kubernetesCRD:
+        allowCrossNamespace: true
+        ingressClass: traefik
+      kubernetesIngress:
+        ingressClass: traefik
+
     securityContext:
       seccompProfile:
         type: RuntimeDefault
     additionalArguments:
-      - "--providers.kubernetescrd.allowCrossNamespace=true"
-      - "--providers.kubernetesingress.ingressclass=traefik"
+      - "--serversTransport.insecureSkipVerify=true"
       - "--providers.kubernetesingress.ingressendpoint.publishedservice=traefik/traefik"
+    
+    # Default certificate
+    tlsStore:
+      # Creates a TLSStore resource "default" with the certificate
+      default:
+        certificates:
+          - secretName: ${main_domain}-tls
+        defaultCertificate:
+          secretName: ${main_domain}-tls
+      # Add more certificates if needed
+
+    # Default TLS options:
+    tlsOptions:
+      # Creates a TLSOption ressource "default"
+      default:
+        minVersion: VersionTLS12
+        cipherSuites:
+          - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384   # TLS 1.2
+          - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305    # TLS 1.2
+          - TLS_AES_256_GCM_SHA384                  # TLS 1.3
+          - TLS_CHACHA20_POLY1305_SHA256            # TLS 1.3
+          - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+          - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+          - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+          - TLS_AES_128_GCM_SHA256
+          - TLS_FALLBACK_SCSV # Client is doing version fallback. See RFC 7507
+        curvePreferences:
+          - CurveP521
+          - CurveP384
+        sniStrict: true
+
+    service:
+      enabled: true
+      annotations:
+        "io.cilium/lb-ipam-ips": "192.168.192.1" # Should be an IP defined in the L2 IP pool range of Cilium
+      labels:
+        "homelab/public-service": "true"
+      spec:
+        externalTrafficPolicy: Local
+
+    ports:
+      # http redirect to https
+      web:
+        redirections:
+          entryPoint:
+            to: websecure
+            scheme: https
+            # Higher priority than any rule per default to redirect everything to https. If no redirection is required, put a higher priority to the rule.
+            priority: 1000
+      websecure:
+        tls:
+          enabled: true
+
+    extraObjects:
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: ratelimit
+          namespace: traefik
+        spec:
+          rateLimit:
+            average: 200
+            burst: 100
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: secure-headers
+          namespace: traefik
+        spec:
+          headers:
+            accessControlAllowMethods: 
+              - GET
+              - OPTIONS
+              - PUT
+            accessControlAllowOriginListRegex:
+              - "https://([a-z]*\\.)?${main_domain}"
+            addVaryHeader: true
+            accessControlMaxAge: 100
+            hostsProxyHeaders: 
+              - X-Forwarded-Host
+            stsSeconds: 63072000
+            stsIncludeSubdomains: true
+            stsPreload: true
+            forceSTSHeader: true
+            contentSecurityPolicy: "frame-ancestors 'self' ${main_domain} *.${main_domain}"
+            contentTypeNosniff: true
+            browserXssFilter: true
+            referrerPolicy: "strict-origin"
+            permissionsPolicy: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), vr=()"
+            customResponseHeaders: 
+              X-Robots-Tag: "none,noarchive,nosnippet,notranslate,noimageindex,"
+              server: ""
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: compress
+          namespace: traefik
+        spec:
+          compress: {}
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: local-ip
+          namespace: traefik
+        spec:
+          ipWhiteList:
+            sourceRange:
+              - 192.168.1.254/32
+              - 10.0.0.1/16
+        # Forward auth middlewares
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: authentik-plex
+          namespace: traefik
+        spec:
+          forwardAuth:
+            # This address should point to the cluster endpoint provided by the kubernetes service, not the Ingress.
+            # TODO : authentik namespace variable
+            address: http://authentik-server.authentik.svc.cluster.local:80/outpost.goauthentik.io/auth/traefik
+            trustForwardHeader: true
+            authResponseHeaders:
+              - Cookie
+              - Authorization
+              - X-authentik-username
+              - X-authentik-groups
+              - X-authentik-entitlements
+              - X-authentik-email
+              - X-authentik-name
+              - X-authentik-uid
+              - X-authentik-jwt
+              - X-authentik-meta-jwks
+              - X-authentik-meta-outpost
+              - X-authentik-meta-provider
+              - X-authentik-meta-app
+              - X-authentik-meta-version
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: authentik
+          namespace: traefik
+        spec:
+          forwardAuth:
+            # This address should point to the cluster endpoint provided by the kubernetes service, not the Ingress.
+            # TODO : authentik namespace variable
+            address: http://authentik-server.authentik.svc.cluster.local:80/outpost.goauthentik.io/auth/traefik
+            trustForwardHeader: true
+            authResponseHeaders:
+              - X-authentik-username
+              - X-authentik-groups
+              - X-authentik-entitlements
+              - X-authentik-email
+              - X-authentik-name
+              - X-authentik-uid
+              - X-authentik-jwt
+              - X-authentik-meta-jwks
+              - X-authentik-meta-outpost
+              - X-authentik-meta-provider
+              - X-authentik-meta-app
+              - X-authentik-meta-version
+
+        # CHAIN MIDDLEWARES
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: chain-forwardauth
+          namespace: traefik
+        spec:
+          chain:
+            middlewares:
+              - name: secure-headers
+              - name: authentik
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: chain-forwardauth-plex
+          namespace: traefik
+        spec:
+          chain:
+            middlewares:
+              - name: secure-headers
+              - name: authentik-plex
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: chain-noauth
+          namespace: traefik
+        spec:
+          chain:
+            middlewares:
+              - name: secure-headers

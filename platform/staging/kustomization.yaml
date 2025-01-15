@@ -16,4 +16,6 @@ resources:
 patches:
   - path: cert-manager-ovh-values.yaml
     target:
+      name: cert-manager-webhook-ovh
+      namespace: cert-manager
       kind: HelmRelease

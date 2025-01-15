@@ -32,6 +32,9 @@ spec:
     s3:
       endpoint: http://${minio_url}
       customDomain: ${minio_url}/authentik
+    ingress:
+      certSecret: ${main_domain}-tls
+      host: auth.${main_domain}
     authentik:
       # authentik:
       #   secret_key: replaced by valueFrom

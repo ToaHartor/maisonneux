@@ -1,0 +1,21 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik-crds
+  namespace: traefik
+spec:
+  releaseName: traefik-crds
+  chart:
+    spec:
+      chart: traefik-crds
+      # renovate: datasource=helm depName=traefik-crds registryUrl=https://traefik.github.io/charts
+      version: "1.2.0"
+      sourceRef:
+        kind: HelmRepository
+        name: traefik
+        namespace: flux-system
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
