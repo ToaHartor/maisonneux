@@ -1,0 +1,41 @@
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  module_defaults:
+    group/ansibleguy.opnsense.all:
+      firewall: "{{ ansible_host }}"
+      api_key: "{{ api_key }}"
+      api_secret: "{{ api_secret }}"
+      ssl_verify: false
+
+  tasks:
+    - name: Install FRR plugin
+      ansibleguy.opnsense.package:
+        name: "os-frr"
+        action: "install"
+    # Routing - General enable
+    - name: Configure general FRR settings
+      ansibleguy.opnsense.frr_general:
+        enabled: true
+        log: true
+        log_level: 'notifications'
+        snmp_agentx: false
+        carp: false
+    # Routing - BGP General
+    - name: Configuring general BGP routing settings
+      ansibleguy.opnsense.frr_bgp_general:
+        enabled: true
+        as_number: "{{ bgp_asn }}"
+        networks: [] # '{{ lb_network }}'
+        redistribute: [] # 'connected' 'static'
+    # For each K8S node
+    - name: Configure BGP neighbors
+      ansibleguy.opnsense.frr_bgp_neighbor:
+        as_number: "{{ bgp_asn }}"
+        source_int: "lan"
+        ip: "{{ item }}"
+        description: "BGP config for {{ item }}"
+        next_hop_self: true
+        # bfd: false
+        # next_hop_self_all: true
+      loop: "{{ node_list | split(',') }}"

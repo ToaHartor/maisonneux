@@ -27,8 +27,9 @@ locals {
 
     bpf = {
       # datapathMode      = "netkit" # Not working even with Talos 1.19.1 (kernel 6.12)
-      masquerade        = true
-      tproxy            = true
+      masquerade = true
+      tproxy     = true
+      # vlanBypass        = [0]
       hostLegacyRouting = false # Enable until compatibility is improved for 1.16.5+
     }
 
@@ -59,9 +60,14 @@ locals {
     ipv4 = {
       enabled = true
     }
-    socketLB = {
-      enabled = true
+    ipv6 = {
+      enabled = false
     }
+
+    # Enabled by kubeProxyReplacement
+    # socketLB = {
+    #   enabled = true
+    # }
 
     securityContext = {
       capabilities = {
@@ -99,44 +105,79 @@ locals {
       burst = 100
     }
 
-    l2announcements = {
+    bgpControlPlane = {
       enabled = true
     }
 
-    externalIPs = {
-      enabled = true
+    l2announcements = {
+      enabled   = false # enable if no bgp
+      interface = "eth0"
     }
+
+    # Enabled by kubeProxyReplacement
+    # externalIPs = {
+    #   enabled = true
+    # }
 
     loadBalancer = {
       # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
       algorithm    = "maglev"
       mode         = "hybrid" # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#direct-server-return-dsr
       acceleration = "best-effort"
+      # TODO : L7 is handled by Traefik
       # l7 = {
       #   backend = "envoy"
       # }
     }
 
+    # maglev = {
+    #   hashSeed = "" # TODO : base64-encoded 12 byte-random number
+    # }
+
+    nodeIPAM = {
+      enabled = false
+    }
+
+    gatewayAPI = {
+      enabled           = false
+      enableAlpn        = false
+      enableAppProtocol = false
+    }
+
+
     devices = ["eth0"]
     ingressController = {
-      enabled          = true
-      default          = true
+      enabled          = false
+      default          = false
       loadbalancerMode = "shared"
       enforceHttps     = false
-      service = {
-        annotations = {
-          "io.cilium/lb-ipam-ips" = var.cluster_vip
-        }
-      }
+      # service = {
+      #   annotations = {
+      #     #     "io.cilium/lb-ipam-ips" = var.cluster_vip
+      #   }
+      # }
+    }
+
+    debug = {
+      enabled = true
+    }
+
+    envoyConfig = {
+      enabled = false
     }
 
     envoy = {
-      enabled     = true
+      enabled     = false # TODO : we try to use Traefik for that
       rollOutPods = true
       securityContext = {
         capabilities = {
           keepCapNetBindService = true
-          envoy                 = ["NET_ADMIN", "NET_BIND_SERVICE", "PERFMON", "BPF"]
+          envoy                 = ["NET_ADMIN", "NET_BIND_SERVICE", "PERFMON", "BPF"] # "SYS_ADMIN"
+        }
+      }
+      debug = {
+        admin = {
+          enabled = true
         }
       }
     }
@@ -195,7 +236,7 @@ resource "helm_release" "cilium" {
 
 # Nodes become ready when CNI is established, so this checks if cilium install worked correctly
 data "talos_cluster_health" "k8s_network_health" {
-  depends_on = [helm_release.cilium]
+  depends_on = [helm_release.cilium, ansible_playbook.configure_bgp]
   client_configuration = {
     ca_certificate     = local.talosconfig.ca
     client_certificate = local.talosconfig.crt
@@ -228,25 +269,71 @@ resource "helm_release" "cilium_custom_resources" {
     <<-EOF
     resources:
       - apiVersion: "cilium.io/v2alpha1"
-        kind: "CiliumL2AnnouncementPolicy"
-        metadata:
-          name: "external"
-        spec:
-          loadBalancerIPs: true
-          interfaces:
-            - eth0
-          nodeSelector:
-            matchExpressions:
-              - key: "node-role.kubernetes.io/control-plane"
-                operator: "DoesNotExist"
-      - apiVersion: "cilium.io/v2alpha1"
         kind: "CiliumLoadBalancerIPPool"
         metadata:
           name: "external"
         spec:
           blocks:
-            - start: ${cidrhost(var.cluster_node_network, var.cluster_node_network_load_balancer_first_hostnum)}
-              stop: ${cidrhost(var.cluster_node_network, var.cluster_node_network_load_balancer_last_hostnum)}
+            - cidr: ${var.cluster_virtual_lb_pool}
+      - apiVersion: cilium.io/v2alpha1
+        kind: CiliumBGPAdvertisement
+        metadata:
+          name: bgp-advertisements
+          namespace: kube-system
+          labels:
+            advertise: bgp
+        spec:
+          advertisements:
+            - advertisementType: "Service"
+              service:
+                addresses:
+                  # - ClusterIP
+                  # - ExternalIP
+                  - LoadBalancerIP
+              selector:
+                matchExpressions:
+                  - { key: homelab/public-service, operator: In, values: [ 'true' ] }
+
+      - apiVersion: cilium.io/v2alpha1
+        kind: CiliumBGPPeerConfig
+        metadata:
+          name: peer-config
+          namespace: kube-system
+        spec:
+          timers:
+            holdTimeSeconds: 90
+            keepAliveTimeSeconds: 30
+            connectRetryTimeSeconds: 120
+          # authSecretRef: bgp-auth-secret
+          # ebgpMultihop: 10
+          gracefulRestart:
+            enabled: true
+            restartTimeSeconds: 120
+          families:
+            - afi: ipv4
+              safi: unicast
+              advertisements:
+                matchLabels:
+                  advertise: "bgp"
+
+      - apiVersion: cilium.io/v2alpha1
+        kind: CiliumBGPClusterConfig
+        metadata:
+          name: bgp-peering
+          namespace: kube-system
+        spec:
+          # nodeSelector:
+          #   matchLabels:
+          #     rack: rack0
+          bgpInstances:
+          - name: "instance-${var.bgp_asn}"
+            localASN: ${var.bgp_asn}
+            peers:
+            - name: "peer-router"
+              peerASN: ${var.bgp_asn}
+              peerAddress: ${var.cluster_lan_gateway} # OPNSense IP
+              peerConfigRef:
+                name: "peer-config"
     EOF
   ]
 }

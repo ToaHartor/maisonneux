@@ -2,7 +2,7 @@ WORKSPACES=static k8s fluxcd-production fluxcd-staging
 HELM_ENVS=dev prod
 MAKEFLAGS += -rR
 
-.PHONY: start-devenv stop-devenv local-git talos-img cluster-health use-context tools tf-plan tf-apply tf-init tf-destroy dry-renovate renovate $(WORKSPACES)
+.PHONY: python-venv start-devenv stop-devenv local-git talos-img cluster-health use-context tools tf-plan tf-apply tf-init tf-destroy dry-renovate renovate $(WORKSPACES)
 
 cluster-health:
 	sh scripts/check_cluster_health.sh
@@ -21,6 +21,13 @@ stop-devenv:
 
 start-devenv:
 	sh scripts/start_devenv.sh
+
+python-venv:
+	rm -rf .venv
+	uv self update || curl -LsSf https://astral.sh/uv/install.sh | sh
+	uv venv --seed --python 3.13
+	uv pip install pip -r dev/dev-requirements.txt
+	ansible-galaxy collection install ansibleguy.opnsense --force
 
 # Renovate
 renovate:

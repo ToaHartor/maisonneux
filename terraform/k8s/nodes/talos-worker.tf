@@ -54,6 +54,9 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
   }
 
   initialization {
+    dns {
+      servers = [var.cluster_lan_gateway]
+    }
     ip_config {
       ipv4 {
         address = "${local.worker_nodes[count.index].address}/${var.cluster_subnet}"

@@ -133,18 +133,6 @@ variable "cluster_node_network_first_worker_hostnum" {
   default     = 90
 }
 
-variable "cluster_node_network_load_balancer_first_hostnum" {
-  description = "The hostnum of the first load balancer host"
-  type        = number
-  default     = 130
-}
-
-variable "cluster_node_network_load_balancer_last_hostnum" {
-  description = "The hostnum of the last load balancer host"
-  type        = number
-  default     = 230
-}
-
 variable "ingress_domain" {
   description = "the DNS domain of the ingress resources"
   type        = string
@@ -154,6 +142,12 @@ variable "ingress_domain" {
 variable "cluster_prefix" {
   type    = string
   default = "talos"
+}
+
+variable "cluster_lan_gateway" {
+  description = "The gateway for the load balancer subnet"
+  type        = string
+  default     = "10.64.64.255"
 }
 
 variable "cluster_os_storage" {

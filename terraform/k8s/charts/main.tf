@@ -22,6 +22,11 @@ terraform {
       source  = "hashicorp/http"
       version = "3.4.5"
     }
+
+    ansible = {
+      source  = "ansible/ansible"
+      version = "1.3.0"
+    }
   }
 }
 

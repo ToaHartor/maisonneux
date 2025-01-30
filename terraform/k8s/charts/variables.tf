@@ -35,14 +35,39 @@ variable "cluster_pod_cidr" {
   default     = "10.244.0.0/16"
 }
 
-variable "cluster_node_network_load_balancer_first_hostnum" {
-  description = "The hostnum of the first load balancer host"
-  type        = number
-  default     = 130
+variable "cluster_virtual_lb_pool" {
+  description = "The subnet dedicated for load balancer IPs"
+  type        = string
+  default     = "10.64.64.0/24"
 }
 
-variable "cluster_node_network_load_balancer_last_hostnum" {
-  description = "The hostnum of the last load balancer host"
+variable "cluster_lan_gateway" {
+  description = "The gateway for the load balancer subnet"
+  type        = string
+  default     = "10.64.64.255"
+}
+
+# BGP config
+variable "bgp_asn" {
   type        = number
-  default     = 230
+  description = "BGP ASN for Cilium peer routing"
+  default     = 65555
+}
+
+# OPNSense configuration
+variable "opnsense_host" {
+  type        = string
+  description = "OPNSense VM IP address"
+}
+
+variable "opnsense_api_key" {
+  type        = string
+  description = "OPNSense root API key"
+  sensitive   = true
+}
+
+variable "opnsense_api_secret" {
+  type        = string
+  description = "OPNSense root API secret"
+  sensitive   = true
 }

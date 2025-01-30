@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Device has two interfaces : wireguard link (wg0) and wifi link (wlp1s0)
+# Device has two interfaces : wireguard link (wg0/wg1 if ISP or OPNsense VPN) and wifi link (wlp1s0)
 # Try wireguard first as it is only mounted if not in local
 
 function get_ipaddr_of_interface {
@@ -13,7 +13,7 @@ function get_ipaddr_of_interface {
     fi
 }
 
-iface_list=("wg0" "wlp1s0")
+iface_list=("wg1" "wg0" "wlp1s0")
 
 for iface in "${iface_list[@]}"
 do
