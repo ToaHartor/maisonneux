@@ -5,3 +5,8 @@ variable "data_disks" {
   }))
   description = "List of disks to attach"
 }
+
+variable "proxmox_node_name" {
+  type        = string
+  description = "Proxmox node name"
+}

@@ -8,7 +8,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   scsi_hardware = "virtio-scsi-single"
   tablet_device = false
   started       = true
-  node_name     = "datacenter"
+  node_name     = var.proxmox_node_name
   vm_id         = 101
 
   on_boot = false
@@ -207,7 +207,7 @@ resource "proxmox_virtual_environment_firewall_rules" "truenas_inbound" {
     type    = "in"
     action  = "ACCEPT"
     comment = "NFS share TCP for k8s"
-    source  = "192.168.1.221-192.168.1.228"
+    source  = "192.168.1.205" # Nodes are SNATed through OPNsense, hence the router's IP
     dport   = "111,724,2049"
     proto   = "tcp"
     log     = "info"
@@ -217,7 +217,7 @@ resource "proxmox_virtual_environment_firewall_rules" "truenas_inbound" {
     type    = "in"
     action  = "ACCEPT"
     comment = "NFS share UDP for k8s"
-    source  = "192.168.1.221-192.168.1.228"
+    source  = "192.168.1.205"
     dport   = "111,2049"
     proto   = "udp"
     log     = "info"

@@ -5,7 +5,7 @@ resource "proxmox_virtual_environment_vm" "nas" {
   machine       = "q35"
   migrate       = false
   name          = "nas"
-  node_name     = "datacenter"
+  node_name     = var.proxmox_node_name
   protection    = false
   scsi_hardware = "virtio-scsi-single"
   started       = true
@@ -94,10 +94,10 @@ resource "proxmox_virtual_environment_vm" "nas" {
   }
 
   hostpci {
-    device   = "hostpci0"
-    id       = "0000:08:00.0"
-    mapping  = null
-    mdev     = "nvidia-47"
+    device  = "hostpci0"
+    id      = "0000:08:00.0"
+    mapping = null
+    # mdev     = "nvidia-47"
     pcie     = false
     rom_file = null
     rombar   = true

@@ -1,6 +1,7 @@
 module "nodes" {
-  source     = "./nodes"
-  data_disks = var.data_disks
+  source            = "./nodes"
+  data_disks        = var.data_disks
+  proxmox_node_name = var.proxmox_node_name
 }
 
 module "lxc" {
