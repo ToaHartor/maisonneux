@@ -1,0 +1,75 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cyberchef-proxy
+  namespace: services
+spec:
+  releaseName: cyberchef-proxy
+  dependsOn:
+    - name: authentik
+      namespace: &authentik-ns authentik
+  chart:
+    spec:
+      chart: helm/library/authentik-application
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision # TODO : ChartVersion when fully configured
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml
+    # secret:
+    
+    blueprint:
+      namespace: *authentik-ns
+      authentik:
+        domain: "https://auth.${main_domain}"
+      provider:
+        enabled: true
+        name: "Cyberchef"
+        type: "proxy"
+        proxy:
+          externalHost: "https://cyberchef.${main_domain}"
+          skipPathRegex: ""
+          cookieDomain: ""
+          ingress:
+            # -- deploy ingress on application domain for e.g. logout (WIP)
+            enabled: false
+            # -- domain of application (where outpost should be deployed)
+            domain:
+            # -- service backend to authentik
+            backend: authentik
+            # -- annotations to ingress for outpost
+            annotations: []
+            # -- tls to ingress for outpost
+            tls: []
+      application:
+        name: "Cyberchef"
+        slug: "cyberchef"
+        # -- put this application in authentik in group
+        group: ""
+        launchURL: "http://app.example.com"
+        openInNewTab: false
+        icon: ""
+        description: "Cryptographic utils"
+        # publisher: "Publisher"
+        # -- uuid for bindPolicyID for group - if not set generated on secret for be stable (or groups: [] filled)
+        bindPolicyID:
+        policyEngineMode: "any"
+      # -- authentik groups created / give access to this application
+      groups: []
+      #  disable any groups by set groups: [] (to a slice)
+      # example:
+      #   - slug: "app: grafana-admin"
+      #     parent: "app: infra"
+      #     bindID: uuid
+      #
+
+      
