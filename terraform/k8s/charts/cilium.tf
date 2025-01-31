@@ -1,216 +1,175 @@
 locals {
-  # https://artifacthub.io/packages/helm/cilium/cilium    
-  cilium_chart_values = {
-    ipam = {
-      mode = "kubernetes"
-      operator = {
-        rollOutPods = true
-        replicas    = 3
-        # clusterPoolIPv4MaskSize    = 20
-        # clusterPoolIPv4PodCIDRList = var.cluster_pod_cidr
-        resources = {
-          limits = {
-            cpu    = "500m"
-            memory = "256Mi"
-          }
-          requests = {
-            cpu    = "50m"
-            memory = "126Mi"
-          }
-        }
+  # https://artifacthub.io/packages/helm/cilium/cilium  
 
-        # prometheus = {
-        #   enabled = true
-        # }
-      }
-    }
+  cilium_values = <<EOF
+ipam:
+  mode: kubernetes
 
-    bpf = {
-      # datapathMode      = "netkit" # Not working even with Talos 1.19.1 (kernel 6.12)
-      masquerade = true
-      tproxy     = true
-      # vlanBypass        = [0]
-      hostLegacyRouting = false # Enable until compatibility is improved for 1.16.5+
-    }
+operator:
+  rollOutPods: true
+  replicas: 3
 
-    ipv4NativeRoutingCIDR = var.cluster_pod_cidr
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  
+  prometheus:
+    enabled: true
 
-    endpointRoutes = {
-      enabled = true
-    }
+bpf:
+  # datapathMode: netkit # Not working even with Talos 1.9.1 (kernel 6.12)
+  masquerade: true
+  tproxy: true
+  # vlanBypass: [0]
+  hostLegacyRouting: false # Enable until compatibility is improved for 1.16.5+
 
-    # -- Install Iptables rules to skip netfilter connection tracking on all pod
-    # traffic. This option is only effective when Cilium is running in direct
-    # routing and full KPR mode. Moreover, this option cannot be enabled when Cilium
-    # is running in a managed Kubernetes environment or in a chained CNI setup.
-    installNoConntrackIptablesRules = true
-    # -- Enable bandwidth manager to optimize TCP and UDP workloads and allow
-    # for rate-limiting traffic from individual Pods with EDT (Earliest Departure
-    # Time) through the "kubernetes.io/egress-bandwidth" Pod annotation.
-    bandwidthManager = {
-      # Disable it according to https://github.com/siderolabs/talos/issues/8836#issuecomment-2159127683 if using cilium 1.16.5+
-      # and enable bpf.hostLegacyRouting
-      enabled = true
-      bbr     = true
-    }
-    # -- Enables IPv4 BIG TCP support which increases maximum IPv4 GSO/GRO limits for nodes and pods
-    # Not supported with bpf.hostLegacyRouting
-    enableIPv4BIGTCP = true
+ipv4NativeRoutingCIDR: ${var.cluster_pod_cidr}
 
-    ipv4 = {
-      enabled = true
-    }
-    ipv6 = {
-      enabled = false
-    }
+endpointRoutes:
+  enabled: true
 
-    # Enabled by kubeProxyReplacement
-    # socketLB = {
-    #   enabled = true
-    # }
+# -- Install Iptables rules to skip netfilter connection tracking on all pod
+# traffic. This option is only effective when Cilium is running in direct
+# routing and full KPR mode. Moreover, this option cannot be enabled when Cilium
+# is running in a managed Kubernetes environment or in a chained CNI setup.
+installNoConntrackIptablesRules: true
 
-    securityContext = {
-      capabilities = {
-        ciliumAgent      = ["CHOWN", "KILL", "NET_ADMIN", "NET_RAW", "IPC_LOCK", "SYS_ADMIN", "SYS_RESOURCE", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
-        cleanCiliumState = ["NET_ADMIN", "SYS_ADMIN", "SYS_RESOURCE"]
-      }
-    }
-    cgroup = {
-      autoMount = {
-        enabled = false
-      }
-      hostRoot = "/sys/fs/cgroup"
-    }
-    k8sServiceHost       = "localhost"
-    k8sServicePort       = var.kubeprism_port
-    kubeProxyReplacement = true
-    autoDirectNodeRoutes = true
-    routingMode          = "native"
+# -- Enable bandwidth manager to optimize TCP and UDP workloads and allow
+# for rate-limiting traffic from individual Pods with EDT (Earliest Departure
+# Time) through the "kubernetes.io/egress-bandwidth" Pod annotation.
+bandwidthManager:
+  enabled: true
+  bbr: true
 
-    rollOutCiliumPods = true
-    resources = {
-      limits = {
-        cpu    = "1000m"
-        memory = "1Gi"
-      }
-      requests = {
-        cpu    = "200m"
-        memory = "512Mi"
-      }
-    }
+# -- Enables IPv4 BIG TCP support which increases maximum IPv4 GSO/GRO limits for nodes and pods
+# Not supported with bpf.hostLegacyRouting
+enableIPv4BIGTCP: true
 
-    # Increase rate limit when doing L2 announcements
-    k8sClientRateLimit = {
-      qps   = 20
-      burst = 100
-    }
+ipv4:
+  enabled: true
+ipv6:
+  enabled: false
 
-    bgpControlPlane = {
-      enabled = true
-    }
+# Enabled by kubeProxyReplacement
+# socketLB:
+#   enabled: true
 
-    l2announcements = {
-      enabled   = false # enable if no bgp
-      interface = "eth0"
-    }
+securityContext:
+  capabilities:
+    ciliumAgent: ["CHOWN", "KILL", "NET_ADMIN", "NET_RAW", "IPC_LOCK", "SYS_ADMIN", "SYS_RESOURCE", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
+    cleanCiliumState: ["NET_ADMIN", "SYS_ADMIN", "SYS_RESOURCE"]
 
-    # Enabled by kubeProxyReplacement
-    # externalIPs = {
-    #   enabled = true
-    # }
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: "/sys/fs/cgroup"
 
-    loadBalancer = {
-      # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
-      algorithm    = "maglev"
-      mode         = "hybrid" # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#direct-server-return-dsr
-      acceleration = "best-effort"
-      # TODO : L7 is handled by Traefik
-      # l7 = {
-      #   backend = "envoy"
-      # }
-    }
+k8sServiceHost: localhost
+k8sServicePort: ${var.kubeprism_port}
+kubeProxyReplacement: true
+autoDirectNodeRoutes: true
+routingMode: native
 
-    # maglev = {
-    #   hashSeed = "" # TODO : base64-encoded 12 byte-random number
-    # }
+rollOutCiliumPods: true
+resources:
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+  requests:
+    cpu: "200m"
+    memory: "512Mi"
 
-    nodeIPAM = {
-      enabled = false
-    }
+# Increase rate limit when doing L2 announcements
+# k8sClientRateLimit:
+#   qps: 20
+#   burst: 100
 
-    gatewayAPI = {
-      enabled           = false
-      enableAlpn        = false
-      enableAppProtocol = false
-    }
+bgpControlPlane:
+  enabled: true
 
+l2announcements:
+  enabled: false # enable if no bgp
+  interface: "eth0"
 
-    devices = ["eth0"]
-    ingressController = {
-      enabled          = false
-      default          = false
-      loadbalancerMode = "shared"
-      enforceHttps     = false
-      # service = {
-      #   annotations = {
-      #     #     "io.cilium/lb-ipam-ips" = var.cluster_vip
-      #   }
-      # }
-    }
+# Enabled by kubeProxyReplacement
+# externalIPs:
+#   enabled: true
 
-    debug = {
-      enabled = true
-    }
+loadBalancer:
+  # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
+  algorithm: "maglev"
+  mode: "hybrid" # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#direct-server-return-dsr
+  acceleration: "best-effort"
+  l7:
+    backend: "envoy"
 
-    envoyConfig = {
-      enabled = false
-    }
+# maglev:
+#   hashSeed: "" # TODO : base64-encoded 12 byte-random number
 
-    envoy = {
-      enabled     = false # TODO : we try to use Traefik for that
-      rollOutPods = true
-      securityContext = {
-        capabilities = {
-          keepCapNetBindService = true
-          envoy                 = ["NET_ADMIN", "NET_BIND_SERVICE", "PERFMON", "BPF"] # "SYS_ADMIN"
-        }
-      }
-      debug = {
-        admin = {
-          enabled = true
-        }
-      }
-    }
-    hubble = {
-      relay = {
-        enabled     = true
-        rollOutPods = true
-      }
-      ui = {
-        enabled     = true
-        rollOutPods = true
-      }
-      # metrics = {
-      #   enableOpenMetrics = true
-      #   enabled = ["dns", "drop", "tcp", "flow", "icmp", "http"]
-      # }
-    }
-    # prometheus = {
-    #   enabled = true
-    # }
+nodeIPAM:
+  enabled: false
 
-    # Hardening
-    # policyEnforcementMode = "always" # Enforce network policies
-    # hostFirewall = {
-    #   enabled = true # Enable host policies (host-level network policies)
-    # }
-    # extraConfig = {
-    #   allow-localhost = "policy" # Enforce policies for node-local traffic as well
-    # }
+gatewayAPI: # Using traefik for that
+  enabled: false
+  enableAlpn: false
+  enableAppProtocol: false
 
-    # Audit mode
-    # policyAuditMode = true
-  }
+devices: ["eth0"]
+# Ingress is managed by traefik
+ingressController:
+  enabled: false
+  default: false
+  loadbalancerMode: "shared"
+  enforceHttps:  false
+  # service:
+  #   annotations:
+  #     #     "io.cilium/lb-ipam-ips": ${var.cluster_vip}
+
+debug:
+  enabled: false # Only if debugging
+
+# envoyConfig:
+#   enabled: false
+
+envoy:
+  enabled: true
+  rollOutPods: true
+  securityContext:
+    capabilities:
+      keepCapNetBindService: true
+      envoy: ["NET_ADMIN", "NET_BIND_SERVICE", "PERFMON", "BPF"] # "SYS_ADMIN"
+  debug:
+    admin:
+      enabled: false # Only if debugging
+
+hubble:
+  relay:
+    enabled: true
+    rollOutPods: true
+  ui:
+    enabled: true
+    rollOutPods: true
+  # metrics:
+  #   enableOpenMetrics: true
+  #   enabled: ["dns", "drop", "tcp", "flow", "icmp", "http"]
+
+# prometheus:
+#   enabled: true
+
+# Hardening
+# policyEnforcementMode: "always" # Enforce network policies
+# hostFirewall:
+#   enabled: true # Enable host policies (host-level network policies)
+# extraConfig:
+#   allow-localhost: "policy" # Enforce policies for node-local traffic as well
+
+# Audit mode
+# policyAuditMode: true
+EOF
 }
 
 // see https://www.talos.dev/v1.7/kubernetes-guides/network/deploying-cilium/#method-4-helm-manifests-inline-install
@@ -229,7 +188,7 @@ resource "helm_release" "cilium" {
   repository = "https://helm.cilium.io"
   chart      = "cilium"
   version    = "1.16.4" # 1.16.5 has issues => https://github.com/cilium/cilium/issues/36761
-  values     = [yamlencode(local.cilium_chart_values)]
+  values     = [local.cilium_values]
   wait       = false # Do not wait for resources as the chart is designed like this
 
 }
