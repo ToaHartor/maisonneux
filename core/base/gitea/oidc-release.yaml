@@ -1,0 +1,78 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gitea-oidc
+  namespace: services
+spec:
+  releaseName: gitea-oidc
+  dependsOn:
+    - name: authentik
+      namespace: &authentik-ns authentik
+  chart:
+    spec:
+      chart: helm/library/authentik-application
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision # TODO : ChartVersion when fully configured
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml
+    # secret:
+    
+    blueprint:
+      namespace: *authentik-ns
+      authentik:
+        domain: "https://auth.${main_domain}"
+      provider:
+        # -- creat an provider for authentification (otherwise just a like in menu is created)
+        enabled: true
+        name: "Gitea"
+        type: "oidc"
+        oidc:
+          clientType: "confidential"
+          redirectURL: &appurl "https://gitea.${main_domain}"
+          # -- Need for non-curve / RSA
+          # signingKey: "authentik Self-signed Certificate"
+          tokenDuration: "minutes=5"
+          # -- Scope
+          # Data from https://github.com/goauthentik/authentik/blob/main/blueprints/system/providers-oauth2.yaml
+          scopes:
+            - name: "authentik default OAuth Mapping: OpenID 'openid'"
+            - name: "authentik default OAuth Mapping: OpenID 'email'"
+            - name: "authentik default OAuth Mapping: OpenID 'profile'"
+            # - name:
+            #   scope_name:
+            #   expression:
+      application:
+        name: "Gitea"
+        slug: "gitea"
+        # -- put this application in authentik in group
+        group: ""
+        # url to application
+        launchURL: *appurl
+        openInNewTab: false
+        # -- icon of application (url)
+        icon: ""
+        description: "Git server"
+        # publisher: "Publisher"
+        # -- uuid for bindPolicyID for group - if not set generated on secret for be stable (or groups: [] filled)
+        bindPolicyID:
+        policyEngineMode: "any"
+      # -- authentik groups created / give access to this application
+      groups: []
+      #  disable any groups by set groups: [] (to a slice)
+      # example:
+      #   - slug: "app: grafana-admin"
+      #     parent: "app: infra"
+      #     bindID: uuid
+      #
+
+      

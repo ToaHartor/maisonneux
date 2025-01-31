@@ -1,0 +1,17 @@
+apiVersion: v2
+name: gitea
+description: Gitea Helm chart with additional resources
+dependencies:
+  - name: gitea
+    version: &version "10.6.0"
+    repository: https://dl.gitea.com/charts/
+  - name: common
+    version: "0.0.1"
+    repository: "file://../../library/common"
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - cloudnative-pg
+    # - s3-operator
+    # - redis
+    # - traefik
+version: *version

@@ -1,17 +1,15 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: psql-cluster
-  namespace: postgres
+  name: gitea
+  namespace: services
 spec:
-  releaseName: psql-cluster
-  # targetNamespace: postgres
+  releaseName: gitea
   dependsOn:
-    - name: cloudnative-pg
-      namespace: operators
+    - name: gitea-oidc
   chart:
     spec:
-      chart: helm/platform/psql-cluster
+      chart: helm/core/gitea
       interval: 12h
       sourceRef:
         kind: GitRepository
@@ -20,19 +18,15 @@ spec:
       reconcileStrategy: Revision
   interval: 50m
   install:
+    createNamespace: true
     remediation:
       retries: 3
-
   values:
+    s3:
+      endpoint: ${minio_url}
+    ingress:
+      certSecret: ${main_domain}-tls
+      host: auth.${main_domain}
     storage:
       persistentClassName: ${fastdata_storage}
-    database:
-      users:
-        - authentik
-        - sonarr
-        - vaultwarden
-        - wakapi
-        - outline
-        - stirling
-        - gitea
-    
+      
