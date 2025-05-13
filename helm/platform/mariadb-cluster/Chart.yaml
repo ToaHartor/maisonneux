@@ -1,0 +1,5 @@
+apiVersion: v2
+name: mariadb-cluster
+description: Helm chart provisioning Mariadb cluster 
+# Implicit dependencies : mariadb-operator, kubernetes-secret-operator
+version: 0.0.1

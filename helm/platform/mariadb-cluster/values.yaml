@@ -1,0 +1,4 @@
+clusterName: mariadb-galera
+
+storage:
+  persistentClassName: default

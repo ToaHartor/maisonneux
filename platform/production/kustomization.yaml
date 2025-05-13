@@ -6,6 +6,7 @@ resources:
   - ../base/cloudnative-pg
   - ../base/postgres-db
   - ../base/mariadb-operator
+  - ../base/mariadb-cluster
   - ../base/mongodb
   - ../base/cert-manager-webhook-ovh
   - ../base/traefik

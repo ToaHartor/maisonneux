@@ -1,0 +1,28 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mariadb-cluster
+  namespace: mariadb
+spec:
+  releaseName: mariadb-cluster
+  dependsOn:
+    - name: mariadb-operator
+      namespace: operators
+  chart:
+    spec:
+      chart: helm/platform/mariadb-cluster
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+
+  values:
+    storage:
+      persistentClassName: ${fastdata_storage}
+    
