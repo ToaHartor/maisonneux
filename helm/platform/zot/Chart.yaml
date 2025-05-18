@@ -4,7 +4,7 @@ description: Zot Helm chart with resource provisioning
 dependencies:
   - name: zot
     # Check version https://github.com/project-zot/helm-charts/releases
-    version: &version 0.1.65
+    version: &version 0.1.70
     repository: http://zotregistry.dev/helm-charts
     # Other implicit dependencies are installed before this chart by fluxcd :
     # - s3-operator
