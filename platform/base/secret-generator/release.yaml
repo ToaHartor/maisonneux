@@ -10,7 +10,7 @@ spec:
     spec:
       chart: kubernetes-secret-generator
       # renovate: datasource=helm depName=kubernetes-secret-generator registryUrl=https://helm.mittwald.de
-      version: "3.4.0"
+      version: "3.4.1"
       sourceRef:
         kind: HelmRepository
         name: mittwald
