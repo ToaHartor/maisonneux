@@ -9,7 +9,7 @@ terraform {
     # see https://registry.terraform.io/providers/hashicorp/kubernetes
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "2.35.1"
+      version = "2.36.0"
     }
     local = {
       source  = "hashicorp/local"
