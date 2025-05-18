@@ -11,7 +11,7 @@ database:
 image:
   repository: ghcr.io/muety/wakapi
   pullPolicy: IfNotPresent
-  tag: "2.12.3@sha256:16ac23159dba05255a1ea3e45b4decab106acb159c21183ae389eb71ba923d42"
+  tag: "2.13.4@sha256:a95a09d9b694161e57a712d58bfe7a67eeebfef1327d3dd641fac25a194d5512"
 
 config:
   port: 3000
