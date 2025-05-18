@@ -10,7 +10,7 @@ spec:
     spec:
       chart: s3-operator
       # renovate: datasource=helm depName=s3-operator registryUrl=https://inseefrlab.github.io/helm-charts
-      version: "0.5.5"
+      version: "0.6.0"
       sourceRef:
         kind: HelmRepository
         name: inseefrlab
