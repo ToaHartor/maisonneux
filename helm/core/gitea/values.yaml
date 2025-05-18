@@ -71,8 +71,8 @@ gitea:
     enabled: false
   postgresql-ha:
     enabled: false
-  # Disable embedded redis
-  redis-cluster:
+  # Disable embedded valkey
+  valkey-cluster:
     enabled: false
   # TODO : Requires prometheus operator
   # https://gitea.com/gitea/helm-chart/#metrics-and-profiling
