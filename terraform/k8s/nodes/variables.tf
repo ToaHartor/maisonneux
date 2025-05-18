@@ -38,7 +38,7 @@ variable "proxmox_cluster_name" {
 variable "talos_version" {
   type = string
   # renovate: datasource=github-releases depName=siderolabs/talos
-  default = "1.9.1"
+  default = "1.10.2"
   validation {
     condition     = can(regex("^\\d+(\\.\\d+)+", var.talos_version))
     error_message = "Must be a version number."
