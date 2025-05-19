@@ -39,6 +39,8 @@ spec:
       #       cpu:
       #       memory:
       manager:
+        image: # workaround for: https://github.com/InseeFrLab/helm-charts/issues/84
+          tag: v0.11.0 
         extraArgs:
           - --useSsl=false
 
