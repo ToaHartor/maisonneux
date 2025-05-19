@@ -21,11 +21,20 @@ operator:
     enabled: true
 
 bpf:
-  # datapathMode: netkit # Not working even with Talos 1.9.1 (kernel 6.12)
+  datapathMode: netkit
   masquerade: true
-  tproxy: true
+  # tproxy: true
   # vlanBypass: [0]
-  hostLegacyRouting: false # Enable until compatibility is improved for 1.16.5+
+  hostLegacyRouting: false
+  distributedLRU:
+    enabled: true
+  mapDynamicSizeRatio: 0.08
+  preallocateMaps: true
+
+bpfClockProbe: true
+
+cni:
+  exclusive: false
 
 ipv4NativeRoutingCIDR: ${var.cluster_pod_cidr}
 
@@ -93,7 +102,7 @@ bgpControlPlane:
 
 l2announcements:
   enabled: false # enable if no bgp
-  interface: "eth0"
+  # interface: "eth0"
 
 # Enabled by kubeProxyReplacement
 # externalIPs:
@@ -102,7 +111,7 @@ l2announcements:
 loadBalancer:
   # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
   algorithm: "maglev"
-  mode: "hybrid" # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#direct-server-return-dsr
+  mode: "dsr" # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#direct-server-return-dsr
   acceleration: "best-effort"
   l7:
     backend: "envoy"
@@ -118,7 +127,7 @@ gatewayAPI: # Using traefik for that
   enableAlpn: false
   enableAppProtocol: false
 
-devices: ["eth0"]
+# devices: ["eth0"]
 # Ingress is managed by traefik
 ingressController:
   enabled: false
@@ -187,7 +196,7 @@ resource "helm_release" "cilium" {
   name       = "cilium"
   repository = "https://helm.cilium.io"
   chart      = "cilium"
-  version    = "1.16.4" # 1.16.5 has issues => https://github.com/cilium/cilium/issues/36761
+  version    = "1.17.4"
   values     = [local.cilium_values]
   wait       = false # Do not wait for resources as the chart is designed like this
 

@@ -28,7 +28,7 @@ locals {
         }
         hostDNS = {
           enabled              = true
-          forwardKubeDNSToHost = false # Disable it as it conflicts with cilium's bpf.masquerade option
+          forwardKubeDNSToHost = false # Disable it as it conflicts with cilium's bpf.masquerade option https://github.com/cilium/cilium/issues/36761
           # resolveMemberNames   = true
         }
       }
