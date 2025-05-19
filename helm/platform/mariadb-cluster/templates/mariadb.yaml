@@ -6,7 +6,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   updateStrategy:
-    autoUpdateDataPlane: true
+    # autoUpdateDataPlane: false # Only enable when updating
+    type: ReplicasFirstPrimaryLast
   mariaDbRef:
     name: {{ .Values.clusterName }}
   # image: docker.mariadb.com/enterprise-server:10.6
@@ -50,6 +51,8 @@ spec:
   #     metadata:
   #       annotations:
   #         metallb.universe.tf/loadBalancerIPs: 172.18.0.20
+  tls:
+    enabled: false
 
   podDisruptionBudget:
     maxUnavailable: 33%
@@ -105,12 +108,27 @@ spec:
   resources:
     requests:
       cpu: 80m
-      memory: 128Mi
+      memory: 192Mi
     limits:
-      memory: 256Mi
+      memory: 512Mi
   metrics:
     enabled: true
     # passwordSecretKeyRef:
     #   generate: true
     #   key: password
     #   name: mariadb-metrics-password
+
+  # https://github.com/mariadb-operator/mariadb-operator/issues/286#issuecomment-1840097307
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsGroup: 999
+    runAsNonRoot: true
+    runAsUser: 999
+    capabilities:
+      drop: ["ALL"]
+  # Should already be set by default
+  podSecurityContext:
+    fsGroup: 999
+    runAsGroup: 999
+    runAsNonRoot: true
+    runAsUser: 999
