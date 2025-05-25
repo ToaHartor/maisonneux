@@ -1,0 +1,5 @@
+apiVersion: v2
+name: mongodb-cluster
+description: Helm chart provisioning Postgres cluster with 
+# Implicit dependencies : mongodb community-operator
+version: 0.0.1

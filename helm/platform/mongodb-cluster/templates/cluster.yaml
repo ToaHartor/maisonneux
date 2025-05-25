@@ -1,0 +1,65 @@
+---
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: {{ .Values.database.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  members: 3
+  type: ReplicaSet
+  version: "6.0.5"
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: admin
+      db: admin
+      passwordSecretRef: # a reference to the secret that will be used to generate the user's password
+        name: mongodb-admin-secret
+      roles:
+        - name: clusterAdmin
+          db: admin
+        - name: userAdminAnyDatabase
+          db: admin
+      # Scram credentials are created by the operator (name is $secretName-scram-credentials)
+      scramCredentialsSecretName: admin
+    {{- range $user := .Values.database.users }}
+    - name: {{ $user }}
+      db: {{ $user }}  # In our case, we don't really need to have more than one database per user
+      passwordSecretRef:
+        name: {{ $user }}-mongodb-secret
+      roles:
+        - name: readWrite
+          db: {{ $user }}
+      scramCredentialsSecretName: {{ $user }}
+    {{- end }}  
+  additionalMongodConfig:
+    storage.wiredTiger.engineConfig.journalCompressor: zlib
+
+  statefulSet:
+    spec:
+      # template:
+      #   spec:
+      #     containers:
+      #       - name: mongodb-agent
+      #         volumes:
+      #           - mountPath: /var/log/mongodb-mms-automation                                                                                                                                                                                  │
+      # │           name: logs-volume
+      volumeClaimTemplates:
+        - metadata:
+            name: data-volume
+          spec:
+            resources:
+              requests:
+                storage: 1Gi
+            storageClassName: {{ .Values.storage.persistentClassName }}
+        # Logs pvc is mandatory, terrifying
+        - metadata:
+            name: logs-volume
+          spec:
+            resources:
+              requests:
+                storage: 1Gi
+            storageClassName: {{ .Values.storage.persistentClassName }}
+
+

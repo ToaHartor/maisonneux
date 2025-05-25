@@ -8,6 +8,7 @@ resources:
   - ../base/mariadb-operator
   - ../base/mariadb-cluster
   - ../base/mongodb
+  - ../base/mongodb-cluster
   - ../base/cert-manager-webhook-ovh
   - ../base/traefik
   - ../base/tekton-operator

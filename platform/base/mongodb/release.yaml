@@ -25,4 +25,4 @@ spec:
     # see https://github.com/mongodb/helm-charts/blob/main/charts/community-operator/values.yaml
     operator:
       replicas: 1
-      # watchNamespace: mongodb
+      watchNamespace: mongodb
