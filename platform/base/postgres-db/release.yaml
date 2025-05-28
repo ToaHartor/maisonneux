@@ -35,4 +35,6 @@ spec:
         - outline
         - stirling
         - gitea
+        - radarr
+        - radarr4k
     

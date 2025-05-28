@@ -1,0 +1,15 @@
+apiVersion: v2
+name: radarr
+description: Custom helm wrapper for Radarr Helm chart
+dependencies:
+  - name: radarr
+    # Version from https://github.com/truecharts/public/blob/master/charts/stable/radarr/Chart.yaml
+    version: "23.25.4"
+    repository: oci://tccr.io/truecharts
+  - name: common
+    version: "0.0.1"
+    repository: "file://../../library/common"
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - cloudnative-pg
+version: 0.0.1

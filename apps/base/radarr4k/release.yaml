@@ -1,0 +1,44 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: radarr4k
+  namespace: media
+spec:
+  releaseName: radarr4k
+  chart:
+    spec:
+      chart: helm/apps/radarr
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/radarr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/radarr/
+  values:
+    storage:
+      persistentClassName: ${fastdata_storage}
+
+    radarr:
+      workload:
+        main:
+          podSpec:
+            containers:
+              main:
+                env:
+                  RADARR__AUTH__APIKEY:
+                    secretKeyRef:
+                      name: radarr4k-api-key
+                  RADARR__APP__INSTANCENAME: Radarr4K
+                  RADARR__POSTGRES__USER: radarr4k
+                  RADARR__POSTGRES__PASSWORD:
+                    secretKeyRef:
+                      name: radarr4k-psql-secret
+                  RADARR__POSTGRES__MAINDB: radarr4k-main
+                  RADARR__POSTGRES__LOGDB: radarr4k-log

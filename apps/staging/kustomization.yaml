@@ -4,6 +4,8 @@ resources:
   - ../base/testapp
   - ../base/qbittorrent
   - ../base/sonarr
+  - ../base/radarr
+  - ../base/radarr4k
   - ../base/vaultwarden
   - ../base/wakapi
   - ../base/outline

@@ -1,0 +1,65 @@
+storage:
+  persistentClassName: default
+
+namespaces:
+  postgresNamespace: &psqlNs postgres
+
+database:
+  clusterName: psql-cluster
+  clusterSecretName: postgres-secrets
+
+
+radarr:
+  # see https://github.com/truecharts/public/blob/master/charts/stable/radarr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/radarr/
+  waitPsqlImage:
+    repository: docker.io/library/busybox
+    tag: latest
+    pullPolicy: IfNotPresent
+  # namespace: ""
+  workload:
+    main:
+      annotations:
+        # Reload pod on secret change
+        # secret.reloader.stakater.com/reload: "radarr-psql-secret" 
+      podSpec:
+        initContainers:
+          waitpsql:
+            enabled: true
+            type: init
+            imageSelector: waitPsqlImage
+            command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAMESPACE: *psqlNs
+        containers:
+          main:
+            env:
+              RADARR__AUTH__APIKEY:
+                secretKeyRef:
+                  name: radarr-api-key
+                  key: RADARR__AUTH__APIKEY
+                  expandObjectName: false
+              RADARR__AUTH__METHOD: External
+              RADARR__APP__INSTANCENAME: Radarr
+              RADARR__APP__THEME: dark
+              RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
+              RADARR__LOG__LEVEL: info
+              RADARR__UPDATE__BRANCH: develop
+              RADARR__POSTGRES__HOST: psql-cluster-rw.postgres.svc.cluster.local
+              RADARR__POSTGRES__PORT: "5432"
+              RADARR__POSTGRES__USER: radarr
+              RADARR__POSTGRES__PASSWORD:
+                secretKeyRef:
+                  name: radarr-psql-secret
+                  key: password
+                  expandObjectName: false
+              RADARR__POSTGRES__MAINDB: radarr-main
+              RADARR__POSTGRES__LOGDB: radarr-log
+  persistence:
+    config:
+      enabled: true
+      type: emptyDir
+  metrics:
+    main:
+      enabled: false # TODO : true when monitoring stack deployed
