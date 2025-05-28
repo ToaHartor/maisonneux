@@ -1,0 +1,65 @@
+storage:
+  persistentClassName: default
+
+namespaces:
+  postgresNamespace: &psqlNs postgres
+
+database:
+  clusterName: psql-cluster
+  clusterSecretName: postgres-secrets
+
+
+lidarr:
+  # see https://github.com/truecharts/public/blob/master/charts/stable/lidarr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/lidarr/
+  waitPsqlImage:
+    repository: docker.io/library/busybox
+    tag: latest
+    pullPolicy: IfNotPresent
+  # namespace: ""
+  workload:
+    main:
+      annotations:
+        # Reload pod on secret change
+        # secret.reloader.stakater.com/reload: "lidarr-psql-secret" 
+      podSpec:
+        initContainers:
+          waitpsql:
+            enabled: true
+            type: init
+            imageSelector: waitPsqlImage
+            command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAMESPACE: *psqlNs
+        containers:
+          main:
+            env:
+              LIDARR__AUTH__APIKEY:
+                secretKeyRef:
+                  name: lidarr-api-key
+                  key: LIDARR__AUTH__APIKEY
+                  expandObjectName: false
+              LIDARR__AUTH__METHOD: External
+              LIDARR__APP__INSTANCENAME: Lidarr
+              LIDARR__APP__THEME: dark
+              LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
+              LIDARR__LOG__LEVEL: info
+              LIDARR__UPDATE__BRANCH: develop
+              LIDARR__POSTGRES__HOST: psql-cluster-rw.postgres.svc.cluster.local
+              LIDARR__POSTGRES__PORT: "5432"
+              LIDARR__POSTGRES__USER: lidarr
+              LIDARR__POSTGRES__PASSWORD:
+                secretKeyRef:
+                  name: lidarr-psql-secret
+                  key: password
+                  expandObjectName: false
+              LIDARR__POSTGRES__MAINDB: lidarr-main
+              LIDARR__POSTGRES__LOGDB: lidarr-log
+  persistence:
+    config:
+      enabled: true
+      type: emptyDir
+  metrics:
+    main:
+      enabled: false # TODO : true when monitoring stack deployed

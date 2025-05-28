@@ -1,0 +1,15 @@
+apiVersion: v2
+name: lidarr
+description: Custom helm wrapper for Lidarr Helm chart
+dependencies:
+  - name: lidarr
+    # Version from https://github.com/truecharts/public/blob/master/charts/stable/lidarr/Chart.yaml
+    version: "24.12.2"
+    repository: oci://tccr.io/truecharts
+  - name: common
+    version: "0.0.1"
+    repository: "file://../../library/common"
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - cloudnative-pg
+version: 0.0.1

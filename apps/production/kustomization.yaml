@@ -6,6 +6,8 @@ resources:
   - ../base/sonarr
   - ../base/radarr
   - ../base/radarr4k
+  - ../base/lidarr
+  - ../base/prowlarr
   - ../base/vaultwarden
   - ../base/wakapi
   - ../base/outline
