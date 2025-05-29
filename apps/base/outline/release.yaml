@@ -27,12 +27,16 @@ spec:
       persistentClassName: ${fastdata_storage}
     
     outline:
+      s3:
+        endpoint: http://${minio_url}
+        customDomain: ${minio_url}/outline
       workload:
         main:
           podSpec:
             containers:
               main:
                 env:
+                  URL: https://wiki.${main_domain}
                   OIDC_CLIENT_ID:
                     secretKeyRef:
                       # {oidc-release-name}-{chart-name}
