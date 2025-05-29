@@ -5,19 +5,25 @@ metadata:
   namespace: services
 spec:
   releaseName: outline-oidc
-  # targetNamespace: authentik
   dependsOn:
     - name: authentik
       namespace: &authentik-ns authentik
   chart:
     spec:
-      chart: helm/library/authentik-application
-      interval: 12h
+      # chart: helm/library/authentik-application
+      # interval: 12h
+      # sourceRef:
+      #   kind: GitRepository
+      #   name: flux-system
+      #   namespace: flux-system
+      # reconcileStrategy: Revision # TODO : ChartVersion when fully configured
+      chart: authentik-application
+      # renovate: datasource=docker depName=authentik-application registryUrl=oci://codeberg.org/wrenix/helm-charts
+      version: "0.4.9"
       sourceRef:
-        kind: GitRepository
-        name: flux-system
+        kind: HelmRepository
+        name: wrenix
         namespace: flux-system
-      reconcileStrategy: Revision # TODO : ChartVersion when fully configured
   interval: 50m
   install:
     createNamespace: true
@@ -29,7 +35,7 @@ spec:
     # secret:
     
     blueprint:
-      namespace: *authentik-ns
+      # namespace: *authentik-ns
       authentik:
         # -- domain to authentik, used in generated url (like issuer)
         domain: "https://auth.${main_domain}"
@@ -48,7 +54,7 @@ spec:
           # clientID:
           # -- client secret - generated if secret enabled
           # clientSecret:
-          redirectURL: "http://app.example.com"
+          redirectURL: "http://wiki.${main_domain}"
           # -- Need for non-curve / RSA
           # signingKey: "authentik Self-signed Certificate"
           tokenDuration: "minutes=5"
@@ -67,7 +73,7 @@ spec:
         # -- put this application in authentik in group
         group: ""
         # url to application
-        launchURL: "http://app.example.com"
+        launchURL: "http://wiki.${main_domain}"
         openInNewTab: false
         # -- icon of application (url)
         icon: ""

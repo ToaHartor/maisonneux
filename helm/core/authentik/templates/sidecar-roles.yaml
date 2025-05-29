@@ -1,6 +1,6 @@
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole # Role if watching only one namespace
 metadata:
   name: authentik-blueprint-sidecar
 rules:
@@ -9,13 +9,14 @@ rules:
     verbs: ["get", "watch", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding # RoleBinding if only one namespace
 metadata:
   name: authentik-blueprint-sidecar
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: authentik-blueprint-sidecar
 subjects:
   - kind: ServiceAccount
     name: authentik
+    namespace: {{ .Release.Namespace }}
