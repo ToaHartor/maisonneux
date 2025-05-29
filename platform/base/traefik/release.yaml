@@ -46,6 +46,8 @@ spec:
         ingressClass: traefik
       kubernetesIngress:
         ingressClass: traefik
+      kubernetesGateway:
+        enabled: true
 
     securityContext:
       seccompProfile:
@@ -106,6 +108,22 @@ spec:
       websecure:
         tls:
           enabled: true
+    
+    gateway:
+      enabled: true
+      listeners:
+        # Matching ports defined in the "ports" section
+        web:
+          port: 8000
+          protocol: HTTP
+          namespacePolicy: All
+        websecure:
+          port: 8443
+          protocol: HTTPS
+          namespacePolicy: All
+          certificateRefs:
+            - name: ${main_domain}-tls
+          mode: Terminate
 
     extraObjects:
       - apiVersion: traefik.io/v1alpha1
