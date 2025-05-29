@@ -43,8 +43,8 @@ spec:
       downloads:
         enabled: true
         type: nfs
-        server: 192.168.1.203
-        path: /mnt/raw-18tb-media/test-qbittorrent
+        server: ${nfs_server}
+        path: ${nfs_path_2}
       vuetorrent:
         enabled: true
         type: emptyDir

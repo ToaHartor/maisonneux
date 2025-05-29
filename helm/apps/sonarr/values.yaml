@@ -18,6 +18,9 @@ sonarr:
   # namespace: ""
   workload:
     main:
+      annotations:
+        # Reload pod on secret change
+        secret.reloader.stakater.com/reload: "sonarr-psql-secret" 
       podSpec:
         initContainers:
           waitpsql:
@@ -56,6 +59,18 @@ sonarr:
     config:
       enabled: true
       type: emptyDir
+    downloads:
+      enabled: true
+      type: nfs
+      server: # Complete with nfs server
+      path: # Complete with nfs path
+      mountPath: /downloads
+    media:
+      enabled: true
+      type: nfs
+      server: # Complete with nfs server
+      path: # Complete with nfs path
+      mountPath: /tv
   metrics:
     main:
       enabled: false # TODO : true when monitoring stack deployed

@@ -42,3 +42,11 @@ spec:
                       name: radarr4k-psql-secret
                   RADARR__POSTGRES__MAINDB: radarr4k-main
                   RADARR__POSTGRES__LOGDB: radarr4k-log
+      persistence:
+        # NFS mounts
+        downloads:
+          server: ${nfs_server}
+          path: ${nfs_path_2}
+        media:
+          server: ${nfs_server}
+          path: ${nfs_path_1}

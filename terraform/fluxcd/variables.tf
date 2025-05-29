@@ -70,8 +70,19 @@ variable "minio_access_url" {
   description = "External MinIO access URL (format 'localhost:9000')"
 }
 
-# OVH
+# TrueNAS
+variable "truenas_vm_host" {
+  type        = string
+  description = "TrueNAS host or IP"
+}
 
+variable "truenas_nfs_paths" {
+  type        = list(string)
+  description = "TrueNAS list of NFS paths"
+  default     = []
+}
+
+# OVH
 variable "ovh_endpoint_name" {
   type        = string
   description = "Endpoint name for OVH challenge (e.g. ovh-eu)"

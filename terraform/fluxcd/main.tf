@@ -19,6 +19,20 @@ terraform {
 }
 
 locals {
+  general_config = merge({
+    "environment"      = terraform.workspace
+    "minio_url"        = var.minio_access_url
+    "nfs_server"       = var.truenas_vm_host
+    "main_domain"      = var.main_domain
+    "secondary_domain" = var.second_domain
+    "fastdata_storage" = var.storage.fastdata
+    "git_repo_url"     = local.flux_sync_helm_values.gitRepository.spec.url
+    "git_branch"       = var.flux_git_branch
+    },
+    { for idx, data in var.truenas_nfs_paths : "nfs_path_${idx + 1}" => data }
+  )
+
+
   # see https://artifacthub.io/packages/helm/fluxcd-community/flux2-sync
   flux_sync_helm_values = {
     gitRepository = {

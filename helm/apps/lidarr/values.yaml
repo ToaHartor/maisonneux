@@ -60,6 +60,18 @@ lidarr:
     config:
       enabled: true
       type: emptyDir
+    downloads:
+      enabled: true
+      type: nfs
+      server: # Complete with nfs server
+      path: # Complete with nfs path
+      mountPath: /downloads
+    media:
+      enabled: true
+      type: nfs
+      server: # Complete with nfs server
+      path: # Complete with nfs path
+      mountPath: /music
   metrics:
     main:
       enabled: false # TODO : true when monitoring stack deployed

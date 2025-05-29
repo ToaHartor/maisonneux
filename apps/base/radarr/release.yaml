@@ -24,3 +24,13 @@ spec:
   values:
     storage:
       persistentClassName: ${fastdata_storage}
+    
+    radarr:
+      persistence:
+        # NFS mounts
+        downloads:
+          server: ${nfs_server}
+          path: ${nfs_path_2}
+        media:
+          server: ${nfs_server}
+          path: ${nfs_path_1}
