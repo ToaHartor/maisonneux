@@ -1,0 +1,73 @@
+storage:
+  persistentClassName: default
+
+namespaces:
+  postgresNamespace: &psqlNs postgres
+
+database:
+  clusterName: psql-cluster
+  clusterSecretName: postgres-secrets
+
+
+
+jellyseerr:
+  # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/jellyseerr/
+  waitPsqlImage:
+    repository: docker.io/library/busybox
+    tag: latest
+    pullPolicy: IfNotPresent
+  # namespace: ""
+  workload:
+    main:
+      annotations:
+        # Reload pod on secret change
+        # secret.reloader.stakater.com/reload: "jellyseerr-psql-secret" 
+      podSpec:
+        initContainers:
+          waitpsql:
+            enabled: true
+            type: init
+            imageSelector: waitPsqlImage
+            command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAMESPACE: *psqlNs
+        containers:
+          main:
+            env:
+              # User Defined
+              # JELLYFIN_TYPE: ""
+              LOG_LEVEL: "info"
+
+              DB_TYPE: "postgres" # Which DB engine to use, either "sqlite" or "postgres". The default is "sqlite".
+              DB_HOST: "psql-cluster-rw.postgres.svc.cluster.local" # (optional) The host (URL) of the database. The default is "localhost".
+              DB_PORT: "5432" # (optional) The port to connect to. The default is "5432".
+              DB_USER: "jellyseerr" # (required) Username used to connect to the database.
+              DB_PASS: # (required) Password of the user used to connect to the database.
+                secretKeyRef:
+                  name: jellyseerr-psql-secret
+                  key: password
+                  expandObjectName: false
+              DB_NAME: "jellyseerr" # (optional) The name of the database to connect to. The default is "jellyseerr".
+              DB_LOG_QUERIES: "false" # (optional) Whether to log the DB queries for debugging. The default is "false".
+            
+        # TODO : mount config or persistent data 
+        #     volumeMounts:
+        #     - name: settings
+        #       mountPath: "/app/config/settings.json"
+        #       subPath: settings.json
+        #       readOnly: true
+        # volumes:
+        #   - name: settings
+        #     secret:
+        #       secretName: jellyseerr-config
+        #       optional: false
+        #       items:
+        #         - key: settings.json
+        #           path: settings.json
+
+  persistence:
+    config:
+      enabled: true
+      type: emptyDir # persistent

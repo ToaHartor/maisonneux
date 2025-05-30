@@ -1,0 +1,28 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyseerr
+  namespace: media
+spec:
+  releaseName: jellyseerr
+  chart:
+    spec:
+      chart: helm/apps/jellyseerr
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/jellyseerr/
+  values:
+    storage:
+      persistentClassName: ${fastdata_storage}
+    
+    # jellyseerr:
