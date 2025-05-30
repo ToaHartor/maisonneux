@@ -48,9 +48,9 @@ spec:
                       name: outline-oidc-authentik-application
                       key: clientSecret
                       expandObjectName: false
-                  OIDC_AUTH_URI: https://auth.${main_domain}/application/o/authorize/
-                  OIDC_TOKEN_URI: https://auth.${main_domain}/application/o/token/
-                  OIDC_USERINFO_URI: https://auth.${main_domain}/application/o/userinfo/
+                  OIDC_AUTH_URI: https://auth.${main_domain}:10443/application/o/authorize/
+                  OIDC_TOKEN_URI: https://auth.${main_domain}:10443/application/o/token/
+                  OIDC_USERINFO_URI: https://auth.${main_domain}:10443/application/o/userinfo/
                   OIDC_USERNAME_CLAIM: preferred_username
                   OIDC_DISPLAY_NAME: Authentik
                   OIDC_SCOPES: openid profile email

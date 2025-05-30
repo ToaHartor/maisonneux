@@ -1,0 +1,26 @@
+{{- $domainSplit := include "common.func.split-domain" (dict "Domain" .Values.outline.workload.main.podSpec.containers.main.env.URL) | fromJson }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: outline
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: {{ ternary "websecure" "web" (eq $domainSplit.Protocol "https")}}
+      kind: Gateway
+
+  hostnames:
+    - {{ $domainSplit.Domain }}
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: outline
+        namespace: {{ .Release.Namespace }}
+        port: {{ .Values.outline.service.main.ports.main.port }}

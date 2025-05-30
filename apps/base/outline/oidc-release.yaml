@@ -31,7 +31,7 @@ spec:
       # namespace: *authentik-ns
       authentik:
         # -- domain to authentik, used in generated url (like issuer)
-        domain: "https://auth.${main_domain}"
+        domain: "https://auth.${main_domain}:10443"
       # Label used by the sidecar container to populate secrets in Authentik containers
       # labels:
       #   goauthentik_blueprint: "1"
@@ -47,7 +47,7 @@ spec:
           # clientID:
           # -- client secret - generated if secret enabled
           # clientSecret:
-          redirectURL: "https://wiki.${main_domain}"
+          redirectURL: "https://wiki.${main_domain}:10443"
           # -- Need for non-curve / RSA
           # signingKey: "authentik Self-signed Certificate"
           tokenDuration: "minutes=5"
@@ -66,7 +66,7 @@ spec:
         # -- put this application in authentik in group
         group: ""
         # url to application
-        launchURL: "https://wiki.${main_domain}"
+        launchURL: "https://wiki.${main_domain}:10443"
         openInNewTab: false
         # -- icon of application (url)
         icon: ""

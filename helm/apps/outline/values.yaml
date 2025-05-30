@@ -52,6 +52,7 @@ outline:
               
               PGSSLMODE: disable
 
+              URL:
               DATABASE_URL:
                 secretKeyRef:
                   name: outline-psql-secret
