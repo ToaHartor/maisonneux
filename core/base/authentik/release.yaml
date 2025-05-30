@@ -58,15 +58,15 @@ spec:
       server:
         serviceAccountName: authentik
         ingress:
-          enabled: true
-          ingressClassName: traefik
-          annotations:
-            traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          enabled: false
+          # ingressClassName: traefik
+          # annotations:
+          #   traefik.ingress.kubernetes.io/router.entrypoints: websecure
           #   traefik.ingress.kubernetes.io/router.tls: "true"
           #   traefik.ingress.kubernetes.io/router.middlewares: "" # TODO chain-noauth
           #   traefik.ingress.kubernetes.io/router.tls.options: "" # TODO tls-opts
-          hosts:
-            - auth.${main_domain}
+          # hosts:
+          #   - auth.${main_domain}
           # tls:
           #   - secretName: ${main_domain}-tls
           #     hosts:
