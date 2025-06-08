@@ -9,3 +9,4 @@ resources:
   - ../base/cert-manager-csi-driver
   - ../base/trust-manager
   - ../base/descheduler
+  - ../base/piraeus-operator

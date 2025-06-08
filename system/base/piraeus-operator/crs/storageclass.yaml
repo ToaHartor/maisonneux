@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+provisioner: linstor.csi.linbit.com
+metadata:
+  name: ${fastdata_storage}
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+parameters:
+  csi.storage.k8s.io/fstype: xfs
+  linstor.csi.linbit.com/autoPlace: "1"
+  linstor.csi.linbit.com/storagePool: lvm

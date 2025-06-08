@@ -1,0 +1,49 @@
+# Custom resources to create a cluster
+---
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+  namespace: piraeus
+spec: {}
+---
+# from https://github.com/piraeusdatastore/piraeus-operator/blob/v2.8.1/docs/how-to/talos.md#configure-the-drbd-module-loader
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: talos-loader-override
+  namespace: piraeus
+spec:
+  storagePools:
+    - name: lvm
+      lvmPool:
+        volumeGroup: vg1
+      source:
+        hostDevices:
+          - /dev/sdb
+  podTemplate:
+    spec:
+      initContainers:
+        - name: drbd-shutdown-guard
+          $patch: delete
+        - name: drbd-module-loader
+          $patch: delete
+      volumes:
+        - name: run-systemd-system
+          $patch: delete
+        - name: run-drbd-shutdown-guard
+          $patch: delete
+        - name: systemd-bus-socket
+          $patch: delete
+        - name: lib-modules
+          $patch: delete
+        - name: usr-src
+          $patch: delete
+        - name: etc-lvm-backup
+          hostPath:
+            path: /var/etc/lvm/backup
+            type: DirectoryOrCreate
+        - name: etc-lvm-archive
+          hostPath:
+            path: /var/etc/lvm/archive
+            type: DirectoryOrCreate
