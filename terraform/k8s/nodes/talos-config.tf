@@ -1,16 +1,26 @@
 locals {
   controller_nodes = [
-    for i in range(var.controller_count) : {
-      name    = "${var.cluster_prefix}-c${i}"
-      address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_controller_hostnum + i)
+    for i in range(length(var.node_distribution.controllers)) : {
+      name    = "${var.cluster_prefix}-c${i}-${terraform.workspace}"
+      address = var.node_distribution.controllers[i].address
+      config  = var.node_distribution.controllers[i]
     }
   ]
   worker_nodes = [
-    for i in range(var.worker_count) : {
-      name    = "${var.cluster_prefix}-w${i}"
-      address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_worker_hostnum + i)
+    for i in range(length(var.node_distribution.workers)) : {
+      name    = "${var.cluster_prefix}-w${i}-${terraform.workspace}"
+      address = var.node_distribution.workers[i].address
+      config  = var.node_distribution.workers[i]
     }
   ]
+
+  proxmox_nodes = distinct(
+    concat(
+      [for n in local.controller_nodes : n.config.node],
+      [for n in local.worker_nodes : n.config.node]
+    )
+  )
+
   common_machine_config = {
     machine = {
       # NB the install section changes are only applied after a talos upgrade
@@ -32,17 +42,30 @@ locals {
           # resolveMemberNames   = true
         }
       }
+      kernel = {
+        modules = [
+          # DRBD module for linstor and piraeus operator
+          {
+            name = "drbd"
+            parameters = [
+              "usermode_helper=disabled"
+            ]
+          },
+          {
+            name = "drbd_transport_tcp"
+          },
+          # Also enable this module for LVM-thin storage pools
+          {
+            name = "dm-thin-pool"
+          }
+        ]
+      }
       # For metrics server
       kubelet = {
         extraArgs = {
           cloud-provider             = "external"
           rotate-server-certificates = true
         }
-      }
-      # Labels for csi-proxmox-driver
-      nodeLabels = {
-        "topology.kubernetes.io/region" = var.proxmox_cluster_name
-        "topology.kubernetes.io/zone"   = var.proxmox_node_name
       }
       # nodeTaints = {
       #   "node.cilium.io/agent-not-ready" = "true:NoSchedule" # Taint nodes for cilium to check if it controls the node
@@ -55,7 +78,8 @@ locals {
         enabled = true
         registries = {
           kubernetes = {
-            disabled = false
+            # Deprecated as of k8s 1.32+
+            disabled = true
           }
           service = {
             disabled = true
@@ -81,7 +105,7 @@ locals {
             name = "PodSecurity"
             configuration = {
               exemptions = {
-                namespaces = ["cert-manager", "flux-system"]
+                namespaces = ["cert-manager", "flux-system", "piraeus"]
               }
             }
           }

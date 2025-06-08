@@ -1,4 +1,9 @@
 # Variables from module nodes output
+variable "deploy_env" {
+  type        = string
+  description = "Target environment to deploy the charts to"
+}
+
 variable "kubeprism_port" {
   type        = number
   description = "Kubeprism port from nodes deployment"

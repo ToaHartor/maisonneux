@@ -12,23 +12,23 @@ resource "kubernetes_secret" "flux_git_credentials" {
   }
 }
 
-data "local_sensitive_file" "proxmox_csi_creds_file" {
-  filename = "${path.module}/../../tmp/proxmoxcsi.yaml"
-}
+# data "local_sensitive_file" "proxmox_csi_creds_file" {
+#   filename = "${path.module}/../../tmp/proxmoxcsi.yaml"
+# }
 
-resource "kubernetes_secret" "proxmox_csi_creds" {
-  # Count = 1 if production env
-  # count = 1
-  metadata {
-    name      = "proxmox-csi-creds"
-    namespace = "kube-system"
-  }
-  type = "Opaque"
+# resource "kubernetes_secret" "proxmox_csi_creds" {
+#   # Count = 1 if production env
+#   # count = 1
+#   metadata {
+#     name      = "proxmox-csi-creds"
+#     namespace = "kube-system"
+#   }
+#   type = "Opaque"
 
-  data = {
-    "config.yaml" = data.local_sensitive_file.proxmox_csi_creds_file.content
-  }
-}
+#   data = {
+#     "config.yaml" = data.local_sensitive_file.proxmox_csi_creds_file.content
+#   }
+# }
 
 resource "kubernetes_secret" "external_minio_secrets" {
   metadata {

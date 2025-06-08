@@ -31,9 +31,11 @@ terraform {
 }
 
 locals {
-  kubeconfig_path = "../../../tmp/kubeconfig.yaml"
+  kubeconfig_path = "../../../tmp/kubeconfig-${var.deploy_env}.yaml"
   kubeconfig_raw  = yamldecode(file(local.kubeconfig_path))
-  talosconfig_raw = yamldecode(file("../../../tmp/talosconfig.yaml"))
+  talosconfig_raw = yamldecode(file("../../../tmp/talosconfig-${var.deploy_env}.yaml"))
+
+  opnsense_bgp_asn = 64555
 
   talosconfig = {
     ca            = local.talosconfig_raw.contexts.k8s.ca

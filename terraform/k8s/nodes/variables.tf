@@ -23,11 +23,6 @@ variable "proxmox_private_key_path" {
   description = "Private key path to log onto Proxmox via SSH"
 }
 
-variable "proxmox_node_name" {
-  type        = string
-  description = "Proxmox node name"
-}
-
 variable "proxmox_cluster_name" {
   type        = string
   description = "Proxmox cluster name"
@@ -57,22 +52,47 @@ variable "kubernetes_version" {
   }
 }
 
-variable "controller_count" {
-  type    = number
-  default = 1
-  validation {
-    condition     = var.controller_count >= 1
-    error_message = "Must be 1 or more."
-  }
-}
+variable "node_distribution" {
+  type = object({
+    controllers = list(object({
+      node    = string
+      cpu     = number
+      memory  = number
+      address = string
+      storage = object({
+        os = object({
+          storage_pool = string
+          size         = number
+        })
+        datastore = optional(object({
+          storage_pool = string
+          size         = number
+        }), null)
+      })
 
-variable "worker_count" {
-  type    = number
-  default = 1
-  validation {
-    condition     = var.worker_count >= 1
-    error_message = "Must be 1 or more."
-  }
+    }))
+    workers = list(object({
+      node    = string
+      cpu     = number
+      memory  = number
+      address = string
+      storage = object({
+        os = object({
+          storage_pool = string
+          size         = number
+        })
+        datastore = optional(object({
+          storage_pool = string
+          size         = number
+        }), null)
+      })
+
+      gpu = optional(object({
+        id = string
+      }), null)
+    }))
+  })
+  description = "A collection of node definitions to define which node is created on which proxmox node. A cluster should have at least one controller and one worker."
 }
 
 variable "cluster_name" {
@@ -148,20 +168,4 @@ variable "cluster_lan_gateway" {
   description = "The gateway for the load balancer subnet"
   type        = string
   default     = "10.64.64.255"
-}
-
-variable "cluster_os_storage" {
-  description = "Number of GB the OS disk of each node should have"
-  type        = number
-  default     = 40
-  validation {
-    condition     = var.cluster_os_storage >= 1
-    error_message = "Must be 1 or more."
-  }
-}
-
-variable "proxmox_vm_storage" {
-  description = "Storage name in Proxmox for PVC usage"
-  type        = string
-  default     = "data"
 }

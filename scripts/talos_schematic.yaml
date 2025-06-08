@@ -1,8 +1,9 @@
 customization:
-    extraKernelArgs:
-        - console=ttyS0
-        - net.ifnames=0
-    systemExtensions:
-        officialExtensions:
-            - siderolabs/iscsi-tools
-            - siderolabs/qemu-guest-agent
+  extraKernelArgs:
+    - console=ttyS0
+    - net.ifnames=0
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/iscsi-tools
+      - siderolabs/qemu-guest-agent
+      - siderolabs/drbd

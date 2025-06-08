@@ -9,6 +9,7 @@
 #   }
 # }
 
+# TODO : manage images containing nvidia drivers
 data "http" "talos_factory_schematic_id" {
   url    = "https://factory.talos.dev/schematics"
   method = "POST"
@@ -20,11 +21,13 @@ data "http" "talos_factory_schematic_id" {
 }
 
 resource "proxmox_virtual_environment_download_file" "talos_nocloud_image" {
+  # Add the image on each node
+  count        = length(local.proxmox_nodes)
   content_type = "iso"
   datastore_id = "local"
-  node_name    = var.proxmox_node_name
+  node_name    = local.proxmox_nodes[count.index]
 
-  file_name               = "talos-${var.talos_version}-nocloud-amd64.img"
+  file_name               = "talos-${var.talos_version}-nocloud-amd64-${terraform.workspace}.img"
   url                     = "https://factory.talos.dev/image/${jsondecode(data.http.talos_factory_schematic_id.response_body).id}/v${var.talos_version}/nocloud-amd64.raw.gz"
   decompression_algorithm = "gz"
   overwrite               = false
@@ -32,10 +35,10 @@ resource "proxmox_virtual_environment_download_file" "talos_nocloud_image" {
 
 
 resource "proxmox_virtual_environment_vm" "k8s-controller" {
-  count           = var.controller_count
+  count           = length(local.controller_nodes)
   name            = local.controller_nodes[count.index].name
-  node_name       = var.proxmox_node_name
-  tags            = sort(["terraform", "talos", "k8s", "controller"])
+  node_name       = local.controller_nodes[count.index].config.node
+  tags            = sort(["terraform", "talos", "k8s", "controller", "${terraform.workspace}"])
   stop_on_destroy = true
   bios            = "ovmf"
   machine         = "q35"
@@ -46,13 +49,13 @@ resource "proxmox_virtual_environment_vm" "k8s-controller" {
   }
 
   cpu {
-    cores        = 4
+    cores        = local.controller_nodes[count.index].config.cpu
     type         = "host"
     architecture = "x86_64"
   }
 
   memory {
-    dedicated = 6 * 1024
+    dedicated = local.controller_nodes[count.index].config.memory * 1024
   }
   vga {
     type = "qxl"
@@ -64,20 +67,35 @@ resource "proxmox_virtual_environment_vm" "k8s-controller" {
     version = "v2.0"
   }
   efi_disk {
-    datastore_id = var.proxmox_vm_storage
+    datastore_id = local.controller_nodes[count.index].config.storage.os.storage_pool
     file_format  = "raw"
     type         = "4m"
   }
   disk {
-    datastore_id = var.proxmox_vm_storage
+    datastore_id = local.controller_nodes[count.index].config.storage.os.storage_pool
     interface    = "scsi0"
     iothread     = true
     ssd          = true
     discard      = "on"
-    size         = var.cluster_os_storage
+    size         = local.controller_nodes[count.index].config.storage.os.size
     file_format  = "raw"
-    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
+    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image[index(local.proxmox_nodes, local.controller_nodes[count.index].config.node)].id
   }
+
+  dynamic "disk" {
+    # Add an additional disk only if this storage is defined in the node config
+    for_each = local.controller_nodes[count.index].config.storage.datastore != null ? [1] : []
+    content {
+      datastore_id = local.controller_nodes[count.index].config.storage.datastore.storage_pool
+      interface    = "scsi1"
+      iothread     = true
+      ssd          = true
+      discard      = "on"
+      size         = local.controller_nodes[count.index].config.storage.datastore.size
+      file_format  = "raw"
+    }
+  }
+
   agent {
     enabled = true
     trim    = true
@@ -93,17 +111,7 @@ resource "proxmox_virtual_environment_vm" "k8s-controller" {
       }
     }
   }
-  // TODO : passthrough vGPU
-  # hostpci {
-  #   device   = "hostpci0"
-  #   id       = "0000:07:00.0"
-  #   mapping  = null
-  #   mdev     = "nvidia-47"
-  #   pcie     = false
-  #   rom_file = null
-  #   rombar   = true
-  #   xvga     = true
-  # }
+
   lifecycle {
     ignore_changes = [
       disk[0].file_id
@@ -226,7 +234,7 @@ resource "talos_machine_bootstrap" "talos" {
 
 // see https://registry.terraform.io/providers/siderolabs/talos/0.5.0/docs/resources/machine_configuration_apply
 resource "talos_machine_configuration_apply" "controller" {
-  count                       = var.controller_count
+  count                       = length(local.controller_nodes)
   client_configuration        = talos_machine_secrets.talos.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controller.machine_configuration
   endpoint                    = local.controller_nodes[count.index].address
@@ -236,6 +244,11 @@ resource "talos_machine_configuration_apply" "controller" {
       machine = {
         network = {
           hostname = local.controller_nodes[count.index].name
+        }
+        # Labels for csi-proxmox-driver
+        nodeLabels = {
+          "topology.kubernetes.io/region" = var.proxmox_cluster_name
+          "topology.kubernetes.io/zone"   = local.controller_nodes[count.index].config.node
         }
       }
     }),

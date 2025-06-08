@@ -3,25 +3,25 @@ set -euo pipefail
 
 # THIS SCRIPT SHOULD ONLY BE USED WITH THE MAKEFILE
 
-readarray -d '' FLUXCD_ENVS < <(find terraform/fluxcd/terraform.tfstate.d/* -type d -exec basename {} \;)
-TF_FOLDER=$1
+# Get dependencies
+source "scripts/utils/tf-utils.sh"
 
-FLUXCD_ENV=$(printf "%s\n" "${FLUXCD_ENVS[@]}" | sed -n "/${1#fluxcd-*}/p")
+tfutils::get_folder_env "$1"
 
 # If environment is recognized for fluxcd-$env, switch env to the right one and set TF folder and config file
-if [ "${FLUXCD_ENV}" != "" ]; then \
+if [ "${TF_FOLDER}" == "fluxcd" ]; then \
     # Env in this TF folder
-    TF_FOLDER="fluxcd"
-    pushd terraform/${TF_FOLDER}
-    tofu workspace select ${FLUXCD_ENV}
+    pushd "terraform/${TF_FOLDER}"
+    tofu workspace select "${TF_DEPLOY_ENV}"
     popd
 fi
-cd terraform/${TF_FOLDER}
+cd "terraform/${TF_FOLDER}"
 # If targetting k8s, we extract values only from nodes deployment
-if [ "$1" = "k8s" ]; then
+if [ "${TF_FOLDER}" == "k8s" ]; then
     pushd nodes
-        tofu output -json >../../../tmp/datavalue_${TF_FOLDER}.json
+        tofu workspace select "${TF_DEPLOY_ENV}"
+        tofu output -json >"../../../tmp/datavalue_${TF_FOLDER}.json"
     popd
 else
-    tofu output -json >../../tmp/datavalue_${TF_FOLDER}.json
+    tofu output -json >"../../tmp/datavalue_${TF_FOLDER}.json"
 fi

@@ -25,9 +25,8 @@
     - name: Configuring general BGP routing settings
       ansibleguy.opnsense.frr_bgp_general:
         enabled: true
-        as_number: "{{ bgp_asn }}"
+        as_number: "{{ opnsense_bgp_asn }}"
         networks: [] # '{{ lb_network }}'
-        redistribute: [] # 'connected' 'static'
     # For each K8S node
     - name: Configure BGP neighbors
       ansibleguy.opnsense.frr_bgp_neighbor:

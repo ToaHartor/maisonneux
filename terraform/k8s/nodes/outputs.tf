@@ -20,7 +20,7 @@ output "kubeprism_port" {
   value = local.common_machine_config.machine.features.kubePrism.port
 }
 
-output "proxmox_csi_account" {
-  value     = yamlencode(local.proxmox_csi_cluster)
-  sensitive = true
-}
+# output "proxmox_csi_account" {
+#   value     = yamlencode(local.proxmox_csi_cluster)
+#   sensitive = true
+# }

@@ -298,7 +298,7 @@ resource "helm_release" "cilium_custom_resources" {
             localASN: ${var.bgp_asn}
             peers:
             - name: "peer-router"
-              peerASN: ${var.bgp_asn}
+              peerASN: ${local.opnsense_bgp_asn} # OPNSense BGP ASN
               peerAddress: ${var.cluster_lan_gateway} # OPNSense IP
               peerConfigRef:
                 name: "peer-config"

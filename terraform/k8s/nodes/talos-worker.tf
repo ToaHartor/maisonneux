@@ -1,9 +1,9 @@
 # see https://registry.terraform.io/providers/bpg/proxmox/0.62.0/docs/resources/virtual_environment_vm
 resource "proxmox_virtual_environment_vm" "k8s-worker" {
-  count           = var.worker_count
+  count           = length(local.worker_nodes)
   name            = local.worker_nodes[count.index].name
-  node_name       = var.proxmox_node_name
-  tags            = sort(["terraform", "talos", "k8s", "worker"])
+  node_name       = local.worker_nodes[count.index].config.node
+  tags            = sort(["terraform", "talos", "k8s", "worker", "${terraform.workspace}"])
   stop_on_destroy = true
   bios            = "ovmf"
   machine         = "q35"
@@ -16,11 +16,11 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
   cpu {
     architecture = "x86_64"
     type         = "host"
-    cores        = 4
+    cores        = local.worker_nodes[count.index].config.cpu
   }
 
   memory {
-    dedicated = 4 * 1024
+    dedicated = local.worker_nodes[count.index].config.memory * 1024
   }
 
   vga {
@@ -33,19 +33,33 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
     version = "v2.0"
   }
   efi_disk {
-    datastore_id = var.proxmox_vm_storage
+    datastore_id = local.worker_nodes[count.index].config.storage.os.storage_pool
     file_format  = "raw"
     type         = "4m"
   }
   disk {
-    datastore_id = var.proxmox_vm_storage
+    datastore_id = local.worker_nodes[count.index].config.storage.os.storage_pool
     interface    = "scsi0"
     iothread     = true
     ssd          = true
     discard      = "on"
-    size         = var.cluster_os_storage
+    size         = local.worker_nodes[count.index].config.storage.os.size
     file_format  = "raw"
-    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
+    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image[index(local.proxmox_nodes, local.worker_nodes[count.index].config.node)].id
+  }
+
+  dynamic "disk" {
+    # Add an additional disk only if this storage is defined in the node config
+    for_each = local.worker_nodes[count.index].config.storage.datastore != null ? [1] : []
+    content {
+      datastore_id = local.worker_nodes[count.index].config.storage.datastore.storage_pool
+      interface    = "scsi1"
+      iothread     = true
+      ssd          = true
+      discard      = "on"
+      size         = local.worker_nodes[count.index].config.storage.datastore.size
+      file_format  = "raw"
+    }
   }
 
   agent {
@@ -53,6 +67,23 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
     trim    = true
   }
 
+
+  dynamic "hostpci" {
+    # Add GPU binding if defined in node config
+    for_each = local.worker_nodes[count.index].config.gpu != null ? [1] : []
+
+    content {
+      device  = "hostpci0"
+      id      = local.worker_nodes[count.index].config.gpu.id # "0000:08:00.0"
+      mapping = null
+      # mdev     = "nvidia-47"
+      pcie     = false
+      rom_file = null
+      rombar   = true
+      xvga     = true
+    }
+
+  }
   initialization {
     dns {
       servers = [var.cluster_lan_gateway]
@@ -89,7 +120,7 @@ data "talos_machine_configuration" "worker" {
 
 // see https://registry.terraform.io/providers/siderolabs/talos/0.5.0/docs/resources/machine_configuration_apply
 resource "talos_machine_configuration_apply" "worker" {
-  count                       = var.worker_count
+  count                       = length(local.worker_nodes)
   client_configuration        = talos_machine_secrets.talos.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
   endpoint                    = local.worker_nodes[count.index].address
@@ -99,6 +130,11 @@ resource "talos_machine_configuration_apply" "worker" {
       machine = {
         network = {
           hostname = local.worker_nodes[count.index].name
+        }
+        # Labels to identify proxmox nodes
+        nodeLabels = {
+          "topology.kubernetes.io/region" = var.proxmox_cluster_name
+          "topology.kubernetes.io/zone"   = local.worker_nodes[count.index].config.node
         }
       }
     }),
