@@ -19,3 +19,7 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+  values:
+    # From https://github.com/traefik/traefik-helm-chart/blob/master/traefik-crds/values.yaml
+    # Install gatewayAPI CRD
+    gatewayAPI: true
