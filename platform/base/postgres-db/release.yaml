@@ -40,3 +40,4 @@ spec:
         - lidarr
         - prowlarr
         - jellyseerr
+        - jellystat

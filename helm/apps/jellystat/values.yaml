@@ -1,0 +1,72 @@
+storage:
+  persistentClassName: default
+
+namespaces:
+  postgresNamespace: &psqlNs postgres
+
+database:
+  clusterName: psql-cluster
+  clusterSecretName: postgres-secrets
+
+
+
+jellystat:
+  # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/jellyseerr/
+  waitPsqlImage:
+    repository: docker.io/library/busybox
+    tag: latest
+    pullPolicy: IfNotPresent
+  # namespace: ""
+  workload:
+    main:
+      annotations:
+        # Reload pod on secret change
+        # secret.reloader.stakater.com/reload: "jellystat-psql-secret" 
+      podSpec:
+        initContainers:
+          waitpsql:
+            enabled: true
+            type: init
+            imageSelector: waitPsqlImage
+            command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAMESPACE: *psqlNs
+        containers:
+          main:
+            env:
+              POSTGRES_DB: "jellystat"
+              POSTGRES_USER: "jellystat"
+              POSTGRES_PASSWORD:
+                secretKeyRef:
+                  name: jellystat-psql-secret
+                  key: password
+                  expandObjectName: false
+              POSTGRES_IP: "psql-cluster-rw.postgres.svc.cluster.local"
+              POSTGRES_PORT: "5432"
+              JWT_SECRET:
+                secretKeyRef:
+                  name: jellystat-jwt
+                  key: JWT_SECRET
+                  expandObjectName: false
+              JS_USER:
+                secretKeyRef:
+                  name: jellystat-masteruser
+                  key: masterUser
+                  expandObjectName: false
+              JS_PASSWORD:
+                secretKeyRef:
+                  name: jellystat-masteruser
+                  key: masterPassword
+                  expandObjectName: false
+
+  persistence:
+    backup:
+      enabled: false
+    # config:
+    #   enabled: true
+    #   type: emptyDir # persistent
+  cnpg:
+    main:
+      enabled: false
