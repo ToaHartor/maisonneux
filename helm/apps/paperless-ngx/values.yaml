@@ -1,0 +1,83 @@
+paperless:
+  # see https://github.com/truecharts/public/blob/master/charts/stable/paperless-ngx/values.yaml
+  # see documentation https://truecharts.org/charts/stable/paperless-ngx/
+  # namespace: ""
+  securityContext:
+    container:
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      runAsUser: 1000
+      runAsGroup: 1000
+  s3:
+    secretName: paperless-s3user
+    bucketName: paperless
+    endpoint: "http://localhost:9000"
+    customDomain: "localhost:9000/paperless"
+  persistence:
+    data:
+      enabled: true
+      mountPath: "/data"
+      # emptyDir ????? if it needs persistence, then no
+      type: emptyDir
+
+    consume:
+      enabled: true
+      mountPath: "/consume"
+      type: emptyDir
+    media:
+      enabled: true
+      mountPath: "/media"
+      type: nfs
+      path: /mnt/test # override in release
+      server: localhost # override in release
+
+  waitPsqlImage:
+    repository: docker.io/library/busybox
+    tag: latest
+    pullPolicy: IfNotPresent
+  # namespace: ""
+
+  workload:
+    main:
+      podSpec:
+        initContainers:
+          waitpsql:
+            enabled: true
+            type: init
+            imageSelector: waitPsqlImage
+            command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAMESPACE: *psqlNs
+
+        containers:
+          main:
+            env:
+              PAPERLESS_DBNAME: "paperless"
+              PAPERLESS_DBUSER: "paperless"
+              PAPERLESS_DBPASS:
+                secretKeyRef:
+                  name: paperless-psql-secret
+                  key: password
+              PAPERLESS_DBHOST: localhost:5432
+              PAPERLESS_SECRET_KEY:
+                secretKeyRef:
+                  name: paperless-secret-key
+                  key: secretKey
+              PAPERLESS_REDIS: redis://redis:6379
+
+              # Settings
+              PAPERLESS_OCR_LANGUAGE: "fra"
+              PAPERLESS_OCR_LANGUAGES: "eng fra jpn jpn-vert"
+              PAPERLESS_FILENAME_FORMAT: "{created_year}/{correspondent}/{title}"
+
+
+
+  # Disable cnpg and redis deployments as we use our own
+  redis:
+    enabled: false
+    # creds:
+    #   url: redis://redis:6379 # Url is also needed 
+  cnpg:
+    main:
+      enabled: false
