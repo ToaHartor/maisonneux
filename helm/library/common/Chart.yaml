@@ -3,4 +3,3 @@ name: common
 description: Library Helm chart for common functions
 type: library
 version: 0.0.1
-appVersion: "0.0.0"

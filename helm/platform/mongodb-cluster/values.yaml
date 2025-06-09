@@ -1,6 +1,3 @@
-storage:
-  persistentClassName: default
-
 database:
   name: mongodb-cluster
   users:

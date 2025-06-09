@@ -1,13 +1,3 @@
-storage:
-  persistentClassName: default
-
-namespaces:
-  postgresNamespace: &psqlNs postgres
-
-database:
-  clusterName: psql-cluster
-  clusterSecretName: postgres-secrets
-
 image:
   repository: ghcr.io/muety/wakapi
   pullPolicy: IfNotPresent

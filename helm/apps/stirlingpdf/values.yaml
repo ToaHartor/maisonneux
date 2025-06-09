@@ -1,9 +1,4 @@
-namespaces:
-  postgresNamespace: &psqlNs postgres
-
 database:
-  clusterName: psql-cluster
-  clusterSecretName: postgres-secrets
   databaseName: stirlingpdf
   databaseOwner: stirling
 

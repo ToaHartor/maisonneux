@@ -48,7 +48,7 @@ spec:
                       resources:
                         requests:
                           storage: 1Gi
-                      storageClassName: {{ .Values.storage.className }}
+                      storageClassName: {{ .Values.storage.persistentClassName }}
                 # - name: docker-credentials
                 #   secret:
                 #     secretName: docker-credentials

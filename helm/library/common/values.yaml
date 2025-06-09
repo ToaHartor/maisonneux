@@ -1,0 +1,17 @@
+exports:
+  defaults:
+    # Common chart parameters which are used by default for any chart importing it
+    # The values defined here are bound to the root values
+    # Following https://github.com/companyinfo/helm-charts/blob/main/charts/helmet/values.yaml 
+
+    storage:
+      persistentClassName: default
+
+    namespaces:
+      postgresNamespace: &psqlNs postgres
+      secretsNamespace: external-secrets
+      traefikNamespace: traefik
+
+    database:
+      clusterName: psql-cluster
+      clusterSecretName: postgres-secrets

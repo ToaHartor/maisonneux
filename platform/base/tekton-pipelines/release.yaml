@@ -31,4 +31,4 @@ spec:
     registry:
       url: zot.internal-ci.svc.cluster.local:5000
     storage:
-      className: ${fastdata_storage}
+      persistentClassName: ${fastdata_storage}

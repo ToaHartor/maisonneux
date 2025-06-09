@@ -4,6 +4,3 @@ repository:
 
 registry:
   url: example.com:5000
-
-storage:
-  className: default
