@@ -8,10 +8,15 @@ exports:
       persistentClassName: default
 
     namespaces:
-      postgresNamespace: &psqlNs postgres
+      postgresNamespace: postgres
+      mariadbNamespace: mariadb
       secretsNamespace: external-secrets
       traefikNamespace: traefik
 
     database:
-      clusterName: psql-cluster
-      clusterSecretName: postgres-secrets
+      postgres:
+        clusterName: psql-cluster
+        clusterSecretName: postgres-secrets
+      mariadb:
+        clusterName: mariadb-galera
+        clusterSecretName: mariadb-secrets

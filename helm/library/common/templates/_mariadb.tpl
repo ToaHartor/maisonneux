@@ -34,7 +34,7 @@ metadata:
   namespace: {{ .DatabaseNamespace }}
   annotations:
     secret-generator.v1.mittwald.de/autogenerate: password
-    secret-generator.v1.mittwald.de/length: "64"
+    secret-generator.v1.mittwald.de/length: "32"
     secret-generator.v1.mittwald.de/encoding: hex
 type: Opaque
 data:
@@ -69,7 +69,7 @@ Parameters :
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Grant
 metadata:
-  name: "grant-{{ .DatabaseUser }}"
+  name: "grant-{{ .DatabaseUser }}-on-{{ .DatabaseName }}-mariadb"
   namespace: {{ .DatabaseNamespace }}
 spec:
   mariaDbRef:

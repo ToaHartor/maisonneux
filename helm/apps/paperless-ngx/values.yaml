@@ -78,7 +78,7 @@ paperless:
               # Settings
               PAPERLESS_OCR_LANGUAGE: "fra"
               PAPERLESS_OCR_LANGUAGES: "eng fra jpn jpn-vert"
-              PAPERLESS_FILENAME_FORMAT: "{{ created_year }}/{{ correspondent }}/{{ title }}"
+              PAPERLESS_FILENAME_FORMAT: "{{`{{ created_year }}`}}/{{`{{ correspondent }}`}}/{{`{{ title }}`}}"
 
 
 

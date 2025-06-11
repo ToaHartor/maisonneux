@@ -2,14 +2,14 @@ apiVersion: k8s.mariadb.com/v1alpha1
 kind: MariaDB
 metadata:
   # Name of the app.kubernetes.io/instance
-  name: {{ .Values.clusterName }}
+  name: {{ .Values.database.mariadb.clusterName }}
   namespace: {{ .Release.Namespace }}
 spec:
   updateStrategy:
     # autoUpdateDataPlane: false # Only enable when updating
     type: ReplicasFirstPrimaryLast
   mariaDbRef:
-    name: {{ .Values.clusterName }}
+    name: {{ .Values.database.mariadb.clusterName }}
   # image: docker.mariadb.com/enterprise-server:10.6
   # imagePullPolicy: IfNotPresent
   # imagePullSecrets:

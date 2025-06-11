@@ -1,6 +1,6 @@
 {{- $root := . -}}
 {{- range $db := list .Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__MAINDB .Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__LOGDB -}}
 ---
-{{ include "common.psqldb" (dict "DatabaseNamespace" $root.Values.namespaces.postgresNamespace "DatabaseName" $db "DatabaseOwner" $root.Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__USER "PsqlClusterName" $root.Values.database.clusterName) }}
+{{ include "common.psqldb" (dict "DatabaseNamespace" $root.Values.namespaces.postgresNamespace "DatabaseName" $db "DatabaseOwner" $root.Values.sonarr.workload.main.podSpec.containers.main.env.SONARR__POSTGRES__USER "PsqlClusterName" $root.Values.database.postgres.clusterName) }}
 ---
 {{- end -}}

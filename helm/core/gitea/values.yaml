@@ -4,22 +4,12 @@ s3:
   endpoint: &bucket-endpoint "localhost:9000"
   customDomain: &custom-domain "localhost:9000/gitea"
 
-namespaces:
-  postgresNamespace: postgres
-  secretsNamespace: external-secrets
-  traefikNamespace: traefik
-
 database:
-  clusterName: psql-cluster
-  clusterSecretName: postgres-secrets
   databaseName: gitea
   owner: gitea
 
 redis:
   url: redis-master.redis.svc.cluster.local
-
-storage:
-  persistentClassName: default
 
 ingress:
   host: git.example.com

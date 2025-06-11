@@ -10,4 +10,4 @@ spec:
   ensure: present
   owner: wakapi
   cluster:
-    name: {{ .Values.database.clusterName }}
+    name: {{ .Values.database.postgres.clusterName }}

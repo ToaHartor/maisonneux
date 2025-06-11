@@ -8,7 +8,7 @@ data:
   #   ENABLE_PPROF=true
   database: |
     DB_TYPE=postgres
-    HOST={{ .Values.database.clusterName }}-rw.{{ .Values.namespaces.postgresNamespace }}.svc.cluster.local
+    HOST={{ .Values.database.postgres.clusterName }}-rw.{{ .Values.namespaces.postgresNamespace }}.svc.cluster.local
     NAME=gitea
     USER=gitea
   queue:
