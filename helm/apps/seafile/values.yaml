@@ -1,0 +1,198 @@
+seafile:
+  # FluxCD provisioned secret data (for config files)
+  fluxcd:
+    jwtSecret:
+
+  securityContext:
+    pod:
+      fsGroup: 0
+    container:
+      runAsNonRoot: false
+      readOnlyRootFilesystem: false
+      runAsUser: 0
+      runAsGroup: 0
+
+  workload:
+    main:
+      podSpec:
+        initContainers:
+          # We only mount the config files in the main container
+          init:
+            enabled: true
+            type: init
+            command: ['sh', '-c', 'cd /scripts && /usr/bin/env python3 -c "import bootstrap;bootstrap.wait_for_mysql();bootstrap.init_seafile_server()"']
+            env: &seafile-env
+              TIME_ZONE: UTC
+              NON_ROOT: "false"
+              SEAFILE_SERVER_LETSENCRYPT: "false"
+              SEAFILE_SERVER_HOSTNAME: "localhost"
+              SEAFILE_SERVER_PROTOCOL: "http"
+              SEAFILE_LOG_TO_STDOUT: "true"
+              # SEAFILE_VOLUME: /opt/seafile-data
+              # CLUSTER_INIT_MEMCACHED_HOST: "seafile-memcache.seafile.svc.cluster.local"
+              CLUSTER_SERVER: "false"
+              CLUSTER_INIT_MODE: "false"
+              JWT_PRIVATE_KEY:
+                secretKeyRef:
+                  name: seafile-jwt
+                  key: jwtKey
+                  expandObjectName: false
+              FORCE_HTTPS_IN_CONF: "false"
+              # Database vars (for init script)
+              DB_HOST: "{{ .Values.workload.main.podSpec.containers.main.env.SEAFILE_MYSQL_DB_HOST }}"
+              DB_ROOT_PASSWD: "{{ .Values.mariadb.rootPassword }}"
+              DB_PASSWORD:
+                secretKeyRef:
+                  name: seafile-db-creds
+                  key: password
+                  expandObjectName: false
+
+              # Seafile database variables
+              SEAFILE_MYSQL_DB_HOST: "mariadb-galera.mariadb.svc.cluster.local"
+              SEAFILE_MYSQL_DB_PORT: 3306
+              SEAFILE_MYSQL_DB_PASSWORD:
+                secretKeyRef:
+                  name: seafile-db-creds
+                  key: password
+                  expandObjectName: false
+              SEAFILE_MYSQL_DB_USER: "{{ .Values.mariadb.mariadbUsername }}"
+              INIT_SEAFILE_MYSQL_ROOT_PASSWORD: "{{ .Values.mariadb.rootPassword }}"
+
+              # Those variables do not work for the init script somehow, do not modify them
+              SEAFILE_MYSQL_DB_CCNET_DB_NAME: ccnet_db # default is ccnet_db
+              SEAFILE_MYSQL_DB_SEAFILE_DB_NAME: "{{ .Values.mariadb.mariadbDatabase }}" # seafile
+              SEAFILE_MYSQL_DB_SEAHUB_DB_NAME: seahub_db # default is seahub_db
+              ENABLE_SEADOC: "false"
+              # Admin
+              INIT_SEAFILE_ADMIN_EMAIL:
+                secretKeyRef:
+                  name: seafile-admin-creds
+                  key: username
+                  expandObjectName: false
+              INIT_SEAFILE_ADMIN_PASSWORD:
+                secretKeyRef:
+                  name: seafile-admin-creds
+                  key: password
+                  expandObjectName: false
+
+        containers:
+          main:
+            env: *seafile-env
+
+  configmap:
+    env:
+      enabled: false
+
+  persistence:
+    storage:
+      enabled: true
+      type: nfs
+      server: # Complete with nfs server
+      path: # Complete with nfs path
+
+      # type: pvc
+      # size: 1Gi
+      # storageClass: default
+      targetSelector:
+        main:
+          init:
+            mountPath: "/shared/seafile"
+          main:
+            mountPath: "/shared/seafile"
+
+    # Mount config files in storage
+    # Files should not be read only as seafile must be able to write
+    seafileconfig:
+      enabled: true
+      type: secret
+      readOnly: false
+      defaultMode: "0777"
+      objectName: seafile-config
+      expandObjectName: false
+      targetSelector:
+        main:
+          main:
+            mountPath: /shared/seafile/conf/seafile.conf
+            subPath: seafile.conf
+    seafdavconfig:
+      enabled: true
+      type: secret
+      readOnly: false
+      defaultMode: "0777"
+      objectName: seafile-config
+      expandObjectName: false
+      targetSelector:
+        main:
+          main:
+            mountPath: /shared/seafile/conf/seafdav.conf
+            subPath: seafdav.conf
+    seafeventsconfig:
+      enabled: true
+      type: secret
+      readOnly: false
+      defaultMode: "0777"
+      objectName: seafile-config
+      expandObjectName: false
+      targetSelector:
+        main:
+          main:
+            mountPath: /shared/seafile/conf/seafevents.conf
+            subPath: seafevents.conf
+    seahubsettingsconfig:
+      enabled: true
+      type: secret
+      readOnly: false
+      defaultMode: "0777"
+      objectName: seafile-config
+      expandObjectName: false
+      targetSelector:
+        main:
+          main:
+            mountPath: /shared/seafile/conf/seahub_settings.py
+            subPath: seahub_settings.py
+
+    ccnetconfig:
+      enabled: true
+      type: secret
+      readOnly: false
+      defaultMode: "0777"
+      objectName: seafile-config
+      expandObjectName: false
+      targetSelector:
+        main:
+          main:
+            mountPath: /shared/seafile/conf/ccnet.conf
+            subPath: ccnet.conf
+    
+    gunicornconfig:
+      enabled: true
+      type: secret
+      readOnly: false
+      defaultMode: "0777"
+      objectName: seafile-config
+      expandObjectName: false
+      targetSelector:
+        main:
+          main:
+            mountPath: /shared/seafile/conf/gunicorn.conf.py
+            subPath: gunicorn.conf.py
+
+    env:
+      enabled: false
+
+
+  mariadb:
+    enabled: false
+    mariadbUsername: seafile
+    mariadbDatabase: seafile_db
+    password:
+    rootPassword:
+    persistence:
+      data:
+        enabled: false
+        type: pvc
+        size: 1Gi
+        storageClass: default
+  
+  memcached:
+    enabled: true # maybe set to true

@@ -1,0 +1,21 @@
+# Create database user
+{{- $dbUser := .Values.seafile.database.user }}
+{{- $dbSecretName := include "common.db.secret-name" (dict "DatabaseUser" $dbUser) }}
+---
+{{ include "common.mariadb.user" (dict "DatabaseUser" $dbUser "DatabaseNamespace" .Values.namespaces.mariadbNamespace "ClusterName" .Values.database.mariadb.clusterName) }}
+# Retrieve secret from db namespace
+---
+{{ include "common.db.extsecret" (dict "Namespace" .Release.Namespace "SecretName" $dbSecretName "ClusterSecretName" .Values.database.mariadb.clusterSecretName ) }}
+---
+# Retrieve root database secret as Seafile needs it
+{{ include "common.db.extsecret" (dict "Namespace" .Release.Namespace "SecretName" .Values.seafile.database.rootSecret "ClusterSecretName" .Values.database.mariadb.clusterSecretName ) }}
+---
+# Create databases and grant rights for the user
+{{- $root := .}}
+{{- range $db := .Values.seafile.database.names -}}
+---
+{{ include "common.mariadb.database" (dict "DatabaseNamespace" $root.Values.namespaces.mariadbNamespace "DatabaseName" $db "ClusterName" $root.Values.database.mariadb.clusterName) }}
+---
+{{ include "common.mariadb.grantall" (dict "DatabaseNamespace" $root.Values.namespaces.mariadbNamespace "DatabaseName" $db "DatabaseUser" $dbUser "ClusterName" $root.Values.database.mariadb.clusterName) }}
+---
+{{- end -}}

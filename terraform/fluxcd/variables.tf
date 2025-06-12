@@ -82,6 +82,11 @@ variable "truenas_nfs_paths" {
   default     = []
 }
 
+variable "truenas_nfs_seafile" {
+  type        = string
+  description = "TrueNAS NFS share for Seafile"
+}
+
 # OVH
 variable "ovh_endpoint_name" {
   type        = string

@@ -16,3 +16,4 @@ resources:
   - ../base/jellyseerr
   - ../base/jellystat
   - ../base/paperless-ngx
+  - ../base/seafile

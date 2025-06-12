@@ -28,6 +28,7 @@ locals {
     "fastdata_storage" = var.storage.fastdata
     "git_repo_url"     = local.flux_sync_helm_values.gitRepository.spec.url
     "git_branch"       = var.flux_git_branch
+    "nfs_path_seafile" = var.truenas_nfs_seafile
     },
     { for idx, data in var.truenas_nfs_paths : "nfs_path_${idx + 1}" => data }
   )

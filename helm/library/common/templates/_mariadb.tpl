@@ -5,13 +5,13 @@ Parameters :
 - .ClusterName : MariaDB cluster name
 */}}
 {{- define "common.mariadb.database" -}}
----
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Database
 metadata:
-  name: {{ .DatabaseName }}
+  name: {{ .DatabaseName | replace "_" "-" }}
   namespace: {{ .DatabaseNamespace }}
 spec:
+  name: {{ .DatabaseName }} # Set again database name (for names which have special characters forbidden in metadata.name)
   mariaDbRef:
     name: {{ .ClusterName }}
   characterSet: utf8
@@ -26,11 +26,11 @@ Parameters :
 - .ClusterName : MariaDB cluster name
 */}}
 {{- define "common.mariadb.user" -}}
----
+{{- $secretName := include "common.db.secret-name" (dict "DatabaseUser" .DatabaseUser) }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .DatabaseUser }}-mariadb-creds
+  name: {{ $secretName }}
   namespace: {{ .DatabaseNamespace }}
   annotations:
     secret-generator.v1.mittwald.de/autogenerate: password
@@ -49,7 +49,7 @@ spec:
   mariaDbRef:
     name: {{ .ClusterName }}
   passwordSecretKeyRef:
-    name: {{ .DatabaseUser }}-mariadb-password
+    name: {{ $secretName }}
     key: password
   maxUserConnections: 20
   host: "%"
@@ -65,11 +65,10 @@ Parameters :
 - .ClusterName : MariaDB cluster name
 */}}
 {{- define "common.mariadb.grantall" -}}
----
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Grant
 metadata:
-  name: "grant-{{ .DatabaseUser }}-on-{{ .DatabaseName }}-mariadb"
+  name: "grant-{{ .DatabaseUser }}-on-{{ .DatabaseName | replace "_" "-" }}-mariadb"
   namespace: {{ .DatabaseNamespace }}
 spec:
   mariaDbRef:

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: seafile
+description: Custom helm wrapper for Seafile Helm chart
+dependencies:
+  - name: seafile
+    # Version from https://github.com/truecharts/public/blob/master/charts/stable/seafile/Chart.yaml
+    version: "8.1.9"
+    repository: oci://tccr.io/truecharts
+  - name: common
+    version: "0.0.1"
+    repository: "file://../../library/common"
+    import-values:
+      - defaults
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - mariadb-operator
+version: 0.0.1

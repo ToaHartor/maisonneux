@@ -1,0 +1,9 @@
+seafile:
+  database:
+    rootSecret: mariadb-root-secret
+    user: seafile
+    # Database names
+    names:
+      - seafile_db
+      - seahub_db
+      - ccnet_db
