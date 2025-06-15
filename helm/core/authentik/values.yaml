@@ -26,6 +26,8 @@ authentik:
   #     - authentik-blueprint
   global:
     env:
+      - name: AUTHENTIK_REDIS__DB
+        value: "15"
       - name: AUTHENTIK_BOOTSTRAP_PASSWORD
         valueFrom:
           secretKeyRef:
