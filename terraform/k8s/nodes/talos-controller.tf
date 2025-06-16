@@ -252,6 +252,8 @@ resource "talos_machine_configuration_apply" "controller" {
         }
       }
     }),
+    # Add mount for linstor
+    yamlencode(local.controller_nodes[count.index].config.storage.datastore != null ? local.linstor_mount_config : {})
   ]
   depends_on = [
     proxmox_virtual_environment_vm.k8s-controller,

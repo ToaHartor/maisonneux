@@ -15,12 +15,15 @@ metadata:
   namespace: piraeus
 spec:
   storagePools:
-    - name: lvm
-      lvmPool:
-        volumeGroup: vg1
-      source:
-        hostDevices:
-          - /dev/sdb
+    # - name: lvm
+    #   lvmPool:
+    #     volumeGroup: vg1
+    #   source:
+    #     hostDevices:
+    #       - /dev/sdb
+    - name: fs-storage
+      filePool:
+        directory: /var/mnt/linstor
   podTemplate:
     spec:
       initContainers:

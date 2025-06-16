@@ -39,7 +39,7 @@ locals {
         hostDNS = {
           enabled              = true
           forwardKubeDNSToHost = false # Disable it as it conflicts with cilium's bpf.masquerade option https://github.com/cilium/cilium/issues/36761
-          # resolveMemberNames   = true
+          resolveMemberNames   = true
         }
       }
       kernel = {
@@ -75,7 +75,7 @@ locals {
       # see https://www.talos.dev/v1.7/talos-guides/discovery/
       # see https://www.talos.dev/v1.7/reference/configuration/#clusterdiscoveryconfig
       discovery = {
-        enabled = true
+        enabled = false
         registries = {
           kubernetes = {
             # Deprecated as of k8s 1.32+
@@ -111,6 +111,33 @@ locals {
           }
         ]
       }
+    }
+  }
+  linstor_mount_config = {
+    machine = {
+      nodeLabels = {
+        "homelab/linstor-enabled" = "true"
+      }
+      kubelet = {
+        extraMounts = [
+          {
+            destination = "/var/mnt/linstor"
+            type        = "bind"
+            source      = "/var/mnt/linstor"
+            options     = ["bind", "rshared", "rw"]
+          }
+        ]
+      }
+      disks = [
+        {
+          device = "/dev/sdb"
+          partitions = [
+            {
+              mountpoint = "/var/mnt/linstor"
+            }
+          ]
+        }
+      ]
     }
   }
 }

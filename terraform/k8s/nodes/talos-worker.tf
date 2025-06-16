@@ -138,6 +138,8 @@ resource "talos_machine_configuration_apply" "worker" {
         }
       }
     }),
+    # Add mount for linstor
+    yamlencode(local.worker_nodes[count.index].config.storage.datastore != null ? local.linstor_mount_config : {})
   ]
   depends_on = [
     proxmox_virtual_environment_vm.k8s-worker,
