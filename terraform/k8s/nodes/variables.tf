@@ -153,6 +153,12 @@ variable "cluster_node_network_first_worker_hostnum" {
   default     = 90
 }
 
+variable "schedule_pods_on_control_plane_nodes" {
+  description = "Whether or not every pods can be scheduled on control plane nodes"
+  type        = bool
+  default     = false
+}
+
 variable "ingress_domain" {
   description = "the DNS domain of the ingress resources"
   type        = string

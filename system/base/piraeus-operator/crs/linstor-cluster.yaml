@@ -5,7 +5,37 @@ kind: LinstorCluster
 metadata:
   name: linstorcluster
   namespace: piraeus
-spec: {}
+spec:
+  nodeSelector:
+    homelab/linstor-enabled: "true"
+# Disable node connection on nodes that do not have linstor enabled
+---
+apiVersion: piraeus.io/v1
+kind: LinstorNodeConnection
+metadata:
+  name: selector
+spec:
+  selector:
+    - matchLabels:
+        - key: homelab/linstor-enabled
+          op: In
+          values:
+            - "true"
+# Disable satellite on nodes that do not have linstor enabled
+---
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: disabled-nodes
+spec:
+  nodeAffinity:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: "homelab/linstor-enabled"
+            operator: NotExists
+  properties:
+    - name: AutoplaceTarget
+      value: "no"
 ---
 # from https://github.com/piraeusdatastore/piraeus-operator/blob/v2.8.1/docs/how-to/talos.md#configure-the-drbd-module-loader
 apiVersion: piraeus.io/v1

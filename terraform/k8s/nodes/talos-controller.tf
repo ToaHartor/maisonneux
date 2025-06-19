@@ -164,7 +164,7 @@ data "talos_machine_configuration" "controller" {
     }),
     yamlencode({
       cluster = {
-        allowSchedulingOnControlPlanes = true
+        allowSchedulingOnControlPlanes = var.schedule_pods_on_control_plane_nodes
         // solves https://github.com/siderolabs/talos/issues/9980 for k8s 1.32+
         apiServer = {
           extraArgs = {
@@ -253,7 +253,7 @@ resource "talos_machine_configuration_apply" "controller" {
       }
     }),
     # Add mount for linstor
-    yamlencode(local.controller_nodes[count.index].config.storage.datastore != null ? local.linstor_mount_config : {})
+    local.controller_nodes[count.index].config.storage.datastore != null ? yamlencode(local.linstor_mount_config) : ""
   ]
   depends_on = [
     proxmox_virtual_environment_vm.k8s-controller,

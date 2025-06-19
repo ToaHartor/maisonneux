@@ -23,12 +23,12 @@ spec:
   values:
     # https://artifacthub.io/packages/helm/cloudnative-pg/cloudnative-pg
     # Schedule operator on control plane
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
+    # nodeSelector:
+    #   node-role.kubernetes.io/control-plane: ""
 
-    tolerations:
-      - key: "node-role.kubernetes.io/control-plane"
-        operator: "Exists"
-        effect: "NoSchedule"
+    # tolerations:
+    #   - key: "node-role.kubernetes.io/control-plane"
+    #     operator: "Exists"
+    #     effect: "NoSchedule"
     crds:
       create: true # by default

@@ -53,10 +53,6 @@ locals {
           },
           {
             name = "drbd_transport_tcp"
-          },
-          # Also enable this module for LVM-thin storage pools
-          {
-            name = "dm-thin-pool"
           }
         ]
       }
