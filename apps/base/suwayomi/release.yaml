@@ -1,0 +1,68 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: suwayomi
+  namespace: media
+spec:
+  releaseName: suwayomi
+  chart:
+    spec:
+      chart: tachidesk-docker
+      # renovate: datasource=docker depName=tachidesk-docker registryUrl=oci://tccr.io/truecharts
+      version: "8.5.19"
+      sourceRef:
+        kind: HelmRepository
+        name: truecharts
+        namespace: flux-system
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/tachidesk-docker/values.yaml
+  values:
+    securityContext:
+      pod:
+        fsGroup: 1000
+      container:
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+
+    workload:
+      main:
+        podSpec:
+          containers:
+            main:
+              env:
+                # TZ: UTC
+                DOWNLOAD_AS_CBZ: true
+                # AUTO_DOWNLOAD_CHAPTERS: true
+                AUTO_DOWNLOAD_EXCLUDE_UNREAD: false
+                UPDATE_EXCLUDE_UNREAD: false
+                UPDATE_EXCLUDE_STARTED: false
+                UPDATE_EXCLUDE_COMPLETED: false
+                EXTENSION_REPOS: '["https://github.com/keiyoushi/extensions/tree/repo/"]'
+                UPDATE_MANGA_INFO: true
+                BASIC_AUTH_ENABLED: false
+                FLARESOLVERR_ENABLED: true
+                FLARESOLVERR_URL: "flaresolverr.services.svc.cluster.local:8191"
+
+    persistence:
+      # Config also contains the sqlite database, so we have no choice but to use a PVC here
+      appdata:
+        enabled: true
+        type: pvc
+        size: 1Gi # As media covers are cached, increase the PVC size 
+        storageClass: ${fastdata_storage}
+        # mountPath: "/home/suwayomi/.local/share/Tachidesk"
+      library:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_2}
+        # mountPath: "/home/suwayomi/.local/share/Tachidesk/downloads"
+      # Disable local library mount, as we don't host any library on Suwayomi but instead on Kavita
+      local-library:
+        enabled: false
