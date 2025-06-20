@@ -1,0 +1,49 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kavita
+  namespace: media
+spec:
+  releaseName: kavita
+  chart:
+    spec:
+      chart: kavita
+      # renovate: datasource=docker depName=kavita registryUrl=oci://tccr.io/truecharts
+      version: "11.5.7"
+      sourceRef:
+        kind: HelmRepository
+        name: truecharts
+        namespace: flux-system
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/kavita/values.yaml
+  values:
+    securityContext:
+      pod:
+        fsGroup: 1000
+      container:
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+
+    persistence:
+      # Config also contains the sqlite database, so we have no choice but to use a PVC here
+      config:
+        enabled: true
+        type: pvc
+        size: 10Gi # As media covers are cached, increase the PVC size 
+        storageClass: ${fastdata_storage}
+        # mountPath: "/kavita/config"
+      media:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_2}
+        mountPath: "/media"
+      # Disable default manga chart path, as we'll use /media for multiple libraries
+      manga:
+        enabled: false
