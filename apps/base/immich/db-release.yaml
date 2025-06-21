@@ -1,0 +1,24 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: immich-db
+  namespace: immich
+spec:
+  releaseName: immich-db
+  chart:
+    spec:
+      chart: helm/apps/immich-db
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  values:
+    storage:
+      persistentClassName: ${fastdata_storage}

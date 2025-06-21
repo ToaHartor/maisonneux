@@ -1,0 +1,62 @@
+# See https://cloudnative-pg.io/documentation/1.26/samples/cluster-example-full.yaml
+# See https://cloudnative-pg.io/documentation/1.26/samples/
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: immich-psql-cluster
+  namespace: {{ .Release.Namespace }}
+spec:
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+
+  # Custom psql image with vector support
+  imageName: "{{ .Values.immich.database.image.repository }}:{{ .Values.immich.database.image.tag }}"
+  imagePullPolicy: {{ .Values.immich.database.image.pullPolicy }}
+
+  superuserSecret:
+    name: {{ include "common.db.secret-name" (dict "DatabaseUser" .Values.immich.database.adminUser )}}
+
+  # Cluster setup advices from https://github.com/immich-app/immich-charts/issues/149
+  postgresql:
+    shared_preload_libraries:
+      - "vchord.so"
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.immich.database.name }}
+      owner: {{ .Values.immich.database.user }}
+      secret:
+        name: {{ include "common.db.secret-name" (dict "DatabaseUser" .Values.immich.database.user )}}
+    postInitSQL:
+      - CREATE EXTENSION IF NOT EXISTS "vectors";
+      - CREATE EXTENSION IF NOT EXISTS "cube" CASCADE;
+      - CREATE EXTENSION IF NOT EXISTS "earthdistance" CASCADE;
+
+  managed:
+    roles:
+      - name: immich
+        superuser: true
+        login: true
+
+    services:
+      # No need since our database is exclusive
+      disabledDefaultServices: ["ro", "r"]
+
+  # resources:
+  #   requests:
+  #     memory: "64m"
+  #     cpu: 50m
+  #   limits:
+  #     memory: "256m"
+  #     cpu: 250m
+  # Require 1Gi of space
+  storage:
+    size: 1Gi
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: {{ .Values.storage.persistentClassName }}
+      volumeMode: Filesystem

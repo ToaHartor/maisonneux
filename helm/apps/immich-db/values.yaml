@@ -1,0 +1,9 @@
+immich:
+  database:
+    image:
+      repository: ghcr.io/tensorchord/cloudnative-vectorchord
+      tag: 16-0.4.4@sha256:bdb8d8829bd68c9204628cde5c495db9db0d2b45e958ddd17de1703338a3b98b
+      pullPolicy: IfNotPresent
+    adminUser: admin
+    user: immich
+    name: immich

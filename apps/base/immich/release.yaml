@@ -1,0 +1,158 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: immich
+  namespace: immich
+spec:
+  releaseName: immich
+  dependsOn:
+    # Wait for DB resources to be deployed
+    - name: immich-db
+  chart:
+    spec:
+      chart: immich
+      # renovate: datasource=docker depName=immich registryUrl=oci://tccr.io/truecharts
+      version: "18.3.1"
+      sourceRef:
+        kind: HelmRepository
+        name: truecharts
+        namespace: flux-system
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: immich-db-creds
+      valuesKey: password
+      targetPath: cnpg.main.creds.password
+
+  # see https://github.com/truecharts/public/blob/master/charts/stable/immich/values.yaml
+  values:
+    # storage:
+    #   persistentClassName: ${fastdata_storage}
+    authentikOidc:
+      clientId: # Filled by fluxcd
+      clientSecret: # Filled by fluxcd
+      redirectUri:
+      mobileRedirectUri:
+
+    cnpg:
+      main:
+        enabled: false
+        user: immich
+        database: immich
+        creds:
+          # Hostname is basically "cluster-name"-rw
+          host: immich-psql-cluster-rw
+          # password: "" # Filled by secrets
+    
+    redis:
+      enabled: false
+      creds:
+        plainhost: redis-master.redis.svc.cluster.local
+        redisPassword: ""
+
+
+    workload:
+      main:
+        podSpec:
+          containers:
+            main:
+              env:
+                IMMICH_CONFIG_FILE: /config/immich-config.yaml
+                # Metrics
+                IMMICH_TELEMETRY_INCLUDE: all
+                # REDIS_DBINDEX: ""
+                # DB_PASSWORD:
+                #   valueFrom:
+                #     secretKeyRef:
+                #       name: immich-db-creds
+                #       key: password
+
+      
+    #   microservices:
+    #     podSpec:
+    #       containers:
+    #         microservices:
+    #           env:
+    #             REDIS_DBINDEX: ""
+    #             DB_PASSWORD:
+    #               valueFrom:
+    #                 secretKeyRef:
+    #                   name: immich-db-creds
+    #                   key: password
+      
+      # machinelearning:
+      #   podSpec:
+      #     containers:
+      #       machinelearning:
+      #         env:
+
+
+    # https://immich.app/docs/install/config-file/
+    configmap:
+      immich-config:
+        enabled: true
+        data:
+          immich-config.yaml: |
+            oauth:
+              enabled: false # true
+              buttonText: "Login with Authentik"
+              clientId: {{ .Values.authentikOidc.clientId }} # Filled by fluxcd
+              clientSecret: {{ .Values.authentikOidc.clientSecret }}# Filled by fluxcd
+              issuerUrl: {{ .Values.authentikOidc.issuerUrl }}
+              mobileRedirectUri: {{ .Values.authentikOidc.mobileRedirectUri }}
+              # defaultStorageQuota:
+            
+            passwordLogin:
+              enabled: true # false
+
+            notifications:
+              smtp:
+                enabled: false
+
+
+    persistence:
+      # mlcache:
+      
+      # microcache:
+          # enabled: true
+          # size: 10Gi
+          # type: emptyDir # or pvc
+          # # accessMode: ReadWriteMany
+          # # storageClass:
+      config:
+        enabled: true
+        type: configmap
+        objectName: immich-config
+        expandObjectName: true
+        optional: false
+        defaultMode: "0777"
+        mountPath: /config
+        targetSelector:
+          main:
+            main: {}
+    
+      library:
+        enabled: true
+        mountPath: /usr/src/app/upload
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_immich}
+
+      uploads:
+        enabled: false
+      
+      backups:
+        enabled: false
+      
+      thumbs:
+        enabled: false
+
+      profile:
+        enabled: false
+      
+      video:
+        enabled: false         

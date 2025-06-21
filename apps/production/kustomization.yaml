@@ -20,3 +20,4 @@ resources:
   - ../base/jdownloader
   - ../base/kavita
   - ../base/suwayomi
+  - ../base/immich

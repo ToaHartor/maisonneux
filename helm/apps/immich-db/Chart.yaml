@@ -1,0 +1,13 @@
+apiVersion: v2
+name: immich-db
+description: Deploy databases resources before Immich main chart
+dependencies:
+  - name: common
+    version: "0.0.1"
+    repository: "file://../../library/common"
+    import-values:
+      - defaults
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - mariadb-operator
+version: 0.0.1
