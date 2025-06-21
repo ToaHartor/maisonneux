@@ -44,7 +44,7 @@ spec:
         enabled: true
         type: nfs
         server: ${nfs_server}
-        path: ${nfs_path_2}
+        path: ${nfs_path_download}
       vuetorrent:
         enabled: true
         type: emptyDir

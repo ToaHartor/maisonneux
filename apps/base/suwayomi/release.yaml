@@ -61,7 +61,7 @@ spec:
         enabled: true
         type: nfs
         server: ${nfs_server}
-        path: ${nfs_path_2}
+        path: ${nfs_path_download}
         # mountPath: "/home/suwayomi/.local/share/Tachidesk/downloads"
       # Disable local library mount, as we don't host any library on Suwayomi but instead on Kavita
       local-library:

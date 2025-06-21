@@ -77,14 +77,14 @@ variable "truenas_vm_host" {
 }
 
 variable "truenas_nfs_paths" {
-  type        = list(string)
+  type = object({
+    media_1   = string
+    download  = string
+    immich    = string
+    paperless = string
+    seafile   = string
+  })
   description = "TrueNAS list of NFS paths"
-  default     = []
-}
-
-variable "truenas_nfs_seafile" {
-  type        = string
-  description = "TrueNAS NFS share for Seafile"
 }
 
 # OVH

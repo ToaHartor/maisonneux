@@ -46,7 +46,7 @@ spec:
         # NFS mounts
         downloads:
           server: ${nfs_server}
-          path: ${nfs_path_2}
+          path: ${nfs_path_download}
         media:
           server: ${nfs_server}
-          path: ${nfs_path_1}
+          path: ${nfs_path_media_1}

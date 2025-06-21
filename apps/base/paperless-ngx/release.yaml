@@ -34,7 +34,7 @@ spec:
       persistence:
         media:
           server: ${nfs_server}
-          path: ${nfs_path_3}
+          path: ${nfs_path_paperless}
 
       workload:
         main:
