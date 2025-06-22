@@ -31,7 +31,7 @@ jellystat:
               POSTGRES_USER: "jellystat"
               POSTGRES_PASSWORD:
                 secretKeyRef:
-                  name: jellystat-psql-secret
+                  name: jellystat-db-creds
                   key: password
                   expandObjectName: false
               POSTGRES_IP: "psql-cluster-rw.postgres.svc.cluster.local"

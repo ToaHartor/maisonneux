@@ -1,6 +1,6 @@
 database:
-  databaseName: stirlingpdf
-  databaseOwner: stirling
+  name: stirlingpdf
+  user: stirling
 
 stirling-pdf-chart:
   # envs:
@@ -23,7 +23,7 @@ stirling-pdf-chart:
     #       key: password
   envsFrom:
     - secretRef:
-        name: stirling-psql-secret
+        name: stirling-db-creds
     - configMapRef:
         name: stirling-config
   ingress:

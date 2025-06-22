@@ -13,7 +13,7 @@ sonarr:
     main:
       annotations:
         # Reload pod on secret change
-        secret.reloader.stakater.com/reload: "sonarr-psql-secret" 
+        secret.reloader.stakater.com/reload: "sonarr-db-creds" 
       podSpec:
         initContainers:
           waitpsql:
@@ -43,7 +43,7 @@ sonarr:
               SONARR__POSTGRES__USER: sonarr
               SONARR__POSTGRES__PASSWORD:
                 secretKeyRef:
-                  name: sonarr-psql-secret
+                  name: sonarr-db-creds
                   key: password
                   expandObjectName: false
               SONARR__POSTGRES__MAINDB: sonarr-main

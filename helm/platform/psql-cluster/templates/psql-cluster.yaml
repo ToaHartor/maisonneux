@@ -18,7 +18,6 @@ spec:
   #     owner: psql # should be the same in the secret
   #     secret:
   #       name: authentik-psql-secret
-
   managed:
     services:
       # No need since our database is 
@@ -31,7 +30,7 @@ spec:
         login: true
         superuser: false
         passwordSecret:
-          name: {{ $user }}-psql-secret
+          name:  {{ include "common.db.secret-name" (dict "DatabaseUser" $user) }}
       {{- end }}
 
   # resources:

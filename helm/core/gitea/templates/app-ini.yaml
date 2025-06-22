@@ -9,8 +9,8 @@ data:
   database: |
     DB_TYPE=postgres
     HOST={{ .Values.database.postgres.clusterName }}-rw.{{ .Values.namespaces.postgresNamespace }}.svc.cluster.local
-    NAME=gitea
-    USER=gitea
+    NAME={{ .Values.database.name }}
+    USER={{ .Values.database.user }}
   queue:
     TYPE=redis
     CONN_STR=redis://{{ .Values.redis.url }}/0

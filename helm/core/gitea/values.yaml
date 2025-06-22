@@ -5,8 +5,8 @@ s3:
   customDomain: &custom-domain "localhost:9000/gitea"
 
 database:
-  databaseName: gitea
-  owner: gitea
+  name: gitea
+  user: gitea
 
 redis:
   url: redis-master.redis.svc.cluster.local
@@ -27,7 +27,7 @@ gitea:
       - name: GITEA__DATABASE__PASSWD
         valueFrom:
           secretKeyRef:
-            name: gitea-psql-secret
+            name: gitea-db-creds
             key: password
       - name: GITEA__STORAGE__MINIO_ACCESS_KEY_ID
         valueFrom:

@@ -1,1 +1,1 @@
-{{ include "common.psqldb" (dict "DatabaseNamespace" .Values.namespaces.postgresNamespace "DatabaseName" .Values.database.databaseName "DatabaseOwner" .Values.database.owner "PsqlClusterName" .Values.database.postgres.clusterName) }}
+{{ include "common.psqldb" (dict "DatabaseNamespace" .Values.namespaces.postgresNamespace "DatabaseName" .Values.database.name "DatabaseOwner" .Values.database.user "PsqlClusterName" .Values.database.postgres.clusterName) }}

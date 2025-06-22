@@ -1,5 +1,6 @@
 database:
-  databaseName: outline
+  name: outline
+  user: outline
 
 outline:
   # see https://github.com/truecharts/public/blob/master/charts/stable/outline/values.yaml
@@ -10,6 +11,14 @@ outline:
     bucketName: outline
     endpoint: "http://localhost:9000"
     customDomain: "localhost:9000/outline"
+  
+  securityContext:
+    container:
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+
   workload:
     main:
       podSpec:
@@ -18,7 +27,7 @@ outline:
             env:
               DATABASE_URL:
                 secretKeyRef:
-                  name: outline-psql-secret
+                  name: outline-db-creds
                   key: connectionUrl
                   expandObjectName: false
               REDIS_URL:
@@ -47,7 +56,7 @@ outline:
               URL:
               DATABASE_URL:
                 secretKeyRef:
-                  name: outline-psql-secret
+                  name: outline-db-creds
                   key: connectionUrl
                   expandObjectName: false
               REDIS_URL:

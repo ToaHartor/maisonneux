@@ -43,7 +43,7 @@ radarr:
               RADARR__POSTGRES__USER: radarr
               RADARR__POSTGRES__PASSWORD:
                 secretKeyRef:
-                  name: radarr-psql-secret
+                  name: radarr-db-creds
                   key: password
                   expandObjectName: false
               RADARR__POSTGRES__MAINDB: radarr-main

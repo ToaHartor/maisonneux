@@ -39,7 +39,7 @@ spec:
                   RADARR__POSTGRES__USER: radarr4k
                   RADARR__POSTGRES__PASSWORD:
                     secretKeyRef:
-                      name: radarr4k-psql-secret
+                      name: radarr4k-db-creds
                   RADARR__POSTGRES__MAINDB: radarr4k-main
                   RADARR__POSTGRES__LOGDB: radarr4k-log
       persistence:

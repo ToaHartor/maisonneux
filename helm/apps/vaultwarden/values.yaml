@@ -3,6 +3,7 @@ namespaces:
 
 database:
   databaseTable: vaultwarden
+  user: vaultwarden
 
 vaultwarden:
   waitPsqlImage:
@@ -26,9 +27,10 @@ vaultwarden:
             env:
               DATABASE_URL:
                 secretKeyRef:
-                  name: vaultwarden-psql-secret
+                  name: vaultwarden-db-creds
                   key: connectionUrl
                   expandObjectName: false
+            # TODO : RSA key generation at /data/rsa_key.pem (with "BEGIN RSA PRIVATE KEY" format), see if data needs persistency for attachments/icon_cache
   database:
     type: postgresql
     wal: false # disable if not using sqlite

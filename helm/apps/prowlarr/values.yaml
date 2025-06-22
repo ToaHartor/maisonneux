@@ -43,7 +43,7 @@ prowlarr:
               PROWLARR__POSTGRES__USER: prowlarr
               PROWLARR__POSTGRES__PASSWORD:
                 secretKeyRef:
-                  name: prowlarr-psql-secret
+                  name: prowlarr-db-creds
                   key: password
                   expandObjectName: false
               PROWLARR__POSTGRES__MAINDB: prowlarr-main

@@ -64,7 +64,7 @@ paperless:
               PAPERLESS_DBUSER: "paperless"
               PAPERLESS_DBPASS:
                 secretKeyRef:
-                  name: paperless-psql-secret
+                  name: paperless-db-creds
                   key: password
                   expandObjectName: false
               PAPERLESS_DBHOST: localhost:5432

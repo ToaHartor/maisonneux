@@ -43,7 +43,7 @@ lidarr:
               LIDARR__POSTGRES__USER: lidarr
               LIDARR__POSTGRES__PASSWORD:
                 secretKeyRef:
-                  name: lidarr-psql-secret
+                  name: lidarr-db-creds
                   key: password
                   expandObjectName: false
               LIDARR__POSTGRES__MAINDB: lidarr-main
