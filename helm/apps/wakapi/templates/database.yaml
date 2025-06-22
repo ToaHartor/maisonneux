@@ -1,13 +1,1 @@
-apiVersion: postgresql.cnpg.io/v1
-kind: Database
-metadata:
-  name: wakapi
-  namespace: {{ .Values.namespaces.postgresNamespace }}
-  labels:
-    {{- include "labels" . | nindent 4 }}
-spec:
-  name: {{ .Values.config.db.name }}
-  ensure: present
-  owner: wakapi
-  cluster:
-    name: {{ .Values.database.postgres.clusterName }}
+{{ include "common.psqldb" (dict "DatabaseNamespace" .Values.namespaces.postgresNamespace "DatabaseName" .Values.config.db.name "DatabaseOwner" "wakapi" "PsqlClusterName" .Values.database.postgres.clusterName) }}

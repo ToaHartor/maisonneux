@@ -9,7 +9,16 @@ config:
     host: localhost
     port: 5432
     name: wakapi
+    user: wakapi
   public_url: http://localhost:3000
   insecure_cookies: false
   allow_signup: true
   export_metrics: false
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 30Mi
+  limits:
+    cpu: 100m
+    memory: 100Mi

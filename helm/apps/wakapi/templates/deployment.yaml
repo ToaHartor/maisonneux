@@ -47,15 +47,16 @@ spec:
                 secretKeyRef:
                   name: wakapi-password-salt
                   key: passwordSalt
+            {{- $secretName := include "common.db.secret-name" (dict "DatabaseUser" .Values.config.db.user )}}
             - name: WAKAPI_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: wakapi-psql-secret
+                  name: {{ $secretName }}
                   key: username
             - name: WAKAPI_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: wakapi-psql-secret
+                  name: {{ $secretName }}
                   key: password
             - name: WAKAPI_DB_HOST
               value: "{{ .Values.config.db.host }}"
@@ -72,6 +73,10 @@ spec:
             - name: http
               containerPort: {{ .Values.config.port }}
               protocol: TCP
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /api/health
