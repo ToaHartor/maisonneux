@@ -19,6 +19,14 @@ outline:
       runAsUser: 1000
       runAsGroup: 1000
 
+  resources:
+    limits:
+      cpu: 1
+      memory: 800Mi
+    requests:
+      cpu: 200m
+      memory: 400Mi
+
   workload:
     main:
       podSpec:

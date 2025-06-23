@@ -54,6 +54,13 @@ spec:
         plainhost: redis-master.redis.svc.cluster.local
         redisPassword: ""
 
+    resources:
+      limits:
+        cpu: 500m
+        memory: 600Mi
+      requests:
+        cpu: 100m
+        memory: 300Mi
 
     workload:
       main:

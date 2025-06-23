@@ -4,7 +4,13 @@ namespaces:
 paperless:
   # see https://github.com/truecharts/public/blob/master/charts/stable/paperless-ngx/values.yaml
   # see documentation https://truecharts.org/charts/stable/paperless-ngx/
-  # namespace: ""
+  resources:
+    limits:
+      cpu: 1
+      memory: 1500Mi
+    requests:
+      cpu: 500m
+      memory: 800Mi
   securityContext:
     pod:
       # Run as non root from here https://github.com/paperless-ngx/paperless-ngx/discussions/4019#discussioncomment-8526764

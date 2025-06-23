@@ -23,6 +23,13 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/jdownloader2/values.yaml
   values:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 800Mi
+      requests:
+        cpu: 100m
+        memory: 400Mi
     securityContext:
       container:
         readOnlyRootFilesystem: false

@@ -3,6 +3,14 @@ database:
   user: stirling
 
 stirling-pdf-chart:
+  securityContext:
+    pod:
+      fsGroup: 1000
+    container:
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
   # envs:
     # - name: SYSTEM_DATASOURCE_ENABLECUSTOMDATABASE
     #   value: "true"
@@ -31,3 +39,11 @@ stirling-pdf-chart:
 
   serviceMonitor:
     enabled: false
+  
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi

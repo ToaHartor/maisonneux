@@ -21,6 +21,13 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/tachidesk-docker/values.yaml
   values:
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 512Mi
     securityContext:
       pod:
         fsGroup: 1000

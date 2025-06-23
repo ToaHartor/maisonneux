@@ -8,7 +8,13 @@ jellyseerr:
     repository: docker.io/library/busybox
     tag: latest
     pullPolicy: IfNotPresent
-  # namespace: ""
+  resources:
+    limits:
+      cpu: 500m
+      memory: 500Mi
+    requests:
+      cpu: 20m
+      memory: 200Mi
   workload:
     main:
       annotations:

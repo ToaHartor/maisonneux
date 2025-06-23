@@ -21,6 +21,13 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/kavita/values.yaml
   values:
+    resources:
+      limits:
+        cpu: 1
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
     securityContext:
       pod:
         fsGroup: 1000

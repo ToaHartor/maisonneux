@@ -21,6 +21,13 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/flaresolverr/values.yaml
   values:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi
     securityContext:
       container:
         readOnlyRootFilesystem: false

@@ -55,6 +55,13 @@ authentik:
         value: "false" # "true" if prod
   server:
     replicas: 1
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 512Mi
     ingress:
       ingressClassName: traefik
       enabled: false
@@ -70,6 +77,13 @@ authentik:
         readOnly: true
   worker:
     replicas: 1
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 512Mi
     volumes:
       - name: postgres-creds
         secret:

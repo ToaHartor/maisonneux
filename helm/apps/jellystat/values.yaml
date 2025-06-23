@@ -8,7 +8,13 @@ jellystat:
     repository: docker.io/library/busybox
     tag: latest
     pullPolicy: IfNotPresent
-  # namespace: ""
+  resources:
+    limits:
+      cpu: 500m
+      memory: 250Mi
+    requests:
+      cpu: 10m
+      memory: 100Mi
   workload:
     main:
       annotations:
