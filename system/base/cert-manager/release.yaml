@@ -24,7 +24,147 @@ spec:
     crds:
       enabled: true
       keep: true
+    replicaCount: &replicas 2
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
     livenessProbe:
       enabled: true
     # prometheus:
     #   enabled: true
+
+    affinity:
+      podAntiAffinity:
+        # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+        # If it does not, they also won't be scheduled on the same pod unless necessary
+        preferredDuringSchedulingIgnoredDuringExecution:
+          # Anti affinity on the same hypervisor
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - cert-manager
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - cert-manager
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - controller
+          # Anti affinity on the same node
+          - weight: 50
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - cert-manager
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - cert-manager
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - controller
+
+    webhook:
+      replicaCount: *replicas
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 1
+      affinity:
+        podAntiAffinity:
+          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+          # If it does not, they also won't be scheduled on the same pod unless necessary
+          preferredDuringSchedulingIgnoredDuringExecution:
+            # Anti affinity on the same hypervisor
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: topology.kubernetes.io/zone
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - webhook
+                  - key: app.kubernetes.io/instance
+                    operator: In
+                    values:
+                    - cert-manager
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                    - webhook
+            # Anti affinity on the same node
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - webhook
+                  - key: app.kubernetes.io/instance
+                    operator: In
+                    values:
+                    - cert-manager
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                    - webhook
+    
+    cainjector:
+      replicaCount: *replicas
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 1
+      affinity:
+        podAntiAffinity:
+          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+          # If it does not, they also won't be scheduled on the same pod unless necessary
+          preferredDuringSchedulingIgnoredDuringExecution:
+            # Anti affinity on the same hypervisor
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: topology.kubernetes.io/zone
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - cainjector
+                  - key: app.kubernetes.io/instance
+                    operator: In
+                    values:
+                    - cert-manager
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                    - cainjector
+            # Anti affinity on the same node
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - cainjector
+                  - key: app.kubernetes.io/instance
+                    operator: In
+                    values:
+                    - cert-manager
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                    - cainjector

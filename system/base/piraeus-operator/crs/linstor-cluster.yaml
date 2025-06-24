@@ -8,6 +8,54 @@ metadata:
 spec:
   nodeSelector:
     homelab/linstor-enabled: "true"
+  # Add replicates to csi-controller (controller can't be used with more than one replica)
+  patches:
+    - target:
+        kind: Deployment
+        name: linstor-csi-controller
+      patch: |-
+        - op: add
+          path: /spec/replicas
+          value: 2
+  # Set anti affinity on csi controller
+  csiController:
+    enabled: true
+    podTemplate:
+      spec:
+        affinity:
+          # nodeAffinity: *linstorNodeAffinity
+          podAntiAffinity:
+            # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+            # If it does not, they also won't be scheduled on the same pod unless necessary
+            preferredDuringSchedulingIgnoredDuringExecution:
+              # Anti affinity on the same hypervisor
+              - weight: 100
+                podAffinityTerm:
+                  topologyKey: topology.kubernetes.io/zone
+                  labelSelector:
+                    matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                      - piraeus-datastore
+                    - key: app.kubernetes.io/component
+                      operator: In
+                      values:
+                      - linstor-csi-controller
+              # Anti affinity on the same node
+              - weight: 50
+                podAffinityTerm:
+                  topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                      - piraeus-datastore
+                    - key: app.kubernetes.io/component
+                      operator: In
+                      values:
+                      - linstor-csi-controller
 # Disable node connection on nodes that do not have linstor enabled
 ---
 apiVersion: piraeus.io/v1

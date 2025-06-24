@@ -28,16 +28,85 @@ spec:
     crds:
       enabled: false
 
-    # Enable scheduling on control plane
-    # nodeSelector:
-    #   node-role.kubernetes.io/control-plane: ""
+    ha:
+      enabled: true
+      replicas: 2
 
-    # tolerations:
-    #   - key: "node-role.kubernetes.io/control-plane"
-    #     operator: "Exists"
-    #     effect: "NoSchedule"
+    affinity:
+      podAntiAffinity:
+        # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+        # If it does not, they also won't be scheduled on the same pod unless necessary
+        preferredDuringSchedulingIgnoredDuringExecution:
+          # Anti affinity on the same hypervisor
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - mariadb-operator
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - mariadb-operator
+          # Anti affinity on the same node
+          - weight: 50
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - mariadb-operator
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - mariadb-operator
 
     webhook:
       cert:
         certManager:
           enabled: true
+      ha:
+        enabled: true
+        replicas: 2
+      affinity:
+        podAntiAffinity:
+          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+          # If it does not, they also won't be scheduled on the same pod unless necessary
+          preferredDuringSchedulingIgnoredDuringExecution:
+            # Anti affinity on the same hypervisor
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: topology.kubernetes.io/zone
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - mariadb-operator-webhook
+                  - key: app.kubernetes.io/instance
+                    operator: In
+                    values:
+                    - mariadb-operator
+            # Anti affinity on the same node
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - mariadb-operator-webhook
+                  - key: app.kubernetes.io/instance
+                    operator: In
+                    values:
+                    - mariadb-operator
+    
+    pdb:
+      enabled: true
+      minAvailable: 1

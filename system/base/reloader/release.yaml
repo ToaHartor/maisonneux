@@ -20,5 +20,45 @@ spec:
     remediation:
       retries: 3
   values:
+    # https://github.com/stakater/Reloader/blob/master/deployments/kubernetes/chart/reloader/values.yaml
     reloader:
       autoReloadAll: false
+
+      enableHA: true
+      readOnlyRootFileSystem: true
+    
+      deployment:
+        replicas: 2
+
+        affinity:
+          podAntiAffinity:
+            # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+            # If it does not, they also won't be scheduled on the same pod unless necessary
+            preferredDuringSchedulingIgnoredDuringExecution:
+              # Anti affinity on the same hypervisor
+              - weight: 100
+                podAffinityTerm:
+                  topologyKey: topology.kubernetes.io/zone
+                  labelSelector:
+                    matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                      - reloader-reloader
+              # Anti affinity on the same node
+              - weight: 50
+                podAffinityTerm:
+                  topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                      - reloader-reloader
+
+        containerSecurityContext:
+          capabilities:
+            drop:
+              - ALL
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true

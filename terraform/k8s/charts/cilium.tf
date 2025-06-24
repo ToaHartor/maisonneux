@@ -9,6 +9,18 @@ operator:
   rollOutPods: true
   replicas: 3
 
+  affinity:
+    podAntiAffinity:
+      # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+      # If it does not, they also won't be scheduled on the same pod unless necessary
+      preferredDuringSchedulingIgnoredDuringExecution:
+        # Anti affinity on the same hypervisor
+        - weight: 100
+          podAffinityTerm:
+            topologyKey: topology.kubernetes.io/zone
+            labelSelector:
+              matchLabels:
+                io.cilium/app: operator
   resources:
     limits:
       cpu: 500m

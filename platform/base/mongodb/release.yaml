@@ -23,6 +23,9 @@ spec:
 
   values:
     # see https://github.com/mongodb/helm-charts/blob/main/charts/community-operator/values.yaml
+    community-operator-crds:
+      enabled: true # TODO install CRDs independently
+
     operator:
-      replicas: 1
+      replicas: 1 # Apparently this is optimized
       watchNamespace: mongodb

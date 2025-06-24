@@ -5,12 +5,11 @@ metadata:
   namespace: operators
 spec:
   releaseName: cloudnative-pg
-  # targetNamespace: operators
   chart:
     spec:
       chart: cloudnative-pg
       # renovate: datasource=helm depName=cloudnative-pg registryUrl=https://cloudnative-pg.github.io/charts
-      version: "0.23.2" # "0.22.1"
+      version: "0.23.2"
       sourceRef:
         kind: HelmRepository
         name: cnpg
@@ -22,13 +21,45 @@ spec:
 
   values:
     # https://artifacthub.io/packages/helm/cloudnative-pg/cloudnative-pg
-    # Schedule operator on control plane
-    # nodeSelector:
-    #   node-role.kubernetes.io/control-plane: ""
+    replicaCount: 2 # One on each hypervisor is better
 
-    # tolerations:
-    #   - key: "node-role.kubernetes.io/control-plane"
-    #     operator: "Exists"
-    #     effect: "NoSchedule"
+    # Ensure there is at least one pod available
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 50%
+        maxUnavailable: 50%
+
+    affinity:
+      podAntiAffinity:
+        # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+        # If it does not, they also won't be scheduled on the same pod unless necessary
+        preferredDuringSchedulingIgnoredDuringExecution:
+          # Anti affinity on the same hypervisor
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - cloudnative-pg
+          # Anti affinity on the same node
+          - weight: 50
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - cloudnative-pg
+
     crds:
       create: true # by default
+
+    # monitoring:
+    #   podMonitorEnabled: false
+    #   grafanaDashboard:
+    #     create: false

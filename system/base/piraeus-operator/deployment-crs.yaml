@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: piraeus-operator
+    - name: piraeus-crds
       namespace: flux-system
   wait: true
   interval: 10m

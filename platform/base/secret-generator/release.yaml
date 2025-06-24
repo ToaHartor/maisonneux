@@ -21,6 +21,8 @@ spec:
       retries: 3
 
   values:
+    # https://github.com/mittwald/kubernetes-secret-generator/blob/master/deploy/helm-chart/kubernetes-secret-generator/values.yaml
+    installCRDs: true # TODO : install crd separately
     secretLength: 32
     watchNamespace: "" # empty for all namespaces
     rbac:

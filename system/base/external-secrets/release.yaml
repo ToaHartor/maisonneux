@@ -23,3 +23,97 @@ spec:
   values:
     # Installed with deployment-crds.yaml
     installCRDs: false
+
+    replicaCount: &replicas 2
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    
+    # grafanaDashboard:
+    #   enabled: true
+    affinity:
+      podAntiAffinity:
+        # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+        # If it does not, they also won't be scheduled on the same pod unless necessary
+        preferredDuringSchedulingIgnoredDuringExecution:
+          # Anti affinity on the same hypervisor
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - external-secrets
+          # Anti affinity on the same node
+          - weight: 50
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - external-secrets
+
+    webhook:
+      replicaCount: *replicas
+      affinity:
+        podAntiAffinity:
+          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+          # If it does not, they also won't be scheduled on the same pod unless necessary
+          preferredDuringSchedulingIgnoredDuringExecution:
+            # Anti affinity on the same hypervisor
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: topology.kubernetes.io/zone
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - external-secrets-webhook
+            # Anti affinity on the same node
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - external-secrets-webhook
+
+    certController:
+      replicaCount: *replicas
+      affinity:
+        podAntiAffinity:
+          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+          # If it does not, they also won't be scheduled on the same pod unless necessary
+          preferredDuringSchedulingIgnoredDuringExecution:
+            # Anti affinity on the same hypervisor
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: topology.kubernetes.io/zone
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - cert-manager-webhook-ovh
+            # Anti affinity on the same node
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - cert-manager-webhook-ovh

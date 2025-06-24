@@ -29,7 +29,7 @@ spec:
       keep: false # true for persistency
 
     controllerManager:
-      replicas: 1
+      replicas: 2
       # manager:
       #   resources:
       #     limits:
