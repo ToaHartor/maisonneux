@@ -175,11 +175,6 @@ data "talos_machine_configuration" "controller" {
         externalCloudProvider = {
           enabled = true
           manifests = [
-            # "https://raw.githubusercontent.com/sergelogvinov/proxmox-csi-plugin/main/docs/deploy/proxmox-csi-plugin-talos.yml",
-            # Manifests for metrics server for HPA/VPA
-            # see https://www.talos.dev/v1.7/kubernetes-guides/configuration/deploy-metrics-server/#install-during-bootstrap
-            "https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml",
-            "https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml",
             # Talos CCM
             "https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/main/docs/deploy/cloud-controller-manager.yml"
           ]

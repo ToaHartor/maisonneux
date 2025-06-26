@@ -10,3 +10,5 @@ resources:
   - ../base/trust-manager
   - ../base/descheduler
   - ../base/piraeus-operator
+  - ../base/kubelet-cert-approver
+  - ../base/metrics-server

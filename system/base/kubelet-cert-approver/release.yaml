@@ -1,0 +1,48 @@
+
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: kubelet-serving-cert-approver
+  namespace: flux-system
+spec:
+  interval: 10m
+  ref:
+    # renovate: datasource=github-tags depName=alex1989hu/kubelet-serving-cert-approver extractVersion=^(?<version>.+)$
+    tag: v0.9.3
+  url: http://github.com/alex1989hu/kubelet-serving-cert-approver
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kubelet-serving-cert-approver
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./deploy/ha
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kubelet-serving-cert-approver
+    namespace: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: kubelet-serving-cert-approver
+      namespace: kubelet-serving-cert-approver
+  patches:
+    - target:
+        kind: Deployment
+        name: kubelet-serving-cert-approver
+        namespace: kubelet-serving-cert-approver
+      # Add anti affinity for hypervisors
+      patch: |-
+        - op: add
+          path: /spec/template/spec/affinity/podAntiAffinity
+          value:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  topologyKey: topology.kubernetes.io/zone
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/instance: kubelet-serving-cert-approver
