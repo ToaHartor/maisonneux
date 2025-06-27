@@ -37,7 +37,8 @@ seafile:
               SEAFILE_SERVER_PROTOCOL: "http"
               SEAFILE_LOG_TO_STDOUT: "true"
               # SEAFILE_VOLUME: /opt/seafile-data
-              # CLUSTER_INIT_MEMCACHED_HOST: "seafile-memcache.seafile.svc.cluster.local"
+              CLUSTER_INIT_MEMCACHED_HOST: "dragonfly-cluster.dragonfly.svc.cluster.local"
+              CACHE_PROVIDER: redis
               CLUSTER_SERVER: "false"
               CLUSTER_INIT_MODE: "false"
               JWT_PRIVATE_KEY:
@@ -203,4 +204,4 @@ seafile:
         storageClass: default
   
   memcached:
-    enabled: true # maybe set to true
+    enabled: false # use dragonfly 
