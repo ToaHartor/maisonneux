@@ -15,6 +15,8 @@ resources:
   - ../base/tekton-pipelines
   - ../base/redis
   - ../base/zot
+  - ../base/dragonfly-operator
+  - ../base/dragonfly-cluster
 patches:
   - path: cert-manager-ovh-values.yaml
     target:

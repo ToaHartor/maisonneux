@@ -1,0 +1,85 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: dragonfly-operator
+  namespace: flux-system
+spec:
+  interval: 10m
+  ref:
+    # renovate: datasource=github-tags depName=dragonflydb/dragonfly-operator extractVersion=^(?<version>.+)$
+    tag: v1.1.11
+  url: http://github.com/dragonflydb/dragonfly-operator
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dragonfly-operator
+  namespace: operators
+spec:
+  releaseName: dragonfly-operator
+  chart:
+    spec:
+      chart: ./charts/dragonfly-operator
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: dragonfly-operator
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # https://github.com/dragonflydb/dragonfly-operator/blob/main/charts/dragonfly-operator/values.yaml
+    replicaCount: 2
+
+    crds:
+      install: true
+      keep: true
+    
+    manager:
+      resources:
+        limits:
+          cpu: 500m
+          memory: 128Mi
+        requests:
+          cpu: 10m
+          memory: 64Mi
+
+
+      affinity:
+        podAntiAffinity:
+          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+          # If it does not, they also won't be scheduled on the same pod unless necessary
+          preferredDuringSchedulingIgnoredDuringExecution:
+            # Anti affinity on the same hypervisor
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: topology.kubernetes.io/zone
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                    - controller
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - dragonfly-operator
+            # Anti affinity on the same node
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                    - controller
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - dragonfly-operator
