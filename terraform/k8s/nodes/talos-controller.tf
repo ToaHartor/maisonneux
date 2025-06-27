@@ -175,8 +175,8 @@ data "talos_machine_configuration" "controller" {
         externalCloudProvider = {
           enabled = true
           manifests = [
-            # Talos CCM
-            "https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/main/docs/deploy/cloud-controller-manager.yml"
+            # Talos CCM, install with daemonset
+            "https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/main/docs/deploy/cloud-controller-manager-daemonset.yml"
           ]
         }
         inlineManifests = [
