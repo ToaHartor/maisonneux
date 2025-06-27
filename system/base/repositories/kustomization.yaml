@@ -18,3 +18,4 @@ resources:
   - descheduler.yaml
   - wrenix.yaml
   - metrics-server.yaml
+  - open-telemetry.yaml

@@ -12,3 +12,4 @@ resources:
   - ../base/piraeus-operator
   - ../base/kubelet-cert-approver
   - ../base/metrics-server
+  - ../base/opentelemetry-kube-stack
