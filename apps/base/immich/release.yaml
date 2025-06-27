@@ -51,7 +51,7 @@ spec:
     redis:
       enabled: false
       creds:
-        plainhost: redis-master.redis.svc.cluster.local
+        plainhost: dragonfly-cluster.dragonfly.svc.cluster.local
         redisPassword: ""
 
     resources:

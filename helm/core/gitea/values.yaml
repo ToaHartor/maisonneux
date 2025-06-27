@@ -9,7 +9,7 @@ database:
   user: gitea
 
 redis:
-  url: redis-master.redis.svc.cluster.local
+  url: dragonfly-cluster.dragonfly.svc.cluster.local
 
 ingress:
   host: git.example.com

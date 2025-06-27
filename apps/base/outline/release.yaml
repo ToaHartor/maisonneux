@@ -57,4 +57,4 @@ spec:
       
       redis:
         creds:
-          url: redis://redis-master.redis.svc.cluster.local:6379
+          url: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379

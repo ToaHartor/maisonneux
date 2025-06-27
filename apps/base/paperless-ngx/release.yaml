@@ -44,4 +44,4 @@ spec:
                 env:
                   PAPERLESS_URL: https://paper.${main_domain}
                   PAPERLESS_DBHOST: psql-cluster-rw.postgres.svc.cluster.local
-                  PAPERLESS_REDIS: redis://redis-master.redis.svc.cluster.local:6379
+                  PAPERLESS_REDIS: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379
