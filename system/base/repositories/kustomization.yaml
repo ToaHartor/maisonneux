@@ -19,3 +19,4 @@ resources:
   - wrenix.yaml
   - metrics-server.yaml
   - open-telemetry.yaml
+  - victoriametrics.yaml

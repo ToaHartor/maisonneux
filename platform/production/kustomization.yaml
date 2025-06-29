@@ -16,6 +16,7 @@ resources:
   - ../base/zot
   - ../base/dragonfly-operator
   - ../base/dragonfly-cluster
+  - ../base/victoriametrics-operator
 patches:
   - path: cert-manager-ovh-values.yaml
     target:
