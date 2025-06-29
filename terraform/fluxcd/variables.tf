@@ -107,3 +107,22 @@ variable "ovh_consumer_key" {
   type        = string
   description = "OVH consumer key"
 }
+
+# K8S LB IPs
+variable "k8s_lb_traefik_ip" {
+  type        = string
+  description = "IP address of Traefik LB (must be in LB subnet)"
+  validation {
+    condition     = can(cidrnetmask("${var.k8s_lb_traefik_ip}/32"))
+    error_message = "Must be a valid IPv4 CIDR block address."
+  }
+}
+
+variable "k8s_lb_otelcol_ip" {
+  type        = string
+  description = "IP address of Otel collector LB (must be in LB subnet)"
+  validation {
+    condition     = can(cidrnetmask("${var.k8s_lb_otelcol_ip}/32"))
+    error_message = "Must be a valid IPv4 CIDR block address."
+  }
+}

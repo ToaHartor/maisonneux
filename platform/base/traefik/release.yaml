@@ -90,7 +90,8 @@ spec:
     service:
       enabled: true
       annotations:
-        "io.cilium/lb-ipam-ips": "192.168.192.1" # Should be an IP defined in the L2 IP pool range of Cilium
+        "io.cilium/lb-ipam-ips": "${traefik_lb_ip}" # Should be an IP defined in the L2 IP pool range of Cilium
+      # type: ClusterIP / LoadBalancer
       labels:
         "homelab/public-service": "true"
       spec:

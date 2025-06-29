@@ -28,12 +28,14 @@ locals {
     "git_repo_url"     = local.flux_sync_helm_values.gitRepository.spec.url
     "git_branch"       = var.flux_git_branch
     "nfs_server"       = var.truenas_vm_host
+    "traefik_lb_ip"    = var.k8s_lb_traefik_ip
+    "otelcol_lb_ip"    = var.k8s_lb_otelcol_ip
     },
     { for k, v in var.truenas_nfs_paths : "nfs_path_${k}" => v },
   )
 
-
-  # see https://artifacthub.io/packages/helm/fluxcd-community/flux2-sync
+  # flux2 values : https://artifacthub.io/packages/helm/fluxcd-community/flux2?modal=values
+  # flux-sync https://artifacthub.io/packages/helm/fluxcd-community/flux2-sync?modal=values
   flux_sync_helm_values = {
     gitRepository = {
       spec = {
@@ -75,7 +77,7 @@ EOF
 resource "helm_release" "fluxcd" {
   repository = "https://fluxcd-community.github.io/helm-charts"
   chart      = "flux2"
-  version    = "2.15.0"
+  version    = "2.16.1"
   name       = "flux2"
   namespace  = "flux-system"
 
@@ -85,7 +87,7 @@ resource "helm_release" "fluxcd" {
 resource "helm_release" "fluxcd_sync" {
   repository = "https://fluxcd-community.github.io/helm-charts"
   chart      = "flux2-sync"
-  version    = "1.12.0"
+  version    = "1.13.1"
 
   # Note: Do not change the name or namespace of this resource. The below mimics the behaviour of "flux bootstrap".
   name      = "flux-system"

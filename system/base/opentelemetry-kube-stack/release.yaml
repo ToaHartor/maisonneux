@@ -27,6 +27,9 @@ spec:
     opentelemetry-operator:
       # Subchart values https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-operator/values.yaml
       enabled: true
+      manager:
+        collectorImage:
+          repository: otel/opentelemetry-collector-contrib
       crds:
         create: false # Disable as we install the CRDs globally
       
@@ -112,11 +115,6 @@ spec:
           runAsNonRoot: false
           runAsUser: 0
           runAsGroup: 0
-          # privileged: true
-          # capabilities:
-          #   add:
-          #     - DAC_READ_SEARCH
-          #     - SYS_ADMIN
 
         # Tolerations to schedule daemon pods on control-plane nodes
         tolerations:
@@ -138,3 +136,62 @@ spec:
         # We wan't to keep a pod running
         podDisruptionBudget:
           minAvailable: 1
+        
+        config:
+          receivers:
+            # InfluxDB receiver for proxmox hypervisor metrics (tcp)
+            influxdb:
+              endpoint: 0.0.0.0:8086
+
+          service:
+            pipelines:
+              logs:
+                exporters:
+                - debug
+                processors:
+                - k8sattributes
+                - resourcedetection/env
+                - batch
+                receivers:
+                - k8sobjects
+              metrics:
+                exporters:
+                - debug
+                processors:
+                - k8sattributes
+                - resourcedetection/env
+                - batch
+                receivers:
+                - k8s_cluster
+              metrics/proxmox:
+                exporters:
+                - debug
+                processors:
+                - batch
+                receivers:
+                - influxdb
+
+    extraObjects:
+      # Add service for external receivers
+      - apiVersion: v1
+        kind: Service
+        metadata:
+          name: otel-receivers
+          namespace: opentelemetry
+          annotations:
+            io.cilium/lb-ipam-ips: ${otelcol_lb_ip}
+          labels:
+            homelab/public-service: "true"
+        spec:
+          selector:
+            app.kubernetes.io/component: opentelemetry-collector
+            app.kubernetes.io/instance: opentelemetry.opentelemetry-kube-stack-cluster-stats
+          type: LoadBalancer
+          sessionAffinity: None
+          externalTrafficPolicy: Local
+          internalTrafficPolicy: Cluster
+          ports:
+          - name: influxdb
+            protocol: UDP
+            port: 8086
+            targetPort: 8086
