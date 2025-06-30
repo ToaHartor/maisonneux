@@ -50,6 +50,11 @@ spec:
                 namespaces:
                   exclude: []
             - name: RemovePodsViolatingTopologySpreadConstraint
+              args:
+                constraints:
+                  - DoNotSchedule
+                  - ScheduleAnyway
+                topologyBalanceNodeFit: true
             - name: LowNodeUtilization
               args:
                 thresholds:
