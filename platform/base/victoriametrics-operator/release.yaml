@@ -69,3 +69,232 @@ spec:
                   operator: In
                   values:
                   - victoria-metrics-operator
+    
+    extraObjects:
+      # Metrics cluster storage
+      - apiVersion: operator.victoriametrics.com/v1beta1
+        kind: VMCluster
+        metadata:
+          name: metrics-datastore
+        spec:
+          replicationFactor: 1 # 2
+          vmstorage:
+            replicaCount: 2
+
+            # affinity:
+            #   podAntiAffinity:
+            #     # Preferrably do not schedule on the same node
+            #     preferredDuringSchedulingIgnoredDuringExecution:
+            #       # Anti affinity on the same node
+            #       - weight: 50
+            #         podAffinityTerm:
+            #           topologyKey: kubernetes.io/hostname
+            #           labelSelector:
+            #             matchExpressions:
+            #             - key: app.kubernetes.io/name
+            #               operator: In
+            #               values:
+            #               - vmstorage
+
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vmstorage
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vmstorage
+
+            storage:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: ${fastdata_storage}
+                  resources:
+                    requests:
+                      storage: 10Gi
+          vmselect:
+            replicaCount: 2
+            # affinity:
+            #   podAntiAffinity:
+            #     # Preferrably do not schedule on the same node
+            #     preferredDuringSchedulingIgnoredDuringExecution:
+            #       # Anti affinity on the same node
+            #       - weight: 50
+            #         podAffinityTerm:
+            #           topologyKey: kubernetes.io/hostname
+            #           labelSelector:
+            #             matchExpressions:
+            #             - key: app.kubernetes.io/name
+            #               operator: In
+            #               values:
+            #               - vmselect
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vmselect
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vmselect
+
+          vminsert:
+            replicaCount: 2
+            # affinity:
+            #   podAntiAffinity:
+            #     # Preferrably do not schedule on the same node
+            #     preferredDuringSchedulingIgnoredDuringExecution:
+            #       # Anti affinity on the same node
+            #       - weight: 50
+            #         podAffinityTerm:
+            #           topologyKey: kubernetes.io/hostname
+            #           labelSelector:
+            #             matchExpressions:
+            #             - key: app.kubernetes.io/name
+            #               operator: In
+            #               values:
+            #               - vminsert
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vminsert
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vminsert
+
+
+      # Logs cluster storage
+      - apiVersion: operator.victoriametrics.com/v1
+        kind: VLCluster
+        metadata:
+          name: logs-datastore
+        spec:
+          vlinsert:
+            replicaCount: 2
+            # affinity:
+            #   podAntiAffinity:
+            #     # Preferrably do not schedule on the same node
+            #     preferredDuringSchedulingIgnoredDuringExecution:
+            #       # Anti affinity on the same node
+            #       - weight: 50
+            #         podAffinityTerm:
+            #           topologyKey: kubernetes.io/hostname
+            #           labelSelector:
+            #             matchExpressions:
+            #             - key: app.kubernetes.io/name
+            #               operator: In
+            #               values:
+            #               - vlinsert
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlinsert
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlinsert
+
+
+          vlselect:
+            replicaCount: 2
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlselect
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlselect
+
+
+            # affinity:
+            #   podAntiAffinity:
+            #     # Preferrably do not schedule on the same node
+            #     preferredDuringSchedulingIgnoredDuringExecution:
+            #       # Anti affinity on the same node
+            #       - weight: 50
+            #         podAffinityTerm:
+            #           topologyKey: kubernetes.io/hostname
+            #           labelSelector:
+            #             matchExpressions:
+            #             - key: app.kubernetes.io/name
+            #               operator: In
+            #               values:
+            #               - vlselect
+          vlstorage:
+            retentionPeriod: "4w"
+            replicaCount: 2
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlstorage
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlstorage
+
+            # affinity:
+            #   podAntiAffinity:
+            #     # Preferrably do not schedule on the same node
+            #     preferredDuringSchedulingIgnoredDuringExecution:
+            #       # Anti affinity on the same node
+            #       - weight: 50
+            #         podAffinityTerm:
+            #           topologyKey: kubernetes.io/hostname
+            #           labelSelector:
+            #             matchExpressions:
+            #             - key: app.kubernetes.io/name
+            #               operator: In
+            #               values:
+            #               - vlstorage
+            storage:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: ${fastdata_storage}
+                  resources:
+                    requests:
+                      storage: 10Gi
+
+
