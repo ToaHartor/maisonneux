@@ -5,6 +5,10 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   enabledManagers: ["terraform", "helm-values", "helmv3", "regex"], // Only enable comments
+  // Group major-minor-patch PRs
+  separateMajorMinor: false,
+  separateMultipleMajor: true,
+  separateMinorPatch: false,
   // flux: {
   //   fileMatch: ["(apps|core|platform|system)/base/.+\\.yaml$"],
   // },
@@ -28,6 +32,7 @@
     },
   ],
   packageRules: [
+    // In package rules, we also add non matched packages source url
     // Use opentofu registry as we use it instead of terraform
     {
       matchDatasources: ["terraform-provider"],
@@ -42,19 +47,65 @@
     {
       matchPackageNames: ["/mariadb-operator/"],
       groupName: "mariadb-operator",
-    },
-    // * Terraform providers
-    {
-      matchPackageNames: ["proxmox"],
-      groupName: "proxmox",
+      prBodyNotes: [
+        ":warning: Check upgrade notes in https://github.com/mariadb-operator/mariadb-operator/blob/main/docs/releases/UPGRADE_{{newVersion}}.md :warning:",
+      ],
     },
     {
-      matchPackageNames: ["helm"],
-      groupName: "helm",
+      matchPackageNames: ["/traefik/"],
+      groupName: "traefik",
     },
     {
-      matchPackageNames: ["kubernetes"],
-      groupName: "kubernetes",
+      matchPackageNames: ["/victoria-metrics-operator/"],
+      groupName: "victoria-metrics-operator",
+    },
+    // Source URL manual match
+    {
+      matchDepNames: ["kubernetes-secret-generator"],
+      matchDatasources: ["helm"],
+      sourceUrl: "https://github.com/mittwald/kubernetes-secret-generator",
+    },
+    // TrueCharts packages
+    // All of them can't be matched with packageNames tccr.io/truecharts/*, so we're matching the registryUrl
+    {
+      matchDatasources: ["docker"],
+      // matchPackageNames: ["tccr.io/truecharts/*"],
+      matchJsonata: ["registryUrl = 'https://tccr.io'"], // Using Jsonata to match specific deps fields
+      sourceUrl: "",
+      changelogUrl: "https://truecharts.org/charts/stable/{{depName}}/changelog/",
+    },
+    // * Override stable charts with premium
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: ["tccr.io/truecharts/vaultwarden"],
+      sourceUrl: "",
+      changelogUrl: "https://truecharts.org/charts/premium/{{depName}}/changelog/",
+    },
+    // Terraform providers
+    {
+      matchPackageNames: ["bpg/proxmox"],
+      matchDatasources: ["terraform-provider"],
+      groupName: "terraform-proxmox",
+      sourceUrl: "https://github.com/bpg/terraform-provider-proxmox",
+    },
+    // Match all terraform hashicorp official modules
+    {
+      matchPackageNames: ["hashicorp/*"],
+      matchDatasources: ["terraform-provider"],
+      groupName: "terraform-{{depName}}",
+      sourceUrl: "https://github.com/hashicorp/terraform-provider-{{depName}}",
+    },
+    {
+      matchPackageNames: ["ansible/ansible"],
+      matchDatasources: ["terraform-provider"],
+      groupName: "terraform-ansible",
+      sourceUrl: "https://github.com/ansible/terraform-provider-ansible",
+    },
+    {
+      matchPackageNames: ["siderolabs/talos"],
+      matchDatasources: ["terraform-provider"],
+      groupName: "terraform-talos",
+      sourceUrl: "https://github.com/siderolabs/terraform-provider-talos",
     },
   ],
 }
