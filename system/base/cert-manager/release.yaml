@@ -21,6 +21,7 @@ spec:
     remediation:
       retries: 3
   values:
+    # https://artifacthub.io/packages/helm/cert-manager/cert-manager?modal=values
     crds:
       enabled: true
       keep: true
@@ -33,138 +34,67 @@ spec:
     # prometheus:
     #   enabled: true
 
-    affinity:
-      podAntiAffinity:
-        # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
-        # If it does not, they also won't be scheduled on the same pod unless necessary
-        preferredDuringSchedulingIgnoredDuringExecution:
-          # Anti affinity on the same hypervisor
-          - weight: 100
-            podAffinityTerm:
-              topologyKey: topology.kubernetes.io/zone
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - cert-manager
-                - key: app.kubernetes.io/instance
-                  operator: In
-                  values:
-                  - cert-manager
-                - key: app.kubernetes.io/component
-                  operator: In
-                  values:
-                  - controller
-          # Anti affinity on the same node
-          - weight: 50
-            podAffinityTerm:
-              topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - cert-manager
-                - key: app.kubernetes.io/instance
-                  operator: In
-                  values:
-                  - cert-manager
-                - key: app.kubernetes.io/component
-                  operator: In
-                  values:
-                  - controller
+    topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/instance: cert-manager
+            app.kubernetes.io/component: controller
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/instance: cert-manager
+            app.kubernetes.io/component: controller
 
     webhook:
       replicaCount: *replicas
       podDisruptionBudget:
         enabled: true
         minAvailable: 1
-      affinity:
-        podAntiAffinity:
-          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
-          # If it does not, they also won't be scheduled on the same pod unless necessary
-          preferredDuringSchedulingIgnoredDuringExecution:
-            # Anti affinity on the same hypervisor
-            - weight: 100
-              podAffinityTerm:
-                topologyKey: topology.kubernetes.io/zone
-                labelSelector:
-                  matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                    - webhook
-                  - key: app.kubernetes.io/instance
-                    operator: In
-                    values:
-                    - cert-manager
-                  - key: app.kubernetes.io/component
-                    operator: In
-                    values:
-                    - webhook
-            # Anti affinity on the same node
-            - weight: 50
-              podAffinityTerm:
-                topologyKey: kubernetes.io/hostname
-                labelSelector:
-                  matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                    - webhook
-                  - key: app.kubernetes.io/instance
-                    operator: In
-                    values:
-                    - cert-manager
-                  - key: app.kubernetes.io/component
-                    operator: In
-                    values:
-                    - webhook
+      
+      topologySpreadConstraints:
+        # Maximum 1 pod per Proxmox hypervisor
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: cert-manager
+              app.kubernetes.io/component: webhook
+        # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: cert-manager
+              app.kubernetes.io/component: webhook
     
     cainjector:
       replicaCount: *replicas
       podDisruptionBudget:
         enabled: true
         minAvailable: 1
-      affinity:
-        podAntiAffinity:
-          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
-          # If it does not, they also won't be scheduled on the same pod unless necessary
-          preferredDuringSchedulingIgnoredDuringExecution:
-            # Anti affinity on the same hypervisor
-            - weight: 100
-              podAffinityTerm:
-                topologyKey: topology.kubernetes.io/zone
-                labelSelector:
-                  matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                    - cainjector
-                  - key: app.kubernetes.io/instance
-                    operator: In
-                    values:
-                    - cert-manager
-                  - key: app.kubernetes.io/component
-                    operator: In
-                    values:
-                    - cainjector
-            # Anti affinity on the same node
-            - weight: 50
-              podAffinityTerm:
-                topologyKey: kubernetes.io/hostname
-                labelSelector:
-                  matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                    - cainjector
-                  - key: app.kubernetes.io/instance
-                    operator: In
-                    values:
-                    - cert-manager
-                  - key: app.kubernetes.io/component
-                    operator: In
-                    values:
-                    - cainjector
+      topologySpreadConstraints:
+        # Maximum 1 pod per Proxmox hypervisor
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: cert-manager
+              app.kubernetes.io/component: cainjector
+        # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: cert-manager
+              app.kubernetes.io/component: cainjector

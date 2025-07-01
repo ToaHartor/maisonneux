@@ -9,18 +9,22 @@ operator:
   rollOutPods: true
   replicas: 3
 
-  affinity:
-    podAntiAffinity:
-      # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
-      # If it does not, they also won't be scheduled on the same pod unless necessary
-      preferredDuringSchedulingIgnoredDuringExecution:
-        # Anti affinity on the same hypervisor
-        - weight: 100
-          podAffinityTerm:
-            topologyKey: topology.kubernetes.io/zone
-            labelSelector:
-              matchLabels:
-                io.cilium/app: operator
+  topologySpreadConstraints:
+    # Maximum 2 pod per Proxmox hypervisor
+    - maxSkew: 2
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          io.cilium/app: operator
+    # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          io.cilium/app: operator
+
   resources:
     limits:
       cpu: 500m

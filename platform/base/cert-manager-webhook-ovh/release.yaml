@@ -37,29 +37,20 @@ spec:
       serviceAccountName: cert-manager
     replicas: 2
 
-    affinity:
-      podAntiAffinity:
-        # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
-        # If it does not, they also won't be scheduled on the same pod unless necessary
-        preferredDuringSchedulingIgnoredDuringExecution:
-          # Anti affinity on the same hypervisor
-          - weight: 100
-            podAffinityTerm:
-              topologyKey: topology.kubernetes.io/zone
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - cert-manager-webhook-ovh
-          # Anti affinity on the same node
-          - weight: 50
-            podAffinityTerm:
-              topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - cert-manager-webhook-ovh
+    topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: cert-manager-webhook-ovh
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: cert-manager-webhook-ovh
+
     # Issuer configured in production/staging kustomization.yaml

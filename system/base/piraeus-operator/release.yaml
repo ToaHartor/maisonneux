@@ -19,6 +19,7 @@ spec:
     remediation:
       retries: 3
   values:
+    # https://github.com/piraeusdatastore/piraeus-operator/blob/v2/charts/piraeus/values.yaml
     # Installed with deployment-crds.yaml
     installCRDs: false
 
@@ -26,6 +27,7 @@ spec:
 
     # grafanaDashboard:
     #   enabled: true
+    # TopologySpreadConstraints are not supported in the chart
     affinity:
       podAntiAffinity:
         # Refuse if possible to schedule two pods on the same hypervisor (e.g node)

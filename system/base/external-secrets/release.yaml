@@ -21,6 +21,7 @@ spec:
       retries: 3
 
   values:
+    # https://github.com/external-secrets/external-secrets/blob/main/deploy/charts/external-secrets/values.yaml
     # Installed with deployment-crds.yaml
     installCRDs: false
 
@@ -36,84 +37,54 @@ spec:
     
     # grafanaDashboard:
     #   enabled: true
-    affinity:
-      podAntiAffinity:
-        # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
-        # If it does not, they also won't be scheduled on the same pod unless necessary
-        preferredDuringSchedulingIgnoredDuringExecution:
-          # Anti affinity on the same hypervisor
-          - weight: 100
-            podAffinityTerm:
-              topologyKey: topology.kubernetes.io/zone
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - external-secrets
-          # Anti affinity on the same node
-          - weight: 50
-            podAffinityTerm:
-              topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - external-secrets
+    topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets
 
     webhook:
       replicaCount: *replicas
-      affinity:
-        podAntiAffinity:
-          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
-          # If it does not, they also won't be scheduled on the same pod unless necessary
-          preferredDuringSchedulingIgnoredDuringExecution:
-            # Anti affinity on the same hypervisor
-            - weight: 100
-              podAffinityTerm:
-                topologyKey: topology.kubernetes.io/zone
-                labelSelector:
-                  matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                    - external-secrets-webhook
-            # Anti affinity on the same node
-            - weight: 50
-              podAffinityTerm:
-                topologyKey: kubernetes.io/hostname
-                labelSelector:
-                  matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                    - external-secrets-webhook
+      topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets-webhook
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets-webhook
 
     certController:
       replicaCount: *replicas
-      affinity:
-        podAntiAffinity:
-          # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
-          # If it does not, they also won't be scheduled on the same pod unless necessary
-          preferredDuringSchedulingIgnoredDuringExecution:
-            # Anti affinity on the same hypervisor
-            - weight: 100
-              podAffinityTerm:
-                topologyKey: topology.kubernetes.io/zone
-                labelSelector:
-                  matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                    - cert-manager-webhook-ovh
-            # Anti affinity on the same node
-            - weight: 50
-              podAffinityTerm:
-                topologyKey: kubernetes.io/hostname
-                labelSelector:
-                  matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                    - cert-manager-webhook-ovh
+      topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets-cert-controller
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets-cert-controller

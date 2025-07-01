@@ -34,41 +34,22 @@ spec:
     podDisruptionBudget:
       enabled: true
       minAvailable: 1
-
-
-    affinity:
-      podAntiAffinity:
-        # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
-        # If it does not, they also won't be scheduled on the same pod unless necessary
-        preferredDuringSchedulingIgnoredDuringExecution:
-          # Anti affinity on the same hypervisor
-          - weight: 100
-            podAffinityTerm:
-              topologyKey: topology.kubernetes.io/zone
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - victoria-metrics-operator
-                - key: app.kubernetes.io/instance
-                  operator: In
-                  values:
-                  - victoria-metrics-operator
-          # Anti affinity on the same node
-          - weight: 50
-            podAffinityTerm:
-              topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - victoria-metrics-operator
-                - key: app.kubernetes.io/instance
-                  operator: In
-                  values:
-                  - victoria-metrics-operator
+    
+    topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: victoria-metrics-operator
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: victoria-metrics-operator
     
     extraObjects:
       # Metrics cluster storage
@@ -80,22 +61,6 @@ spec:
           replicationFactor: 1 # 2
           vmstorage:
             replicaCount: 2
-
-            # affinity:
-            #   podAntiAffinity:
-            #     # Preferrably do not schedule on the same node
-            #     preferredDuringSchedulingIgnoredDuringExecution:
-            #       # Anti affinity on the same node
-            #       - weight: 50
-            #         podAffinityTerm:
-            #           topologyKey: kubernetes.io/hostname
-            #           labelSelector:
-            #             matchExpressions:
-            #             - key: app.kubernetes.io/name
-            #               operator: In
-            #               values:
-            #               - vmstorage
-
             topologySpreadConstraints:
               # Maximum 1 pod per Proxmox hypervisor
               - maxSkew: 1
@@ -121,20 +86,6 @@ spec:
                       storage: 10Gi
           vmselect:
             replicaCount: 2
-            # affinity:
-            #   podAntiAffinity:
-            #     # Preferrably do not schedule on the same node
-            #     preferredDuringSchedulingIgnoredDuringExecution:
-            #       # Anti affinity on the same node
-            #       - weight: 50
-            #         podAffinityTerm:
-            #           topologyKey: kubernetes.io/hostname
-            #           labelSelector:
-            #             matchExpressions:
-            #             - key: app.kubernetes.io/name
-            #               operator: In
-            #               values:
-            #               - vmselect
             topologySpreadConstraints:
               # Maximum 1 pod per Proxmox hypervisor
               - maxSkew: 1
@@ -153,20 +104,6 @@ spec:
 
           vminsert:
             replicaCount: 2
-            # affinity:
-            #   podAntiAffinity:
-            #     # Preferrably do not schedule on the same node
-            #     preferredDuringSchedulingIgnoredDuringExecution:
-            #       # Anti affinity on the same node
-            #       - weight: 50
-            #         podAffinityTerm:
-            #           topologyKey: kubernetes.io/hostname
-            #           labelSelector:
-            #             matchExpressions:
-            #             - key: app.kubernetes.io/name
-            #               operator: In
-            #               values:
-            #               - vminsert
             topologySpreadConstraints:
               # Maximum 1 pod per Proxmox hypervisor
               - maxSkew: 1
@@ -192,20 +129,6 @@ spec:
         spec:
           vlinsert:
             replicaCount: 2
-            # affinity:
-            #   podAntiAffinity:
-            #     # Preferrably do not schedule on the same node
-            #     preferredDuringSchedulingIgnoredDuringExecution:
-            #       # Anti affinity on the same node
-            #       - weight: 50
-            #         podAffinityTerm:
-            #           topologyKey: kubernetes.io/hostname
-            #           labelSelector:
-            #             matchExpressions:
-            #             - key: app.kubernetes.io/name
-            #               operator: In
-            #               values:
-            #               - vlinsert
             topologySpreadConstraints:
               # Maximum 1 pod per Proxmox hypervisor
               - maxSkew: 1
@@ -240,22 +163,6 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: vlselect
-
-
-            # affinity:
-            #   podAntiAffinity:
-            #     # Preferrably do not schedule on the same node
-            #     preferredDuringSchedulingIgnoredDuringExecution:
-            #       # Anti affinity on the same node
-            #       - weight: 50
-            #         podAffinityTerm:
-            #           topologyKey: kubernetes.io/hostname
-            #           labelSelector:
-            #             matchExpressions:
-            #             - key: app.kubernetes.io/name
-            #               operator: In
-            #               values:
-            #               - vlselect
           vlstorage:
             retentionPeriod: "4w"
             replicaCount: 2
@@ -274,21 +181,6 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: vlstorage
-
-            # affinity:
-            #   podAntiAffinity:
-            #     # Preferrably do not schedule on the same node
-            #     preferredDuringSchedulingIgnoredDuringExecution:
-            #       # Anti affinity on the same node
-            #       - weight: 50
-            #         podAffinityTerm:
-            #           topologyKey: kubernetes.io/hostname
-            #           labelSelector:
-            #             matchExpressions:
-            #             - key: app.kubernetes.io/name
-            #               operator: In
-            #               values:
-            #               - vlstorage
             storage:
               volumeClaimTemplate:
                 spec:
