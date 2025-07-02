@@ -23,7 +23,11 @@ spec:
     # Installed with deployment-crds.yaml
     installCRDs: false
 
-    replicaCount: 2
+    replicaCount: 1
+
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
 
     # grafanaDashboard:
     #   enabled: true
