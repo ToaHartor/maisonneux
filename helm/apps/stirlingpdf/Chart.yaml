@@ -3,7 +3,7 @@ name: stirlingpdf
 description: Custom helm wrapper for Stirling-PDF Helm chart
 dependencies:
   - name: stirling-pdf-chart
-    version: &version "1.9.1"
+    version: &version "1.10.0"
     repository: https://stirling-tools.github.io/Stirling-PDF-chart
   - name: common
     version: "0.0.1"

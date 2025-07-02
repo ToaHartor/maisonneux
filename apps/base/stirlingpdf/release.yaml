@@ -11,7 +11,7 @@ spec:
     spec:
       # chart: stirling-pdf-chart
       # renovate: datasource=helm depName=stirling-pdf-chart registryUrl=https://stirling-tools.github.io/Stirling-PDF-chart
-      # version: "1.9.1"
+      # version: "1.10.0"
       # sourceRef:
       #   kind: HelmRepository
       #   name: stirling-pdf
