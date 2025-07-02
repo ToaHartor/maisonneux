@@ -3,7 +3,7 @@ name: gitea
 description: Gitea Helm chart with additional resources
 dependencies:
   - name: gitea
-    version: &version "12.0.0"
+    version: &version "12.1.1"
     repository: https://dl.gitea.com/charts/
   - name: common
     version: "0.0.1"
