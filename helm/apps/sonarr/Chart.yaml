@@ -4,7 +4,7 @@ description: Custom helm wrapper for Sonarr Helm chart
 dependencies:
   - name: sonarr
     # Version from https://github.com/truecharts/public/blob/master/charts/stable/sonarr/Chart.yaml
-    version: "23.8.1"
+    version: "23.8.3"
     repository: oci://tccr.io/truecharts
   - name: common
     version: "0.0.1"
