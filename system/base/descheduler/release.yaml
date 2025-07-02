@@ -34,6 +34,8 @@ spec:
               args:
                 ignorePvcPods: true
                 evictLocalStoragePods: true
+                evictFailedBarePods: true
+                evictDaemonSetPods: true
                 nodeFit: true
             - name: RemoveDuplicates
             - name: RemovePodsHavingTooManyRestarts
