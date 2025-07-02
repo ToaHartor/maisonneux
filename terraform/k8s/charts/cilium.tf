@@ -212,7 +212,7 @@ resource "helm_release" "cilium" {
   name       = "cilium"
   repository = "https://helm.cilium.io"
   chart      = "cilium"
-  version    = "1.17.4"
+  version    = "1.17.5"
   values     = [local.cilium_values]
   wait       = false # Do not wait for resources as the chart is designed like this
 
