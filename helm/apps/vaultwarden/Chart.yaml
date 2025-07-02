@@ -4,7 +4,7 @@ description: Custom helm wrapper for Vaultwarden Helm chart
 dependencies:
   - name: vaultwarden
     # Version from https://github.com/truecharts/public/blob/master/charts/premium/vaultwarden/Chart.yaml
-    version: "28.8.3"
+    version: "28.9.0"
     repository: oci://tccr.io/truecharts
   - name: common
     version: "0.0.1"
