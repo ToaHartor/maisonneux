@@ -51,7 +51,7 @@ spec:
           spec:
             resources:
               requests:
-                storage: 1Gi
+                storage: {{ .Values.storage.size }}
             storageClassName: {{ .Values.storage.persistentClassName }}
         # Logs pvc is mandatory, terrifying
         - metadata:
@@ -59,7 +59,7 @@ spec:
           spec:
             resources:
               requests:
-                storage: 1Gi
+                storage: {{ .Values.storage.logsSize }}
             storageClassName: {{ .Values.storage.persistentClassName }}
 
 

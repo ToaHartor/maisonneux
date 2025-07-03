@@ -34,7 +34,7 @@ spec:
   port: 3306
 
   storage:
-    size: 1Gi
+    size: {{ .Values.storage.size }}
     storageClassName: {{ .Values.storage.persistentClassName }}
     resizeInUseVolumes: true
     waitForVolumeResize: true
@@ -43,7 +43,7 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 1Gi
+          storage: {{ .Values.storage.size }}
       storageClassName: {{ .Values.storage.persistentClassName }}
 
   #   service:

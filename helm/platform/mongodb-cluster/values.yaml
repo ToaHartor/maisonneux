@@ -1,3 +1,6 @@
+storage:
+  size: 1Gi
+  logsSize: 1Gi
 database:
   name: mongodb-cluster
   users:

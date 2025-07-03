@@ -1,3 +1,5 @@
+storage:
+  size: 1Gi
 database:
   users:
     - default

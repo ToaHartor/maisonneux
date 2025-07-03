@@ -42,12 +42,12 @@ spec:
   #     cpu: 250m
   # Require 1Gi of space
   storage:
-    size: 1Gi
+    size: {{ .Values.storage.size }}
     pvcTemplate:
       accessModes:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 1Gi
+          storage: {{ .Values.storage.size }}
       storageClassName: {{ .Values.storage.persistentClassName }}
       volumeMode: Filesystem
