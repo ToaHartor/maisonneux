@@ -8,5 +8,11 @@ volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Delete
 parameters:
   csi.storage.k8s.io/fstype: xfs
-  linstor.csi.linbit.com/autoPlace: "1"
+  # Linstor parameters https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-kubernetes-sc-parameters
+  # To apply parameters on an existing cluster, it's possible to delete the StorageClass then let FluxCD reconciliate
+  linstor.csi.linbit.com/autoPlace: "2"
   linstor.csi.linbit.com/storagePool: fs-storage
+  # 2 per region (the cluster), one per node
+  linstor.csi.linbit.com/xReplicasOnDifferent: |
+    topology.kubernetes.io/region: 2
+    topology.kubernetes.io/zone: 1
