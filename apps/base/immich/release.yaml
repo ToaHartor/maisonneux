@@ -61,16 +61,43 @@ spec:
       requests:
         cpu: 100m
         memory: 300Mi
+    service:
+      apimetrics:
+        enabled: true
+        type: "ClusterIP"
+        targetSelector: main
+        ports:
+          metrics:
+            enabled: true
+            port: 8081
+            protocol: http
+            targetPort: 8081
+            targetSelector: main
+      # microservicesmetrics:
+      #   enabled: true
+      #   type: "ClusterIP"
+      #   targetSelector: microservices
+      #   ports:
+      #     metrics:
+      #       enabled: true
+      #       port: 8082
+      #       protocol: http
+      #       targetPort: 8082
+      #       targetSelector: microservices
 
     workload:
       main:
         podSpec:
+          annotations:
+            prometheus.io/port: "8081"
+            prometheus.io/scrape: "true"
+            prometheus.io/path: "/metrics"
           containers:
             main:
               env:
                 IMMICH_CONFIG_FILE: /config/immich-config.yaml
                 # Metrics
-                IMMICH_TELEMETRY_INCLUDE: all
+                IMMICH_TELEMETRY_INCLUDE: api,io,repo,job
                 # REDIS_DBINDEX: ""
                 # DB_PASSWORD:
                 #   valueFrom:
@@ -79,11 +106,14 @@ spec:
                 #       key: password
 
       
-    #   microservices:
-    #     podSpec:
-    #       containers:
-    #         microservices:
-    #           env:
+      # microservices:
+      #   podSpec:
+      #     annotations:
+      #       prometheus.io/port: "8082"
+      #       prometheus.io/scrape: "true"
+      #     containers:
+      #       microservices:
+      #         env:
     #             REDIS_DBINDEX: ""
     #             DB_PASSWORD:
     #               valueFrom:

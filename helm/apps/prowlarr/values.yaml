@@ -54,10 +54,26 @@ prowlarr:
                   expandObjectName: false
               PROWLARR__POSTGRES__MAINDB: prowlarr-main
               PROWLARR__POSTGRES__LOGDB: prowlarr-log
+          exportarr:
+            env:
+              API_KEY:
+                secretKeyRef:
+                  name: prowlarr-api-key
+                  key: PROWLARR__AUTH__APIKEY
+                  expandObjectName: false
   persistence:
     config:
       enabled: true
       type: emptyDir
+  configmap:
+    dashboard:
+      enabled: true
+      labels:
+        grafana_dashboard: "1"
+      data:
+        prowlarr.json: >-
+          {{ .Files.Get "dashboard.json" }}
+
   metrics:
     main:
-      enabled: false # TODO : true when monitoring stack deployed
+      enabled: true

@@ -58,3 +58,13 @@ spec:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: DoNotSchedule
+    # Monitoring
+    serviceMonitor:
+      enabled: true
+    
+    grafanaDashboard:
+      enabled: true
+      folder: database
+      labels:
+        name: grafana_dashboard
+        value: "1"

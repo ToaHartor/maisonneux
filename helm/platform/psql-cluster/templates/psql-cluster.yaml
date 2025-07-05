@@ -32,7 +32,9 @@ spec:
         passwordSecret:
           name:  {{ include "common.db.secret-name" (dict "DatabaseUser" $user) }}
       {{- end }}
-
+  
+  monitoring:
+    enablePodMonitor: true
   # resources:
   #   requests:
   #     memory: "64m"

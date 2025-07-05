@@ -5,3 +5,4 @@ resources:
   - deployment-crds.yaml
   - release.yaml
   - deployment-crs.yaml
+  - deployment-monit.yaml

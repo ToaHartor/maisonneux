@@ -31,6 +31,9 @@ spec:
     ha:
       enabled: true
       replicas: 2
+    
+    metrics:
+      enabled: true
 
     topologySpreadConstraints:
       # Maximum 1 pod per Proxmox hypervisor

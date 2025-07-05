@@ -39,9 +39,6 @@ spec:
       metrics:
         enabled: true
         type: "ClusterIP"
-        annotations:
-          prometheus.io/scrape: "true"
-          prometheus.io/port: "8192"
         ports:
           metrics:
             enabled: true
@@ -51,6 +48,10 @@ spec:
     workload:
       main:
         podSpec:
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "8192"
+            prometheus.io/path: "/metrics"
           containers:
             main:
               env:

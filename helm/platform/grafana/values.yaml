@@ -22,7 +22,8 @@ grafana:
     dashboards:
       enabled: true
       label: grafana_dashboard
-      labelValue: ""
+      labelValue: "1"
+      searchNamespace: ALL
       provider:
         disableDelete: true
         allowUiUpdates: false
@@ -43,6 +44,12 @@ grafana:
           url: http://vmselect-metrics-datastore.monitoring.svc.cluster.local:8481/select/0/prometheus
           access: proxy
           isDefault: true
+          editable: false
+        - name: Metrics as prometheus
+          type: prometheus
+          url: http://vmselect-metrics-datastore.monitoring.svc.cluster.local:8481/select/0/prometheus
+          access: proxy
+          isDefault: false
           editable: false
         # Logs
         - name: Logs

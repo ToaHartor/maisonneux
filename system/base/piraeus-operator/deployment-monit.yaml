@@ -1,0 +1,15 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: piraeus-monitoring
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: piraeus-crs
+      namespace: flux-system
+  interval: 10m
+  path: ./config/extras/monitoring
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: piraeus-operator

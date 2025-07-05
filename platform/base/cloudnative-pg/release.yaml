@@ -49,7 +49,7 @@ spec:
     crds:
       create: true # by default
 
-    # monitoring:
-    #   podMonitorEnabled: false
-    #   grafanaDashboard:
-    #     create: false
+    monitoring:
+      podMonitorEnabled: true
+      grafanaDashboard:
+        create: true
