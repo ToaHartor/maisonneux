@@ -1,6 +1,7 @@
 # see https://registry.terraform.io/providers/bpg/proxmox/0.62.0/docs/resources/virtual_environment_vm
 resource "proxmox_virtual_environment_vm" "k8s-worker" {
   count           = length(local.worker_nodes)
+  depends_on      = [talos_machine_bootstrap.talos] # Deploy workers after cluster bootstrap to avoid misconfigurations
   name            = local.worker_nodes[count.index].name
   node_name       = local.worker_nodes[count.index].config.node
   tags            = sort(["terraform", "talos", "k8s", "worker", "${terraform.workspace}"])
