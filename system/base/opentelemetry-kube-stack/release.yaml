@@ -69,6 +69,21 @@ spec:
           telemetry:
             logs:
               level: DEBUG
+          pipelines:
+            logs:
+              exporters: &victoriametrics-exporter [otlphttp/victoriametrics, debug]
+            metrics:
+              exporters: *victoriametrics-exporter
+        
+        exporters:
+          otlphttp/victoriametrics:
+            compression: gzip
+            encoding: proto
+            # URL format from https://docs.victoriametrics.com/victoriametrics/cluster-victoriametrics/#url-format
+            metrics_endpoint: http://vminsert-metrics-datastore.monitoring.svc.cluster.local:8480/insert/0/opentelemetry/v1/metrics
+            logs_endpoint: http://vlinsert-logs-datastore.monitoring.svc.cluster.local:9481/insert/opentelemetry/v1/logs
+            tls:
+              insecure: true
 
     collectors:
       daemon:
@@ -97,6 +112,14 @@ spec:
           - key: node-role.kubernetes.io/control-plane
             effect: NoSchedule
 
+        config:
+          service:
+            pipelines:
+              logs:
+                exporters: *victoriametrics-exporter
+              metrics:
+                exporters: *victoriametrics-exporter
+
       cluster:
         enabled: true
 
@@ -118,34 +141,28 @@ spec:
             # InfluxDB receiver for proxmox hypervisor metrics (tcp)
             influxdb:
               endpoint: 0.0.0.0:8086
+            k8sobjects:
+              auth_type: serviceAccount
+              objects:
+                - name: pods
+                  mode: pull
+                - name: events
+                  mode: watch
 
           service:
             pipelines:
               logs:
-                exporters:
-                - debug
-                processors:
-                - k8sattributes
-                - resourcedetection/env
-                - batch
-                receivers:
-                - k8sobjects
+                receivers: [k8sobjects]
+                processors: [k8sattributes, resourcedetection/env, batch]
+                exporters: *victoriametrics-exporter
               metrics:
-                exporters:
-                - debug
-                processors:
-                - k8sattributes
-                - resourcedetection/env
-                - batch
-                receivers:
-                - k8s_cluster
+                receivers: [k8s_cluster]
+                processors: [k8sattributes, resourcedetection/env, batch]
+                exporters: *victoriametrics-exporter
               metrics/proxmox:
-                exporters:
-                - debug
-                processors:
-                - batch
-                receivers:
-                - influxdb
+                receivers: [influxdb]
+                processors: [batch]
+                exporters: *victoriametrics-exporter
 
     extraObjects:
       # Add service for external receivers

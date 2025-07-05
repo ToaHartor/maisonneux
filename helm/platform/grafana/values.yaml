@@ -40,7 +40,7 @@ grafana:
         # Metrics
         - name: Metrics
           type: victoriametrics-metrics-datasource
-          url: http://vmselect-metrics-datastore.monitoring.svc.cluster.local:8481/service/0/prometheus
+          url: http://vmselect-metrics-datastore.monitoring.svc.cluster.local:8481/select/0/prometheus
           access: proxy
           isDefault: true
           editable: false

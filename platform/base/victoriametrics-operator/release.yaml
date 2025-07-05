@@ -103,6 +103,8 @@ spec:
                     app.kubernetes.io/name: vmselect
 
           vminsert:
+            extraArgs:
+              opentelemetry.usePrometheusNaming: "true"
             replicaCount: 2
             topologySpreadConstraints:
               # Maximum 1 pod per Proxmox hypervisor
