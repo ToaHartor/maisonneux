@@ -1,0 +1,18 @@
+apiVersion: v2
+name: grafana
+description: Custom helm wrapper for Grafana Helm chart
+dependencies:
+  - name: grafana
+    # Version from https://github.com/grafana/helm-charts/blob/main/charts/grafana/Chart.yaml
+    version: "9.2.10"
+    repository: https://grafana.github.io/helm-charts
+  - name: common
+    # renovate: datasource=local-dependency
+    version: "0.0.1"
+    repository: "file://../../library/common"
+    import-values:
+      - defaults
+    # Other implicit dependencies are installed before this chart by fluxcd :
+    # - kubernetes-secret-generator
+    # - cloudnative-pg
+version: 0.0.1

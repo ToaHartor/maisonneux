@@ -43,3 +43,4 @@ spec:
         - jellyseerr
         - jellystat
         - paperless
+        - grafana

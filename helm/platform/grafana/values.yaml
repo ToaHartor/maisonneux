@@ -1,0 +1,98 @@
+
+
+database:
+  user: grafana
+  name: grafana
+
+grafana:
+  # https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
+  deploymentStrategy:
+    type: RollingUpdate
+
+  replicas: 1
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  adminUser: admin
+  
+  # Helm sidecar to handle dashboard provisioning with both other helm charts and personal dashboards
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: ""
+      provider:
+        disableDelete: true
+        allowUiUpdates: false
+        foldersFromFileStructure: false
+  
+  plugins:
+    # Datasource plugins
+    - victoriametrics-metrics-datasource
+    - victoriametrics-logs-datasource
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        # Metrics
+        - name: Metrics
+          type: victoriametrics-metrics-datasource
+          url: http://vmselect-metrics-datastore.monitoring.svc.cluster.local:8481/service/0/prometheus
+          access: proxy
+          isDefault: true
+          editable: false
+        # Logs
+        - name: Logs
+          type: victoriametrics-logs-datasource
+          url: http://vlselect-logs-datastore.monitoring.svc.cluster.local:9471
+          access: proxy
+          isDefault: false
+          editable: false
+  
+  # Content of the grafana.ini file http://docs.grafana.org/installation/configuration/
+  grafana.ini:
+    app_mode: production
+    instance_name: homelab
+    analytics:
+      reporting_enabled: false
+    
+    database:
+      # Connection url is built in pqsl-extsecret.yaml
+      type: postgres
+      url: $__file{/etc/secrets/postgres_db_creds/connectionUrl}
+      ssl_mode: disable
+
+    auth:
+      signout_redirect_url:
+    
+    auth.generic_oauth:
+      enabled: false # true
+      name: Authentik
+      use_pkce: true
+      # client_id: $__file{/etc/secrets/auth_generic_oauth/client_id}
+      # client_secret: $__file{/etc/secrets/auth_generic_oauth/client_secret}
+      scope: openid profile email
+      auth_url:
+      token_url:
+      redirect_url:
+      tls_skip_verify_insecure: true
+      auto_login: false # true
+      # Depends on groups assigned to users in Authentik
+      role_attribute_path: "contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'"
+
+    # users:
+    #   auto_assign_org_role: Viewer
+
+  extraSecretMounts:
+    - name: postgres-db-creds
+      mountPath: /etc/secrets/postgres_db_creds
+      secretName: grafana-db-creds
+      readOnly: true
+  # TODO : requires OAuth setup enabled  
+  #   - name: auth-generic-oauth
+  #     mountPath: /etc/secrets/auth_generic_oauth
+  #     secretName: authentik-grafana-secret
+  #     readOnly: true
