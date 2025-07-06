@@ -59,6 +59,33 @@ grafana:
           isDefault: false
           editable: false
   
+  dashboards:
+    default:
+      # https://grafana.com/grafana/dashboards/14837-authentik/
+      authentik:
+        gnetId: 14837
+        revision: 2
+        datasource: Metrics as prometheus
+      # https://grafana.com/grafana/dashboards/20340-cert-manager/
+      cert-manager:
+        gnetId: 20340
+        revision: 1
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      # Add downloaded dashboards in the providers list
+      # Dashboards provisioned by sidecar are automatically added, so no need to add them here
+      - name: 'downloads'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: true
+        editable: false
+        options:
+          path: /var/lib/grafana/dashboards/default
+
   # Content of the grafana.ini file http://docs.grafana.org/installation/configuration/
   grafana.ini:
     app_mode: production

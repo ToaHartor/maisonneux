@@ -55,3 +55,6 @@ spec:
       readOnlyRootFilesystem: true
       runAsNonRoot: true
       runAsUser: 1000
+    
+    service:
+      createServiceMonitor: true

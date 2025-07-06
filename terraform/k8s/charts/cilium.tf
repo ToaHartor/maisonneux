@@ -35,6 +35,11 @@ operator:
   
   prometheus:
     enabled: true
+  
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
 
 bpf:
   datapathMode: netkit
@@ -46,6 +51,8 @@ bpf:
     enabled: true
   mapDynamicSizeRatio: 0.08
   preallocateMaps: true
+
+# enableIPv4Masquerade: false # Managed by the router ?
 
 bpfClockProbe: true
 
@@ -170,6 +177,9 @@ envoy:
   debug:
     admin:
       enabled: false # Only if debugging
+  
+  prometheus:
+    enabled: true
 
 hubble:
   relay:
@@ -178,12 +188,26 @@ hubble:
   ui:
     enabled: true
     rollOutPods: true
-  # metrics:
-  #   enableOpenMetrics: true
-  #   enabled: ["dns", "drop", "tcp", "flow", "icmp", "http"]
+  metrics:
+    enableOpenMetrics: true
+    enabled: ["dns", "drop", "tcp", "flow", "icmp", "http"]
 
-# prometheus:
-#   enabled: true
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+
+  prometheus:
+    enabled: true
+
+# Cilium agent metrics
+prometheus:
+  enabled: true
+
+dashboards:
+  enabled: true
+  label: grafana_dashboard
+  labelValue: "1"
 
 # Hardening
 # policyEnforcementMode: "always" # Enforce network policies

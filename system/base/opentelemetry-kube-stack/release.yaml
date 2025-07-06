@@ -379,9 +379,6 @@ spec:
         
         config:
           receivers:
-            # InfluxDB receiver for proxmox hypervisor metrics (tcp)
-            influxdb:
-              endpoint: 0.0.0.0:8086
             k8sobjects:
               auth_type: serviceAccount
               objects:
@@ -400,32 +397,5 @@ spec:
                 receivers: [k8s_cluster]
                 processors: [k8sattributes, resourcedetection/env, batch]
                 exporters: *victoriametrics-exporter
-              metrics/proxmox:
-                receivers: [influxdb]
-                processors: [batch]
-                exporters: *victoriametrics-exporter
 
-    extraObjects:
-      # Add service for external receivers
-      - apiVersion: v1
-        kind: Service
-        metadata:
-          name: otel-receivers
-          namespace: opentelemetry
-          annotations:
-            io.cilium/lb-ipam-ips: ${otelcol_lb_ip}
-          labels:
-            homelab/public-service: "true"
-        spec:
-          selector:
-            app.kubernetes.io/component: opentelemetry-collector
-            app.kubernetes.io/instance: opentelemetry.opentelemetry-kube-stack-cluster-stats
-          type: LoadBalancer
-          sessionAffinity: None
-          externalTrafficPolicy: Local
-          internalTrafficPolicy: Cluster
-          ports:
-          - name: influxdb
-            protocol: UDP
-            port: 8086
-            targetPort: 8086
+    # extraObjects:

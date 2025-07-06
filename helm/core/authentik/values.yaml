@@ -9,6 +9,7 @@ ingress:
   certSecret: ingress-tls
 
 authentik:
+  # https://github.com/goauthentik/helm/blob/main/charts/authentik/values.yaml
   authentik:
     log_level: debug
     secret_key: TODO # Replaced by fluxcd on installed with the content of authentik-secret-key
@@ -25,6 +26,8 @@ authentik:
     secrets:
   #     - authentik-blueprint
   global:
+    addPrometheusAnnotations: true
+
     env:
       - name: AUTHENTIK_REDIS__DB
         value: "15"
@@ -55,6 +58,9 @@ authentik:
         value: "false" # "true" if prod
   server:
     replicas: 1
+    pdb:
+      enabled: true
+      minAvailable: 1
     resources:
       limits:
         cpu: 1000m
@@ -77,6 +83,9 @@ authentik:
         readOnly: true
   worker:
     replicas: 1
+    pdb:
+      enabled: true
+      minAvailable: 1
     resources:
       limits:
         cpu: 1000m

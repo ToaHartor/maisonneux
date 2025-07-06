@@ -122,7 +122,6 @@ spec:
                   matchLabels:
                     app.kubernetes.io/name: vminsert
 
-
       # Logs cluster storage
       - apiVersion: operator.victoriametrics.com/v1
         kind: VLCluster
@@ -191,4 +190,28 @@ spec:
                     requests:
                       storage: 10Gi
 
-
+      # InfluxDB endpoint for proxmox to upload cluster metrics.
+      # API prefix must be set to /insert/0/influx in the proxmox config
+      - apiVersion: v1
+        kind: Service
+        metadata:
+          name: proxmox-influxcd-receiver
+          namespace: monitoring
+          annotations:
+            io.cilium/lb-ipam-ips: ${otelcol_lb_ip}
+          labels:
+            homelab/public-service: "true"
+        spec:
+          selector:
+            app.kubernetes.io/name: vminsert
+            app.kubernetes.io/component: monitoring
+            app.kubernetes.io/instance: metrics-datastore
+          type: LoadBalancer
+          sessionAffinity: None
+          externalTrafficPolicy: Local
+          internalTrafficPolicy: Cluster
+          ports:
+          - name: influxdb
+            protocol: TCP
+            port: 8086
+            targetPort: 8480
