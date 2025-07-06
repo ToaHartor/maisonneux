@@ -72,10 +72,8 @@ spec:
             logs:
               level: DEBUG
           pipelines:
-            logs:
-              exporters: &victoriametrics-exporter [otlphttp/victoriametrics, debug]
             metrics:
-              exporters: *victoriametrics-exporter
+              exporters: &victoriametrics-exporter [otlphttp/victoriametrics, debug]
         
         exporters:
           otlphttp/victoriametrics:
@@ -88,18 +86,63 @@ spec:
               insecure: true
 
     collectors:
-      daemon:
+      targetallocator:
         enabled: true
-
+        replicas: 1
+        mode: statefulset
         # Collecting ServiceMonitor and PodMonitor resources
+        # We dedicate a pod to collect targetAllocator metrics, and the other for scrape annotations
         targetAllocator:
           replicas: 1
           enabled: true
-          allocationStrategy: per-node
+          # allocationStrategy: per-node
+          filterStrategy: relabel-config
           prometheusCR:
             enabled: true
             podMonitorSelector: {}
             serviceMonitorSelector: {}
+
+        podDisruptionBudget:
+          minAvailable: 1
+
+        presets:
+          kubernetesAttributes:
+            enabled: true
+
+        config:
+          receivers:
+            prometheus:
+              config:
+                scrape_configs:
+                # Overriden by targetAllocator config
+                - job_name: 'otel-collector'
+                  scrape_interval: 10s
+                  static_configs:
+                  - targets: [ '0.0.0.0:8888' ]
+                  metric_relabel_configs:
+                  - action: labeldrop
+                    regex: (id|name)
+                    replacement: $$$$1
+                  - action: labelmap
+                    regex: label_(.+)
+                    replacement: $$$$1
+
+          processors:
+            batch:
+              send_batch_max_size: 1500
+              send_batch_size: 1000
+              timeout: 1s
+          exporters:
+            debug: {}
+          service:
+            pipelines:
+              metrics:
+                receivers: [prometheus]
+                processors: [k8sattributes, batch]
+                exporters: *victoriametrics-exporter
+
+      daemon:
+        enabled: true
 
         presets:
           logsCollection:
@@ -134,7 +177,7 @@ spec:
                 global:
                   scrape_timeout: 10s
                 scrape_configs:
-                # Prometheus scraping, from https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-kube-stack/daemon_scrape_configs.yaml 
+                # Prometheus scraping, from https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-kube-stack/daemon_scrape_configs.yaml
                   - job_name: kubernetes-pods
                     scrape_interval: 30s
                     kubernetes_sd_configs:
@@ -142,7 +185,7 @@ spec:
                         selectors:
                           - role: pod
                             # only scrape data from pods running on the same node as collector
-                            field: "spec.nodeName=${env:OTEL_K8S_NODE_NAME}"
+                            field: "spec.nodeName=$${env:OTEL_K8S_NODE_NAME}"
                     relabel_configs:
                       - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
                         action: keep
@@ -163,12 +206,13 @@ spec:
                           [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
                         action: replace
                         regex: ([^:]+)(?::\d+)?;(\d+)
-                        # NOTE: otel collector uses env var replacement. $$ is used as a literal $.
-                        replacement: $$1:$$2
+                        # NOTE: otel collector uses env var replacement. $$ is used as a literal $. We escape dollars once more as fluxcd also uses them.
+                        # $$$$ =(fluxcd)> $$ =(otel)> $
+                        replacement: $$$$1:$$$$2
                         target_label: __address__
                       - action: labelmap
                         regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
-                        replacement: __param_$$1
+                        replacement: __param_$$$$1
                       - action: labelmap
                         regex: __meta_kubernetes_pod_label_(.+)
                       - source_labels: [__meta_kubernetes_namespace]
@@ -192,14 +236,14 @@ spec:
                   #       regex: __meta_kubernetes_node_label_(.+)
                   #     - action: replace
                   #       regex: "(.*)"
-                  #       replacement: "$$1"
+                  #       replacement: "$$$$1"
                   #       separator: ";"
                   #       source_labels:
                   #         - job
                   #       target_label: __tmp_prometheus_job_name
                   #   static_configs:
                   #     - targets:
-                  #         - ${env:OTEL_K8S_NODE_IP}:9100
+                  #         - $${env:OTEL_K8S_NODE_IP}:9100
                   # We still need to scrape kubelet's CAdvisor which isn't supported in any otel collector receiver
                   # https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29053
                   - authorization:
@@ -215,41 +259,41 @@ spec:
                         selectors:
                           - role: node
                             # only scrape data from pods running on the same node as collector
-                            field: "metadata.name=${env:OTEL_K8S_NODE_NAME}"
+                            field: "metadata.name=$${env:OTEL_K8S_NODE_NAME}"
                     metric_relabel_configs:
                       - action: drop
                         regex: container_cpu_(load_average_10s|system_seconds_total|user_seconds_total)
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - __name__
                       - action: drop
                         regex: container_fs_(io_current|reads_merged_total|sector_reads_total|sector_writes_total|writes_merged_total)
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - __name__
                       - action: drop
                         regex: container_memory_(mapped_file|swap)
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - __name__
                       - action: drop
                         regex: container_(file_descriptors|tasks_state|threads_max)
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - __name__
                       - action: drop
                         regex: container_spec.*
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - __name__
                       - action: drop
                         regex: ".+;"
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - id
@@ -258,7 +302,7 @@ spec:
                     relabel_configs:
                       - action: replace
                         regex: "(.*)"
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - job
@@ -268,7 +312,7 @@ spec:
                         target_label: job
                       - action: replace
                         regex: "(.*)"
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - __meta_kubernetes_node_name
@@ -280,7 +324,7 @@ spec:
                         target_label: endpoint
                       - action: replace
                         regex: "(.*)"
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - __metrics_path__
@@ -288,14 +332,14 @@ spec:
                       - action: hashmod
                         modulus: 1
                         regex: "(.*)"
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - __address__
                         target_label: __tmp_hash
                       - action: keep
                         regex: "$(SHARD)"
-                        replacement: "$$1"
+                        replacement: "$$$$1"
                         separator: ";"
                         source_labels:
                           - __tmp_hash
@@ -309,8 +353,12 @@ spec:
           service:
             pipelines:
               logs:
+                receivers: [otlp, filelog]
+                processors: [k8sattributes, resourcedetection/env, batch]
                 exporters: *victoriametrics-exporter
               metrics:
+                receivers: [otlp, prometheus, hostmetrics, kubeletstats]
+                processors: [k8sattributes, resourcedetection/env, batch]
                 exporters: *victoriametrics-exporter
 
       cluster:
