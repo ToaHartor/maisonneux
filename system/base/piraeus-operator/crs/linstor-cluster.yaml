@@ -4,7 +4,6 @@ apiVersion: piraeus.io/v1
 kind: LinstorCluster
 metadata:
   name: linstorcluster
-  namespace: piraeus
 spec:
   nodeSelector:
     homelab/linstor-enabled: "true"
@@ -74,7 +73,6 @@ apiVersion: piraeus.io/v1
 kind: LinstorSatelliteConfiguration
 metadata:
   name: talos-loader-override
-  namespace: piraeus
 spec:
   storagePools:
     # - name: lvm

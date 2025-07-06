@@ -19,4 +19,5 @@ resources:
   - wrenix.yaml
   - metrics-server.yaml
   - open-telemetry.yaml
+  - prometheus-community.yaml
   - victoriametrics.yaml

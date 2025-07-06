@@ -5,6 +5,8 @@ metadata:
   namespace: opentelemetry
 spec:
   releaseName: opentelemetry-kube-stack
+  dependsOn:
+    - name: prometheus-operator-crds
   chart:
     spec:
       chart: opentelemetry-kube-stack
@@ -22,7 +24,7 @@ spec:
     # https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-kube-stack/values.yaml
     crds:
       installOtel: true
-      installPrometheus: true
+      installPrometheus: false # Installed by prometheus-operator-crds chart
 
     opentelemetry-operator:
       # Subchart values https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-operator/values.yaml
