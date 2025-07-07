@@ -29,7 +29,7 @@ locals {
     "git_branch"       = var.flux_git_branch
     "nfs_server"       = var.truenas_vm_host
     "traefik_lb_ip"    = var.k8s_lb_traefik_ip
-    "otelcol_lb_ip"    = var.k8s_lb_otelcol_ip
+    "influxdb_lb_ip"    = var.k8s_lb_influxdb_ip
     },
     { for k, v in var.truenas_nfs_paths : "nfs_path_${k}" => v },
   )

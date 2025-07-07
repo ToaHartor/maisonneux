@@ -198,7 +198,7 @@ spec:
           name: proxmox-influxcd-receiver
           namespace: monitoring
           annotations:
-            io.cilium/lb-ipam-ips: ${otelcol_lb_ip}
+            io.cilium/lb-ipam-ips: ${influxdb_lb_ip}
           labels:
             homelab/public-service: "true"
         spec:
