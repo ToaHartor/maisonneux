@@ -25,7 +25,7 @@ grafana:
       labelValue: "1"
       searchNamespace: ALL
       provider:
-        disableDelete: true
+        disableDelete: false # true
         allowUiUpdates: false
         foldersFromFileStructure: false
   
@@ -70,6 +70,25 @@ grafana:
       cert-manager:
         gnetId: 20340
         revision: 1
+      # https://grafana.com/grafana/dashboards/7362-mysql-overview/
+      mariadb-overview:
+        gnetId: 7362
+        revision: 5
+        datasource: Metrics as prometheus
+      tekton:
+        url: https://raw.githubusercontent.com/jenkins-x-charts/grafana-dashboard/refs/heads/master/charts/grafana-dashboard/dashboards/tekton.json
+        curlOptions: -skLf
+        datasource: Metrics as prometheus
+      # https://grafana.com/grafana/dashboards/12896-radarr-v3/
+      radarrv3:
+        gnetId: 12896
+        revision: 1
+        datasource: Metrics as prometheus
+      # https://grafana.com/grafana/dashboards/12530-sonarr-v3/
+      sonarrv3:
+        gnetId: 12530
+        revision: 2
+        datasource: Metrics as prometheus
 
   dashboardProviders:
     dashboardproviders.yaml:
