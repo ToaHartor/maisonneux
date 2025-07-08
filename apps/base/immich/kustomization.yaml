@@ -3,4 +3,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - db-release.yaml
+  - oidc-release.yaml
+  - gateway.yaml
   - release.yaml

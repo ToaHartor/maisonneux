@@ -8,6 +8,7 @@ spec:
   dependsOn:
     # Wait for DB resources to be deployed
     - name: immich-db
+    - name: immich-oidc
   chart:
     spec:
       chart: immich
@@ -27,15 +28,27 @@ spec:
       name: immich-db-creds
       valuesKey: password
       targetPath: cnpg.main.creds.password
+    - kind: Secret
+      name: immich-oidc-authentik-application
+      valuesKey: clientID
+      targetPath: authentikOidc.clientId
+    - kind: Secret
+      name: immich-oidc-authentik-application
+      valuesKey: clientSecret
+      targetPath: authentikOidc.clientSecret
+    - kind: Secret
+      name: immich-oidc-authentik-application
+      valuesKey: issuerURL
+      targetPath: authentikOidc.issuerUrl
 
   # see https://github.com/truecharts/public/blob/master/charts/stable/immich/values.yaml
   values:
     # storage:
     #   persistentClassName: ${fastdata_storage}
     authentikOidc:
-      clientId: # Filled by fluxcd
-      clientSecret: # Filled by fluxcd
-      redirectUri:
+      # clientId: # Filled by fluxcd
+      # clientSecret: # Filled by fluxcd
+      # issuerUrl:
       mobileRedirectUri:
 
     cnpg:
@@ -98,6 +111,8 @@ spec:
                 IMMICH_CONFIG_FILE: /config/immich-config.yaml
                 # Metrics
                 IMMICH_TELEMETRY_INCLUDE: api,io,repo,job
+                # WARNING : ONLY FOR DEBUG
+                NODE_TLS_REJECT_UNAUTHORIZED: "0"
                 # REDIS_DBINDEX: ""
                 # DB_PASSWORD:
                 #   valueFrom:
@@ -135,12 +150,17 @@ spec:
         data:
           immich-config.yaml: |
             oauth:
-              enabled: false # true
+              enabled: true
+              autoLaunch: false # true
+              autoRegister: true
               buttonText: "Login with Authentik"
-              clientId: {{ .Values.authentikOidc.clientId }} # Filled by fluxcd
-              clientSecret: {{ .Values.authentikOidc.clientSecret }}# Filled by fluxcd
-              issuerUrl: {{ .Values.authentikOidc.issuerUrl }}
-              mobileRedirectUri: {{ .Values.authentikOidc.mobileRedirectUri }}
+              clientId: {{ .Values.authentikOidc.clientId }}
+              clientSecret: {{ .Values.authentikOidc.clientSecret }}
+              issuerUrl: {{ .Values.authentikOidc.issuerUrl }}.well-known/openid-configuration
+              mobileRedirectUri: "{{ .Values.authentikOidc.mobileRedirectUri }}"
+              signingAlgorithm: RS256
+              profileSigningAlgorithm: none
+              storageLabelClaim: preferred_username
               # defaultStorageQuota:
             
             passwordLogin:
