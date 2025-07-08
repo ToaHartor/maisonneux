@@ -62,7 +62,7 @@ spec:
         enabled: true
         type: pvc
         size: 1Gi # As media covers are cached, increase the PVC size 
-        storageClass: ${fastdata_storage}
+        storageClass: ${fastdata_storage}-ha
         # mountPath: "/home/suwayomi/.local/share/Tachidesk"
       library:
         enabled: true

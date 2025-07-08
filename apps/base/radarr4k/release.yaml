@@ -22,9 +22,6 @@ spec:
   # see https://github.com/truecharts/public/blob/master/charts/stable/radarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/radarr/
   values:
-    storage:
-      persistentClassName: ${fastdata_storage}
-
     radarr:
       workload:
         main:

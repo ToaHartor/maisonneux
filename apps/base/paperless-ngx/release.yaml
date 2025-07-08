@@ -24,7 +24,7 @@ spec:
       retries: 3
   values:
     storage:
-      persistentClassName: ${fastdata_storage}
+      persistentClassName: ${fastdata_storage}-ha
     
     paperless:
       s3:

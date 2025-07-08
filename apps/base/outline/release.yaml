@@ -23,9 +23,6 @@ spec:
     remediation:
       retries: 3
   values:
-    storage:
-      persistentClassName: ${fastdata_storage}
-    
     outline:
       s3:
         endpoint: http://${minio_url}

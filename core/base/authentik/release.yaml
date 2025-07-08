@@ -95,8 +95,4 @@ spec:
               mountPath: /blueprints/sidecar
       
       serviceAccount:
-        create: true
-
-    storage:
-      persistentClassName: ${fastdata_storage}
-      
+        create: true      

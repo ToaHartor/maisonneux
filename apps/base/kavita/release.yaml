@@ -43,7 +43,7 @@ spec:
         enabled: true
         type: pvc
         size: 10Gi # As media covers are cached, increase the PVC size 
-        storageClass: ${fastdata_storage}
+        storageClass: ${fastdata_storage}-ha
         # mountPath: "/kavita/config"
       media:
         enabled: true

@@ -21,10 +21,7 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/radarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/radarr/
-  values:
-    storage:
-      persistentClassName: ${fastdata_storage}
-    
+  values:   
     radarr:
       persistence:
         # NFS mounts

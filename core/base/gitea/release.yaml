@@ -27,6 +27,4 @@ spec:
     ingress:
       certSecret: ${main_domain}-tls
       host: auth.${main_domain}
-    storage:
-      persistentClassName: ${fastdata_storage}
       

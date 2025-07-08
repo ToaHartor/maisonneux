@@ -42,17 +42,12 @@ spec:
 
   # see https://github.com/truecharts/public/blob/master/charts/stable/sonarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/sonarr/
-  values:
-    storage:
-      persistentClassName: ${fastdata_storage}
-    
+  values:   
     seafile:
       persistence:
         storage:
           server: ${nfs_server}
           path: ${nfs_path_seafile}/seafile-data
-
-          storageClass: ${fastdata_storage}
 
       workload:
         main:

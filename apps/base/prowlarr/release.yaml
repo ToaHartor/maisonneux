@@ -22,5 +22,3 @@ spec:
   # see https://github.com/truecharts/public/blob/master/charts/stable/prowlarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/prowlarr/
   values:
-    storage:
-      persistentClassName: ${fastdata_storage}

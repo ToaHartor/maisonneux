@@ -23,6 +23,6 @@ spec:
   # see documentation https://truecharts.org/charts/stable/jellystat/
   values:
     storage:
-      persistentClassName: ${fastdata_storage}
+      persistentClassName: ${fastdata_storage}-ha
     
     # jellystat:

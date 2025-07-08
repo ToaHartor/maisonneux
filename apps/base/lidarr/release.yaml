@@ -21,10 +21,7 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/lidarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/lidarr/
-  values:
-    storage:
-      persistentClassName: ${fastdata_storage}
-    
+  values:    
     lidarr:
       persistence:
         # NFS mounts

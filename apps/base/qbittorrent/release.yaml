@@ -37,7 +37,7 @@ spec:
       config:
         enabled: true
         retain: true
-        storageClass: "${fastdata_storage}"
+        storageClass: ${fastdata_storage}-ha
         accessMode: ReadWriteOnce
         size: 1Gi
       downloads:
