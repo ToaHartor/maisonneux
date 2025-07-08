@@ -33,7 +33,7 @@ spec:
             containers:
               main:
                 env:
-                  URL: https://wiki.${main_domain}
+                  URL: https://wiki.${main_domain}:10443
                   OIDC_CLIENT_ID:
                     secretKeyRef:
                       # {oidc-release-name}-{chart-name}
@@ -48,9 +48,13 @@ spec:
                   OIDC_AUTH_URI: https://auth.${main_domain}:10443/application/o/authorize/
                   OIDC_TOKEN_URI: https://auth.${main_domain}:10443/application/o/token/
                   OIDC_USERINFO_URI: https://auth.${main_domain}:10443/application/o/userinfo/
+                  OIDC_LOGOUT_URI: https://auth.${main_domain}:10443/application/o/outline/end-session/
                   OIDC_USERNAME_CLAIM: preferred_username
                   OIDC_DISPLAY_NAME: Authentik
                   OIDC_SCOPES: openid profile email
+
+                  # WARNING : ONLY FOR DEBUG https://github.com/outline/outline/discussions/2606
+                  NODE_TLS_REJECT_UNAUTHORIZED: "0"
       
       redis:
         creds:

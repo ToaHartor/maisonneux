@@ -47,7 +47,7 @@ spec:
           # clientID:
           # -- client secret - generated if secret enabled
           # clientSecret:
-          redirectURL: "https://wiki.${main_domain}:10443"
+          redirectURL: "https://wiki.${main_domain}:10443/auth/oidc.callback"
           # -- Need for non-curve / RSA
           # signingKey: "authentik Self-signed Certificate"
           tokenDuration: "minutes=5"

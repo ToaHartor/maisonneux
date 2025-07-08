@@ -1,7 +1,8 @@
 {{/*
-Function to split a domain with its protocol
-E.g. : https://www.example.com 
-Returns : dict "Protocol" https "Domain" www.example.com
+Function to split a domain with its protocol and port
+E.g. : https://www.example.com:443
+Returns : dict "Protocol" https "Domain" www.example.com "Port" 443
+If there is no port in domain, "Port" = 0
 
 Usage :
 {{- $dict := include "common.func.split-domain" (dict "Domain" .domain) | fromJson }}
@@ -9,7 +10,8 @@ Usage :
 */}}
 {{- define "common.func.split-domain" -}}
 {{- $splitRes := split "://" .Domain -}}
-{{- $result := dict "Protocol" $splitRes._0 "Domain" $splitRes._1 }}
+{{- $splitDomainPort := split ":" $splitRes._1 -}}
+{{- $result := dict "Protocol" $splitRes._0 "Domain" $splitDomainPort._0 "Port" (ternary $splitDomainPort._1 0 (gt (len $splitDomainPort) 1))}}
 {{- $result | toJson}}
 {{- end }}
 
