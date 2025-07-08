@@ -29,6 +29,8 @@ locals {
     "git_branch"       = var.flux_git_branch
     "nfs_server"       = var.truenas_vm_host
     "traefik_lb_ip"    = var.k8s_lb_traefik_ip
+    "traefik_web_lb_port"    = var.opnsense_base_port_number + 80
+    "traefik_websecure_lb_port"    = var.opnsense_base_port_number + 443
     "influxdb_lb_ip"    = var.k8s_lb_influxdb_ip
     },
     { for k, v in var.truenas_nfs_paths : "nfs_path_${k}" => v },

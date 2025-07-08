@@ -108,6 +108,13 @@ variable "ovh_consumer_key" {
   description = "OVH consumer key"
 }
 
+# K8S LB 
+variable "opnsense_base_port_number" {
+  type        = number
+  description = "Starting port number on the router to expose services (e.g. value of 10000 will make the service with a base port of 80 be exposed on port 10080 on the router)"
+}
+
+
 # K8S LB IPs
 variable "k8s_lb_traefik_ip" {
   type        = string
