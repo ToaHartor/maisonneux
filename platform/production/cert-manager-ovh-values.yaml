@@ -8,7 +8,7 @@ spec:
   values:
     issuers:
       - name: letsencrypt-production
-        acmeServerUrl: https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
+        acmeServerUrl: https://acme-v02.api.letsencrypt.org/directory # https://acme-staging-v02.api.letsencrypt.org/directory
         create: true
         kind: ClusterIssuer
         # Completed in valuesFrom
