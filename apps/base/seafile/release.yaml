@@ -6,8 +6,9 @@ metadata:
 spec:
   releaseName: seafile
   dependsOn:
-    # Wait for DB resources to be created
+    # Wait for DB resources and OIDC to be created
     - name: seafile-db
+    - name: seafile-oidc
   chart:
     spec:
       chart: helm/apps/seafile
@@ -39,11 +40,21 @@ spec:
       name: seafile-jwt
       valuesKey: jwtKey
       targetPath: seafile.fluxcd.jwtSecret
+    - kind: Secret
+      name: seafile-oidc-authentik-application
+      valuesKey: clientID
+      targetPath: seafile.fluxcd.oidc.clientId
+    - kind: Secret
+      name: seafile-oidc-authentik-application
+      valuesKey: clientSecret
+      targetPath: seafile.fluxcd.oidc.clientSecret
 
   # see https://github.com/truecharts/public/blob/master/charts/stable/sonarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/sonarr/
   values:   
     seafile:
+      authDomain: auth.${main_domain_websecure}
+      serverDomain: cloud.${main_domain_websecure}
       persistence:
         storage:
           server: ${nfs_server}

@@ -1,7 +1,12 @@
 seafile:
+  authDomain:
+  serverDomain:
   # FluxCD provisioned secret data (for config files)
   fluxcd:
     jwtSecret:
+    oidc:
+      clientId:
+      clientSecret:
 
   securityContext:
     pod:
@@ -34,8 +39,8 @@ seafile:
               NON_ROOT: "false"
               SEAFILE_SERVER_LETSENCRYPT: "false"
               SEAFILE_SERVER_HOSTNAME: "localhost"
-              SEAFILE_SERVER_PROTOCOL: "http"
-              SEAFILE_LOG_TO_STDOUT: "true"
+              SEAFILE_SERVER_PROTOCOL: "https"
+              SEAFILE_LOG_TO_STDOUT: "false"
               # SEAFILE_VOLUME: /opt/seafile-data
               CLUSTER_INIT_MEMCACHED_HOST: "dragonfly-cluster.dragonfly.svc.cluster.local"
               CACHE_PROVIDER: redis
