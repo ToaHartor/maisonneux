@@ -7,37 +7,8 @@ metadata:
 spec:
   nodeSelector:
     homelab/linstor-enabled: "true"
-  # Add replicates to csi-controller (controller can't be used with more than one replica)
-  patches:
-    - target:
-        kind: Deployment
-        name: linstor-csi-controller
-      patch: |-
-        - op: add
-          path: /spec/replicas
-          value: 2
-  # Set anti affinity on csi controller
   csiController:
     enabled: true
-    podTemplate:
-      spec:
-        topologySpreadConstraints:
-          # Maximum 1 pod per Proxmox hypervisor
-          - maxSkew: 1
-            topologyKey: topology.kubernetes.io/zone
-            whenUnsatisfiable: ScheduleAnyway
-            labelSelector:
-              matchLabels:
-                app.kubernetes.io/name: piraeus-datastore
-                app.kubernetes.io/component: linstor-csi-controller
-          # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
-          - maxSkew: 1
-            topologyKey: kubernetes.io/hostname
-            whenUnsatisfiable: DoNotSchedule
-            labelSelector:
-              matchLabels:
-                app.kubernetes.io/name: piraeus-datastore
-                app.kubernetes.io/component: linstor-csi-controller
 
 # Disable node connection on nodes that do not have linstor enabled
 ---
@@ -82,7 +53,7 @@ spec:
     #     hostDevices:
     #       - /dev/sdb
     - name: fs-storage
-      filePool:
+      fileThinPool:
         directory: /var/mnt/linstor
   podTemplate:
     spec:
