@@ -16,6 +16,19 @@ grafana:
     minAvailable: 1
 
   adminUser: admin
+
+  # GatewayAPI
+  route:
+    main:
+      enabled: true
+      
+      hostnames:
+
+      parentRefs:
+        - name: traefik-gateway
+          namespace: traefik
+          sectionName: websecure
+          kind: Gateway
   
   # Helm sidecar to handle dashboard provisioning with both other helm charts and personal dashboards
   sidecar:
@@ -122,21 +135,24 @@ grafana:
       signout_redirect_url:
     
     auth.generic_oauth:
-      enabled: false # true
+      enabled: true
       name: Authentik
       use_pkce: true
-      # client_id: $__file{/etc/secrets/auth_generic_oauth/client_id}
-      # client_secret: $__file{/etc/secrets/auth_generic_oauth/client_secret}
-      scope: openid profile email
+      allow_sign_up: true
+      client_id: $__file{/etc/secrets/auth_generic_oauth/clientID}
+      client_secret: $__file{/etc/secrets/auth_generic_oauth/clientSecret}
+      scopes: openid profile email
       auth_url:
       token_url:
-      redirect_url:
+      api_url: 
       tls_skip_verify_insecure: true
-      auto_login: false # true
       # Depends on groups assigned to users in Authentik
       role_attribute_path: "contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'"
 
-    # users:
+    users:
+      allow_sign_up: false
+      auto_assign_org: true
+      auto_assign_org_id: 1
     #   auto_assign_org_role: Viewer
 
   extraSecretMounts:
@@ -144,8 +160,7 @@ grafana:
       mountPath: /etc/secrets/postgres_db_creds
       secretName: grafana-db-creds
       readOnly: true
-  # TODO : requires OAuth setup enabled  
-  #   - name: auth-generic-oauth
-  #     mountPath: /etc/secrets/auth_generic_oauth
-  #     secretName: authentik-grafana-secret
-  #     readOnly: true
+    - name: auth-generic-oauth
+      mountPath: /etc/secrets/auth_generic_oauth
+      secretName: grafana-oidc-authentik-application
+      readOnly: true
