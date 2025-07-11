@@ -1,5 +1,0 @@
-# {{- $root := . -}}
-# {{- range $appconfig := .Values.applications -}}
-# ---
-# {{ include "common.authentik-app-auth" (dict "ApplicationConfig" $appconfig "Namespace" $root.Release.Namespace "RedirectUri") }}
-# {{- end -}}

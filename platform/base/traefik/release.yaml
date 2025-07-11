@@ -27,16 +27,23 @@ spec:
       retries: 3
 
   values:
+    # https://github.com/traefik/traefik-helm-chart/blob/master/traefik/values.yaml
     deployment:
       kind: DaemonSet
+    
+    # podDisruptionBudget:
+    #   enabled: true
+    #   maxUnavailable: 1
     
     # service:
     #   loadBalancerClass: io.cilium/node
     logs:
       general:
-        level: "DEBUG"
+        level: "DEBUG" # Temp
+        # format: json
       access:
         enabled: true
+        # format: json
 
     ingressClass:
       name: traefik
@@ -193,8 +200,7 @@ spec:
         spec:
           forwardAuth:
             # This address should point to the cluster endpoint provided by the kubernetes service, not the Ingress.
-            # TODO : authentik namespace variable
-            address: http://authentik-server.authentik.svc.cluster.local:80/outpost.goauthentik.io/auth/traefik
+            address: http://ak-outpost-authentik-embedded-outpost.authentik.svc.cluster.local:9000/outpost.goauthentik.io/auth/traefik
             trustForwardHeader: true
             authResponseHeaders:
               - Cookie
@@ -219,8 +225,7 @@ spec:
         spec:
           forwardAuth:
             # This address should point to the cluster endpoint provided by the kubernetes service, not the Ingress.
-            # TODO : authentik namespace variable
-            address: http://authentik-server.authentik.svc.cluster.local:80/outpost.goauthentik.io/auth/traefik
+            address: http://ak-outpost-authentik-embedded-outpost.authentik.svc.cluster.local:9000/outpost.goauthentik.io/auth/traefik
             trustForwardHeader: true
             authResponseHeaders:
               - X-authentik-username
@@ -237,6 +242,8 @@ spec:
               - X-authentik-meta-version
 
         # CHAIN MIDDLEWARES
+        # Make this middleware available in all namespaces that use, since GatewayAPI does not allow cross namespace middleware references
+        # (as suggested here https://github.com/traefik/traefik/issues/11126#issuecomment-2545814293)
       - apiVersion: traefik.io/v1alpha1
         kind: Middleware
         metadata:
@@ -247,6 +254,31 @@ spec:
             middlewares:
               - name: secure-headers
               - name: authentik
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: chain-forwardauth
+          namespace: services
+        spec:
+          chain:
+            middlewares:
+              - name: secure-headers
+                namespace: traefik
+              - name: authentik
+                namespace: traefik
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: chain-forwardauth
+          namespace: media
+        spec:
+          chain:
+            middlewares:
+              - name: secure-headers
+                namespace: traefik
+              - name: authentik
+                namespace: traefik
+      ## Other middlewares
       - apiVersion: traefik.io/v1alpha1
         kind: Middleware
         metadata:
@@ -266,3 +298,19 @@ spec:
           chain:
             middlewares:
               - name: secure-headers
+
+
+
+
+      # experimental:
+      #   plugins:
+      #     demo:
+      #       moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+      #       version: v1.3.5
+
+            # http:
+  # middlewares:
+  #   crowdsec-bouncer:
+  #     forwardauth:
+  #       address: http://bouncer_traefik:8080/api/v1/forwardAuth
+  #       trustForwardHeader: true

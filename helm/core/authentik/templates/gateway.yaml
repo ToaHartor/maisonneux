@@ -14,6 +14,7 @@ spec:
     - {{ .Values.ingress.host }}
 
   rules:
+    # General authentication server
     - matches:
       - path:
           type: PathPrefix
@@ -23,3 +24,13 @@ spec:
       - name: authentik-server
         namespace: {{ .Release.Namespace }}
         port: 80
+    # Forward auth to embedded outpost for single-app setups
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /outpost.goauthentik.io/
+
+      backendRefs:
+      - name: ak-outpost-authentik-embedded-outpost
+        namespace: {{ .Release.Namespace }}
+        port: 9000
