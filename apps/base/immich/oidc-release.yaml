@@ -37,7 +37,9 @@ spec:
           clientType: "confidential"
           # clientID:
           # clientSecret:
-          redirectURL: "https://photos.${main_domain_websecure}/auth/login"
+          redirectURL:
+            - "https://photos.${main_domain_websecure}/auth/login"
+            - "app.immich:///oauth-callback"
           # signingKey: "authentik Self-signed Certificate"
           tokenDuration: "minutes=5"
           scopes:
