@@ -2,7 +2,11 @@ database:
   name: stirlingpdf
   user: stirling
 
-stirling-pdf-chart:
+ingress:
+  domain:
+
+stirlingpdf:
+  # https://github.com/Stirling-Tools/Stirling-PDF-chart/blob/main/charts/stirling-pdf/values.yaml
   securityContext:
     pod:
       fsGroup: 1000
@@ -37,8 +41,12 @@ stirling-pdf-chart:
   ingress:
     enabled: false
 
+  service:
+    servicename: stirlingpdf
+    # externalPort:
+
   serviceMonitor:
-    enabled: false
+    enabled: true
   
   resources:
     limits:

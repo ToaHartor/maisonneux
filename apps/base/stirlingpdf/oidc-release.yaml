@@ -7,16 +7,16 @@ spec:
   releaseName: stirlingpdf-oidc
   dependsOn:
     - name: authentik
-      namespace: &authentik-ns authentik
+      namespace: authentik
   chart:
     spec:
-      chart: helm/library/authentik-application
-      interval: 12h
+      chart: authentik-application
+      # renovate: datasource=docker depName=authentik-application registryUrl=oci://codeberg.org/wrenix/helm-charts
+      version: "0.4.9"
       sourceRef:
-        kind: GitRepository
-        name: flux-system
+        kind: HelmRepository
+        name: wrenix
         namespace: flux-system
-      reconcileStrategy: Revision # TODO : ChartVersion when fully configured
   interval: 50m
   install:
     createNamespace: true
@@ -25,63 +25,33 @@ spec:
 
   values:
     # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml
-    # secret:
-    
     blueprint:
-      namespace: *authentik-ns
       authentik:
         # -- domain to authentik, used in generated url (like issuer)
-        domain: "https://auth.${main_domain}"
-      # Label used by the sidecar container to populate secrets in Authentik containers
-      # labels:
-      #   goauthentik_blueprint: "1"
+        domain: "https://auth.${main_domain_websecure}"
       provider:
-        # -- creat an provider for authentification (otherwise just a like in menu is created)
         enabled: true
-        name: "Stirling-PDF"
-        # -- type of application connection, current support: oidc, saml and proxy
+        name: "Stirling PDF"
         type: "oidc"
         oidc:
           clientType: "confidential"
-          # -- client id - generated if secret enabled
           # clientID:
-          # -- client secret - generated if secret enabled
           # clientSecret:
-          redirectURL: "http://app.example.com"
-          # -- Need for non-curve / RSA
-          # signingKey: "authentik Self-signed Certificate"
+          redirectURL: "https://pdf.${main_domain_websecure}/login/oauth2/code/oidc"
           tokenDuration: "minutes=5"
-          # -- Scope
-          # Data from https://github.com/goauthentik/authentik/blob/main/blueprints/system/providers-oauth2.yaml
+          signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
           scopes:
             - name: "authentik default OAuth Mapping: OpenID 'openid'"
             - name: "authentik default OAuth Mapping: OpenID 'email'"
             - name: "authentik default OAuth Mapping: OpenID 'profile'"
-            # - name:
-            #   scope_name:
-            #   expression:
       application:
-        name: "Stirling-PDF"
-        slug: "stirlingpdf"
-        # -- put this application in authentik in group
+        name: "Stirling PDF"
+        slug: "stirling"
         group: ""
-        # url to application
-        launchURL: "http://app.example.com"
+        launchURL: "https://pdf.${main_domain_websecure}"
         openInNewTab: false
-        # -- icon of application (url)
         icon: ""
-        description: "PDF"
-        # publisher: "Publisher"
-        # -- uuid for bindPolicyID for group - if not set generated on secret for be stable (or groups: [] filled)
+        description: "PDF utilities"
         bindPolicyID:
         policyEngineMode: "any"
-      # -- authentik groups created / give access to this application
       groups: []
-      #  disable any groups by set groups: [] (to a slice)
-      # example:
-      #   - slug: "app: grafana-admin"
-      #     parent: "app: infra"
-      #     bindID: uuid
-      #
-
-      

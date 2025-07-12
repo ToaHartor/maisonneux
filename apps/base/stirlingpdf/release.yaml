@@ -9,13 +9,6 @@ spec:
     - name: stirlingpdf-oidc
   chart:
     spec:
-      # chart: stirling-pdf-chart
-      # renovate: datasource=helm depName=stirling-pdf-chart registryUrl=https://stirling-tools.github.io/Stirling-PDF-chart
-      # version: "1.10.0"
-      # sourceRef:
-      #   kind: HelmRepository
-      #   name: stirling-pdf
-      #   namespace: flux-system
       chart: helm/apps/stirlingpdf
       interval: 12h
       sourceRef:
@@ -30,31 +23,37 @@ spec:
       retries: 3
   # see https://github.com/Stirling-Tools/Stirling-PDF-chart/blob/main/charts/stirling-pdf/values.yaml
   values:
+    ingress:
+      domain: "pdf.${main_domain}"
     # Additional environment variable for configuration : https://docs.stirlingpdf.com/Advanced%20Configuration/How%20to%20add%20configurations/
-    # stirling-pdf-chart:
-    #   envs:
-    #     - name: SECURITY_OAUTH2_ENABLED
-    #       value: "true"
-    #     - name: SECURITY_OAUTH2_ISSUER
-    #       valueFrom:
-    #         secretKeyRef:
-    #           name: stirlingpdf-oidc-authentik-application
-    #           key: issuerURL
-    #     - name: SECURITY_OAUTH2_CLIENTID
-    #       valueFrom:
-    #         secretKeyRef:
-    #           name: stirlingpdf-oidc-authentik-application
-    #           key: clientID
-    #     - name: SECURITY_OAUTH2_CLIENTSECRET
-    #       valueFrom:
-    #         secretKeyRef:
-    #           name: stirlingpdf-oidc-authentik-application
-    #           key: clientSecret
-    #     - name: SECURITY_OAUTH2_AUTOCREATEUSER
-    #       value: "false" # Maybe true
-    #     - name: SECURITY_OAUTH2_USEASUSERNAME
-    #       value: "email"
-    #     - name: SECURITY_OAUTH2_SCOPES
-    #       value: "openid, profile, email"
-    #     - name: SECURITY_OAUTH2_PROVIDER
-    #       value: "authentik"
+    stirlingpdf:
+      envs:
+        - name: SECURITY_LOGINMETHOD
+          value: "oauth2"
+        - name: SECURITY_OAUTH2_ENABLED
+          value: "true"
+        - name: SECURITY_OAUTH2_ISSUER
+          valueFrom:
+            secretKeyRef:
+              name: stirlingpdf-oidc-authentik-application
+              key: issuerURL
+        - name: SECURITY_OAUTH2_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: stirlingpdf-oidc-authentik-application
+              key: clientID
+        - name: SECURITY_OAUTH2_CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: stirlingpdf-oidc-authentik-application
+              key: clientSecret
+        - name: SECURITY_OAUTH2_AUTOCREATEUSER
+          value: "true"
+        - name: SECURITY_OAUTH2_BLOCKREGISTRATION
+          value: "false"
+        - name: SECURITY_OAUTH2_USEASUSERNAME
+          value: "email"
+        - name: SECURITY_OAUTH2_SCOPES
+          value: "openid, profile, email"
+        - name: SECURITY_OAUTH2_PROVIDER
+          value: "authentik"

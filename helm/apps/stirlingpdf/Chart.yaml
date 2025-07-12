@@ -5,6 +5,7 @@ dependencies:
   - name: stirling-pdf-chart
     version: &version "1.10.0"
     repository: https://stirling-tools.github.io/Stirling-PDF-chart
+    alias: stirlingpdf
   - name: common
     version: "0.0.1"
     repository: "file://../../library/common"
