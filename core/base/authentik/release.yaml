@@ -50,9 +50,14 @@ spec:
         volumeMounts:
           - name: sidecar-blueprints
             mountPath: /blueprints/sidecar
+          - name: sidecar-certs
+            mountPath: /certs/sidecar
+
 
         volumes:
           - name: sidecar-blueprints
+            emptyDir: {}
+          - name: sidecar-certs
             emptyDir: {}
       
       server:
@@ -93,6 +98,22 @@ spec:
           volumeMounts:
             - name: sidecar-blueprints
               mountPath: /blueprints/sidecar
+        - name: sidecar-certs
+          image: "ghcr.io/kiwigrid/k8s-sidecar:1.28.4"
+          env:
+            - name: "FOLDER"
+              value: "/certs/sidecar"
+            - name: "LABEL"
+              value: "goauthentik_cert"
+            - name: "LABEL_VALUE"
+              value: "1"
+            - name: "RESOURCE"
+              value: "both"
+            - name: "UNIQUE_FILENAMES"
+              value: "true"
+          volumeMounts:
+            - name: sidecar-certs
+              mountPath: /certs/sidecar
       
       serviceAccount:
         create: true      

@@ -49,7 +49,7 @@ spec:
           # clientSecret:
           redirectURL: "https://wiki.${main_domain_websecure}/auth/oidc.callback"
           # -- Need for non-curve / RSA
-          # signingKey: "authentik Self-signed Certificate"
+          signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
           tokenDuration: "minutes=5"
           # -- Scope
           # Data from https://github.com/goauthentik/authentik/blob/main/blueprints/system/providers-oauth2.yaml

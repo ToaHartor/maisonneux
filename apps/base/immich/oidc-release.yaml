@@ -40,7 +40,7 @@ spec:
           redirectURL:
             - "https://photos.${main_domain_websecure}/auth/login"
             - "app.immich:///oauth-callback"
-          # signingKey: "authentik Self-signed Certificate"
+          signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
           tokenDuration: "minutes=5"
           scopes:
             - name: "authentik default OAuth Mapping: OpenID 'openid'"

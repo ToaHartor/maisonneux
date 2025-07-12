@@ -38,6 +38,7 @@ spec:
           # clientID:
           # clientSecret:
           redirectURL: "https://cloud.${main_domain_websecure}/oauth/callback/"
+          signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
           tokenDuration: "minutes=5"
           # Data from https://github.com/goauthentik/authentik/blob/main/blueprints/system/providers-oauth2.yaml
           scopes:

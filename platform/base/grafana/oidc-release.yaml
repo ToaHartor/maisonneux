@@ -35,6 +35,7 @@ spec:
           # clientSecret:
           redirectURL: "https://monitoring.${main_domain_websecure}/login/generic_oauth"
           tokenDuration: "minutes=5"
+          signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
           scopes:
             - name: "authentik default OAuth Mapping: OpenID 'openid'"
             - name: "authentik default OAuth Mapping: OpenID 'email'"
