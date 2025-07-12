@@ -17,17 +17,22 @@ spec:
         {{- include "selectorLabels" . | nindent 8 }}
     spec:
       securityContext:
-        capabilities:
-          drop:
-          - ALL
-        readOnlyRootFilesystem: true
-        runAsNonRoot: true
-        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: {{ .Release.Name }}
-          # securityContext:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            capabilities:
+              drop:
+              - ALL
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             # Values from https://github.com/muety/wakapi?tab=readme-ov-file#-configuration-options
             - name: ENVIRONMENT
