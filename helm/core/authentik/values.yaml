@@ -27,6 +27,12 @@ authentik:
   #     - authentik-blueprint
   global:
     addPrometheusAnnotations: true
+    
+    deploymentStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
 
     env:
       - name: AUTHENTIK_REDIS__DB

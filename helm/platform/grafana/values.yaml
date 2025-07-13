@@ -8,6 +8,9 @@ grafana:
   # https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
   deploymentStrategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
 
   replicas: 1
 

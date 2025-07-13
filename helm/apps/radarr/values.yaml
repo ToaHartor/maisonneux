@@ -18,6 +18,10 @@ radarr:
       memory: 100Mi
   workload:
     main:
+      strategy: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
       annotations:
         # Reload pod on secret change
         # secret.reloader.stakater.com/reload: "radarr-psql-secret" 

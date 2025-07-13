@@ -29,6 +29,10 @@ outline:
 
   workload:
     main:
+      strategy: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
       podSpec:
         initContainers:
           1-migratedb:

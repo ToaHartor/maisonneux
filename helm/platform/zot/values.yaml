@@ -1,6 +1,11 @@
 zot:
   # see https://github.com/project-zot/helm-charts/blob/main/charts/zot/values.yaml
   replicaCount: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   service:
     type: NodePort
     nodePort: 32000

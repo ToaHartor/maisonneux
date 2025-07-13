@@ -47,6 +47,10 @@ spec:
 
     workload:
       main:
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
         podSpec:
           annotations:
             prometheus.io/scrape: "true"

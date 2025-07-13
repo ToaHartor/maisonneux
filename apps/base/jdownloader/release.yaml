@@ -42,6 +42,13 @@ spec:
       DISPLAY_WIDTH: 1680
       DISPLAY_HEIGHT: 800
     
+    workload:
+      main:
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+    
     # configmap:
     #   jdownloader:
     #     data:
