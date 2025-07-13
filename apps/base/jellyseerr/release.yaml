@@ -5,6 +5,10 @@ metadata:
   namespace: media
 spec:
   releaseName: jellyseerr
+  dependsOn:
+    - name: sonarr
+    - name: radarr
+    - name: radarr4k
   chart:
     spec:
       chart: helm/apps/jellyseerr
@@ -19,10 +23,37 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+  # valuesFrom:
+  #   - kind: Secret
+  #     name: sonarr-api-key
+  #     valuesKey: SONARR__AUTH__APIKEY
+  #     targetPath: external.sonarr.apiKey
+  #   - kind: Secret
+  #     name: radarr-api-key
+  #     valuesKey: RADARR__AUTH__APIKEY
+  #     targetPath: external.radarr.apiKey
+  #   - kind: Secret
+  #     name: radarr4k-api-key
+  #     valuesKey: RADARR__AUTH__APIKEY
+  #     targetPath: external.radarr4k.apiKey
   # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
   # see documentation https://truecharts.org/charts/stable/jellyseerr/
   values:
-    storage:
-      persistentClassName: ${fastdata_storage}-ha
-    
-    # jellyseerr:
+    # external:
+    #   sonarr:
+    #     hostname: sonarr.media.svc.cluster.local
+    #     externalUrl: ""
+    #     # apiKey: # valueFrom
+    #   radarr:
+    #     hostname: radarr.media.svc.cluster.local
+    #     externalUrl: ""
+    #     # apiKey: # valueFrom
+    #   radarr4k:
+    #     hostname: radarr4k.media.svc.cluster.local
+    #     externalUrl: ""
+    #     # apiKey: # valueFrom
+
+    jellyseerr:
+      persistence:
+        config:
+          storageClass: ${fastdata_storage}-ha

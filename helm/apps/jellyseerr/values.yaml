@@ -1,6 +1,23 @@
 namespaces:
   postgresNamespace: &psqlNs postgres
 
+external:
+  sonarr:
+    hostname:
+    externalUrl:
+    apiKey: # Completed by FluxCD
+  radarr:
+    hostname:
+    externalUrl:
+    apiKey: # Completed by FluxCD
+  radarr4k:
+    hostname:
+    externalUrl:
+    apiKey: # Completed by FluxCD
+  jellyfin:
+    externalHostname:    
+    apiKey:
+
 jellyseerr:
   # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
   # see documentation https://truecharts.org/charts/stable/jellyseerr/
@@ -48,23 +65,31 @@ jellyseerr:
                   expandObjectName: false
               DB_NAME: "jellyseerr" # (optional) The name of the database to connect to. The default is "jellyseerr".
               DB_LOG_QUERIES: "false" # (optional) Whether to log the DB queries for debugging. The default is "false".
-            
-        # TODO : mount config or persistent data 
-        #     volumeMounts:
-        #     - name: settings
-        #       mountPath: "/app/config/settings.json"
-        #       subPath: settings.json
-        #       readOnly: true
-        # volumes:
-        #   - name: settings
-        #     secret:
-        #       secretName: jellyseerr-config
-        #       optional: false
-        #       items:
-        #         - key: settings.json
-        #           path: settings.json
 
   persistence:
     config:
       enabled: true
-      type: emptyDir # persistent
+      type: pvc
+      size: 1Gi # Should be enough
+      storageClass: default
+
+
+
+
+    #   type: secret
+    #   readOnly: false
+    #   defaultMode: "0777"
+    #   objectName: jellyseerr-config
+    #   expandObjectName: false
+    #   targetSelector:
+    #     main:
+    #       main:
+    #         mountPath: /app/config/settings.json
+    #         subPath: settings.json
+    # logs:
+    #   enabled: true
+    #   type: emptyDir
+    #   targetSelector:
+    #     main:
+    #       main:
+    #         mountPath: /app/config/logs
