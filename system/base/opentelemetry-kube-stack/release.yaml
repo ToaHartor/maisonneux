@@ -184,6 +184,21 @@ spec:
 
         config:
           receivers:
+            # Logging for OS logging
+            udplog:
+              listen_address: 0.0.0.0:30555
+              attributes:
+                nodeName: $${env:OTEL_K8S_NODE_NAME}
+              operators:
+                - type: json_parser
+                  parse_to: body
+                - type: time_parser
+                  parse_from: body.talos-time
+                  layout_type: strptime
+                  layout: '%Y-%m-%dT%H:%M:%S.%sZ'
+                - type: severity_parser
+                  parse_from: body.talos-level
+
             # Prometheus collector config
             prometheus:
               config:
@@ -365,6 +380,10 @@ spec:
 
           service:
             pipelines:
+              logs/talos:
+                receivers: [udplog]
+                processors: [batch]
+                exporters: *victoriametrics-exporter
               logs:
                 receivers: [otlp, filelog]
                 processors: [k8sattributes, resourcedetection/env, batch]
@@ -411,4 +430,19 @@ spec:
                 processors: [k8sattributes, resourcedetection/env, batch]
                 exporters: *victoriametrics-exporter
 
-    # extraObjects:
+    extraObjects:
+      - apiVersion: v1
+        kind: Service
+        metadata:
+          name: opentelemetry-kube-stack-daemon-udp-logs
+        spec:
+          selector:
+            app.kubernetes.io/instance: opentelemetry.opentelemetry-kube-stack-daemon
+            app.kubernetes.io/component: opentelemetry-collector
+          type: NodePort
+          ports:
+          - name: opentelemetry-kube-stack-daemon-udp-logs
+            protocol: UDP
+            port: 30555
+            targetPort: 30555
+            nodePort: 30555

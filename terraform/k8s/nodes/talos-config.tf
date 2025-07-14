@@ -42,6 +42,16 @@ locals {
           resolveMemberNames   = true
         }
       }
+
+      logging = {
+        destinations = [
+          {
+            endpoint = "udp://127.0.0.1:30555"
+            format   = "json_lines"
+          }
+        ]
+      }
+
       kernel = {
         modules = [
           # DRBD module for linstor and piraeus operator
