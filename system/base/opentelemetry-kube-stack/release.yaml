@@ -32,6 +32,17 @@ spec:
       manager:
         collectorImage:
           repository: otel/opentelemetry-collector-contrib
+
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 50Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+            ephemeral-storage: 50Mi
+
       crds:
         create: false # Disable as we install the CRDs globally
       

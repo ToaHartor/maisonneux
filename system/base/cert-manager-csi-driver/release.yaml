@@ -22,3 +22,12 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+  values:
+    # https://github.com/cert-manager/csi-driver/blob/main/deploy/charts/csi-driver/values.yaml
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi

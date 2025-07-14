@@ -25,6 +25,14 @@ spec:
     # https://artifacthub.io/packages/helm/cert-manager/trust-manager?modal=values
     replicaCount: 2
 
+    resources:
+      limits:
+        cpu: 20m
+        memory: 40Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
+
     topologySpreadConstraints:
       # Maximum 1 pod per Proxmox hypervisor
       - maxSkew: 1

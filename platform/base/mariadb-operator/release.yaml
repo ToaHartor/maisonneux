@@ -32,6 +32,14 @@ spec:
       enabled: true
       replicas: 2
     
+    resources:
+      limits:
+        cpu: 100m
+        memory: 200Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+    
     metrics:
       enabled: true
 
@@ -58,6 +66,14 @@ spec:
       ha:
         enabled: true
         replicas: 2
+
+      resources:
+        limits:
+          cpu: 20m
+          memory: 64Mi
+        requests:
+          cpu: 10m
+          memory: 32Mi
       
       topologySpreadConstraints:
       # Maximum 1 pod per Proxmox hypervisor

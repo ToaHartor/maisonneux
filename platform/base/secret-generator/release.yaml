@@ -23,6 +23,15 @@ spec:
   values:
     # https://github.com/mittwald/kubernetes-secret-generator/blob/master/deploy/helm-chart/kubernetes-secret-generator/values.yaml
     installCRDs: true # TODO : install crd separately
+
+    resources:
+      limits:
+        cpu: 100m
+        memory: 96Mi
+      requests:
+        cpu: 50m
+        memory: 48Mi
+
     secretLength: 32
     watchNamespace: "" # empty for all namespaces
     rbac:

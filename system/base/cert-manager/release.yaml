@@ -29,10 +29,17 @@ spec:
     podDisruptionBudget:
       enabled: true
       minAvailable: 1
+
+    resources:
+      limits:
+        cpu: 10m
+        memory: 64Mi
+      requests:
+        cpu: 10m
+        memory: 32Mi
+
     livenessProbe:
       enabled: true
-    # prometheus:
-    #   enabled: true
 
     topologySpreadConstraints:
       # Maximum 1 pod per Proxmox hypervisor
@@ -58,6 +65,14 @@ spec:
         enabled: true
         minAvailable: 1
       
+      resources:
+        limits:
+          cpu: 10m
+          memory: 64Mi
+        requests:
+          cpu: 10m
+          memory: 32Mi
+
       topologySpreadConstraints:
         # Maximum 1 pod per Proxmox hypervisor
         - maxSkew: 1
@@ -81,6 +96,15 @@ spec:
       podDisruptionBudget:
         enabled: true
         minAvailable: 1
+
+      resources:
+        limits:
+          cpu: 10m
+          memory: 96Mi
+        requests:
+          cpu: 10m
+          memory: 64Mi
+
       topologySpreadConstraints:
         # Maximum 1 pod per Proxmox hypervisor
         - maxSkew: 1
@@ -98,3 +122,14 @@ spec:
             matchLabels:
               app.kubernetes.io/instance: cert-manager
               app.kubernetes.io/component: cainjector
+
+    # Create internal ClusterIssuer here
+    extraObjects:
+      - |
+        apiVersion: cert-manager.io/v1
+        kind: ClusterIssuer
+        metadata:
+          name: homelab-issuer
+          namespace: cert-manager
+        spec:
+          selfSigned: {}

@@ -16,6 +16,10 @@ spec:
       labels:
         {{- include "selectorLabels" . | nindent 8 }}
     spec:
+      strategy: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
       securityContext:
         fsGroup: 1000
       containers:

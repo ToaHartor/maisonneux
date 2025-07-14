@@ -5,7 +5,9 @@ metadata:
   namespace: external-secrets
 spec:
   releaseName: external-secrets
-  # targetNamespace: external-secrets
+  dependsOn:
+    - name: cert-manager
+      namespace: cert-manager
   chart:
     spec:
       chart: external-secrets
@@ -55,24 +57,24 @@ spec:
 
     webhook:
       replicaCount: *replicas
-      topologySpreadConstraints:
-      # Maximum 1 pod per Proxmox hypervisor
-      - maxSkew: 1
-        topologyKey: topology.kubernetes.io/zone
-        whenUnsatisfiable: ScheduleAnyway
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: external-secrets-webhook
-      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: DoNotSchedule
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: external-secrets-webhook
 
-    certController:
-      replicaCount: *replicas
+      # Use cert-manager instead of the included cert-controller
+      certManager:
+        enabled: true
+        cert:
+          issuerRef:
+            name: homelab-issuer
+            kind: ClusterIssuer
+            group: cert-manager.io
+
+      resources:
+        limits:
+          cpu: 20m
+          memory: 64Mi
+        requests:
+          cpu: 10m
+          memory: 32Mi
+
       topologySpreadConstraints:
       # Maximum 1 pod per Proxmox hypervisor
       - maxSkew: 1
@@ -80,11 +82,14 @@ spec:
         whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
-            app.kubernetes.io/name: external-secrets-cert-controller
+            app.kubernetes.io/name: external-secrets-webhook
       # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
       - maxSkew: 1
         topologyKey: kubernetes.io/hostname
         whenUnsatisfiable: DoNotSchedule
         labelSelector:
           matchLabels:
-            app.kubernetes.io/name: external-secrets-cert-controller
+            app.kubernetes.io/name: external-secrets-webhook
+    
+    certController:
+      enabled: false

@@ -30,6 +30,14 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
     
+    resources:
+      limits:
+        cpu: 100m
+        memory: 100Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+
     workload:
       main:
         strategy: RollingUpdate

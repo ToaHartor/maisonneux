@@ -29,6 +29,14 @@ spec:
 
     replicaCount: 2 # One per hypervisor
 
+    resources:
+      limits:
+        cpu: 120m
+        memory: 160Mi
+      requests:
+        cpu: 80m
+        memory: 80Mi
+
     watchNamespaces: ["monitoring"] # All resources will be in the same namespace 
 
     podDisruptionBudget:

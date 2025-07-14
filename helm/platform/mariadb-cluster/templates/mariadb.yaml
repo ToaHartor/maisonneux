@@ -18,6 +18,14 @@ spec:
   replicas: 3
   replicasAllowEvenNumber: false
 
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 500Mi
+
   rootPasswordSecretKeyRef:
     name: mariadb-root-secret
     key: password
@@ -104,19 +112,17 @@ spec:
     initialDelaySeconds: 20
     periodSeconds: 5
     timeoutSeconds: 5
-  # Resources
-  resources:
-    requests:
-      cpu: 80m
-      memory: 192Mi
-    limits:
-      memory: 512Mi
+
   metrics:
     enabled: true
-    # passwordSecretKeyRef:
-    #   generate: true
-    #   key: password
-    #   name: mariadb-metrics-password
+    exporter:
+      resources:
+        limits:
+          cpu: 20m
+          memory: 20Mi
+        requests:
+          cpu: 10m
+          memory: 10Mi
 
   # https://github.com/mariadb-operator/mariadb-operator/issues/286#issuecomment-1840097307
   securityContext:

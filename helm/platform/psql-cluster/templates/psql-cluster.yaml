@@ -35,13 +35,15 @@ spec:
   
   monitoring:
     enablePodMonitor: true
-  # resources:
-  #   requests:
-  #     memory: "64m"
-  #     cpu: 50m
-  #   limits:
-  #     memory: "256m"
-  #     cpu: 250m
+
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 256m
+    limits:
+      memory: 1Gi
+      cpu: 1
+
   # Require 1Gi of space
   storage:
     size: {{ .Values.storage.size }}

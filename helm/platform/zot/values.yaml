@@ -1,6 +1,13 @@
 zot:
   # see https://github.com/project-zot/helm-charts/blob/main/charts/zot/values.yaml
   replicaCount: 1
+  resources:
+    limits:
+      cpu: 1
+      memory: 100Mi
+    requests:
+      cpu: 100m
+      memory: 50Mi
   strategy:
     type: RollingUpdate
     rollingUpdate:

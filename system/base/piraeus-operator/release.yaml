@@ -29,8 +29,14 @@ spec:
       enabled: true
       minAvailable: 1
 
-    # grafanaDashboard:
-    #   enabled: true
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+
     # TopologySpreadConstraints are not supported in the chart
     affinity:
       podAntiAffinity:

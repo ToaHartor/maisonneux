@@ -23,6 +23,14 @@ spec:
     # https://artifacthub.io/packages/helm/cloudnative-pg/cloudnative-pg
     replicaCount: 2 # One on each hypervisor is better
 
+    resources:
+      limits:
+        cpu: 100m
+        memory: 200Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+
     # Ensure there is at least one pod available
     updateStrategy:
       type: RollingUpdate

@@ -1,4 +1,5 @@
 # Custom resources to create a cluster
+# https://piraeus.io/docs/v2.9.0/reference/linstorcluster/
 ---
 apiVersion: piraeus.io/v1
 kind: LinstorCluster
@@ -7,10 +8,20 @@ metadata:
 spec:
   nodeSelector:
     homelab/linstor-enabled: "true"
+  controller:
+    enabled: true
+
   csiController:
     enabled: true
 
+  csiNode:
+    enabled: true
+  
+  highAvailabilityController:
+    enabled: true
+
 # Disable node connection on nodes that do not have linstor enabled
+# https://piraeus.io/docs/v2.9.0/reference/linstornodeconnection/
 ---
 apiVersion: piraeus.io/v1
 kind: LinstorNodeConnection
@@ -24,6 +35,7 @@ spec:
           values:
             - "true"
 # Disable satellite on nodes that do not have linstor enabled
+# https://piraeus.io/docs/v2.9.0/reference/linstorsatelliteconfiguration/
 ---
 apiVersion: piraeus.io/v1
 kind: LinstorSatelliteConfiguration
@@ -62,6 +74,15 @@ spec:
           $patch: delete
         - name: drbd-module-loader
           $patch: delete
+      containers:
+        - name: linstor-satellite
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 200m
+              memory: 1Gi
       volumes:
         - name: run-systemd-system
           $patch: delete
