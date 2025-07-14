@@ -6,6 +6,11 @@ dependencies:
     # Check version https://github.com/project-zot/helm-charts/releases
     version: &version 0.1.74
     repository: http://zotregistry.dev/helm-charts
+  - name: common
+    version: "0.0.1"
+    repository: "file://../../library/common"
+    import-values:
+      - defaults
     # Other implicit dependencies are installed before this chart by fluxcd :
     # - s3-operator
 version: *version

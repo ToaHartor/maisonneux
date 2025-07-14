@@ -2,6 +2,7 @@
 Parameters :
 - .BucketNamespace : Bucket namespace
 - .BucketName : Bucket name
+- .BucketQuota : Quota in Bytes
 */}}
 {{- define "common.s3bucket" -}}
 ---
@@ -14,7 +15,7 @@ spec:
   # Bucket name (on S3 server, as opposed to the name of the CR)
   name: {{ .BucketName }}
   quota:
-    default: 10000000 # TODO : add variables for bucket limitations
+    default: {{ default 1000000000 .BucketQuota }} # Quota defaults to 1GB
     # override: 20000000
 
 ---

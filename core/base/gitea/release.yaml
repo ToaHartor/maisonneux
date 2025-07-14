@@ -23,7 +23,9 @@ spec:
       retries: 3
   values:
     s3:
+      secretName: gitea-${environment}-s3user
       endpoint: ${minio_url}
+      bucketName: gitea-${environment}
     ingress:
       certSecret: ${main_domain}-tls
       host: auth.${main_domain}

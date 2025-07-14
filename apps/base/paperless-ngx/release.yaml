@@ -28,8 +28,10 @@ spec:
     
     paperless:
       s3:
+        secretName: paperless-${environment}-s3user
+        bucketName: paperless-${environment}
         endpoint: http://${minio_url}
-        customDomain: ${minio_url}/paperless
+        customDomain: ${minio_url}/paperless-${environment}
 
       persistence:
         media:

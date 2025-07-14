@@ -1,3 +1,6 @@
+s3:
+  bucketName: zot
+  bucketQuota: 100000000000 # 100GB
 zot:
   # see https://github.com/project-zot/helm-charts/blob/main/charts/zot/values.yaml
   replicaCount: 1
@@ -16,17 +19,6 @@ zot:
   service:
     type: NodePort
     nodePort: 32000
-  env:
-    - name: "AWS_ACCESS_KEY_ID"
-      valueFrom:
-        secretKeyRef:
-          name: &s3user zot-s3user
-          key: accessKey
-    - name: "AWS_SECRET_ACCESS_KEY"
-      valueFrom:
-        secretKeyRef:
-          name: *s3user
-          key: secretKey
 
   mountConfig: true
   configFiles:
@@ -47,6 +39,3 @@ zot:
   
   metrics:
     enabled: true
-    # TODO : enable when monitoring stack is installed
-    # serviceMonitor:
-    #   enabled: true

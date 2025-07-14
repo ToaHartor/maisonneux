@@ -5,7 +5,6 @@ metadata:
   namespace: internal-ci
 spec:
   releaseName: zot
-  # targetNamespace: internal-ci
   dependsOn:
     - name: s3-operator # Required for persistency
       namespace: operators
@@ -13,7 +12,6 @@ spec:
     spec:
       chart: helm/platform/zot
       interval: 30m
-      # version: "0.1.65"
       sourceRef:
         kind: GitRepository
         name: flux-system
@@ -26,7 +24,21 @@ spec:
       retries: 3
   # Edit values in helm/platform/zot/values.yaml
   values:
+    s3:
+      bucketName: zot-${environment}
     zot:
+      env:
+        - name: "AWS_ACCESS_KEY_ID"
+          valueFrom:
+            secretKeyRef:
+              name: &s3user zot-${environment}-s3user
+              key: accessKey
+        - name: "AWS_SECRET_ACCESS_KEY"
+          valueFrom:
+            secretKeyRef:
+              name: *s3user
+              key: secretKey
+
       configFiles:
         config.json: |-
           {
@@ -42,7 +54,7 @@ spec:
                 "name": "s3",
                 "region": "auto",
                 "regionendpoint": "http://${minio_url}",
-                "bucket": "zot",
+                "bucket": "zot-${environment}",
                 "forcepathstyle": true,
                 "secure": false,
                 "skipverify": false
