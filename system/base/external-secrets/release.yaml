@@ -8,6 +8,8 @@ spec:
   dependsOn:
     - name: cert-manager
       namespace: cert-manager
+    - name: cert-manager-crs
+      namespace: cert-manager
   chart:
     spec:
       chart: external-secrets
