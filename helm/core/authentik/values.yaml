@@ -5,10 +5,12 @@ s3:
   customDomain: "localhost:9000/authentik"
 
 ingress:
-  host: auth.example.com
-  certSecret: ingress-tls
+  domain: auth.example.com
+  externalUrl: http://auth.example.com:80
 
 authentik:
+  # List of proxy providers, completed in the HelmRelease
+  proxyProviders: []
   # https://github.com/goauthentik/helm/blob/main/charts/authentik/values.yaml
   authentik:
     log_level: debug
@@ -22,9 +24,7 @@ authentik:
       password: file:///postgres-creds/password
     redis:
       host: dragonfly-cluster.dragonfly.svc.cluster.local
-  blueprints:
-    secrets:
-  #     - authentik-blueprint
+
   global:
     addPrometheusAnnotations: true
     

@@ -1,17 +1,18 @@
+{{- $domainSplit := include "common.func.split-externalurl" (dict "Domain" .Values.ingress.externalUrl) | fromJson }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: authentik
+  name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
 spec:
   parentRefs:
     - name: traefik-gateway
       namespace: traefik
-      sectionName: "websecure"
+      sectionName: {{ ternary "websecure" "web" (eq $domainSplit.Protocol "https")}}
       kind: Gateway
 
   hostnames:
-    - {{ .Values.ingress.host }}
+    - {{ $domainSplit.Domain }}
 
   rules:
     # General authentication server

@@ -6,6 +6,10 @@ exports:
 
     storage:
       persistentClassName: default
+    
+    ingress:
+      domain:
+      externalUrl:
 
     namespaces:
       postgresNamespace: postgres

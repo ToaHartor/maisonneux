@@ -1,5 +1,4 @@
-{{- $serviceUrl := printf "%s://%s" .Values.ingress.protocol .Values.ingress.domain -}}
-{{- $domainSplit := include "common.func.split-domain" (dict "Domain" $serviceUrl) | fromJson }}
+{{- $domainSplit := include "common.func.split-externalurl" (dict "Domain" .Values.ingress.externalUrl) | fromJson }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

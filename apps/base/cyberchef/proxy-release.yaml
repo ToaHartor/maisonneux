@@ -22,34 +22,9 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
-  
-  # Add forgotten blueprint to associate the provider to the internal endpoint
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              version: v1
-              kind: Secret
-              name: cyberchef-proxy-authentik-application-blueprint
-            patch: |-
-              - op: add
-                path: /stringData/association-blueprint.yaml
-                value: |
-                  version: 1
-                  metadata:
-                    name: "cyberchef-authentik-outpost-association"
-                  
-                  entries:
-                    - model: authentik_outposts.outpost
-                      identifiers: 
-                        pk: !Find [ authentik_outposts.outpost, [name, authentik Embedded Outpost]] 
-                      attrs:  
-                        providers: [!Find [authentik_providers_proxy.proxyprovider, [name, Cyberchef]]]
-                        config:
-                          authentik_host: "https://auth.${main_domain_websecure}"
-
   values:
     # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml   
+    # Provider is added to the via blueprint in Authentik chart
     blueprint:
       authentik:
         domain: "https://auth.${main_domain_websecure}"

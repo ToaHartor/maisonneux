@@ -2,8 +2,8 @@ namespaces:
   postgresNamespace: &psqlNs postgres
 
 ingress:
-  protocol: http
   domain: tv.example.com
+  externalUrl: http://tv.example.com
 
 sonarr:
   # see https://github.com/truecharts/public/blob/master/charts/stable/sonarr/values.yaml

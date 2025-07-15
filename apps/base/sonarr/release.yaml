@@ -25,8 +25,8 @@ spec:
   # see documentation https://truecharts.org/charts/stable/sonarr/
   values:
     ingress:
-      protocol: https
       domain: tv.${main_domain}
+      externalUrl: https://tv.${main_domain_websecure}
     sonarr:
       persistence:
         # NFS mounts

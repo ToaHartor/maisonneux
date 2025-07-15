@@ -1,4 +1,4 @@
-{{- $domainSplit := include "common.func.split-domain" (dict "Domain" .Values.outline.workload.main.podSpec.containers.main.env.URL) | fromJson }}
+{{- $domainSplit := include "common.func.split-externalurl" (dict "Domain" .Values.outline.workload.main.podSpec.containers.main.env.URL) | fromJson }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

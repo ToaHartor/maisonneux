@@ -35,18 +35,14 @@ spec:
       endpoint: &authentik-bucket-endpoint http://${minio_url}
       customDomain: &authentik-custom-domain ${minio_url}/authentik-${environment}
     ingress:
-      certSecret: ${main_domain}-tls
-      host: auth.${main_domain}
+      domain: auth.${main_domain}
+      externalUrl: https://auth.${main_domain_websecure}
     authentik:
+      proxyProviders:
+        - Cyberchef
+        - Sonarr
       # authentik:
       #   secret_key: replaced by valueFrom
-      blueprints:
-        secrets:
-      #     # List of configs for our applications. It should match the following pattern : "authentik-{auth type}-{app name}-bp"
-      #     - authentik-oidc-test-bp
-      #     - main_config.yaml
-      #   secrets:
-      #     - config.yaml
 
       global:
         env:
