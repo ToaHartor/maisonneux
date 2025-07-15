@@ -1,10 +1,10 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: cyberchef-proxy
-  namespace: services
+  name: sonarr-proxy
+  namespace: media
 spec:
-  releaseName: cyberchef-proxy
+  releaseName: sonarr-proxy
   dependsOn:
     - name: authentik
       namespace: authentik
@@ -30,21 +30,21 @@ spec:
           - target:
               version: v1
               kind: Secret
-              name: cyberchef-proxy-authentik-application-blueprint
+              name: sonarr-proxy-authentik-application-blueprint
             patch: |-
               - op: add
                 path: /stringData/association-blueprint.yaml
                 value: |
                   version: 1
                   metadata:
-                    name: "cyberchef-authentik-outpost-association"
+                    name: "sonarr-authentik-outpost-association"
                   
                   entries:
                     - model: authentik_outposts.outpost
                       identifiers: 
                         pk: !Find [ authentik_outposts.outpost, [name, authentik Embedded Outpost]] 
                       attrs:  
-                        providers: [!Find [authentik_providers_proxy.proxyprovider, [name, Cyberchef]]]
+                        providers: [!Find [authentik_providers_proxy.proxyprovider, [name, Sonarr]]]
                         config:
                           authentik_host: "https://auth.${main_domain_websecure}"
 
@@ -55,23 +55,23 @@ spec:
         domain: "https://auth.${main_domain_websecure}"
       provider:
         enabled: true
-        name: "Cyberchef"
+        name: "Sonarr"
         type: "proxy"
         proxy:
-          externalHost: "https://cyberchef.${main_domain_websecure}"
+          externalHost: "https://tv.${main_domain_websecure}"
           skipPathRegex: ""
           cookieDomain: ""
           ingress:
             enabled: false
       application:
-        name: "Cyberchef"
-        slug: "cyberchef"
+        name: "Sonarr"
+        slug: "sonarr"
         # -- put this application in authentik in group
         group: ""
-        launchURL: "https://cyberchef.${main_domain_websecure}"
+        launchURL: "https://tv.${main_domain_websecure}"
         openInNewTab: false
         icon: ""
-        description: "Cryptographic utilities"
+        description: "Series PVR"
         # publisher: "Publisher"
         bindPolicyID:
         policyEngineMode: "any"

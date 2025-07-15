@@ -5,15 +5,10 @@ metadata:
   namespace: media
 spec:
   releaseName: sonarr
-  # targetNamespace: media
+  dependsOn:
+    - name: sonarr-proxy
   chart:
     spec:
-      # chart: sonarr
-      # # Version from https://github.com/truecharts/public/blob/master/charts/stable/sonarr/Chart.yaml
-      # version: "23.3.1"
-      # sourceRef:
-      #   kind: HelmRepository
-      #   name: truecharts
       chart: helm/apps/sonarr
       interval: 12h
       sourceRef:
@@ -29,6 +24,9 @@ spec:
   # see https://github.com/truecharts/public/blob/master/charts/stable/sonarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/sonarr/
   values:
+    ingress:
+      protocol: https
+      domain: tv.${main_domain}
     sonarr:
       persistence:
         # NFS mounts
