@@ -20,8 +20,6 @@ spec:
   # targetNamespace: internal-ci
   dependsOn:
     - name: zot # We need a registry to start pushing our container images
-    - name: kubernetes-secret-generator # As we generate tokens for tekton
-      namespace: kube-system
   # Target 
   chart:
     spec:

@@ -38,7 +38,7 @@ spec:
       targetPath: seafile.mariadb.rootPassword
     - kind: Secret
       name: seafile-jwt
-      valuesKey: jwtKey
+      valuesKey: secretKey
       targetPath: seafile.fluxcd.jwtSecret
     - kind: Secret
       name: seafile-oidc-authentik-application

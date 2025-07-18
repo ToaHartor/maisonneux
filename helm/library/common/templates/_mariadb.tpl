@@ -27,18 +27,7 @@ Parameters :
 */}}
 {{- define "common.mariadb.user" -}}
 {{- $secretName := include "common.db.secret-name" (dict "DatabaseUser" .DatabaseUser) }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ $secretName }}
-  namespace: {{ .DatabaseNamespace }}
-  annotations:
-    secret-generator.v1.mittwald.de/autogenerate: password
-    secret-generator.v1.mittwald.de/length: "32"
-    secret-generator.v1.mittwald.de/encoding: hex
-type: Opaque
-data:
-  username: {{ printf .DatabaseUser | b64enc | quote }}
+{{- include "common.secret.creds" (dict "Username" .DatabaseUser "SecretName" $secretName "SecretNamespace" .DatabaseNamespace) }}
 ---
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: User

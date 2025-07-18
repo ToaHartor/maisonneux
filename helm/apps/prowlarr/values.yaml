@@ -40,7 +40,7 @@ prowlarr:
               PROWLARR__AUTH__APIKEY:
                 secretKeyRef:
                   name: prowlarr-api-key
-                  key: PROWLARR__AUTH__APIKEY
+                  key: secretKey
                   expandObjectName: false
               PROWLARR__AUTH__METHOD: External
               PROWLARR__APP__INSTANCENAME: Prowlarr
@@ -63,7 +63,7 @@ prowlarr:
               API_KEY:
                 secretKeyRef:
                   name: prowlarr-api-key
-                  key: PROWLARR__AUTH__APIKEY
+                  key: secretKey
                   expandObjectName: false
   persistence:
     config:

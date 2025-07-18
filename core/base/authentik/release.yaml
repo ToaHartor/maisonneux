@@ -62,6 +62,18 @@ spec:
             value: *authentik-bucket-endpoint
           - name: AUTHENTIK_STORAGE__MEDIA__S3__CUSTOM_DOMAIN
             value: *authentik-custom-domain
+          - name: AUTHENTIK_REDIS__DB
+            value: "15"
+          - name: AUTHENTIK_BOOTSTRAP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: authentik-akadmin
+          - name: AUTHENTIK_STORAGE__MEDIA__BACKEND
+            value: s3
+          - name: AUTHENTIK_STORAGE__MEDIA__S3__SECURE_URLS
+            value: "false" # "true" if prod
+
 
         volumeMounts:
           - name: sidecar-blueprints

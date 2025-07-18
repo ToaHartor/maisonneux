@@ -60,11 +60,11 @@
       groupName: "victoria-metrics-operator",
     },
     // Source URL manual match
-    {
-      matchDepNames: ["kubernetes-secret-generator"],
-      matchDatasources: ["helm"],
-      sourceUrl: "https://github.com/mittwald/kubernetes-secret-generator",
-    },
+    // {
+    //   matchDepNames: ["kubernetes-secret-generator"],
+    //   matchDatasources: ["helm"],
+    //   sourceUrl: "https://github.com/mittwald/kubernetes-secret-generator",
+    // },
     // TrueCharts packages
     // All of them can't be matched with packageNames tccr.io/truecharts/*, so we're matching the registryUrl
     {

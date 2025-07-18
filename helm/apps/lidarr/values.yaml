@@ -40,7 +40,7 @@ lidarr:
               LIDARR__AUTH__APIKEY:
                 secretKeyRef:
                   name: lidarr-api-key
-                  key: LIDARR__AUTH__APIKEY
+                  key: secretKey
                   expandObjectName: false
               LIDARR__AUTH__METHOD: External
               LIDARR__APP__INSTANCENAME: Lidarr
@@ -63,7 +63,7 @@ lidarr:
               API_KEY:
                 secretKeyRef:
                   name: lidarr-api-key
-                  key: LIDARR__AUTH__APIKEY
+                  key: secretKey
                   expandObjectName: false
   persistence:
     config:

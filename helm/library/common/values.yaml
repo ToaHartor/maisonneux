@@ -24,3 +24,9 @@ exports:
       mariadb:
         clusterName: mariadb-galera
         clusterSecretName: mariadb-secrets
+    
+    secretGenerators:
+      databasePassword: database-password
+      password: password
+      secretKey: secret-key
+      apiKey: api-key

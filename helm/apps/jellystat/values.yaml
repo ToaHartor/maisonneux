@@ -49,17 +49,17 @@ jellystat:
               JWT_SECRET:
                 secretKeyRef:
                   name: jellystat-jwt
-                  key: JWT_SECRET
+                  key: secretKey
                   expandObjectName: false
               JS_USER:
                 secretKeyRef:
                   name: jellystat-masteruser
-                  key: masterUser
+                  key: username
                   expandObjectName: false
               JS_PASSWORD:
                 secretKeyRef:
                   name: jellystat-masteruser
-                  key: masterPassword
+                  key: password
                   expandObjectName: false
 
   persistence:

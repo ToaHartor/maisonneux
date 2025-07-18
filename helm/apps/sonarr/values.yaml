@@ -45,7 +45,7 @@ sonarr:
               SONARR__AUTH__APIKEY:
                 secretKeyRef:
                   name: sonarr-api-key
-                  key: SONARR__AUTH__APIKEY
+                  key: secretKey
                   expandObjectName: false
               SONARR__AUTH__METHOD: External
               SONARR__APP__INSTANCENAME: Sonarr
@@ -68,7 +68,7 @@ sonarr:
               API_KEY:
                 secretKeyRef:
                   name: sonarr-api-key
-                  key: SONARR__AUTH__APIKEY
+                  key: secretKey
                   expandObjectName: false
   persistence:
     config:

@@ -49,7 +49,7 @@ seafile:
               JWT_PRIVATE_KEY:
                 secretKeyRef:
                   name: seafile-jwt
-                  key: jwtKey
+                  key: secretKey
                   expandObjectName: false
               FORCE_HTTPS_IN_CONF: "false"
               # Database vars (for init script)

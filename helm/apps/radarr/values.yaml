@@ -41,7 +41,7 @@ radarr:
               RADARR__AUTH__APIKEY:
                 secretKeyRef:
                   name: radarr-api-key
-                  key: RADARR__AUTH__APIKEY
+                  key: secretKey
                   expandObjectName: false
               RADARR__AUTH__METHOD: External
               RADARR__APP__INSTANCENAME: Radarr
@@ -64,7 +64,7 @@ radarr:
               API_KEY:
                 secretKeyRef:
                   name: radarr-api-key
-                  key: RADARR__AUTH__APIKEY
+                  key: secretKey
                   expandObjectName: false
   persistence:
     config:

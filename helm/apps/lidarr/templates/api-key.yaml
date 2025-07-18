@@ -1,11 +1,1 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ .Values.lidarr.workload.main.podSpec.containers.main.env.LIDARR__AUTH__APIKEY.secretKeyRef.name }}
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    secret-generator.v1.mittwald.de/autogenerate: {{ .Values.lidarr.workload.main.podSpec.containers.main.env.LIDARR__AUTH__APIKEY.secretKeyRef.key }}
-    secret-generator.v1.mittwald.de/length: "32"
-    secret-generator.v1.mittwald.de/encoding: hex
-type: Opaque
-data: {}
+{{- include "common.secret.key" (dict "SecretName" .Values.lidarr.workload.main.podSpec.containers.main.env.LIDARR__AUTH__APIKEY.secretKeyRef.name "SecretNamespace" .Release.Namespace "SecretType" "apiKey") }}

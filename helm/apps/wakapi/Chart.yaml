@@ -8,7 +8,7 @@ dependencies:
     import-values:
       - defaults
     # Other implicit dependencies are installed before this chart by fluxcd :
-    # - kubernetes-secret-generator
+    # - external-secrets
     # - cloudnative-pg
 version: 0.0.1
 appVersion: 2.12.3

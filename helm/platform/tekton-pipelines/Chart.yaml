@@ -10,6 +10,6 @@ dependencies:
     # Other implicit dependencies are installed before this chart by fluxcd :
     # - tekton-operator
     # - zot
-    # - kubernetes-secret-generator
+    # - external-secrets
     # - fluxcd
 version: 0.0.1

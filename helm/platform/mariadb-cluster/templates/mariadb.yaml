@@ -30,14 +30,14 @@ spec:
     name: mariadb-root-secret
     key: password
     generate: false
-  username: mariadb
+  # username: root
 
-  passwordSecretKeyRef:
-    name: mariadb-root-secret
-    key: password
-    generate: false
+  # passwordSecretKeyRef:
+  #   name: mariadb-root-secret
+  #   key: password
+  #   generate: false
 
-  database: mariadb
+  # database: mariadb
 
   port: 3306
 
