@@ -42,6 +42,7 @@ metadata:
   name: {{ .SecretName }}
   namespace: {{ .SecretNamespace }}
 spec:
+  refreshPolicy: CreatedOnce
   dataFrom:
   - sourceRef:
       generatorRef:
@@ -73,6 +74,7 @@ metadata:
   name: {{ .SecretName }}
   namespace: {{ .SecretNamespace }}
 spec:
+  refreshPolicy: CreatedOnce
   dataFrom:
   - sourceRef:
       generatorRef:

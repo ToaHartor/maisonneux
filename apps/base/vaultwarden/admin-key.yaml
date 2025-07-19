@@ -4,6 +4,7 @@ metadata:
   name: vaultwarden-admin-key
   namespace: services
 spec:
+  refreshPolicy: CreatedOnce
   dataFrom:
   - sourceRef:
       generatorRef:
