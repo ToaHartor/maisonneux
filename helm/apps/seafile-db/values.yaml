@@ -1,3 +1,6 @@
+backupLabel:
+  homelab/backup-resource: "true"
+
 seafile:
   database:
     rootSecret: mariadb-root-secret

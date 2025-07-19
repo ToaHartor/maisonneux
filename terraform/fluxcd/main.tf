@@ -30,6 +30,7 @@ locals {
     "minio_backup_bucket"       = var.minio_backup_bucket
     "main_domain"               = var.main_domain
     "secondary_domain"          = var.second_domain
+    "psql_suffix"               = var.cnpg_recovery ? "-temp" : ""
     "fastdata_storage"          = var.storage.fastdata
     "git_repo_url"              = local.flux_sync_helm_values.gitRepository.spec.url
     "git_branch"                = var.flux_git_branch

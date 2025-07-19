@@ -32,7 +32,7 @@ prowlarr:
             imageSelector: waitPsqlImage
             command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
             env:
-              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
         containers:
           main:
@@ -48,7 +48,7 @@ prowlarr:
               PROWLARR__AUTH__REQUIRED: DisabledForLocalAddresses
               PROWLARR__LOG__LEVEL: info
               PROWLARR__UPDATE__BRANCH: develop
-              PROWLARR__POSTGRES__HOST: psql-cluster-rw.postgres.svc.cluster.local
+              PROWLARR__POSTGRES__HOST: postgres-db-rw.postgres.svc.cluster.local
               PROWLARR__POSTGRES__PORT: "5432"
               PROWLARR__POSTGRES__USER: prowlarr
               PROWLARR__POSTGRES__PASSWORD:

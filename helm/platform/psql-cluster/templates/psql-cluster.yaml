@@ -3,12 +3,13 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: psql-cluster
+  name: {{ .Values.database.postgres.clusterName }}
   namespace: {{ .Release.Namespace }}
 spec:
   instances: 3
   primaryUpdateStrategy: unsupervised
 
+  enableSuperuserAccess: true
   superuserSecret:
     name: psql-admin-secret
 
@@ -18,10 +19,46 @@ spec:
   #     owner: psql # should be the same in the secret
   #     secret:
   #       name: authentik-psql-secret
+
+  postgresql:
+    parameters:
+      wal_keep_size: "5GB" 
+      max_slot_wal_keep_size: "5GB"
+      hot_standby_feedback: "on"
+
+  plugins:
+  - name: barman-cloud.cloudnative-pg.io
+    isWALArchiver: true
+    parameters:
+      barmanObjectName: minio-backup # Ref to the ObjectStore resource
+
+  # Restore section added in restore script
+  # bootstrap:
+  #   recovery:
+  #     source: psql-cluster-backup
+
+  # externalClusters:
+  # - name: psql-cluster-backup
+  #   plugin:
+  #     name: barman-cloud.cloudnative-pg.io
+  #     parameters:
+  #       barmanObjectName: minio-backup
+  #       serverName: psql-cluster
+
   managed:
     services:
       # No need since our database is 
       disabledDefaultServices: ["ro", "r"]
+      # Fixed service for application database connection
+      # so that if we change the cluster name when restoring they can still connect
+      additional:
+        - selectorType: rw
+          serviceTemplate:
+            metadata:
+              name: "postgres-db-rw"
+            spec:
+              type: ClusterIP
+
     roles:
       {{- range $user := .Values.database.users }}
       - name: {{ $user }}
@@ -36,13 +73,14 @@ spec:
   monitoring:
     enablePodMonitor: true
 
-  resources:
-    requests:
-      memory: 512Mi
-      cpu: 256m
-    limits:
-      memory: 1Gi
-      cpu: 1
+  # Disable resources requests/limits as when restoring it can conflict and pod can not be scheduled
+  # resources:
+  #   requests:
+  #     memory: 512Mi
+  #     cpu: 256m
+  #   limits:
+  #     memory: 1Gi
+  #     cpu: 1
 
   # Require 1Gi of space
   storage:

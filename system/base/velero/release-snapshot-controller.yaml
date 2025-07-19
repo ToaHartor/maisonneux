@@ -54,21 +54,13 @@ spec:
               app.kubernetes.io/name: snapshot-controller
               app.kubernetes.io/instance: snapshot-controller
     
-    volumeSnapshotClasses:
-      # From https://linbit.com/blog/using-velero-linbit-sds-to-back-up-restore-a-kubernetes-deployment/
-      - name: linstor-csi-snapshot-s3
-        driver: linstor.csi.linbit.com
-        labels:
-          velero.io/csi-volumesnapshot-class: "true"
-        deletionPolicy: Delete # Retain
-        parameters:
-          snap.linstor.csi.linbit.com/type: S3
-          snap.linstor.csi.linbit.com/remote-name: "${minio_backup_bucket}"
-          snap.linstor.csi.linbit.com/allow-incremental: "true"
-          snap.linstor.csi.linbit.com/s3-bucket: "${minio_backup_bucket}"
-          snap.linstor.csi.linbit.com/s3-endpoint: "${minio_url}"
-          snap.linstor.csi.linbit.com/s3-use-path-style: "true"
-          # snap.linstor.csi.linbit.com/s3-signing-region: ""
-          # Refer here to the secret that holds access and secret key for the S3 endpoint.
-          csi.storage.k8s.io/snapshotter-secret-name: s3-backup-creds # Same name as in external-secrets.yaml
-          csi.storage.k8s.io/snapshotter-secret-namespace: velero
+      volumeSnapshotClasses:
+        # From https://linbit.com/blog/using-velero-linbit-sds-to-back-up-restore-a-kubernetes-deployment/
+        - name: linstor-csi-snapshot-s3
+          driver: linstor.csi.linbit.com
+          annotations:
+            snapshot.storage.kubernetes.io/is-default-class: "true"
+          labels:
+            velero.io/csi-volumesnapshot-class: "true"
+          deletionPolicy: Delete # Retain
+          # No need to put parameters as upload is handled by Velero

@@ -8,6 +8,9 @@ ingress:
   domain: auth.example.com
   externalUrl: http://auth.example.com:80
 
+backupLabel:
+  homelab/backup-resource: "true"
+
 authentik:
   # List of proxy providers, completed in the HelmRelease
   proxyProviders: []
@@ -18,7 +21,7 @@ authentik:
     error_reporting:
       enabled: false
     postgresql:
-      host: psql-cluster-rw.postgres.svc.cluster.local
+      host: postgres-db-rw.postgres.svc.cluster.local
       name: authentik
       user: authentik
       password: file:///postgres-creds/password

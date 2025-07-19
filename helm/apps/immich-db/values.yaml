@@ -1,3 +1,16 @@
+s3:
+  secretName: # Completed in fluxcd
+  bucketName: # Completed in fluxcd
+  endpoint: # Completed in fluxcd
+  customDomain: # Completed in fluxcd
+
+database:
+  postgres:
+    clusterName: immich-psql-cluster
+
+storage:
+  size: 1Gi
+
 immich:
   database:
     image:

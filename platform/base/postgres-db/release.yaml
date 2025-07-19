@@ -9,6 +9,11 @@ spec:
   dependsOn:
     - name: cloudnative-pg
       namespace: operators
+    - name: cnpg-barman-cloud
+      namespace: operators
+    # Also needs the s3 operator for distant storage
+    - name: s3-operator
+      namespace: operators
   chart:
     spec:
       chart: helm/platform/psql-cluster
@@ -24,10 +29,18 @@ spec:
       retries: 3
 
   values:
+    s3:
+      secretName: cnpg-${environment}-s3user
+      bucketName: cnpg-${environment}
+      endpoint: http://${minio_url}
+      customDomain: ${minio_url}/cnpg-${environment}
+
     storage:
       persistentClassName: ${fastdata_storage}
       size: 10Gi
     database:
+      postgres:
+        clusterName: psql-cluster${psql_suffix:=}
       users:
         - authentik
         - sonarr

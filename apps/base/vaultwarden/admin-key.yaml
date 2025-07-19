@@ -3,6 +3,8 @@ kind: ExternalSecret
 metadata:
   name: vaultwarden-admin-key
   namespace: services
+  labels:
+    homelab/backup-resource: "true"
 spec:
   refreshPolicy: CreatedOnce
   dataFrom:
@@ -14,6 +16,9 @@ spec:
 
   target:
     template:
+      metadata:
+        labels:
+          homelab/backup-resource: "true"
       data:
         secretKey: "{{ .password }}"
       engineVersion: v2

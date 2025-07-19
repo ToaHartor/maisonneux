@@ -32,7 +32,7 @@ lidarr:
             imageSelector: waitPsqlImage
             command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
             env:
-              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
         containers:
           main:
@@ -48,7 +48,7 @@ lidarr:
               LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
               LIDARR__LOG__LEVEL: info
               LIDARR__UPDATE__BRANCH: develop
-              LIDARR__POSTGRES__HOST: psql-cluster-rw.postgres.svc.cluster.local
+              LIDARR__POSTGRES__HOST: postgres-db-rw.postgres.svc.cluster.local
               LIDARR__POSTGRES__PORT: "5432"
               LIDARR__POSTGRES__USER: lidarr
               LIDARR__POSTGRES__PASSWORD:

@@ -57,8 +57,7 @@ spec:
         user: immich
         database: immich
         creds:
-          # Hostname is basically "cluster-name"-rw
-          host: immich-psql-cluster-rw
+          host: immich-db-rw
           # password: "" # Filled by secrets
     
     redis:

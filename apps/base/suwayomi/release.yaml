@@ -59,6 +59,8 @@ spec:
     persistence:
       # Config also contains the sqlite database, so we have no choice but to use a PVC here
       appdata:
+        labels:
+          homelab/backup-resource: "true"
         enabled: true
         type: pvc
         size: 1Gi # As media covers are cached, increase the PVC size 

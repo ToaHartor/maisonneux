@@ -37,7 +37,7 @@ sonarr:
             imageSelector: waitPsqlImage
             command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
             env:
-              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
         containers:
           main:
@@ -53,7 +53,7 @@ sonarr:
               SONARR__AUTH__REQUIRED: DisabledForLocalAddresses
               SONARR__LOG__LEVEL: info
               SONARR__UPDATE__BRANCH: develop
-              SONARR__POSTGRES__HOST: psql-cluster-rw.postgres.svc.cluster.local
+              SONARR__POSTGRES__HOST: postgres-db-rw.postgres.svc.cluster.local
               SONARR__POSTGRES__PORT: "5432"
               SONARR__POSTGRES__USER: sonarr
               SONARR__POSTGRES__PASSWORD:

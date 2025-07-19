@@ -22,3 +22,6 @@ resources:
   limits:
     cpu: 100m
     memory: 100Mi
+
+backupLabel:
+  homelab/backup-resource: "true"

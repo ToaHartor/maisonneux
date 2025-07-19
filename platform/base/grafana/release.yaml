@@ -22,6 +22,20 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+  postRenderers:
+    # Add backup label to main grafana secret to backup admin password
+    - kustomize:
+        patches:
+          # Modify default observability configmap following these settings
+          # https://tekton.dev/docs/pipelines/metrics/#configuring-metrics-using-config-observability-configmap
+          - target:
+              version: v1
+              kind: Secrets
+              name: grafana
+            patch: |
+              - op: add
+                path: /metadata/labels/homelab~1backup-resource
+                value: "true"
 
   values:
     # Under grafana: https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml

@@ -1,9 +1,10 @@
 # See https://cloudnative-pg.io/documentation/1.26/samples/cluster-example-full.yaml
 # See https://cloudnative-pg.io/documentation/1.26/samples/
+{{- $user := .Values.immich.database.user}}
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: immich-psql-cluster
+  name: {{ .Values.database.postgres.clusterName }}
   namespace: {{ .Release.Namespace }}
 spec:
   instances: 1
@@ -13,34 +14,60 @@ spec:
   imageName: "{{ .Values.immich.database.image.repository }}:{{ .Values.immich.database.image.tag }}"
   imagePullPolicy: {{ .Values.immich.database.image.pullPolicy }}
 
+  enableSuperuserAccess: true
   superuserSecret:
     name: {{ include "common.db.secret-name" (dict "DatabaseUser" .Values.immich.database.adminUser )}}
+
+  # bootstrap:
+    # initdb:
+    #   database: {{ .Values.immich.database.name }}
+    #   owner: {{ .Values.immich.database.user }}
+    #   secret:
+    #     name: {{ include "common.db.secret-name" (dict "DatabaseUser" .Values.immich.database.user )}}
+    # postInitSQL:
+    #   - CREATE EXTENSION IF NOT EXISTS "vectors";
+    #   - CREATE EXTENSION IF NOT EXISTS "cube" CASCADE;
+    #   - CREATE EXTENSION IF NOT EXISTS "earthdistance" CASCADE;
 
   # Cluster setup advices from https://github.com/immich-app/immich-charts/issues/149
   postgresql:
     shared_preload_libraries:
       - "vchord.so"
+    parameters:
+      wal_keep_size: "5GB" 
+      max_slot_wal_keep_size: "5GB"
+      hot_standby_feedback: "on"
 
-  bootstrap:
-    initdb:
-      database: {{ .Values.immich.database.name }}
-      owner: {{ .Values.immich.database.user }}
-      secret:
-        name: {{ include "common.db.secret-name" (dict "DatabaseUser" .Values.immich.database.user )}}
-    postInitSQL:
-      - CREATE EXTENSION IF NOT EXISTS "vectors";
-      - CREATE EXTENSION IF NOT EXISTS "cube" CASCADE;
-      - CREATE EXTENSION IF NOT EXISTS "earthdistance" CASCADE;
+  plugins:
+  - name: barman-cloud.cloudnative-pg.io
+    isWALArchiver: true
+    parameters:
+      barmanObjectName: minio-backup # Ref to the ObjectStore resource
+
 
   managed:
     roles:
-      - name: immich
+      - name: {{ .Values.immich.database.user }}
+        ensure: present
         superuser: true
         login: true
+        passwordSecret:
+          name: {{ include "common.db.secret-name" (dict "DatabaseUser" .Values.immich.database.user )}}
 
     services:
       # No need since our database is exclusive
       disabledDefaultServices: ["ro", "r"]
+      # Fixed service for application database connection
+      additional:
+        - selectorType: rw
+          serviceTemplate:
+            metadata:
+              name: "immich-db-rw"
+            spec:
+              type: ClusterIP
+
+  monitoring:
+    enablePodMonitor: true
 
   # resources:
   #   requests:
@@ -49,14 +76,35 @@ spec:
   #   limits:
   #     memory: "256m"
   #     cpu: 250m
-  # Require 1Gi of space
+
   storage:
-    size: 1Gi
+    size: {{ .Values.storage.size }}
     pvcTemplate:
       accessModes:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 1Gi
+          storage: {{ .Values.storage.size }}
       storageClassName: {{ .Values.storage.persistentClassName }}
       volumeMode: Filesystem
+
+---
+# Database object
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: {{ .Values.immich.database.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  name: {{ .Values.immich.database.name }}
+  ensure: present
+  owner: {{ .Values.immich.database.user }}
+  cluster:
+    name: {{ .Values.database.postgres.clusterName }}
+  extensions:
+    - name: vector
+      ensure: present
+    - name: cube
+      ensure: present
+    - name: earthdistance
+      ensure: present

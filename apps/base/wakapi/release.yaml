@@ -37,7 +37,7 @@ spec:
   values:
     config:
       db:
-        host: psql-cluster-rw.postgres.svc.cluster.local
+        host: postgres-db-rw.postgres.svc.cluster.local
         port: 5432
         name: wakapi
       insecure_cookies: false # You need to set this to 'true' when on localhost

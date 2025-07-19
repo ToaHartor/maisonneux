@@ -1,6 +1,9 @@
 namespaces:
   postgresNamespace: &psqlNs postgres
 
+backupLabel:
+  homelab/backup-resource: "true"
+
 jellystat:
   # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
   # see documentation https://truecharts.org/charts/stable/jellyseerr/
@@ -32,7 +35,7 @@ jellystat:
             imageSelector: waitPsqlImage
             command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
             env:
-              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
         containers:
           main:
@@ -44,7 +47,7 @@ jellystat:
                   name: jellystat-db-creds
                   key: password
                   expandObjectName: false
-              POSTGRES_IP: "psql-cluster-rw.postgres.svc.cluster.local"
+              POSTGRES_IP: "postgres-db-rw.postgres.svc.cluster.local"
               POSTGRES_PORT: "5432"
               JWT_SECRET:
                 secretKeyRef:

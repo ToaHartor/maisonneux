@@ -5,6 +5,9 @@ database:
   databaseTable: vaultwarden
   user: vaultwarden
 
+backupLabel:
+  homelab/backup-resource: "true"
+
 vaultwarden:
   waitPsqlImage:
     repository: docker.io/library/busybox
@@ -20,7 +23,7 @@ vaultwarden:
             imageSelector: waitPsqlImage
             command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
             env:
-              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
         containers:
           main:

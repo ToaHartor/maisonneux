@@ -45,7 +45,7 @@ jellyseerr:
             imageSelector: waitPsqlImage
             command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
             env:
-              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
         containers:
           main:
@@ -55,7 +55,7 @@ jellyseerr:
               LOG_LEVEL: "info"
 
               DB_TYPE: "postgres" # Which DB engine to use, either "sqlite" or "postgres". The default is "sqlite".
-              DB_HOST: "psql-cluster-rw.postgres.svc.cluster.local" # (optional) The host (URL) of the database. The default is "localhost".
+              DB_HOST: "postgres-db-rw.postgres.svc.cluster.local" # (optional) The host (URL) of the database. The default is "localhost".
               DB_PORT: "5432" # (optional) The port to connect to. The default is "5432".
               DB_USER: "jellyseerr" # (required) Username used to connect to the database.
               DB_PASS: # (required) Password of the user used to connect to the database.

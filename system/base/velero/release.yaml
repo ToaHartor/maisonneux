@@ -79,57 +79,161 @@ spec:
           accessMode: ReadWrite
           
           config:
-            region: ""
+            region: "minio"
             s3ForcePathStyle: true
             s3Url: "http://${minio_url}"
       # https://velero.io/docs/v1.6/api-types/volumesnapshotlocation/
       volumeSnapshotLocation:
-        - name: linstor-csi-snapshot-s3 # Same name as the VolumeSnapshotClass defined in the snapshot controller
-          provider: csi
+        - name: default
+          # provider: csi
+          # config:
+          #   region: ""
+          provider: aws # For s3 storage
+         
           config:
-            region: ""
+            region: "minio"
+            profile: "default"
+            s3ForcePathStyle: true
+            s3Url: "http://${minio_url}"
+
       
       uploaderType: kopia
 
       features: EnableCSI
 
+      # defaultVolumeSnapshotLocations:
+
+      # Restore externalsecrets resources before secrets otherwise they will be rebuilt
+      # TODO : see if we can only backup the externalsecret resource and not both
+      restoreResourcePriorities: externalsecrets,secrets
+
       # defaultVolumesToFsBackup:
 
       # defaultRepoMaintainFrequency:
     
-    # schedules: 
+    # https://velero.io/docs/v1.16/api-types/schedule/
+    schedules:
+      global:
+        disabled: false
+        # labels:
+        #   myenv: foo
+        annotations:
+          velero.io/csi-volumesnapshot-class_linstor.csi.linbit.com: "linstor-csi-snapshot-s3"
+        schedule: "0 * * * *" # "0 4 * * *" # 4AM schedule
+
+        useOwnerReferencesInBackup: false
+        paused: false
+        skipImmediately: false
+        template:
+          ttl: "240h"
+          storageLocation: default
+          # https://velero.io/docs/v1.16/resource-filtering/
+
+          uploaderConfig:
+            parallelFileUpload: 10
+
+          # Resource selection
+          labelSelector:
+            matchLabels:
+              homelab/backup-resource: "true" # Mark all resources of types included in the list below with this label
+
+          ## Exclude everything by default
+          # excludedNamespaces:
+          #   - '*'
+          # includedNamespaces:
+          #   - postgres
+
+          includedResources: &rsc
+            - secret
+            - externalsecret
+            - persistentvolumeclaim # Backuping PVC allows to perform volume snapshot
+
+          # excludedNamespaceScopedResources:
+          #   - '*'
+          # - persistentVolumeClaims # We backup PVC elsewhere
+          # includedNamespaceScopedResources: *rsc
+            # - backupStorageLocations
+            # - schedules
+
+          # excludedClusterScopedResources:
+          # # - persistentVolumes # Alongside PVC
+          #   - '*'
+
+          # includedClusterScopedResources: *rsc
+
+          # Volume snapshot
+          snapshotVolumes: true
+          snapshotMoveData: true
+          volumeSnapshotLocations:
+            - default
+          
+          hooks:
+            resources: []
+
+      mariadb:
+        # Maybe include DB root password here as well
+        disabled: false
+        annotations:
+          velero.io/csi-volumesnapshot-class_linstor.csi.linbit.com: "linstor-csi-snapshot-s3"
+        schedule: "0 * * * *" # "0 4 * * *" # 4AM schedule
+
+        useOwnerReferencesInBackup: false
+        paused: false
+        skipImmediately: false
+        template:
+          ttl: "240h"
+          storageLocation: default
+          # https://velero.io/docs/v1.16/resource-filtering/
+
+          uploaderConfig:
+            parallelFileUpload: 10
+
+          # Resource selection
+          # labelSelector:
+          #   matchLabels:
+          #     homelab/backup-mariadb: "true" # Mark PVCs 
+
+          includedNamespaces:
+            - mariadb
+          includedResources:
+            - persistentvolumeclaim # Backuping PVC allows to perform volume snapshot
+
+          # Volume snapshot
+          snapshotVolumes: true
+          snapshotMoveData: true
+          volumeSnapshotLocations:
+            - default
+
+          hooks:
+            resources:
+              - name: mariadb-safe-lock-hook
+                # Only run the hook on pod zero
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: mariadb-galera
+                    app.kubernetes.io/name: mariadb
+                    statefulset.kubernetes.io/pod-name: mariadb-galera-0
+                pre:
+                  - exec:
+                      container: mariadb
+                      command:
+                        - /bin/sh
+                        - -c
+                        - mariadb -u root --password=$MARIADB_ROOT_PASSWORD -e "FLUSH TABLES WITH READ LOCK"
+                      onError: Fail
+                      timeout: 1m
+                post:
+                  - exec:
+                      container: mariadb
+                      command:
+                        - /bin/sh
+                        - -c
+                        - mariadb -u root --password=$MARIADB_ROOT_PASSWORD -e "UNLOCK TABLES"
+                      onError: Fail
+                      timeout: 10s
+
 
     extraObjects:
-      - apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
-        metadata:
-          name: s3-backup-creds
-          namespace: velero
-        spec:
-          data:
-          - secretKey: access_key
-            remoteRef:
-              key: external-minio-secrets
-              property: access_key
-          - secretKey: secret_key
-            remoteRef:
-              key: external-minio-secrets
-              property: secret_key
-          refreshInterval: 5m
-          secretStoreRef:
-            kind: ClusterSecretStore
-            name: external-secrets
-          target:
-            creationPolicy: Owner
-            deletionPolicy: Retain
-            template:
-              type: linstor.csi.linbit.com/s3-credentials.v1
-              # immutable: true
-              data:
-                access-key: '{{ `{{ .access_key }}` }}'
-                secret-key: '{{ `{{ .secret_key }}` }}'
-              engineVersion: v2
-
       - apiVersion: external-secrets.io/v1
         kind: ExternalSecret
         metadata:

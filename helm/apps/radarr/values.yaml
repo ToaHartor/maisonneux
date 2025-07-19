@@ -33,7 +33,7 @@ radarr:
             imageSelector: waitPsqlImage
             command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
             env:
-              POD_NAME: psql-cluster-rw # service name for psql rw operations
+              POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
         containers:
           main:
@@ -49,7 +49,7 @@ radarr:
               RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
               RADARR__LOG__LEVEL: info
               RADARR__UPDATE__BRANCH: develop
-              RADARR__POSTGRES__HOST: psql-cluster-rw.postgres.svc.cluster.local
+              RADARR__POSTGRES__HOST: postgres-db-rw.postgres.svc.cluster.local
               RADARR__POSTGRES__PORT: "5432"
               RADARR__POSTGRES__USER: radarr
               RADARR__POSTGRES__PASSWORD:

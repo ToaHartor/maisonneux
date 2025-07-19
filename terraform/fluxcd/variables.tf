@@ -23,6 +23,12 @@ variable "storage" {
   description = "Storage classes name (in k8s)"
 }
 
+variable "cnpg_recovery" {
+  type        = bool
+  description = "Should the postgres clusters be restored (requires running cluster restore scripts)"
+  default     = false
+}
+
 # Fluxcd credentials
 
 variable "flux_git_user" {

@@ -20,5 +20,16 @@ spec:
     remediation:
       retries: 3
   values:
+    s3:
+      # Should be the same as psql-cluster HelmRelease
+      secretName: cnpg-${environment}-s3user
+      bucketName: cnpg-${environment}
+      endpoint: http://${minio_url}
+      customDomain: ${minio_url}/cnpg-${environment}
+
     storage:
       persistentClassName: ${fastdata_storage}-ha
+      size: 10Gi
+    database:
+      postgres:
+        clusterName: immich-psql-cluster${psql_suffix:=}

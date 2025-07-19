@@ -30,6 +30,7 @@ Parameters :
 - SecretName : secret name (and target name)
 - SecretNamespace : secret namespace
 - SecretType : secret type (either apiKey or token, optional)
+- AdditionalLabels : additional labels to add to the key (optional)
 
 Usage :
 {{- include "common.secret.key" (dict "SecretName" .Name "SecretNamespace" .Release.Namespace) }}
@@ -41,6 +42,10 @@ kind: ExternalSecret
 metadata:
   name: {{ .SecretName }}
   namespace: {{ .SecretNamespace }}
+  {{- with .AdditionalLabels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   refreshPolicy: CreatedOnce
   dataFrom:
@@ -52,6 +57,11 @@ spec:
 
   target:
     template:
+      {{- with .AdditionalLabels }}
+      metadata:
+        labels:
+          {{- toYaml . | nindent 10 }}
+      {{- end }}
       data:
         secretKey: "{{ `{{ .password }}` }}"
       engineVersion: v2
@@ -73,8 +83,10 @@ kind: ExternalSecret
 metadata:
   name: {{ .SecretName }}
   namespace: {{ .SecretNamespace }}
+  labels:
+    homelab/backup-resource: "true"
 spec:
-  refreshPolicy: CreatedOnce
+  refreshPolicy: OnChange
   dataFrom:
   - sourceRef:
       generatorRef:
@@ -83,6 +95,9 @@ spec:
         name: "password"
   target:
     template:
+      metadata:
+        labels:
+          homelab/backup-resource: "true"
       data:
         username: "{{ .Username }}"
         password: "{{ `{{ .password }}` }}"
