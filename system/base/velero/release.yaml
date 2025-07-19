@@ -1,0 +1,102 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: velero
+  namespace: velero
+spec:
+  releaseName: velero
+  dependsOn:
+    # Needs monitoring CRDs as it is required by some options
+    - name: prometheus-operator-crds
+      namespace: opentelemetry
+    - name: snapshot-controller
+  chart:
+    spec:
+      chart: velero
+      # renovate: datasource=helm depName=velero registryUrl=https://vmware-tanzu.github.io/helm-charts
+      version: "10.0.10" # 10.0.x
+      sourceRef:
+        kind: HelmRepository
+        name: vmware-tanzu
+        namespace: flux-system
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    # https://artifacthub.io/packages/helm/vmware-tanzu/velero?modal=values
+
+    # replicaCount: 2
+
+    # topologySpreadConstraints:
+    #   # Maximum 1 pod per Proxmox hypervisor
+    #   - maxSkew: 1
+    #     topologyKey: topology.kubernetes.io/zone
+    #     whenUnsatisfiable: ScheduleAnyway
+    #     labelSelector:
+    #       matchLabels:
+    #         app.kubernetes.io/name: trust-manager
+    #         app.kubernetes.io/instance: trust-manager
+    #   # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+    #   - maxSkew: 1
+    #     topologyKey: kubernetes.io/hostname
+    #     whenUnsatisfiable: DoNotSchedule
+    #     labelSelector:
+    #       matchLabels:
+    #         app.kubernetes.io/name: trust-manager
+    #         app.kubernetes.io/instance: trust-manager
+
+    initContainers:
+      - name: velero-plugin-for-aws
+        image: velero/velero-plugin-for-aws:v1.12.1
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /target
+            name: plugins
+    
+    # CRDs
+    upgradeCRDs: true
+    cleanUpCRDs: false
+
+    credentials:
+      useSecret: true
+      name: s3-backup-aws-creds-file # Same name as in external-secrets.yaml
+
+    backupsEnabled: true
+    snapshotsEnabled: true
+
+    deployNodeAgent: true
+
+    configuration:
+      # https://velero.io/docs/v1.6/api-types/backupstoragelocation/
+      backupStorageLocation:
+        - name: default
+          provider: aws # For s3 storage
+          bucket: "${minio_backup_bucket}"
+
+          default: true
+
+          accessMode: ReadWrite
+          
+          config:
+            region: ""
+            s3ForcePathStyle: true
+            s3Url: "http://${minio_url}"
+      # https://velero.io/docs/v1.6/api-types/volumesnapshotlocation/
+      volumeSnapshotLocation:
+        - name: linstor-csi-snapshot-s3 # Same name as the VolumeSnapshotClass defined in the snapshot controller
+          provider: csi
+          config:
+            region: ""
+      
+      uploaderType: kopia
+
+      features: EnableCSI
+
+      # defaultVolumesToFsBackup:
+
+      # defaultRepoMaintainFrequency:
+    
+    # schedules: 
+
+    extraObjects: []

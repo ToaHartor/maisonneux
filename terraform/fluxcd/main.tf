@@ -20,23 +20,24 @@ terraform {
 
 locals {
   ingress_ports = {
-    web = var.opnsense_base_port_number + 80
+    web       = var.opnsense_base_port_number + 80
     websecure = var.opnsense_base_port_number + 443
   }
-  
+
   general_config = merge({
-    "environment"      = terraform.workspace
-    "minio_url"        = var.minio_access_url
-    "main_domain"      = var.main_domain
-    "secondary_domain" = var.second_domain
-    "fastdata_storage" = var.storage.fastdata
-    "git_repo_url"     = local.flux_sync_helm_values.gitRepository.spec.url
-    "git_branch"       = var.flux_git_branch
-    "nfs_server"       = var.truenas_vm_host
-    "traefik_lb_ip"    = var.k8s_lb_traefik_ip
-    "traefik_web_lb_port"    = local.ingress_ports.web
-    "traefik_websecure_lb_port"    = local.ingress_ports.websecure
-    "influxdb_lb_ip"    = var.k8s_lb_influxdb_ip
+    "environment"               = terraform.workspace
+    "minio_url"                 = var.minio_access_url
+    "minio_backup_bucket"       = var.minio_backup_bucket
+    "main_domain"               = var.main_domain
+    "secondary_domain"          = var.second_domain
+    "fastdata_storage"          = var.storage.fastdata
+    "git_repo_url"              = local.flux_sync_helm_values.gitRepository.spec.url
+    "git_branch"                = var.flux_git_branch
+    "nfs_server"                = var.truenas_vm_host
+    "traefik_lb_ip"             = var.k8s_lb_traefik_ip
+    "traefik_web_lb_port"       = local.ingress_ports.web
+    "traefik_websecure_lb_port" = local.ingress_ports.websecure
+    "influxdb_lb_ip"            = var.k8s_lb_influxdb_ip
     },
     { for k, v in local.ingress_ports : "main_domain_${k}" => join("", [var.main_domain, (var.is_internet_ingress ? "" : ":${v}")]) },
     var.second_domain != "" ? { for k, v in local.ingress_ports : "second_domain_${k}" => join("", [var.second_domain, (var.is_internet_ingress ? "" : ":${v}")]) } : {},

@@ -70,6 +70,11 @@ variable "minio_access_url" {
   description = "External MinIO access URL (format 'localhost:9000')"
 }
 
+variable "minio_backup_bucket" {
+  type        = string
+  description = "External MinIO backup bucket"
+}
+
 # TrueNAS
 variable "truenas_vm_host" {
   type        = string
@@ -110,7 +115,7 @@ variable "ovh_consumer_key" {
 
 # K8S LB
 variable "is_internet_ingress" {
-  type = bool
+  type        = bool
   description = "Is the ingress domain reachable on internet. If yes, ports will not appear in the referenced ingress domain (example.com instead of example.com:10080)"
 }
 
