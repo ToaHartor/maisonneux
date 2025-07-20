@@ -63,6 +63,9 @@ locals {
           },
           {
             name = "drbd_transport_tcp"
+          },
+          {
+            name = "dm-thin-pool"
           }
         ]
       }
@@ -124,26 +127,27 @@ locals {
       nodeLabels = {
         "homelab/linstor-enabled" = "true"
       }
-      kubelet = {
-        extraMounts = [
-          {
-            destination = "/var/mnt/linstor"
-            type        = "bind"
-            source      = "/var/mnt/linstor"
-            options     = ["bind", "rshared", "rw"]
-          }
-        ]
-      }
-      disks = [
-        {
-          device = "/dev/sdb"
-          partitions = [
-            {
-              mountpoint = "/var/mnt/linstor"
-            }
-          ]
-        }
-      ]
+      # If using fileStorage in nodes
+      # kubelet = {
+      #   extraMounts = [
+      #     {
+      #       destination = "/var/mnt/linstor"
+      #       type        = "bind"
+      #       source      = "/var/mnt/linstor"
+      #       options     = ["bind", "rshared", "rw"]
+      #     }
+      #   ]
+      # }
+      # disks = [
+      #   {
+      #     device = "/dev/sdb"
+      #     partitions = [
+      #       {
+      #         mountpoint = "/var/mnt/linstor"
+      #       }
+      #     ]
+      #   }
+      # ]
     }
   }
 }

@@ -58,15 +58,15 @@ metadata:
   name: talos-loader-override
 spec:
   storagePools:
-    # - name: lvm
-    #   lvmPool:
-    #     volumeGroup: vg1
-    #   source:
-    #     hostDevices:
-    #       - /dev/sdb
     - name: fs-storage
-      fileThinPool:
-        directory: /var/mnt/linstor
+      lvmThinPool:
+        volumeGroup: vg1
+      source:
+        hostDevices:
+          - /dev/sdb
+    # - name: fs-storage
+    #   fileThinPool:
+    #     directory: /var/mnt/linstor
   podTemplate:
     spec:
       initContainers:
