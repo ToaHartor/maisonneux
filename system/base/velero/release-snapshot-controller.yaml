@@ -12,6 +12,9 @@ spec:
     # Requires external-secrets clustersecretstore to create externlsecrets for s3 access
     - name: external-secrets
       namespace: external-secrets
+    # Also requires piraeus operator to be deployed
+    - name: piraeus-operator
+      namespace: piraeus-datastore
   chart:
     spec:
       chart: snapshot-controller
