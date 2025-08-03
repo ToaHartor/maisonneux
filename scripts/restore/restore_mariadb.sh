@@ -19,19 +19,18 @@ else
 fi
 
 namespace="mariadb"
-pvcs=(storage-mariadb-galera-0 storage-mariadb-galera-1 storage-mariadb-galera-2)
+clusterName="mariadb-galera"
+pvcs=("storage-${clusterName}-0" "storage-${clusterName}-1" "storage-${clusterName}-2")
 
 function suspend_mariadb_resource() {
   suspend="$1"
-  kubectl patch mariadb -n "$namespace" mariadb-galera --type merge -p "{\"spec\": {\"suspend\": $suspend}}"
+  kubectl patch mariadb -n "$namespace" "${clusterName}" --type merge -p "{\"spec\": {\"suspend\": $suspend}}"
 }
 
-# Suspend MariaDB resource for the operator
 suspend_mariadb_resource "true"
 
-# Scale statefulset to zero
-kubectl scale --replicas=0 "statefulset/mariadb-galera" -n "$namespace"
-# Remove PVCs
+kubectl scale --replicas=0 "statefulset/${clusterName}" -n "$namespace"
+
 for pvc in "${pvcs[@]}"
 do
   kubectl delete "pvc/$pvc" -n "$namespace" || true
@@ -46,15 +45,13 @@ do
   kubectl wait --for=jsonpath='{.status.phase}'=Bound "pvc/$pvc" -n "$namespace" --timeout 5m
 done
 
-# Scale up again
-kubectl scale --replicas=3 "statefulset/mariadb-galera" -n "$namespace"
+kubectl scale --replicas=3 "statefulset/${clusterName}" -n "$namespace"
+kubectl wait --for=condition=Ready "pod/${clusterName}-0" -n "$namespace" --timeout 5m
 
-# Wait until main pod is ready
-kubectl wait --for=condition=Ready pod/mariadb-galera-0 -n "$namespace" --timeout 5m
-
-# Enable write again in the cluster
+# Enable write again in the cluster, as backup hook disabled it before
 # shellcheck disable=SC2016
-kubectl exec -n "$namespace" mariadb-galera-0 -it -c mariadb -- /bin/sh -c 'mariadb -u root --password=$MARIADB_ROOT_PASSWORD -e "UNLOCK TABLES"'
+kubectl exec -n "$namespace" "${clusterName}-0" -it -c mariadb -- /bin/sh -c 'mariadb -u root --password=$MARIADB_ROOT_PASSWORD -e "UNLOCK TABLES"'
 
-# Unsuspend MariaDB resource
 suspend_mariadb_resource "false"
+
+kubectl wait --for=condition=Ready "mariadb.k8s.mariadb.com/${clusterName}" -n "$namespace" --timeout=10m

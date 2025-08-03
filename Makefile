@@ -2,7 +2,7 @@ WORKSPACES=static k8s-production k8s-staging fluxcd-production fluxcd-staging
 FLUX_ENVS=production staging
 MAKEFLAGS += -rR
 
-.PHONY: python-venv start-devenv stop-devenv local-git talos-img cluster-health use-context tools tf-plan tf-apply tf-init tf-destroy dry-renovate renovate $(WORKSPACES)
+.PHONY: python-venv start-devenv stop-devenv local-git talos-img cluster-health use-context tools tf-plan tf-apply tf-init tf-destroy dry-renovate renovate restore $(WORKSPACES)
 
 cluster-health:
 	bash scripts/check_cluster_health.sh
@@ -47,6 +47,12 @@ ifeq (use-context,$(filter use-context,$(MAKECMDGOALS)))
 	@cp -rf tmp/kubeconfig-$@.yaml ~/.kube/config
 	@chmod 700 ~/.kube/config
 	@kubectl config use-context admin@k8s
+endif
+# make restore <flux-env>
+ifeq (restore,$(filter restore,$(MAKECMDGOALS)))
+	@make use-context $@
+	@echo "Restoring cluster $@"
+	bash scripts/restore/restore.sh
 endif
 
 # Helm utilities

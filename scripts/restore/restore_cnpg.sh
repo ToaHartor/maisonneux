@@ -3,10 +3,8 @@
 set -euo pipefail
 
 
-# Recovery prefix (default is "-temp" in terraform)
+# Recovery prefix which is appened to the cluster name (default is "-temp" in terraform)
 cnpgRecoveryPrefix="$(kubectl get configmap -n flux-system general-config -o=jsonpath='{.data.psql_suffix}')"
-# so that if we restore in place it does not use prefixes
-
 
 # cnpgRecoveryPrefix=""
 backupSource="minio-backup" # ObjectStore names
@@ -14,11 +12,19 @@ backupSource="minio-backup" # ObjectStore names
 
 # Using current time does not seem to work, as last WAL does not exist ? https://github.com/cloudnative-pg/cloudnative-pg/discussions/2989
 # WAL are archived by default every 5 minutes, if no timestamp is given, use current time minus 10 minutes to be safe ?
-if [ $# -eq 0 ]; then
-  targetTime="$(TZ="Europe/Paris" date -d '10 minutes ago' --rfc-3339=seconds)"
-  echo "No backup timestamp provided, using current date : $targetTime"
+# If an argument is given, we restore the target backup. As we synchronize the backup of the postgres clusters, the backup names are identical.
+if [ $# -eq 0 ] || [ "$1" == "schedule" ]; then
+  echo "Latest backup using targetTime does not currently work, please use the target backup name instead."
+  exit 1
+
+  # Uncomment when https://github.com/cloudnative-pg/cloudnative-pg/issues/5177 is resolved
+  # targetTime="$(TZ="Europe/Paris" date -d '10 minutes ago' --rfc-3339=seconds)"
+  # echo "Using current date as targetTime : $targetTime"
+  # recoveryPatch="{\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"targetTime\": \"$targetTime\"}}}"
 else
-  targetTime="$(date -d "$1" --rfc-3339=seconds)"
+  targetBackup="$1"
+  # targetTime="$(date -d "$1" --rfc-3339=seconds)"
+  recoveryPatch="{\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"backupID\": \"$targetBackup\"}}}"
 fi
 
 # Also suspend corresponding Kustomization
@@ -105,9 +111,7 @@ function restore_database() {
   ## ERROR: WAL archive check failed for server recoveredCluster: Expected empty archive
   # Finally, enable reconciliation
   kubectl patch cluster.postgresql.cnpg.io -n "$namespace" "$targetRestoreCluster" --type json -p \
-    "[{\"op\": \"add\", \"path\": \"/metadata/annotations/cnpg.io~1skipEmptyWalArchiveCheck\", \"value\": \"enabled\"}, {\"op\": \"replace\", \"path\": \"/spec/bootstrap\", \"value\": {\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"targetTime\": \"$targetTime\"}}}}, {\"op\": \"remove\", \"path\": \"/metadata/annotations/cnpg.io~1reconciliationLoop\"}]"
-    # "{\"metadata\": {\"annotations\": {\"cnpg.io/skipEmptyWalArchiveCheck\": \"enabled\"}}, \"spec\": {\"bootstrap\": {\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"targetTime\": \"$targetTime\"}}}, }}"
-
+    "[{\"op\": \"add\", \"path\": \"/metadata/annotations/cnpg.io~1skipEmptyWalArchiveCheck\", \"value\": \"enabled\"}, {\"op\": \"replace\", \"path\": \"/spec/bootstrap\", \"value\": $recoveryPatch}, {\"op\": \"remove\", \"path\": \"/metadata/annotations/cnpg.io~1reconciliationLoop\"}]"
   # Un-hibernate target cluster
   kubectl cnpg hibernate off "$targetRestoreCluster" -n "$namespace"
   kubectl cnpg maintenance unset "$targetRestoreCluster" -n "$namespace"
@@ -135,8 +139,7 @@ if [[ -n "$cnpgRecoveryPrefix" ]]; then
 fi
 
 # Arguments : <namespace> <helmrelease> <target restore cluster> <replicas>
-# restore_database "postgres" "psql-cluster" "psql-cluster" 3
-
+restore_database "postgres" "psql-cluster" "psql-cluster" 3
 
 # Apps
 if [[ -n "$cnpgRecoveryPrefix" ]]; then

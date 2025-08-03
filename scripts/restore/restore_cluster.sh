@@ -33,7 +33,7 @@ function restore_deploy_pvc() {
   pvc="$3"
 
   pre_restore_deploy "$deploy" "$namespace" "$pvc"
-  # Restore PVC, it will try to restore all the others pvc, but as they will be already
+  # Restore PVC, it will try to restore all the others pvc, but as they will be already present it will be skipped
   # shellcheck disable=SC2086
   velero restore create --restore-volumes --include-cluster-resources --exclude-resources externalsecrets,secrets $BACKUP_ARG -w
   post_restore_deploy "$deploy" "$namespace" "$pvc"
