@@ -5,9 +5,9 @@ set -euo pipefail
 # This script is used to restore a backup on an existing cluster
 
 DEPLOYMENTS=(
-  # Format : "deployment, namespace, pvc"
-  "suwayomi-tachidesk-docker, media, suwayomi-tachidesk-docker-appdata"
-  "kavita, media, kavita-config"
+  # Format : "deployment, namespace, pvc, appname"
+  "suwayomi-tachidesk-docker, media, suwayomi-tachidesk-docker-appdata, tachidesk-docker"
+  "kavita, media, kavita-config, kavita"
 )
 
 if [ -z "$1" ]; then
@@ -31,11 +31,11 @@ function restore_deploy_pvc() {
   deploy="$1"
   namespace="$2"
   pvc="$3"
+  appname="$4"
 
   pre_restore_deploy "$deploy" "$namespace" "$pvc"
-  # Restore PVC, it will try to restore all the others pvc, but as they will be already present it will be skipped
   # shellcheck disable=SC2086
-  velero restore create --restore-volumes --include-cluster-resources --exclude-resources externalsecrets,secrets $BACKUP_ARG -w
+  velero restore create --restore-volumes --include-cluster-resources -l "app.kubernetes.io/name=${appname}" --exclude-resources externalsecrets,secrets $BACKUP_ARG -w
   post_restore_deploy "$deploy" "$namespace" "$pvc"
 }
 
