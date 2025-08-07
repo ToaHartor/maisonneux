@@ -34,10 +34,11 @@ spec:
       bucketName: cnpg-${environment}
       endpoint: http://${minio_url}
       customDomain: ${minio_url}/cnpg-${environment}
+      size: 30
 
     storage:
       persistentClassName: ${fastdata_storage}
-      size: 10Gi
+      size: 20Gi
     database:
       postgres:
         clusterName: psql-cluster${psql_suffix:=}

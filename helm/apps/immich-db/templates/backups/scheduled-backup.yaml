@@ -4,7 +4,7 @@ metadata:
   name: immich-psql-cluster-backup
   namespace: {{ .Release.Namespace }}
 spec:
-  schedule: "0 0 * * * *"
+  schedule: "0 0 0 * * *"
   backupOwnerReference: self
   immediate: false
   cluster:

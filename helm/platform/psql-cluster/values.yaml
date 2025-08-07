@@ -3,6 +3,7 @@ s3:
   bucketName: # bucket-${environment}
   endpoint: # http://${minio_url}
   customDomain: # ${minio_url}/bucket-${environment}
+  size: 20 # in GB
 
 storage:
   size: 1Gi
