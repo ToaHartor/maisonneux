@@ -4,4 +4,3 @@ resources:
   - namespace.yaml
   - secret-key.yaml
   - release.yaml
-  - app-release.yaml
