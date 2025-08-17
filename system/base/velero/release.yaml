@@ -119,7 +119,7 @@ spec:
         #   myenv: foo
         annotations:
           velero.io/csi-volumesnapshot-class_linstor.csi.linbit.com: "linstor-csi-snapshot-s3"
-        schedule: "0 * * * *" # "0 4 * * *" # 4AM schedule
+        schedule: "0 4 * * *" # 4AM schedule
 
         useOwnerReferencesInBackup: false
         paused: false
@@ -175,7 +175,7 @@ spec:
         disabled: false
         annotations:
           velero.io/csi-volumesnapshot-class_linstor.csi.linbit.com: "linstor-csi-snapshot-s3"
-        schedule: "0 * * * *" # "0 4 * * *" # 4AM schedule
+        schedule: "0 4 * * *" # 4AM schedule
 
         useOwnerReferencesInBackup: false
         paused: false

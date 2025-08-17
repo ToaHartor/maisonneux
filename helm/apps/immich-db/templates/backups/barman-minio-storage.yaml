@@ -21,4 +21,4 @@ spec:
     data:
       compression: bzip2
 
-  retentionPolicy: "1d" # min 1d
+  retentionPolicy: "7d" # min 1d
