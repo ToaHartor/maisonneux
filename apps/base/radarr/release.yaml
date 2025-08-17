@@ -5,6 +5,8 @@ metadata:
   namespace: media
 spec:
   releaseName: radarr
+  dependsOn:
+    - name: radarr-proxy
   chart:
     spec:
       chart: helm/apps/radarr
@@ -21,7 +23,10 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/radarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/radarr/
-  values:   
+  values:
+    ingress:
+      domain: movies.${main_domain}
+      externalUrl: https://movies.${main_domain_websecure}
     radarr:
       persistence:
         # NFS mounts

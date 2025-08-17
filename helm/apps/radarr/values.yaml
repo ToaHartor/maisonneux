@@ -1,6 +1,10 @@
 namespaces:
   postgresNamespace: &psqlNs postgres
 
+ingress:
+  domain: movies.example.com
+  externalUrl: http://movies.example.com
+
 radarr:
   # see https://github.com/truecharts/public/blob/master/charts/stable/radarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/radarr/

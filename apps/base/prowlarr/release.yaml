@@ -5,6 +5,8 @@ metadata:
   namespace: media
 spec:
   releaseName: prowlarr
+  dependsOn:
+    - name: prowlarr-proxy
   chart:
     spec:
       chart: helm/apps/prowlarr
@@ -22,3 +24,6 @@ spec:
   # see https://github.com/truecharts/public/blob/master/charts/stable/prowlarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/prowlarr/
   values:
+    ingress:
+      domain: indexer.${main_domain}
+      externalUrl: https://indexer.${main_domain_websecure}

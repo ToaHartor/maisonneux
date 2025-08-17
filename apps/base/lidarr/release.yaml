@@ -5,6 +5,8 @@ metadata:
   namespace: media
 spec:
   releaseName: lidarr
+  dependsOn:
+    - name: lidarr-proxy
   chart:
     spec:
       chart: helm/apps/lidarr
@@ -21,7 +23,10 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/lidarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/lidarr/
-  values:    
+  values:
+    ingress:
+      domain: music.${main_domain}
+      externalUrl: https://music.${main_domain_websecure}
     lidarr:
       persistence:
         # NFS mounts

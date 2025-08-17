@@ -1,6 +1,10 @@
 namespaces:
   postgresNamespace: &psqlNs postgres
 
+ingress:
+  domain: music.example.com
+  externalUrl: http://music.example.com
+
 lidarr:
   # see https://github.com/truecharts/public/blob/master/charts/stable/lidarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/lidarr/

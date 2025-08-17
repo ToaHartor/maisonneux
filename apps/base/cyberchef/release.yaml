@@ -44,3 +44,38 @@ spec:
         rollingUpdate:
           maxUnavailable: 0
           maxSurge: 1
+    
+    extraTpl:
+      - |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: {{ .Release.Name }}
+          namespace: {{ .Release.Namespace }}
+        spec:
+          parentRefs:
+            - name: traefik-gateway
+              namespace: traefik
+              sectionName: websecure
+              kind: Gateway
+
+          hostnames:
+            - cyberchef.${main_domain}
+
+          rules:
+            - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+
+              backendRefs:
+              - name: {{ .Release.Name }}
+                namespace: {{ .Release.Namespace }}
+                port: {{ .Values.service.main.ports.main.port }}
+
+              filters:
+                - type: ExtensionRef
+                  extensionRef:
+                    group: traefik.io
+                    kind: Middleware
+                    name: chain-forwardauth

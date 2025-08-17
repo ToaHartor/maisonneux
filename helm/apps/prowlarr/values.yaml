@@ -1,6 +1,10 @@
 namespaces:
   postgresNamespace: &psqlNs postgres
 
+ingress:
+  domain: indexer.example.com
+  externalUrl: http://indexer.example.com
+
 prowlarr:
   # see https://github.com/truecharts/public/blob/master/charts/stable/prowlarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/prowlarr/

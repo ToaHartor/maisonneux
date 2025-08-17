@@ -41,6 +41,10 @@ spec:
       proxyProviders:
         - Cyberchef
         - Sonarr
+        - Radarr
+        - Radarr 4K
+        - Prowlarr
+        - JDownloader
       # authentik:
       #   secret_key: replaced by valueFrom
 

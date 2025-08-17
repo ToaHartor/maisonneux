@@ -5,6 +5,8 @@ metadata:
   namespace: media
 spec:
   releaseName: radarr4k
+  dependsOn:
+    - name: radarr4k-proxy
   chart:
     spec:
       chart: helm/apps/radarr
@@ -22,6 +24,9 @@ spec:
   # see https://github.com/truecharts/public/blob/master/charts/stable/radarr/values.yaml
   # see documentation https://truecharts.org/charts/stable/radarr/
   values:
+    ingress:
+      domain: 4kmovies.${main_domain}
+      externalUrl: https://4kmovies.${main_domain_websecure}
     radarr:
       workload:
         main:

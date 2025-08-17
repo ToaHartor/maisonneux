@@ -1,10 +1,10 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: sonarr-proxy
+  name: radarr-proxy
   namespace: media
 spec:
-  releaseName: sonarr-proxy
+  releaseName: radarr-proxy
   dependsOn:
     - name: authentik
       namespace: authentik
@@ -30,23 +30,23 @@ spec:
         domain: "https://auth.${main_domain_websecure}"
       provider:
         enabled: true
-        name: &app-name "Sonarr"
+        name: &app-name "Radarr"
         type: "proxy"
         proxy:
-          externalHost: &ext-host "https://tv.${main_domain_websecure}"
+          externalHost: &ext-host "https://movies.${main_domain_websecure}"
           skipPathRegex: ""
           cookieDomain: ""
           ingress:
             enabled: false
       application:
         name: *app-name
-        slug: "sonarr"
+        slug: "radarr"
         # -- put this application in authentik in group
         group: ""
         launchURL: *ext-host
         openInNewTab: false
         icon: ""
-        description: "Series PVR"
+        description: "Movies PVR"
         # publisher: "Publisher"
         bindPolicyID:
         policyEngineMode: "any"

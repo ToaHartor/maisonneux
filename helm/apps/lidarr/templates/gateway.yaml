@@ -23,7 +23,7 @@ spec:
       backendRefs:
       - name: {{ .Release.Name }}
         namespace: {{ .Release.Namespace }}
-        port: {{ .Values.sonarr.service.main.ports.main.port }}
+        port: {{ .Values.lidarr.service.main.ports.main.port }}
       
       filters:
         - type: ExtensionRef
