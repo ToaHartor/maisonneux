@@ -252,7 +252,7 @@ data "talos_cluster_health" "k8s_network_health" {
   }
 
   control_plane_nodes = split(",", var.controllers)
-  worker_nodes        = split(",", var.workers)
+  worker_nodes        = var.workers != "" ? split(",", var.workers) : []
   endpoints           = local.talosconfig.controlplanes
   timeouts = {
     read = "10m"

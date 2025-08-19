@@ -38,10 +38,10 @@ locals {
   opnsense_bgp_asn = 64555
 
   talosconfig = {
-    ca            = local.talosconfig_raw.contexts.k8s.ca
-    crt           = local.talosconfig_raw.contexts.k8s.crt
-    key           = local.talosconfig_raw.contexts.k8s.key
-    controlplanes = local.talosconfig_raw.contexts.k8s.endpoints
+    ca            = local.talosconfig_raw.contexts[var.cluster_name].ca
+    crt           = local.talosconfig_raw.contexts[var.cluster_name].crt
+    key           = local.talosconfig_raw.contexts[var.cluster_name].key
+    controlplanes = local.talosconfig_raw.contexts[var.cluster_name].endpoints
   }
 
   kubeconfig = {

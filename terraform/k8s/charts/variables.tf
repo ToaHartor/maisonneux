@@ -22,8 +22,14 @@ variable "workers" {
 
 # Cluster variables
 
-variable "cluster_vip" {
+variable "cluster_name" {
   description = "A name to provide for the Talos cluster"
+  type        = string
+  default     = "k8s"
+}
+
+variable "cluster_vip" {
+  description = "The VIP for the management of the Talos cluster"
   type        = string
   default     = "192.168.1.79"
 }
@@ -83,3 +89,22 @@ variable "opnsense_base_port_number" {
   description = "Starting port number on the router to expose services (e.g. value of 10000 will make the service with a base port of 80 be exposed on port 10080 on the router)"
 }
 
+
+## IPs
+# variable "k8s_lb_traefik_ip" {
+#   type        = string
+#   description = "IP address of Traefik LB (must be in LB subnet)"
+#   validation {
+#     condition     = can(cidrnetmask("${var.k8s_lb_traefik_ip}/32")) # TODO : check if it belongs to var.cluster_virtual_lb_pool
+#     error_message = "Must be a valid IPv4 CIDR block address."
+#   }
+# }
+
+# variable "k8s_lb_influxdb_ip" {
+#   type        = string
+#   description = "IP address of Otel collector LB (must be in LB subnet)"
+#   validation {
+#     condition     = can(cidrnetmask("${var.k8s_lb_influxdb_ip}/32"))
+#     error_message = "Must be a valid IPv4 CIDR block address."
+#   }
+# }

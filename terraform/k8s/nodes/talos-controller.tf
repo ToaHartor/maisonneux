@@ -164,6 +164,7 @@ data "talos_machine_configuration" "controller" {
     }),
     yamlencode({
       cluster = {
+        clusterName                    = var.cluster_name
         allowSchedulingOnControlPlanes = var.schedule_pods_on_control_plane_nodes
         // solves https://github.com/siderolabs/talos/issues/9980 for k8s 1.32+
         apiServer = {

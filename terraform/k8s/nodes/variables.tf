@@ -102,7 +102,7 @@ variable "cluster_name" {
 }
 
 variable "cluster_vip" {
-  description = "A name to provide for the Talos cluster"
+  description = "The VIP for the management of the Talos cluster"
   type        = string
   default     = "192.168.1.79"
 }

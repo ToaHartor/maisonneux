@@ -40,13 +40,7 @@ dry-renovate:
 $(FLUX_ENVS):
 # make use-context <flux-env>
 ifeq (use-context,$(filter use-context,$(MAKECMDGOALS)))
-	@mkdir -p ~/.kube
-	@mkdir -p ~/.talos
-	@kubectl config delete-context admin@k8s || true
-	@cp -rf tmp/talosconfig-$@.yaml ~/.talos/config
-	@cp -rf tmp/kubeconfig-$@.yaml ~/.kube/config
-	@chmod 700 ~/.kube/config
-	@kubectl config use-context admin@k8s
+	bash scripts/make/use-context.sh $@
 endif
 # make restore <flux-env>
 ifeq (restore,$(filter restore,$(MAKECMDGOALS)))
