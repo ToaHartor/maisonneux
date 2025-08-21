@@ -25,6 +25,8 @@ spec:
   values:
     storage:
       persistentClassName: ${fastdata_storage}
+      size: 1Gi
+      logsSize: 1Gi
     database:
       users:
         - tachi

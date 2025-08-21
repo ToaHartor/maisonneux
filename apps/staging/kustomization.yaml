@@ -21,3 +21,21 @@ resources:
   - ../base/kavita
   - ../base/suwayomi
   - ../base/immich
+patches:
+  # Reduce PVC sizes
+  - target:
+      kind: HelmRelease
+      name: kavita
+      namespace: media
+    patch: |-
+      - op: replace
+        path: /spec/values/persistence/config/size
+        value: 500Mi
+  - target:
+      kind: HelmRelease
+      name: immich-db
+      namespace: immich
+    patch: |-
+      - op: replace
+        path: /spec/values/storage/size
+        value: 5Gi

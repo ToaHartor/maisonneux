@@ -19,6 +19,7 @@ resources:
   - ../base/grafana
 patches:
   # Remove all topologySpreadConstraints and reduce replicas in non-production cluster
+  # We also reduce default volume storage size
   - target:
       kind: HelmRelease
       name: victoria-metrics-operator
@@ -39,6 +40,9 @@ patches:
       - op: remove
         path: /spec/values/extraObjects/0/spec/vmstorage/topologySpreadConstraints
       - op: replace
+        path: /spec/values/extraObjects/0/spec/vmstorage/storage/volumeClaimTemplate/spec/resources/requests/storage
+        value: 1Gi
+      - op: replace
         path: /spec/values/extraObjects/0/spec/vmselect/replicaCount
         value: 1
       - op: remove
@@ -54,6 +58,9 @@ patches:
         value: 1
       - op: remove
         path: /spec/values/extraObjects/1/spec/vlstorage/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/extraObjects/1/spec/vlstorage/storage/volumeClaimTemplate/spec/resources/requests/storage
+        value: 1Gi
       - op: replace
         path: /spec/values/extraObjects/1/spec/vlselect/replicaCount
         value: 1
@@ -107,6 +114,36 @@ patches:
         value: 1
       - op: remove
         path: /spec/values/topologySpreadConstraints
+
+  - target:
+      kind: HelmRelease
+      name: psql-cluster
+      namespace: postgres
+    patch: |-
+      - op: replace
+        path: /spec/values/storage/size
+        value: 5Gi
+  
+  - target:
+      kind: HelmRelease
+      name: mariadb-cluster
+      namespace: mariadb
+    patch: |-
+      - op: replace
+        path: /spec/values/storage/size
+        value: 2Gi
+
+  - target:
+      kind: HelmRelease
+      name: mongodb-cluster
+      namespace: mongodb
+    patch: |-
+      - op: replace
+        path: /spec/values/storage/size
+        value: 1Gi
+      - op: replace
+        path: /spec/values/storage/logsSize
+        value: 1Gi
 
   - target:
       kind: HelmRelease
