@@ -8,7 +8,7 @@ spec:
   - "${main_domain}"
   - "*.${main_domain}"
   issuerRef:
-    name: "letsencrypt-${environment}"
+    name: "letsencrypt"
     kind: ClusterIssuer
     group: cert-manager.io
   secretName: ${main_domain}-tls

@@ -53,4 +53,21 @@ spec:
           matchLabels:
             app.kubernetes.io/name: cert-manager-webhook-ovh
 
-    # Issuer configured in production/staging kustomization.yaml
+    issuers:
+      - name: letsencrypt
+        acmeServerUrl: ${acme_server_url} # Inserted by FluxCD Terraform
+        create: true
+        kind: ClusterIssuer
+        # Completed in valuesFrom
+        # email: admin@example.com
+        # ovhEndpointName: ovh-eu
+        ovhAuthenticationRef:
+          applicationKeyRef:
+            name: external-ovh-secrets
+            key: applicationKey
+          applicationSecretRef:
+            name: external-ovh-secrets
+            key: applicationSecret
+          consumerKeyRef:
+            name: external-ovh-secrets
+            key: consumerKey

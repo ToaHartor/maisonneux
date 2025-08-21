@@ -18,9 +18,10 @@ if [ "${TF_FOLDER}" == "fluxcd" ]; then \
     popd
     # Add additional variables to terraform deployment
     # Get ips from ../k8s/config.env.tfvars
-    traefik_ip=$(grep -Po "(?<=k8s_lb_traefik_ip\s?\=\s?\"?)[^\"\s]+" < "terraform/k8s/config.${TF_DEPLOY_ENV}.tfvars")
-    otelcol_ip=$(grep -Po "(?<=k8s_lb_influxdb_ip\s?\=\s?\"?)[^\"\s]+" < "terraform/k8s/config.${TF_DEPLOY_ENV}.tfvars")
-    baseport_number=$(grep -Po "(?<=opnsense_base_port_number\s?\=\s?)[^\s]+" < "terraform/k8s/config.${TF_DEPLOY_ENV}.tfvars")
+    # TODO : get input variables from tfstate instead ?
+    traefik_ip=$(grep -Po "k8s_lb_traefik_ip\s*\=\s*\"[^\"\s]+" < "terraform/k8s/config.${TF_DEPLOY_ENV}.tfvars" | cut -d '"' -f2)
+    otelcol_ip=$(grep -Po "k8s_lb_influxdb_ip\s*\=\s*\"[^\"\s]+" < "terraform/k8s/config.${TF_DEPLOY_ENV}.tfvars" | cut -d '"' -f2)
+    baseport_number=$(grep -Po "opnsense_base_port_number\s*\=\s*\d+" < "terraform/k8s/config.${TF_DEPLOY_ENV}.tfvars" | cut -d '=' -f2 | awk '{$1=$1};1')
     TF_CONFIG_VARS+=("-var=k8s_lb_traefik_ip=${traefik_ip}")
     TF_CONFIG_VARS+=("-var=k8s_lb_influxdb_ip=${otelcol_ip}")
     TF_CONFIG_VARS+=("-var=opnsense_base_port_number=${baseport_number}")

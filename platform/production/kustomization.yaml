@@ -17,9 +17,9 @@ resources:
   - ../base/dragonfly-cluster
   - ../base/victoriametrics-operator
   - ../base/grafana
-patches:
-  - path: cert-manager-ovh-values.yaml
-    target:
-      name: cert-manager-webhook-ovh
-      namespace: cert-manager
-      kind: HelmRelease
+# patches:
+#   - path: cert-manager-ovh-values.yaml
+#     target:
+#       name: cert-manager-webhook-ovh
+#       namespace: cert-manager
+#       kind: HelmRelease

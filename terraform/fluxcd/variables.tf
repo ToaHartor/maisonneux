@@ -29,8 +29,13 @@ variable "cnpg_recovery" {
   default     = false
 }
 
-# Fluxcd credentials
+variable "use_letsencrypt_production_server" {
+  type        = bool
+  description = "Should the Let's Encrypt production server be used"
+  default     = false
+}
 
+# Fluxcd credentials
 variable "flux_git_user" {
   type = string
 }

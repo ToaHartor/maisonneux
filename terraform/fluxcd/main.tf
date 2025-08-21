@@ -28,6 +28,7 @@ locals {
     "environment"               = terraform.workspace
     "minio_url"                 = var.minio_access_url
     "minio_backup_bucket"       = var.minio_backup_bucket
+    "acme_server_url"           = var.use_letsencrypt_production_server ? "https://acme-v02.api.letsencrypt.org/directory" : "https://acme-staging-v02.api.letsencrypt.org/directory"
     "main_domain"               = var.main_domain
     "secondary_domain"          = var.second_domain
     "psql_suffix"               = var.cnpg_recovery ? "-temp" : ""
