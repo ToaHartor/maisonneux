@@ -38,8 +38,34 @@ spec:
 
   statefulSet:
     spec:
-      # template:
-      #   spec:
+      template:
+        spec:
+          containers:
+            - name: mongod
+              resources:
+                limits:
+                  cpu: "0.2"
+                  memory: 250M
+                requests:
+                  cpu: "0.2"
+                  memory: 200M
+            - name: mongodb-agent
+              resources:
+                limits:
+                  cpu: "0.2"
+                  memory: 150M
+                requests:
+                  cpu: "0.2"
+                  memory: 100M
+          initContainers:
+            - name: mongodb-agent-readinessprobe
+              resources:
+                limits:
+                  cpu: "0.5"
+                  memory: 100M
+                requests:
+                  cpu: "0.2"
+                  memory: 50M
       #     containers:
       #       - name: mongodb-agent
       #         volumes:
