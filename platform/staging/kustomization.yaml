@@ -123,6 +123,9 @@ patches:
       - op: replace
         path: /spec/values/storage/size
         value: 5Gi
+      - op: replace
+        path: /spec/values/database/enableAntiAffinity
+        value: false
   
   - target:
       kind: HelmRelease
@@ -132,6 +135,18 @@ patches:
       - op: replace
         path: /spec/values/storage/size
         value: 2Gi
+      - op: replace
+        path: /spec/values/mariadb/enableAntiAffinity
+        value: false
+
+  - target:
+      kind: HelmRelease
+      name: dragonfly-cluster
+      namespace: dragonfly
+    patch: |-
+      - op: replace
+        path: /spec/values/replicas
+        value: 1
 
   - target:
       kind: HelmRelease

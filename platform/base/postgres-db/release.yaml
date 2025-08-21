@@ -40,6 +40,7 @@ spec:
       persistentClassName: ${fastdata_storage}
       size: 20Gi
     database:
+      enableAntiAffinity: true
       postgres:
         clusterName: psql-cluster${psql_suffix:=}
       users:

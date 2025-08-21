@@ -10,7 +10,7 @@ metadata:
   name: dragonfly-cluster
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 3
+  replicas: {{ .Values.replicas }}
   resources:
     requests:
       cpu: 500m

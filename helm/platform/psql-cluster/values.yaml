@@ -8,6 +8,7 @@ s3:
 storage:
   size: 1Gi
 database:
+  enableAntiAffinity: true
   # postgres:
   #   clusterName: # Defined in common
   users:

@@ -26,4 +26,6 @@ spec:
     storage:
       persistentClassName: ${fastdata_storage}
       size: 10Gi
+    mariadb:
+      enableAntiAffinity: true
     

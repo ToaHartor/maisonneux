@@ -24,4 +24,5 @@ spec:
     remediation:
       retries: 3
 
-  # values:
+  values:
+    replicas: 3

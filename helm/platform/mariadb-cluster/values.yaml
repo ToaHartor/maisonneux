@@ -1,2 +1,5 @@
 storage:
   size: 1Gi
+
+mariadb:
+  enableAntiAffinity: true

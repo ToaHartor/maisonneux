@@ -65,7 +65,7 @@ spec:
   podDisruptionBudget:
     maxUnavailable: 33%
   affinity:
-    antiAffinityEnabled: true
+    antiAffinityEnabled: {{ .Values.mariadb.enableAntiAffinity }}
 
   # tolerations:
   #   - key: "k8s.mariadb.com/ha"

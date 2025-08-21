@@ -20,6 +20,9 @@ spec:
   #     secret:
   #       name: authentik-psql-secret
 
+  affinity:
+    enablePodAntiAffinity: {{ .Values.database.enableAntiAffinity }}
+
   postgresql:
     parameters:
       wal_keep_size: "5GB" 
