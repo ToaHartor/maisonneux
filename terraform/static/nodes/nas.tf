@@ -104,7 +104,7 @@ resource "proxmox_virtual_environment_vm" "nas" {
     xvga     = true
   }
   memory {
-    dedicated = 24576
+    dedicated = 22 * 1024
     floating  = 0
     hugepages = null
     shared    = 0
