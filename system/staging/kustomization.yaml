@@ -14,3 +14,112 @@ resources:
   - ../base/metrics-server
   - ../base/opentelemetry-kube-stack
   - ../base/velero
+patches:
+  # Remove all topologySpreadConstraints and reduce replicas in non-production cluster
+  - target:
+      kind: HelmRelease
+      name: trust-manager
+      namespace: cert-manager
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: snapshot-controller
+      namespace: velero
+    patch: |-
+      - op: replace
+        path: /spec/values/controller/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/controller/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: reloader
+      namespace: kube-system
+    patch: |-
+      - op: replace
+        path: /spec/values/reloader/deployment/replicas
+        value: 1
+      - op: remove
+        path: /spec/values/reloader/deployment/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: opentelemetry-kube-stack
+      namespace: opentelemetry
+    patch: |-
+      - op: replace
+        path: /spec/values/opentelemetry-operator/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/opentelemetry-operator/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: metrics-server
+      namespace: kube-system
+    patch: |-
+      - op: replace
+        path: /spec/values/replicas
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: external-secrets
+      namespace: external-secrets
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/webhook/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/webhook/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: cert-manager
+      namespace: cert-manager
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: replace
+        path: /spec/values/podDisruptionBudget/enabled
+        value: false
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+
+      - op: replace
+        path: /spec/values/webhook/replicaCount
+        value: 1
+      - op: replace
+        path: /spec/values/webhook/podDisruptionBudget/enabled
+        value: false
+      - op: remove
+        path: /spec/values/webhook/topologySpreadConstraints
+      
+      - op: replace
+        path: /spec/values/cainjector/replicaCount
+        value: 1
+      - op: replace
+        path: /spec/values/cainjector/podDisruptionBudget/enabled
+        value: false
+      - op: remove
+        path: /spec/values/cainjector/topologySpreadConstraints
+
+  # Modify HA storage class to no longer spread
+  - target:
+      kind: StorageClass
+      name: ${fastdata_storage}-ha
+    patch: |-
+      - op: replace
+        path: /parameters/linstor.csi.linbit.com~1autoPlace
+        value: "1"
+      - op: remove
+        path: /parameters/linstor.csi.linbit.com~1xReplicasOnDifferent

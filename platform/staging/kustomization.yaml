@@ -17,9 +17,104 @@ resources:
   - ../base/dragonfly-cluster
   - ../base/victoriametrics-operator
   - ../base/grafana
-# patches:
-#   - path: cert-manager-ovh-values.yaml
-#     target:
-#       name: cert-manager-webhook-ovh
-#       namespace: cert-manager
-#       kind: HelmRelease
+patches:
+  # Remove all topologySpreadConstraints and reduce replicas in non-production cluster
+  - target:
+      kind: HelmRelease
+      name: victoria-metrics-operator
+      namespace: monitoring
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: replace
+        path: /spec/values/podDisruptionBudget/enabled
+        value: false
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+      
+      - op: replace
+        path: /spec/values/extraObjects/0/spec/vmstorage/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/0/spec/vmstorage/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/extraObjects/0/spec/vmselect/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/0/spec/vmselect/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/extraObjects/0/spec/vminsert/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/0/spec/vminsert/topologySpreadConstraints
+
+      - op: replace
+        path: /spec/values/extraObjects/1/spec/vlstorage/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/1/spec/vlstorage/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/extraObjects/1/spec/vlselect/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/1/spec/vlselect/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/extraObjects/1/spec/vlinsert/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/1/spec/vlinsert/topologySpreadConstraints
+
+  - target:
+      kind: HelmRelease
+      name: mariadb-operator
+      namespace: operators
+    patch: |-
+      - op: replace
+        path: /spec/values/ha/enabled
+        value: false
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+
+      - op: replace
+        path: /spec/values/webhook/ha/enabled
+        value: false
+      - op: remove
+        path: /spec/values/webhook/topologySpreadConstraints
+
+      - op: replace
+        path: /spec/values/pdb/enabled
+        value: false
+
+  - target:
+      kind: HelmRelease
+      name: dragonfly-operator
+      namespace: operators
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/manager/topologySpreadConstraints
+
+  - target:
+      kind: HelmRelease
+      name: cloudnative-pg
+      namespace: operators
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+
+  - target:
+      kind: HelmRelease
+      name: cert-manager-webhook-ovh
+      namespace: cert-manager
+    patch: |-
+      - op: replace
+        path: /spec/values/replicas
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
