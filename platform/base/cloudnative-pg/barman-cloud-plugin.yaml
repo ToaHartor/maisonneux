@@ -10,7 +10,7 @@ spec:
   ref:
     # TODO : ref for tag when merged
     branch: add-pluginbarmancloud-chart
-    commit: 3a9bc82bd0d81c569e072e1f73988a7c3f183db0
+    commit: cb3645cd3f838e22fba1c3ba182a4e4d28c99b51
     # tag: 0.1.0
   url: https://github.com/QuantumEnigmaa/charts/
 
