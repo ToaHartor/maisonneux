@@ -134,7 +134,7 @@ patches:
     patch: |-
       - op: replace
         path: /spec/values/storage/size
-        value: 2Gi
+        value: 5Gi
       - op: replace
         path: /spec/values/mariadb/enableAntiAffinity
         value: false
