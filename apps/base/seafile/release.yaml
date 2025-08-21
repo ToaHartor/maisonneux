@@ -58,7 +58,7 @@ spec:
       persistence:
         storage:
           server: ${nfs_server}
-          path: ${nfs_path_seafile}/seafile-data
+          path: ${nfs_path_seafile}
 
       workload:
         main:

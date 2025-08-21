@@ -103,7 +103,6 @@ seafile:
       type: nfs
       server: # Complete with nfs server
       path: # Complete with nfs path
-
       # type: pvc
       # size: 1Gi
       # storageClass: default
