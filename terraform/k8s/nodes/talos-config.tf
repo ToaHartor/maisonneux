@@ -28,22 +28,32 @@ locals {
       #    talos image, which is created in the installed state.
       #install = {}
       # Add mirror to dev machine only if registry mirror url is set
+      # We may also add the zot registry in the cluster (exposed at localhost:32000)
+      # Finally, we add the actual registry as if no mirror is available, as the cluster should still be able to pull images
       registries = var.registry_mirror_url != "" ? {
         mirrors = {
           "docker.io" = {
-            endpoints    = ["${var.registry_mirror_url}/docker.io"]
+            endpoints    = ["http://localhost:32000/v2/docker.io", "${var.registry_mirror_url}/docker.io", "https://docker.io/v2"]
             overridePath = true
           }
           "gcr.io" = {
-            endpoints    = ["${var.registry_mirror_url}/gcr.io"]
+            endpoints    = ["http://localhost:32000/v2/gcr.io", "${var.registry_mirror_url}/gcr.io", "https://gcr.io/v2"]
             overridePath = true
           }
           "ghcr.io" = {
-            endpoints    = ["${var.registry_mirror_url}/ghcr.io"]
+            endpoints    = ["http://localhost:32000/v2/ghcr.io", "${var.registry_mirror_url}/ghcr.io", "https://ghcr.io/v2"]
             overridePath = true
           }
           "registry.k8s.io" = {
-            endpoints    = ["${var.registry_mirror_url}/registry.k8s.io"]
+            endpoints    = ["http://localhost:32000/v2/registry.k8s.io", "${var.registry_mirror_url}/registry.k8s.io", "https://registry.k8s.io/v2"]
+            overridePath = true
+          }
+          "quay.io" = {
+            endpoints    = ["http://localhost:32000/v2/quay.io", "${var.registry_mirror_url}/quay.io", "https://quay.io/v2"]
+            overridePath = true
+          }
+          "registry.gitlab.com" = {
+            endpoints    = ["http://localhost:32000/v2/registry.gitlab.com", "${var.registry_mirror_url}/registry.gitlab.com", "https://registry.gitlab.com/v2"]
             overridePath = true
           }
         }
