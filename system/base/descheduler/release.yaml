@@ -64,9 +64,9 @@ spec:
                   memory: 20
                   pods: 20
                 targetThresholds:
-                  cpu: 50
-                  memory: 50
-                  pods: 50
+                  cpu: 70
+                  memory: 70
+                  pods: 70
           plugins:
             balance:
               enabled:
