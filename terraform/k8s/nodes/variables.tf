@@ -159,12 +159,6 @@ variable "schedule_pods_on_control_plane_nodes" {
   default     = false
 }
 
-variable "ingress_domain" {
-  description = "the DNS domain of the ingress resources"
-  type        = string
-  default     = "example.test"
-}
-
 variable "cluster_prefix" {
   type    = string
   default = "talos"
@@ -174,4 +168,10 @@ variable "cluster_lan_gateway" {
   description = "The gateway for the load balancer subnet"
   type        = string
   default     = "10.64.64.255"
+}
+
+variable "registry_mirror_url" {
+  description = "URL to be used as base for registry mirrors in the cluster (zot compatible)"
+  type        = string
+  default     = ""
 }

@@ -27,6 +27,28 @@ locals {
       #    (which we do not do). instead, its preferred to create a custom
       #    talos image, which is created in the installed state.
       #install = {}
+      # Add mirror to dev machine only if registry mirror url is set
+      registries = var.registry_mirror_url != "" ? {
+        mirrors = {
+          "docker.io" = {
+            endpoints    = ["${var.registry_mirror_url}/docker.io"]
+            overridePath = true
+          }
+          "gcr.io" = {
+            endpoints    = ["${var.registry_mirror_url}/gcr.io"]
+            overridePath = true
+          }
+          "ghcr.io" = {
+            endpoints    = ["${var.registry_mirror_url}/ghcr.io"]
+            overridePath = true
+          }
+          "registry.k8s.io" = {
+            endpoints    = ["${var.registry_mirror_url}/registry.k8s.io"]
+            overridePath = true
+          }
+        }
+      } : {}
+
       features = {
         # see https://www.talos.dev/v1.7/kubernetes-guides/configuration/kubeprism/
         # see talosctl -n $c0 read /etc/kubernetes/kubeconfig-kubelet | yq .clusters[].cluster.server

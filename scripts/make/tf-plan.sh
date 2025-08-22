@@ -36,7 +36,7 @@ if [ "${TF_FOLDER}" == "k8s" ]; then
     # Only planning nodes
     pushd nodes
         tofu workspace select "${TF_DEPLOY_ENV}"
-        tofu plan -out "${TF_FOLDER}.tfplan" -var-file="../${TF_CONFIG_VARS_FILE}" -var-file='../../env/credentials.tfvars' 
+        tofu plan -out "${TF_FOLDER}.tfplan" -var-file="../${TF_CONFIG_VARS_FILE}" -var-file='../../env/credentials.tfvars' -var="registry_mirror_url=http://$(sh ../../../scripts/get_dev_machine_ip.sh):15000/v2"
     popd
 else
     tofu plan -out "${TF_FOLDER}.tfplan" -var-file="${TF_CONFIG_VARS_FILE}" -var-file='../env/credentials.tfvars' "${TF_CONFIG_VARS[@]}"

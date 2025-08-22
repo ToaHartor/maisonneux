@@ -24,4 +24,16 @@ services:
       - USER=git
 
       - GITEA__database__DB_TYPE=sqlite3
+      - GITEA__repository_0X2E_pull_0X2D_request__DEFAULT_MERGE_STYLE=rebase
+    restart: "unless-stopped"
+
+  # Zot for image mirroring
+  zot:
+    image: ghcr.io/project-zot/zot-linux-amd64:v2.1.5
+    container_name: zot
+    volumes:
+      - ${REPO_PATH:-.}/tmp/zot:/tmp/zot:z
+      - ${REPO_PATH:-.}/dev/zot-config.json:/etc/zot/config.json:z
+    ports:
+      - 15000:15000/tcp # Registry
     restart: "unless-stopped"
