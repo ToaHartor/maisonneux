@@ -31,9 +31,12 @@ services:
   zot:
     image: ghcr.io/project-zot/zot-linux-amd64:v2.1.5
     container_name: zot
+    environment:
+      - AWS_ACCESS_KEY_ID=${MINIO_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_SECRET_KEY}
     volumes:
       - ${REPO_PATH:-.}/tmp/zot:/tmp/zot:z
-      - ${REPO_PATH:-.}/dev/zot-config.json:/etc/zot/config.json:z
+      - ${REPO_PATH:-.}/tmp/zot-config.json:/etc/zot/config.json:z
     ports:
       - 15000:15000/tcp # Registry
     restart: "unless-stopped"

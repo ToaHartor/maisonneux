@@ -2,7 +2,17 @@
   "distSpecVersion": "1.1.1",
   "storage": {
     "rootDirectory": "/tmp/zot",
-    "gc": true
+    "gc": false,
+    "remoteCache": false,
+    "storageDriver": {
+      "name": "s3",
+      "region": "auto",
+      "regionendpoint": "REPLACEDBYSCRIPT",
+      "bucket": "zot",
+      "forcepathstyle": true,
+      "secure": false,
+      "skipverify": false
+    }
   },
   "http": {
     "address": "0.0.0.0",
@@ -29,6 +39,7 @@
     },
     "sync": {
       "enable": true,
+      "downloadDir": "/tmp/zot/mirror",
       "registries": [
         {
           "urls": [
