@@ -1,1 +1,1 @@
- {{ include "common.s3bucket" (dict "BucketNamespace" .Release.Namespace "BucketName" .Values.s3.bucketName "BucketQuota" .Values.s3.bucketQuota) }}
+ {{ include "common.s3bucket" (dict "BucketNamespace" .Release.Namespace "BucketName" .Values.s3.bucketName "BucketUser" .Values.s3.bucketUser "BucketQuota" .Values.s3.bucketQuota) }}

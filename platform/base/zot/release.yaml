@@ -25,7 +25,9 @@ spec:
   # Edit values in helm/platform/zot/values.yaml
   values:
     s3:
-      bucketName: zot-${environment}
+      # We will use the same bucket for all environments.
+      bucketName: zot
+      bucketUser: zot-${environment}
     zot:
       env:
         - name: "AWS_ACCESS_KEY_ID"
@@ -54,7 +56,7 @@ spec:
                 "name": "s3",
                 "region": "auto",
                 "regionendpoint": "http://${minio_url}",
-                "bucket": "zot-${environment}",
+                "bucket": "zot",
                 "forcepathstyle": true,
                 "secure": false,
                 "skipverify": false

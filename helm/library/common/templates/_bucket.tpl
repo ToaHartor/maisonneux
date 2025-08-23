@@ -2,9 +2,11 @@
 Parameters :
 - .BucketNamespace : Bucket namespace
 - .BucketName : Bucket name
+- .BucketUser : Bucket user (defaults to Bucket name)
 - .BucketQuota : Quota in Bytes
 */}}
 {{- define "common.s3bucket" -}}
+{{- $user := default .BucketName .BucketUser -}}
 ---
 apiVersion: s3.onyxia.sh/v1alpha1
 kind: Bucket
@@ -22,11 +24,11 @@ spec:
 apiVersion: s3.onyxia.sh/v1alpha1
 kind: Policy
 metadata:
-  name: "{{ .BucketName }}-bucket-policy"
+  name: "{{ $user }}-bucket-policy"
   namespace: {{ .BucketNamespace }}
 spec:
   # Policy name (on S3 server, as opposed to the name of the CR)
-  name: "{{ .BucketName }}-bucket-policy"
+  name: "{{ $user }}-bucket-policy"
   policyContent: >-
     {
       "Version": "2012-10-17",
@@ -47,10 +49,10 @@ spec:
 apiVersion: s3.onyxia.sh/v1alpha1
 kind: S3User
 metadata:
-  name: {{ .BucketName }}-s3user
+  name: {{ $user }}-s3user
   namespace: {{ .BucketNamespace }}
 spec:
-  accessKey: {{ .BucketName }}
+  accessKey: {{ $user }}
   policies:
-    - "{{ .BucketName }}-bucket-policy"
+    - "{{ $user }}-bucket-policy"
 {{- end -}}

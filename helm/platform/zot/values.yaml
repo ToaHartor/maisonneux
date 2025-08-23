@@ -1,5 +1,6 @@
 s3:
   bucketName: zot
+  bucketUser: zot
   bucketQuota: 100000000000 # 100GB
 zot:
   # see https://github.com/project-zot/helm-charts/blob/main/charts/zot/values.yaml
