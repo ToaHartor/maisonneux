@@ -16,7 +16,7 @@ spec:
     spec:
       chart: velero
       # renovate: datasource=helm depName=velero registryUrl=https://vmware-tanzu.github.io/helm-charts
-      version: "10.0.10" # 10.0.x
+      version: "10.1.0" # 10.0.x
       sourceRef:
         kind: HelmRepository
         name: vmware-tanzu
