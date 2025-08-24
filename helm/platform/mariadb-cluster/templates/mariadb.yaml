@@ -78,6 +78,10 @@ spec:
     key: my.cnf
 
   galera:
+    agent:
+      image: "{{ .Values.mariadb.image.repository }}:{{ .Values.mariadb.image.tag}}"
+    initContainer:
+      image: "{{ .Values.mariadb.image.repository }}:{{ .Values.mariadb.image.tag}}"
     enabled: true
     primary:
       automaticFailover: true

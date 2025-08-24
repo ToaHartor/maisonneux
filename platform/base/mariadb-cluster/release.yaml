@@ -28,4 +28,7 @@ spec:
       size: 10Gi
     mariadb:
       enableAntiAffinity: true
+      image:
+        # renovate: datasource=helm depName=mariadb-operator registryUrl=https://helm.mariadb.com/mariadb-operator
+        tag: 0.38.1
     
