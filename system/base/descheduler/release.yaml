@@ -23,7 +23,7 @@ spec:
     # https://github.com/kubernetes-sigs/descheduler/blob/master/charts/descheduler/values.yaml
     kind: CronJob
     timeZone: Europe/Paris
-    schedule: "*/5 * * * *"
+    schedule: "*/20 * * * *"
 
     deschedulerPolicy:
         profiles:
