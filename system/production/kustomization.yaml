@@ -14,4 +14,3 @@ resources:
   - ../base/kubelet-cert-approver
   - ../base/metrics-server
   - ../base/opentelemetry-kube-stack
-  - ../base/velero

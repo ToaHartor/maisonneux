@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../base/s3-operator
+  - ../base/velero
   - ../base/cloudnative-pg
   - ../base/postgres-db
   - ../base/mariadb-operator

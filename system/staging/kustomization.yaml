@@ -13,7 +13,6 @@ resources:
   - ../base/kubelet-cert-approver
   - ../base/metrics-server
   - ../base/opentelemetry-kube-stack
-  - ../base/velero
 patches:
   # Remove all topologySpreadConstraints and reduce replicas in non-production cluster
   - target:
@@ -26,16 +25,6 @@ patches:
         value: 1
       - op: remove
         path: /spec/values/topologySpreadConstraints
-  - target:
-      kind: HelmRelease
-      name: snapshot-controller
-      namespace: velero
-    patch: |-
-      - op: replace
-        path: /spec/values/controller/replicaCount
-        value: 1
-      - op: remove
-        path: /spec/values/controller/topologySpreadConstraints
   - target:
       kind: HelmRelease
       name: reloader

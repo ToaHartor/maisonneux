@@ -10,6 +10,8 @@ spec:
     - name: prometheus-operator-crds
       namespace: opentelemetry
     - name: snapshot-controller
+    - name: s3-operator
+      namespace: operators
   chart:
     spec:
       chart: velero
@@ -234,6 +236,19 @@ spec:
 
 
     extraObjects:
+      # S3 bucket
+      - apiVersion: s3.onyxia.sh/v1alpha1
+        kind: Bucket
+        metadata:
+          name: "${minio_backup_bucket}-bucket"
+          namespace: velero
+        spec:
+          # Bucket name (on S3 server, as opposed to the name of the CR)
+          name: "${minio_backup_bucket}"
+          quota:
+            default: 100000000000 # 100GB
+
+      # S3 secret mirror
       - apiVersion: external-secrets.io/v1
         kind: ExternalSecret
         metadata:
