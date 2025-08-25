@@ -4,7 +4,7 @@ terraform {
     # see https://github.com/hashicorp/terraform-provider-helm
     helm = {
       source  = "hashicorp/helm"
-      version = "2.17.0"
+      version = "3.0.2"
     }
     # see https://registry.terraform.io/providers/siderolabs/talos
     # see https://github.com/siderolabs/terraform-provider-talos
