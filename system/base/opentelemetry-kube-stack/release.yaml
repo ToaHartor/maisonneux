@@ -167,6 +167,11 @@ spec:
             enabled: true
           kubernetesAttributes:
             enabled: true
+          kubernetesEvents:
+            enabled: true
+          clusterMetrics:
+            enabled: true
+
         
         # Should run as root to collect hostMetrics
         securityContext:
@@ -378,39 +383,6 @@ spec:
                       ca_file: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
                       insecure_skip_verify: true
 
-          service:
-            pipelines:
-              logs/talos:
-                receivers: [udplog]
-                processors: [batch]
-                exporters: *victoriametrics-exporter
-              logs:
-                receivers: [otlp, filelog]
-                processors: [k8sattributes, resourcedetection/env, batch]
-                exporters: *victoriametrics-exporter
-              metrics:
-                receivers: [otlp, prometheus, hostmetrics, kubeletstats]
-                processors: [k8sattributes, resourcedetection/env, batch]
-                exporters: *victoriametrics-exporter
-
-      cluster:
-        enabled: true
-
-        presets:
-          kubernetesAttributes:
-            enabled: true
-          kubernetesEvents:
-            enabled: true
-          clusterMetrics:
-            enabled: true
-        
-
-        # We wan't to keep a pod running
-        podDisruptionBudget:
-          minAvailable: 1
-        
-        config:
-          receivers:
             k8sobjects:
               auth_type: serviceAccount
               objects:
@@ -420,13 +392,18 @@ spec:
                   mode: watch
 
           service:
+            extensions: [k8s_leader_elector/k8s_cluster, k8s_leader_elector/k8s_objects]
             pipelines:
+              logs/talos:
+                receivers: [udplog]
+                processors: [batch]
+                exporters: *victoriametrics-exporter
               logs:
-                receivers: [k8sobjects]
+                receivers: [otlp, filelog, k8sobjects]
                 processors: [k8sattributes, resourcedetection/env, batch]
                 exporters: *victoriametrics-exporter
               metrics:
-                receivers: [k8s_cluster]
+                receivers: [otlp, prometheus, hostmetrics, kubeletstats, k8s_cluster]
                 processors: [k8sattributes, resourcedetection/env, batch]
                 exporters: *victoriametrics-exporter
 
