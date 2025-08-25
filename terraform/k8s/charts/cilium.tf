@@ -229,7 +229,6 @@ EOF
 // see https://github.com/cilium/cilium/releases
 // see https://github.com/cilium/cilium/tree/v1.16.0/install/kubernetes/cilium
 // see https://registry.terraform.io/providers/hashicorp/helm/latest/docs/data-sources/template
-# data "helm_template" "cilium" {
 resource "helm_release" "cilium" {
   depends_on = [data.http.wait_k8sapi]
   namespace  = "kube-system"
