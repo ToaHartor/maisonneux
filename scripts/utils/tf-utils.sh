@@ -32,3 +32,15 @@ function tfutils::get_folder_env() {
   export TF_CONFIG_VARS_FILE
   export TF_DEPLOY_ENV
 }
+
+function tfutils::get_tfvars_quoted_key() {
+  key=$1
+  tfvar_file=$2
+  grep -Po "${key}\s*\=\s*\"[^\"\s]+" < "${tfvar_file}" | cut -d '"' -f2
+}
+
+function tfutils::get_tfvars_number_key() {
+  key=$1
+  tfvar_file=$2
+  grep -Po "${key}\s*\=\s*\d+" < "${tfvar_file}" | cut -d '=' -f2 | awk '{$1=$1};1'
+}

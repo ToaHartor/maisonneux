@@ -1,234 +1,6 @@
-locals {
-  # https://artifacthub.io/packages/helm/cilium/cilium  
-
-  cilium_values = <<EOF
-ipam:
-  mode: kubernetes
-
-operator:
-  rollOutPods: true
-  replicas: 3
-
-  topologySpreadConstraints:
-    # Maximum 2 pod per Proxmox hypervisor
-    - maxSkew: 2
-      topologyKey: topology.kubernetes.io/zone
-      whenUnsatisfiable: ScheduleAnyway
-      labelSelector:
-        matchLabels:
-          io.cilium/app: operator
-    # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
-    - maxSkew: 1
-      topologyKey: kubernetes.io/hostname
-      whenUnsatisfiable: DoNotSchedule
-      labelSelector:
-        matchLabels:
-          io.cilium/app: operator
-
-  resources:
-    limits:
-      cpu: 500m
-      memory: 256Mi
-    requests:
-      cpu: 50m
-      memory: 128Mi
-  
-  prometheus:
-    enabled: true
-  
-  dashboards:
-    enabled: true
-    label: grafana_dashboard
-    labelValue: "1"
-
-bpf:
-  datapathMode: netkit
-  masquerade: true
-  # tproxy: true
-  # vlanBypass: [0]
-  hostLegacyRouting: false
-  distributedLRU:
-    enabled: true
-  mapDynamicSizeRatio: 0.08
-  preallocateMaps: true
-
-# enableIPv4Masquerade: false # Managed by the router ?
-
-bpfClockProbe: true
-
-cni:
-  exclusive: false
-
-ipv4NativeRoutingCIDR: ${var.cluster_pod_cidr}
-
-endpointRoutes:
-  enabled: true
-
-# -- Install Iptables rules to skip netfilter connection tracking on all pod
-# traffic. This option is only effective when Cilium is running in direct
-# routing and full KPR mode. Moreover, this option cannot be enabled when Cilium
-# is running in a managed Kubernetes environment or in a chained CNI setup.
-installNoConntrackIptablesRules: true
-
-# -- Enable bandwidth manager to optimize TCP and UDP workloads and allow
-# for rate-limiting traffic from individual Pods with EDT (Earliest Departure
-# Time) through the "kubernetes.io/egress-bandwidth" Pod annotation.
-bandwidthManager:
-  enabled: true
-  bbr: true
-
-# -- Enables IPv4 BIG TCP support which increases maximum IPv4 GSO/GRO limits for nodes and pods
-# Not supported with bpf.hostLegacyRouting
-enableIPv4BIGTCP: true
-
-ipv4:
-  enabled: true
-ipv6:
-  enabled: false
-
-# Enabled by kubeProxyReplacement
-# socketLB:
-#   enabled: true
-
-securityContext:
-  capabilities:
-    ciliumAgent: ["CHOWN", "KILL", "NET_ADMIN", "NET_RAW", "IPC_LOCK", "SYS_ADMIN", "SYS_RESOURCE", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
-    cleanCiliumState: ["NET_ADMIN", "SYS_ADMIN", "SYS_RESOURCE"]
-
-cgroup:
-  autoMount:
-    enabled: false
-  hostRoot: "/sys/fs/cgroup"
-
-k8sServiceHost: localhost
-k8sServicePort: ${var.kubeprism_port}
-kubeProxyReplacement: true
-autoDirectNodeRoutes: true
-routingMode: native
-
-rollOutCiliumPods: true
-resources:
-  limits:
-    cpu: "1000m"
-    memory: "1Gi"
-  requests:
-    cpu: "200m"
-    memory: "512Mi"
-
-# Increase rate limit when doing L2 announcements
-# k8sClientRateLimit:
-#   qps: 20
-#   burst: 100
-
-bgpControlPlane:
-  enabled: true
-
-l2announcements:
-  enabled: false # enable if no bgp
-  # interface: "eth0"
-
-# Enabled by kubeProxyReplacement
-# externalIPs:
-#   enabled: true
-
-loadBalancer:
-  # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
-  algorithm: "maglev"
-  mode: "dsr" # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#direct-server-return-dsr
-  acceleration: "best-effort"
-  l7:
-    backend: "envoy"
-
-# maglev:
-#   hashSeed: "" # TODO : base64-encoded 12 byte-random number
-
-nodeIPAM:
-  enabled: false
-
-gatewayAPI: # Using traefik for that
-  enabled: false
-  enableAlpn: false
-  enableAppProtocol: false
-
-# devices: ["eth0"]
-# Ingress is managed by traefik
-ingressController:
-  enabled: false
-  default: false
-  loadbalancerMode: "shared"
-  enforceHttps:  false
-  # service:
-  #   annotations:
-  #     #     "io.cilium/lb-ipam-ips": ${var.cluster_vip}
-
-debug:
-  enabled: false # Only if debugging
-
-# envoyConfig:
-#   enabled: false
-
-envoy:
-  enabled: true
-  rollOutPods: true
-  securityContext:
-    capabilities:
-      keepCapNetBindService: true
-      envoy: ["NET_ADMIN", "NET_BIND_SERVICE", "PERFMON", "BPF"] # "SYS_ADMIN"
-  debug:
-    admin:
-      enabled: false # Only if debugging
-  
-  prometheus:
-    enabled: true
-
-hubble:
-  relay:
-    enabled: true
-    rollOutPods: true
-  ui:
-    enabled: true
-    rollOutPods: true
-  metrics:
-    enableOpenMetrics: true
-    enabled: ["dns", "drop", "tcp", "flow", "icmp", "http"]
-
-    dashboards:
-      enabled: true
-      label: grafana_dashboard
-      labelValue: "1"
-
-  prometheus:
-    enabled: true
-
-# Cilium agent metrics
-prometheus:
-  enabled: true
-
-dashboards:
-  enabled: true
-  label: grafana_dashboard
-  labelValue: "1"
-
-# Hardening
-# policyEnforcementMode: "always" # Enforce network policies
-# hostFirewall:
-#   enabled: true # Enable host policies (host-level network policies)
-# extraConfig:
-#   allow-localhost: "policy" # Enforce policies for node-local traffic as well
-
-# Audit mode
-# policyAuditMode: true
-EOF
-}
-
 // see https://www.talos.dev/v1.7/kubernetes-guides/network/deploying-cilium/#method-4-helm-manifests-inline-install
-// see https://docs.cilium.io/en/stable/network/servicemesh/ingress/
-// see https://docs.cilium.io/en/stable/gettingstarted/hubble_setup/
-// see https://docs.cilium.io/en/stable/gettingstarted/hubble/
-// see https://docs.cilium.io/en/stable/helm-reference/#helm-reference
 // see https://github.com/cilium/cilium/releases
 // see https://github.com/cilium/cilium/tree/v1.16.0/install/kubernetes/cilium
-// see https://registry.terraform.io/providers/hashicorp/helm/latest/docs/data-sources/template
 resource "helm_release" "cilium" {
   depends_on = [data.http.wait_k8sapi]
   namespace  = "kube-system"
@@ -236,9 +8,18 @@ resource "helm_release" "cilium" {
   repository = "https://helm.cilium.io"
   chart      = "cilium"
   version    = "1.18.1"
-  values     = [local.cilium_values]
-  wait       = false # Do not wait for resources as the chart is designed like this
-
+  # values     = [local.cilium_values]
+  values = [file("./cilium_values.yaml")]
+  wait   = false # Do not wait for resources as the chart is designed like this
+  set = [{
+    name  = "k8sServicePort"
+    value = var.kubeprism_port
+    },
+    {
+      name  = "ipv4NativeRoutingCIDR"
+      value = var.cluster_pod_cidr
+    }
+  ]
 }
 
 # Nodes become ready when CNI is established, so this checks if cilium install worked correctly
@@ -275,14 +56,14 @@ resource "helm_release" "cilium_custom_resources" {
   values = [
     <<-EOF
     resources:
-      - apiVersion: "cilium.io/v2alpha1"
+      - apiVersion: cilium.io/v2
         kind: "CiliumLoadBalancerIPPool"
         metadata:
           name: "external"
         spec:
           blocks:
             - cidr: ${var.cluster_virtual_lb_pool}
-      - apiVersion: cilium.io/v2alpha1
+      - apiVersion: cilium.io/v2
         kind: CiliumBGPAdvertisement
         metadata:
           name: bgp-advertisements
@@ -301,7 +82,7 @@ resource "helm_release" "cilium_custom_resources" {
                 matchExpressions:
                   - { key: homelab/public-service, operator: In, values: [ 'true' ] }
 
-      - apiVersion: cilium.io/v2alpha1
+      - apiVersion: cilium.io/v2
         kind: CiliumBGPPeerConfig
         metadata:
           name: peer-config
@@ -323,7 +104,7 @@ resource "helm_release" "cilium_custom_resources" {
                 matchLabels:
                   advertise: "bgp"
 
-      - apiVersion: cilium.io/v2alpha1
+      - apiVersion: cilium.io/v2
         kind: CiliumBGPClusterConfig
         metadata:
           name: bgp-peering
