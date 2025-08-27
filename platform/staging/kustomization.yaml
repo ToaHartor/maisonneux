@@ -7,8 +7,8 @@ resources:
   - ../base/postgres-db
   - ../base/mariadb-operator
   - ../base/mariadb-cluster
-  - ../base/mongodb
-  - ../base/mongodb-cluster
+  # - ../base/mongodb
+  # - ../base/mongodb-cluster
   - ../base/cert-manager-webhook-ovh
   - ../base/traefik
   - ../base/tekton-operator
@@ -160,17 +160,17 @@ patches:
         path: /spec/values/replicas
         value: 1
 
-  - target:
-      kind: HelmRelease
-      name: mongodb-cluster
-      namespace: mongodb
-    patch: |-
-      - op: replace
-        path: /spec/values/storage/size
-        value: 1Gi
-      - op: replace
-        path: /spec/values/storage/logsSize
-        value: 1Gi
+  # - target:
+  #     kind: HelmRelease
+  #     name: mongodb-cluster
+  #     namespace: mongodb
+  #   patch: |-
+  #     - op: replace
+  #       path: /spec/values/storage/size
+  #       value: 1Gi
+  #     - op: replace
+  #       path: /spec/values/storage/logsSize
+  #       value: 1Gi
 
   - target:
       kind: HelmRelease
