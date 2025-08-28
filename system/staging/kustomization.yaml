@@ -102,17 +102,6 @@ patches:
       - op: remove
         path: /spec/values/cainjector/topologySpreadConstraints
 
-  # Modify HA storage class to no longer spread
-  - target:
-      kind: StorageClass
-      name: ${fastdata_storage}-ha
-    patch: |-
-      - op: replace
-        path: /parameters/linstor.csi.linbit.com~1autoPlace
-        value: "1"
-      - op: remove
-        path: /parameters/linstor.csi.linbit.com~1xReplicasOnDifferent
-
   # Manage descheduler to function on tight resource clusters
   - target:
       kind: HelmRelease
