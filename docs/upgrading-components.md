@@ -6,6 +6,12 @@ Everything is bundled in `scripts/upgrade_node_os.sh` and `scripts/upgrade_k8s.s
 
 If one day it becomes possible to upgrade Kubernetes and Talos using the Talos provider, then we would be able to get rid of them.
 
+### Talos Linux
+
+Rollback is quite easy with `talosctl rollback --nodes <target-node-ip>`
+
+In case extensions or kernel arguments must be modified, modify the file `scripts/talos_schematic.yaml` then run an update with the same version.
+
 ## Charts installed with Terraform
 
 - Run Renovate to create Pull requests
@@ -57,6 +63,7 @@ helm rollback cilium [REVISION] --namespace=kube-system
 - Delete HelmResource mariadb-operator (pause Kustomization reconciliation ?)
 - Merge MR in Gitea
 - Let platform Kustomization reconcile and recreate mariadb-operator
+- Same steps for production on GitHub
 
 ### CloudNative PG operator
 

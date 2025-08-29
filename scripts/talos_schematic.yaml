@@ -2,8 +2,10 @@ customization:
   extraKernelArgs:
     - console=ttyS0
     - net.ifnames=0
+    - mitigations=off
+    - elevator=none
   systemExtensions:
     officialExtensions:
-      - siderolabs/iscsi-tools
       - siderolabs/qemu-guest-agent
       - siderolabs/drbd
+      - siderolabs/amd-ucode

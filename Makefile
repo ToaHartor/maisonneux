@@ -2,7 +2,8 @@ WORKSPACES=static k8s-production k8s-staging fluxcd-production fluxcd-staging
 FLUX_ENVS=production staging
 MAKEFLAGS += -rR
 
-.PHONY: python-venv start-devenv stop-devenv local-git talos-img cluster-health use-context tools tf-plan tf-apply tf-init tf-destroy dry-renovate renovate restore $(WORKSPACES)
+# Dev utilities
+.PHONY: python-venv start-devenv stop-devenv local-git talos-img cluster-health use-context tools dry-renovate renovate $(WORKSPACES)
 
 cluster-health:
 	bash scripts/check_cluster_health.sh
@@ -36,6 +37,9 @@ renovate:
 dry-renovate:
 	sh scripts/run_renovate.sh --dry-run
 
+# Cluster utilities
+.PHONY: use-context restore upgrade-k8s upgrade-talos
+
 # Use the right kubeconfig
 $(FLUX_ENVS):
 # make use-context <flux-env>
@@ -49,28 +53,21 @@ ifeq (restore,$(filter restore,$(MAKECMDGOALS)))
 	bash scripts/restore/restore.sh
 endif
 
-# Helm utilities
-# --kubeconfig string
-.PHONY: cluster-deps deploy-cluster uninstall-cluster
+# make upgrade-k8s <flux-env>
+ifeq (upgrade-k8s,$(filter upgrade-k8s,$(MAKECMDGOALS)))
+	@make use-context $@
+	@echo "Upgrading Kubernetes on $@ cluster"
+	bash scripts/upgrade_k8s.sh $@
+endif
 
-cluster-deps:
-	rm -f helm/maisonneux/Chart.lock
-	helm dependency build helm/maisonneux
+# make upgrade-talos <flux-env>
+ifeq (upgrade-talos,$(filter upgrade-talos,$(MAKECMDGOALS)))
+	@make use-context $@
+	@echo "Upgrading Talos on $@ cluster"
+	bash scripts/upgrade_node_os.sh $@
+endif
 
-# Helmfile commands with environments
-# $(HELM_ENVS):
-# # make deploy-cluster <env>
-# ifeq (deploy-cluster,$(filter deploy-cluster,$(MAKECMDGOALS)))
-# 	# helmfile apply -f helm/helmfile.yaml
-# 	helmfile sync -f helm/helmfile.yaml --environment $@ --debug
-# 	# helm upgrade --install --timeout 30m --namespace maisonneux --create-namespace --values helm/values/cluster.yaml maisonneux helm/maisonneux
-# endif
-# # make uninstall-cluster <env>
-# ifeq (uninstall-cluster,$(filter uninstall-cluster,$(MAKECMDGOALS)))
-# 	helmfile destroy -f helm/helmfile.yaml --environment $@
-# 	# helm uninstall maisonneux --wait --timeout 20m --namespace maisonneux
-# endif
-
+# Terraform utiliies
 .PHONY: tf-workspaces tf-plan tf-apply tf-destroy tf-init tf-upgrade tf-output
 
 tf-workspaces:
@@ -95,9 +92,11 @@ endif
 ifeq (tf-init,$(filter tf-init,$(MAKECMDGOALS)))
 	bash scripts/make/tf-init.sh $@
 endif
+# make tf-upgrade <ws>
 ifeq (tf-upgrade,$(filter tf-upgrade,$(MAKECMDGOALS)))
 	bash scripts/make/tf-upgrade.sh $@
 endif
+# make tf-output <ws>
 ifeq (tf-output,$(filter tf-output,$(MAKECMDGOALS)))
 	bash scripts/make/tf-output.sh $@
 endif
