@@ -24,6 +24,12 @@ spec:
     enablePodAntiAffinity: {{ .Values.database.enableAntiAffinity }}
 
   postgresql:
+    # Quorum based synchronous replication
+    # https://cloudnative-pg.io/documentation/current/replication/#synchronous-replication
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: required
     parameters:
       wal_keep_size: "5GB" 
       max_slot_wal_keep_size: "5GB"
