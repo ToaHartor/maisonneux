@@ -8,6 +8,8 @@ spec:
   dependsOn:
     - name: victoria-metrics-operator
     - name: grafana-oidc
+    - name: psql-cluster
+      namespace: postgres
   chart:
     spec:
       chart: helm/platform/grafana
