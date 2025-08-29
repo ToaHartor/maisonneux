@@ -129,8 +129,33 @@ resource "talos_machine_configuration_apply" "worker" {
   config_patches = [
     yamlencode({
       machine = {
+        kubelet = {
+          nodeIP = {
+            validSubnets = [
+              var.cluster_node_network
+            ]
+          }
+        }
         network = {
           hostname = local.worker_nodes[count.index].name
+          interfaces = [
+            {
+              interface = "eth0"
+              addresses = ["${local.worker_nodes[count.index].address}/${var.cluster_subnet}"]
+              dhcp      = false
+              routes = [
+                {
+                  network = "0.0.0.0/0"
+                  gateway = var.cluster_node_network_gateway
+                }
+              ]
+            }
+          ]
+          nameservers = [
+            var.cluster_node_network_gateway,
+            "1.1.1.1",
+            "8.8.8.8"
+          ]
         }
         # Labels to identify proxmox nodes
         nodeLabels = {
