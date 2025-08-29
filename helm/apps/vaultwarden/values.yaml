@@ -13,6 +13,15 @@ vaultwarden:
     repository: docker.io/library/busybox
     tag: latest
     pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 250Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
   workload:
     main:
       podSpec:
