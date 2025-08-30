@@ -12,6 +12,13 @@ Rollback is quite easy with `talosctl rollback --nodes <target-node-ip>`
 
 In case extensions or kernel arguments must be modified, modify the file `scripts/talos_schematic.yaml` then run an update with the same version.
 
+#### Storage
+
+Storage is only extensible, it cannot be shrinked.
+
+- For the storage used by Piraeus/Linstor (PVC storage), increasing the disk size in k8s Terraform is enough, no reboot is needed
+- For the ephemeral storage (main partition of the node), first increase the disk size in k8s Terraform, then reboot nodes to let the partition grow
+
 ## Charts installed with Terraform
 
 - Run Renovate to create Pull requests
