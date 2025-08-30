@@ -23,10 +23,28 @@ spec:
     remediation:
       retries: 3
   valuesFrom:
+    # Authentik Secret Key
     - kind: Secret
       name: authentik-secret-key
       valuesKey: secretKey
       targetPath: authentik.authentik.secret_key
+    # SMTP configuration mirrored from the external-secrets secret store
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_username
+      targetPath: authentik.authentik.email.username
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_token
+      targetPath: authentik.authentik.email.password
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_server
+      targetPath: authentik.authentik.email.host
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_port
+      targetPath: authentik.authentik.email.port
 
   values:
     s3:
@@ -45,7 +63,13 @@ spec:
         - Radarr 4K
         - Prowlarr
         - JDownloader
-      # authentik:
+      authentik:
+        email:
+          # host: replaced by valueFrom
+          # port: replaced by valueFrom
+          # username: replaced by valueFrom
+          # password: replaced by valueFrom
+          use_tls: true
       #   secret_key: replaced by valueFrom
 
       global:

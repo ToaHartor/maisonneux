@@ -35,6 +35,28 @@ variable "use_letsencrypt_production_server" {
   default     = false
 }
 
+# SMTP settings 
+
+variable "smtp_username" {
+  type        = string
+  description = "Username to use to authenticate to the SMTP server"
+}
+
+variable "smtp_token" {
+  type        = string
+  description = "Password or token to use to authenticate to the SMTP server"
+}
+
+variable "smtp_server" {
+  type        = string
+  description = "SMTP server domain"
+}
+
+variable "smtp_port" {
+  type        = number
+  description = "Port of the SMTP server"
+}
+
 # Fluxcd credentials
 variable "flux_git_user" {
   type = string

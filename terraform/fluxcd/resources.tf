@@ -67,3 +67,17 @@ resource "kubernetes_config_map" "general_config" {
   data = local.general_config
 }
 
+resource "kubernetes_secret" "external_smtp_config" {
+  metadata {
+    name      = "external-smtp-config"
+    namespace = kubernetes_namespace.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    smtp_username = var.smtp_username
+    smtp_token    = var.smtp_token
+    smtp_server   = var.smtp_server
+    smtp_port     = var.smtp_port
+  }
+}
