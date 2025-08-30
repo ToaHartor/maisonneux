@@ -11,6 +11,6 @@ resource "ansible_playbook" "configure_bgp" {
     bgp_asn          = var.bgp_asn
     lb_network       = var.cluster_virtual_lb_pool
     lb_gateway       = var.cluster_lan_gateway
-    node_list        = "${var.controllers},${var.workers}"
+    node_list        = "${var.controllers}${length(var.workers) > 0 ? ",${var.workers}" : ""}"
   }
 }
