@@ -108,5 +108,25 @@
       groupName: "terraform-talos",
       sourceUrl: "https://github.com/siderolabs/terraform-provider-talos",
     },
+    // Automerge settings
+    // Setting from https://docs.renovatebot.com/key-concepts/automerge/#automerge-non-major-updates
+    // * Non major updates for development tools
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: ["renovate/renovate"],
+      matchUpdateTypes: ["minor", "patch"],
+      matchCurrentVersion: "!/^0/",
+      ignoreTests: true,
+      automerge: true,
+    },
+    // * Non major updates for truecharts
+    {
+      matchDatasources: ["docker"],
+      matchJsonata: ["registryUrl = 'https://tccr.io'"],
+      matchUpdateTypes: ["minor", "patch"],
+      matchCurrentVersion: "!/^0/",
+      ignoreTests: true,
+      automerge: true,
+    },
   ],
 }
