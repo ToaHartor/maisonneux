@@ -4,7 +4,7 @@ description: Custom helm wrapper for Grafana Helm chart
 dependencies:
   - name: grafana
     # Version from https://github.com/grafana/helm-charts/blob/main/charts/grafana/Chart.yaml
-    version: "9.3.4"
+    version: "9.4.3"
     repository: https://grafana.github.io/helm-charts
   - name: common
     # renovate: datasource=local-dependency
