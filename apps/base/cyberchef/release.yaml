@@ -44,6 +44,8 @@ spec:
         rollingUpdate:
           maxUnavailable: 0
           maxSurge: 1
+        podSpec:
+          hostUsers: true
     
     extraTpl:
       - |
