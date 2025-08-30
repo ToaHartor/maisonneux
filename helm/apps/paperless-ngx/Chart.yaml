@@ -3,7 +3,7 @@ name: paperless-ngx
 description: Custom helm wrapper for Paperless-ngx Helm chart
 dependencies:
   - name: paperless-ngx
-    version: "11.10.1"
+    version: "11.10.3"
     repository: oci://tccr.io/truecharts
     alias: paperless
   - name: common
