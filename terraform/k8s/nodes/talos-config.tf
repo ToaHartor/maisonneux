@@ -106,8 +106,14 @@ locals {
         extraArgs = {
           cloud-provider             = "external"
           rotate-server-certificates = true
+          # To solve "failed to create pod sandbox : no space left on device"
+          # https://serverfault.com/questions/1189137/talos-os-and-truecharts-failed-to-create-network-namespace-for-sandbox-error
+          # feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
         }
       }
+      # sysctls = {
+      #   "user.max_user_namespaces" = "11255"
+      # }
       # nodeTaints = {
       #   "node.cilium.io/agent-not-ready" = "true:NoSchedule" # Taint nodes for cilium to check if it controls the node
       # }
@@ -141,6 +147,10 @@ locals {
       # Allow cert manager csi driver
       # Base from https://www.talos.dev/v1.7/reference/configuration/v1alpha1/config/#Config.cluster.apiServer.admissionControl.
       apiServer = {
+        # User namespace feature
+        # extraArgs = {
+        #   feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
+        # }
         admissionControl = [
           {
             name = "PodSecurity"

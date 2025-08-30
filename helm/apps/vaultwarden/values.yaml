@@ -25,6 +25,8 @@ vaultwarden:
   workload:
     main:
       podSpec:
+        # As UserNamespaces are not enabled on Talos
+        hostUsers: true
         initContainers:
           waitpsql:
             enabled: true
