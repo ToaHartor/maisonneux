@@ -50,4 +50,7 @@ spec:
         # publisher: "Publisher"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []
+      groups:
+        - slug: "app: cyberchef"
+          parent: "Users"
+          bindID: "377f9113-1047-4d6b-940e-c1ae0e7588ed" # arbitrary uuid

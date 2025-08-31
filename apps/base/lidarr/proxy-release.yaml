@@ -50,4 +50,7 @@ spec:
         # publisher: "Publisher"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []
+      groups:
+        - slug: "app: lidarr"
+          parent: "Media Admins"
+          bindID: "04bd37e5-dc02-4729-b021-20c917c17dd1" # arbitrary uuid

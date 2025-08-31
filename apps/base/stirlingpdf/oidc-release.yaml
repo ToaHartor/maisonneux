@@ -54,4 +54,8 @@ spec:
         description: "PDF utilities"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []
+      groups:
+        - slug: "app: stirlingpdf"
+          parent: "Users"
+          bindID: "948eaabd-8a84-48fd-a48c-aad99932b40d" # arbitrary uuid
+

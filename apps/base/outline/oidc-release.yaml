@@ -63,25 +63,16 @@ spec:
       application:
         name: "Outline"
         slug: "outline"
-        # -- put this application in authentik in group
         group: "Services"
-        # url to application
         launchURL: "https://wiki.${main_domain_websecure}"
         openInNewTab: false
-        # -- icon of application (url)
         icon: ""
         description: "Wiki"
         # publisher: "Publisher"
-        # -- uuid for bindPolicyID for group - if not set generated on secret for be stable (or groups: [] filled)
         bindPolicyID:
         policyEngineMode: "any"
-      # -- authentik groups created / give access to this application
-      groups: []
-      #  disable any groups by set groups: [] (to a slice)
-      # example:
-      #   - slug: "app: grafana-admin"
-      #     parent: "app: infra"
-      #     bindID: uuid
-      #
+      groups:
+        - slug: "app: outline"
+          bindID: "cfb4c497-77d4-4000-8988-93cca51af4a6" # arbitrary uuid
 
       

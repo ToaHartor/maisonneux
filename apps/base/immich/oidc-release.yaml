@@ -57,7 +57,9 @@ spec:
         # publisher: "Publisher"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []
+      groups:
+        - slug: "app: immich"
+          bindID: "a776296c-b2f9-41c1-b7bf-112802f9572d" # arbitrary uuid
 
 
       

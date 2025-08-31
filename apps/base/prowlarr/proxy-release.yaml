@@ -50,4 +50,7 @@ spec:
         # publisher: "Publisher"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []
+      groups:
+        - slug: "app: prowlarr"
+          parent: "Media Admins"
+          bindID: "8763c9ca-5d75-41e6-92a0-983055216961" # arbitrary uuid

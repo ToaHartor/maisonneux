@@ -50,4 +50,7 @@ spec:
         # publisher: "Publisher"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []
+      groups:
+        - slug: "app: radarr"
+          parent: "Media Admins"
+          bindID: "a009f7b2-aba4-40fd-a1b7-ed7f1f7c20d7" # arbitrary uuid

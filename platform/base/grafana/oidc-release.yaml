@@ -50,9 +50,10 @@ spec:
         launchURL: "https://monitoring.${main_domain_websecure}"
         openInNewTab: false
         icon: ""
-        description: "Monitoring system"
+        description: "Monitoring dashboards"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []      #
-
-      
+      groups:
+        - slug: "app: grafana"
+          parent: "authentik Admins"
+          bindID: "6bee1134-3cc7-4cfc-a2e3-e60705928ecd" # arbitrary uuid

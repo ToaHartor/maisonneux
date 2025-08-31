@@ -50,4 +50,7 @@ spec:
         # publisher: "Publisher"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []
+      groups:
+        - slug: "app: jdownloader"
+          parent: "Media Admins"
+          bindID: "010683f6-5639-483a-a206-c2729d37e8e7" # arbitrary uuid

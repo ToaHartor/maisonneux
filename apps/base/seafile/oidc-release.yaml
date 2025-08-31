@@ -55,5 +55,6 @@ spec:
         description: "Cloud file server"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []
-     
+      groups:
+        - slug: "app: seafile"
+          bindID: "89ca1beb-674a-4ecc-8c72-b3fa305681f1" # arbitrary uuid

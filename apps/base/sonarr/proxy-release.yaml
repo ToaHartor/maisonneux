@@ -50,4 +50,7 @@ spec:
         # publisher: "Publisher"
         bindPolicyID:
         policyEngineMode: "any"
-      groups: []
+      groups:
+        - slug: "app: sonarr"
+          parent: "Media Admins"
+          bindID: "4fc54e7f-a85f-4110-b105-cecdf50c0c11" # arbitrary uuid
