@@ -1,0 +1,18 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: smtp-config
+  namespace: services
+spec:
+  refreshPolicy: CreatedOnce
+  dataFrom:
+  - extract:
+      key: external-smtp-config
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: external-secrets
+  target:
+    name: smtp-config
+    creationPolicy: Owner
+    deletionPolicy: Retain

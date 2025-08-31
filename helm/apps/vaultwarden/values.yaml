@@ -57,7 +57,13 @@ vaultwarden:
       disableAdminToken: false
       token: # Filled in valuesFrom
     smtp:
-      enabled: false
+      enabled: true
+      # host: ""  # Filled in valuesFrom
+      # from: "" # Filled in valuesFrom
+      security: starttls
+      # port: 587 # Filled in valuesFrom
+      # user: ""  # Filled in valuesFrom
+      # password: ""  # Filled in valuesFrom
     yubico:
       enabled: false
     push:

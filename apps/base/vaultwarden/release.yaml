@@ -30,6 +30,28 @@ spec:
       name: vaultwarden-admin-key
       valuesKey: secretKey
       targetPath: vaultwarden.vaultwarden.admin.token
+    # SMTP configuration mirrored from the external-secrets secret store
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_username
+      targetPath: vaultwarden.vaultwarden.smtp.user
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_username
+      targetPath: vaultwarden.vaultwarden.smtp.from
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_token
+      targetPath: vaultwarden.vaultwarden.smtp.password
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_server
+      targetPath: vaultwarden.vaultwarden.smtp.host
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_port
+      targetPath: vaultwarden.vaultwarden.smtp.port
+
 
   # see https://github.com/truecharts/public/blob/master/charts/premium/vaultwarden/values.yaml
   # values:
