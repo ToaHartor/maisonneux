@@ -54,5 +54,8 @@ spec:
 
 
   # see https://github.com/truecharts/public/blob/master/charts/premium/vaultwarden/values.yaml
-  # values:
+  values:
+    ingress:
+      domain: vault.${main_domain}
+      externalUrl: https://vault.${main_domain_websecure}
     

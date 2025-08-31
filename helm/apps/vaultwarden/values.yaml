@@ -5,6 +5,10 @@ database:
   databaseTable: vaultwarden
   user: vaultwarden
 
+ingress:
+  domain: vault.example.com
+  externalUrl: http://vault.example.com
+
 backupLabel:
   homelab/backup-resource: "true"
 
