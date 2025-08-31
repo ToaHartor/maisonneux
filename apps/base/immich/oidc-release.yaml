@@ -49,7 +49,7 @@ spec:
       application:
         name: "Immich"
         slug: "immich"
-        group: ""
+        group: "Services"
         launchURL: "https://photos.${main_domain_websecure}"
         openInNewTab: false
         icon: ""

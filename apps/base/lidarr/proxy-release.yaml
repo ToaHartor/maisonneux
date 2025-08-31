@@ -42,7 +42,7 @@ spec:
         name: *app-name
         slug: "lidarr"
         # -- put this application in authentik in group
-        group: ""
+        group: "Media"
         launchURL: *ext-host
         openInNewTab: false
         icon: ""

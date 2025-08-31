@@ -46,7 +46,7 @@ spec:
       application:
         name: "Grafana"
         slug: "grafana"
-        group: ""
+        group: "Admin"
         launchURL: "https://monitoring.${main_domain_websecure}"
         openInNewTab: false
         icon: ""
