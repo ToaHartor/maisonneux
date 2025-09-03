@@ -196,6 +196,32 @@ locals {
       # ]
     }
   }
+  nvidia_gpu_config = {
+    machine = {
+      kernel = {
+        modules = [
+          {
+            name = "nvidia"
+          },
+          {
+            name = "nvidia_uvm"
+          },
+          {
+            name = "nvidia_drm"
+          },
+          {
+            name = "nvidia_modeset"
+          }
+        ]
+      },
+      sysctls = {
+        "net.core.bpf_jit_harden" = 1
+      }
+      nodeLabels = {
+        "nvidia.com/gpu.present" = "true"
+      }
+    }
+  }
 }
 
 // see https://registry.terraform.io/providers/siderolabs/talos/0.5.0/docs/data-sources/client_configuration

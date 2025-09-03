@@ -21,6 +21,11 @@ variable "workers" {
 }
 
 # Cluster variables
+variable "use_nvidia_gpu" {
+  description = "Does the cluster have at least one node with a NVIDIA GPU attached to it"
+  type        = bool
+  default     = false
+}
 
 variable "cluster_name" {
   description = "A name to provide for the Talos cluster"

@@ -20,6 +20,35 @@ data "http" "talos_factory_schematic_id" {
   request_body = file("../../../scripts/talos_schematic.yaml")
 }
 
+locals {
+  base_schematic             = yamldecode(file("../../../scripts/talos_schematic.yaml"))
+  nvidia_extensions          = yamldecode(file("../../../scripts/talos_nvidia_extensions.yaml"))
+  merged_kernel_args         = local.base_schematic.customization.extraKernelArgs
+  merged_official_extensions = distinct(concat(local.base_schematic.customization.systemExtensions.officialExtensions, local.nvidia_extensions.customization.systemExtensions.officialExtensions))
+}
+
+data "http" "talos_factory_nvidia_schematic_id" {
+  url    = "https://factory.talos.dev/schematics"
+  method = "POST"
+
+  request_headers = {
+    Content-type = "text/x-yaml"
+  }
+  request_body = yamlencode(
+    merge(
+      local.base_schematic,
+      {
+        customization = {
+          extraKernelArgs = local.merged_kernel_args
+          systemExtensions = {
+            officialExtensions = local.merged_official_extensions
+          }
+        }
+      }
+    )
+  )
+}
+
 resource "proxmox_virtual_environment_download_file" "talos_nocloud_image" {
   # Add the image on each node
   count        = length(local.proxmox_nodes)
@@ -29,6 +58,20 @@ resource "proxmox_virtual_environment_download_file" "talos_nocloud_image" {
 
   file_name               = "talos-${var.talos_version}-nocloud-amd64-${terraform.workspace}.img"
   url                     = "https://factory.talos.dev/image/${jsondecode(data.http.talos_factory_schematic_id.response_body).id}/v${var.talos_version}/nocloud-amd64.raw.gz"
+  decompression_algorithm = "gz"
+  overwrite               = false
+}
+
+resource "proxmox_virtual_environment_download_file" "talos_nvidia_nocloud_image" {
+  # Wait until base nocloud is finished, to avoid getting limit rated
+  depends_on   = [proxmox_virtual_environment_download_file.talos_nocloud_image]
+  count        = length(local.proxmox_nodes)
+  content_type = "iso"
+  datastore_id = "local"
+  node_name    = local.proxmox_nodes[count.index]
+
+  file_name               = "talos-${var.talos_version}-nvidia-nocloud-amd64-${terraform.workspace}.img"
+  url                     = "https://factory.talos.dev/image/${jsondecode(data.http.talos_factory_nvidia_schematic_id.response_body).id}/v${var.talos_version}/nocloud-amd64.raw.gz"
   decompression_algorithm = "gz"
   overwrite               = false
 }
@@ -151,15 +194,6 @@ data "talos_machine_configuration" "controller" {
             allowedKubernetesNamespaces = ["kube-system"]
           }
         }
-        // Add the following for nvidia driver
-        # sysctls = {
-        #   "net.core.bpf_jit_harden" = 1
-        # }
-        # kernel = {
-        #   modules = [
-        #     { name = "nvidia" }, { name = "nvidia_uvm" }, { name = "nvidia_drm" }, { name = "nvidia_modeset" }
-        #   ]
-        # }
       }
     }),
     yamlencode({

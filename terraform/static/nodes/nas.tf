@@ -93,16 +93,16 @@ resource "proxmox_virtual_environment_vm" "nas" {
     }
   }
 
-  hostpci {
-    device  = "hostpci0"
-    id      = "0000:08:00.0"
-    mapping = null
-    # mdev     = "nvidia-47"
-    pcie     = false
-    rom_file = null
-    rombar   = true
-    xvga     = true
-  }
+  # hostpci {
+  #   device  = "hostpci0"
+  #   id      = "0000:08:00.0"
+  #   mapping = null
+  #   # mdev     = "nvidia-47"
+  #   pcie     = false
+  #   rom_file = null
+  #   rombar   = true
+  #   xvga     = true
+  # }
   memory {
     dedicated = 22 * 1024
     floating  = 0

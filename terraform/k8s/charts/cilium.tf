@@ -11,9 +11,10 @@ resource "helm_release" "cilium" {
   # values     = [local.cilium_values]
   values = [file("./cilium_values.yaml")]
   wait   = false # Do not wait for resources as the chart is designed like this
-  set = [{
-    name  = "k8sServicePort"
-    value = var.kubeprism_port
+  set = [
+    {
+      name  = "k8sServicePort"
+      value = var.kubeprism_port
     },
     {
       name  = "ipv4NativeRoutingCIDR"

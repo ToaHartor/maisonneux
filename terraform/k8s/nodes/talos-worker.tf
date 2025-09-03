@@ -46,7 +46,7 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
     discard      = "on"
     size         = local.worker_nodes[count.index].config.storage.os.size
     file_format  = "raw"
-    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image[index(local.proxmox_nodes, local.worker_nodes[count.index].config.node)].id
+    file_id      = local.worker_nodes[count.index].config.gpu != null ? proxmox_virtual_environment_download_file.talos_nvidia_nocloud_image[index(local.proxmox_nodes, local.worker_nodes[count.index].config.node)].id : proxmox_virtual_environment_download_file.talos_nocloud_image[index(local.proxmox_nodes, local.worker_nodes[count.index].config.node)].id
   }
 
   dynamic "disk" {
@@ -75,7 +75,7 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
 
     content {
       device  = "hostpci0"
-      id      = local.worker_nodes[count.index].config.gpu.id # "0000:08:00.0"
+      id      = local.worker_nodes[count.index].config.gpu.id # "0000:08:00"
       mapping = null
       # mdev     = "nvidia-47"
       pcie     = false
@@ -165,7 +165,9 @@ resource "talos_machine_configuration_apply" "worker" {
       }
     }),
     # Add mount for linstor
-    local.worker_nodes[count.index].config.storage.datastore != null ? yamlencode(local.linstor_mount_config) : ""
+    local.worker_nodes[count.index].config.storage.datastore != null ? yamlencode(local.linstor_mount_config) : "",
+    # Add nvidia config on target GPU node
+    local.worker_nodes[count.index].config.gpu != null ? yamlencode(local.nvidia_gpu_config) : ""
   ]
   depends_on = [
     proxmox_virtual_environment_vm.k8s-worker,
