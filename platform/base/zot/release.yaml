@@ -164,6 +164,19 @@ spec:
                     ],
                     "onDemand": true,
                     "tlsVerify": true
+                  },
+                  {
+                    "urls": [
+                      "https://nvcr.io"
+                    ],
+                    "content": [
+                      {
+                        "destination": "/nvcr.io",
+                        "prefix": "**"
+                      }
+                    ],
+                    "onDemand": true,
+                    "tlsVerify": true
                   }
                 ]
               }

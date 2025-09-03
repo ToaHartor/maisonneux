@@ -44,6 +44,10 @@ locals {
             endpoints    = ["http://localhost:32000/v2/ghcr.io", "${var.registry_mirror_url}/ghcr.io", "https://ghcr.io/v2"]
             overridePath = true
           }
+          "nvcr.io" = {
+            endpoints    = ["http://localhost:32000/v2/nvcr.io", "${var.registry_mirror_url}/nvcr.io", "https://nvcr.io/v2"]
+            overridePath = true
+          }
           "registry.k8s.io" = {
             endpoints    = ["http://localhost:32000/v2/registry.k8s.io", "${var.registry_mirror_url}/registry.k8s.io", "https://registry.k8s.io/v2"]
             overridePath = true
