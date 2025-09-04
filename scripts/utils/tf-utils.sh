@@ -44,3 +44,9 @@ function tfutils::get_tfvars_number_key() {
   tfvar_file=$2
   grep -Po "${key}\s*\=\s*\d+" < "${tfvar_file}" | cut -d '=' -f2 | awk '{$1=$1};1'
 }
+
+function tfutils::get_tfvars_boolean_key() {
+  key=$1
+  tfvar_file=$2
+  grep -Po "${key}\s*\=\s*\w+" < "${tfvar_file}" | cut -d '=' -f2 | awk '{$1=$1};1'
+}

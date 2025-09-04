@@ -21,3 +21,43 @@ resources:
   - ../base/kavita
   - ../base/suwayomi
   - ../base/immich
+  - ../base/jellyfin
+patches:
+  - target:
+      kind: HelmRelease
+      name: jellyfin
+      namespace: jellyfin
+    patch: |-
+      - op: add
+        path: /spec/values/resources/limits
+        value:
+          nvidia.com/gpu: 1
+      # Patchception to patch the helmrelease, which patches the deployment
+      - op: add
+        path: /spec/postRenderers
+        value:
+          - kustomize:
+              patches:
+                - target:
+                    version: v1
+                    kind: Deployment
+                    name: jellyfin
+                  patch: |-
+                    - op: replace
+                      path: /spec/template/spec/affinity
+                      value:
+                        nodeAffinity:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            nodeSelectorTerms:
+                            - matchExpressions:
+                              - key: nvidia.com/gpu.present
+                                operator: In
+                                values: ["true"]
+                        podAffinity:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            - labelSelector:
+                                matchExpressions:
+                                  - key: truecharts.org/pvc
+                                    operator: In
+                                    values: ["config"]
+                              topologyKey: kubernetes.io/hostname

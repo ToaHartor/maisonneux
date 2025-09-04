@@ -35,6 +35,12 @@ variable "use_letsencrypt_production_server" {
   default     = false
 }
 
+variable "use_nvidia_gpu" {
+  description = "Does the cluster have at least one node with a NVIDIA GPU attached to it"
+  type        = bool
+  default     = false
+}
+
 # SMTP settings 
 
 variable "smtp_username" {
