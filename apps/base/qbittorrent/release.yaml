@@ -5,46 +5,41 @@ metadata:
   namespace: media
 spec:
   releaseName: qbittorrent
-  # targetNamespace: media
   chart:
     spec:
       chart: qbittorrent
-      # Version from https://artifacthub.io/packages/helm/gabe565/qbittorrent
-      # renovate: datasource=docker depName=qbittorrent registryUrl=oci://ghcr.io/gabe565/charts
-      version: "0.4.1"
+      # renovate: datasource=docker depName=qbittorrent registryUrl=oci://tccr.io/truecharts
+      version: "23.3.6"
       sourceRef:
         kind: HelmRepository
-        name: gabe565
+        name: truecharts
         namespace: flux-system
   interval: 50m
   install:
     createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/gabe565/charts/blob/main/charts/qbittorrent/values.yaml
-  # see https://github.com/bjw-s/helm-charts/blob/main/charts/library/common/values.yaml
+  # see https://github.com/truecharts/public/blob/master/charts/stable/qbittorrent/values.yaml
   values:
-    # TODO : configure with configMap if possible
-    # configMaps:
-    #   config:
-    #     enabled: true
-    env:
-      TZ: Europe/Paris
-      PUID: 1000 # User ID, should have the rights on the NFS share and the dataset
-      PGID: 1000 # Group ID
-      DOCKER_MODS: ghcr.io/gabe565/linuxserver-mod-vuetorrent
+    # workload:
+    #   main:
+    #     podSpec:
+    #       containers:
+    #         main:
+    #           env:
+    #             TZ: Europe/Paris
+    #             PUID: 1000 # User ID, should have the rights on the NFS share and the dataset
+    #             PGID: 1000 # Group ID
     persistence:
       config:
         enabled: true
-        retain: true
-        storageClass: ${fastdata_storage}-ha
-        accessMode: ReadWriteOnce
+        labels:
+          homelab/backup-resource: "true"
+        type: pvc
         size: 1Gi
+        storageClass: ${fastdata_storage}-ha
       downloads:
         enabled: true
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_download}
-      vuetorrent:
-        enabled: true
-        type: emptyDir
