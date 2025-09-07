@@ -38,8 +38,10 @@ spec:
         type: pvc
         size: 1Gi
         storageClass: ${fastdata_storage}-ha
+        mountPath: /config
       downloads:
         enabled: true
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_download}
+        mountPath: /downloads

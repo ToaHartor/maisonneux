@@ -11,8 +11,6 @@ resources:
   - mongodb.yaml
   - cert-manager-webhook-ovh.yaml
   - traefik.yaml
-  - bitnami.yaml
-  - gabe565.yaml
   - truecharts.yaml
   - descheduler.yaml
   - wrenix.yaml
