@@ -66,6 +66,13 @@ spec:
         plainhost: dragonfly-cluster.dragonfly.svc.cluster.local
         redisPassword: ""
 
+    securityContext:
+      pod:
+        fsGroup: 1000
+      container:
+        runAsUser: 1000
+        runAsGroup: 1000
+
     resources:
       limits:
         cpu: 500m

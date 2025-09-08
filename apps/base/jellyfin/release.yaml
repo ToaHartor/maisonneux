@@ -31,8 +31,8 @@ spec:
       container:
         readOnlyRootFilesystem: false
         # runAsNonRoot: false
-        # runAsUser: 1000
-        # runAsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
 
     # affinity:
     #   nodeAffinity:

@@ -12,6 +12,14 @@ lidarr:
     repository: docker.io/library/busybox
     tag: latest
     pullPolicy: IfNotPresent
+
+  securityContext:
+    pod:
+      fsGroup: 1000
+    container:
+      runAsUser: 1000
+      runAsGroup: 1000
+
   resources:
     limits:
       cpu: 500m

@@ -31,12 +31,13 @@ spec:
         cpu: 100m
         memory: 400Mi
     securityContext:
+      pod:
+        fsGroup: 1000
       container:
         readOnlyRootFilesystem: false
         runAsNonRoot: false
         runAsUser: 0
-        runAsGroup: 0
-    
+        runAsGroup: 1000
 
     jdownloader:
       DISPLAY_WIDTH: 1680
