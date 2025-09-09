@@ -59,7 +59,7 @@ spec:
               env:
                 ## No need as it will be added automatically with resource requests
                 # NVIDIA_DRIVER_CAPABILITIES: all
-                # NVIDIA_VISIBLE_DEVICES: all
+                NVIDIA_VISIBLE_DEVICES: all
                 JELLYFIN_LOG_DIR: /logs
                 # JELLYFIN_DATA_DIR: /data
                 # JELLYFIN_CONFIG_DIR: /config
