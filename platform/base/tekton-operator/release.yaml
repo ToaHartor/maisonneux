@@ -54,7 +54,7 @@ spec:
 
   values:
     # see https://github.com/tektoncd/operator/blob/main/charts/tekton-operator/values.yaml
-    installCRDs: true # TODO : proper CRDs install before actual helm release
+    installCRDs: true
     # tektonconfig,tektonpipeline,tektontrigger,tektonhub,tektonchain,tektonresult,tektondashboard,manualapprovalgate
     controllers: "tektonconfig,tektonpipeline,tektontrigger,tektonhub,tektonchain,tektondashboard,manualapprovalgate"
     operator:

@@ -8,7 +8,6 @@ metadata:
 spec:
   interval: 10m
   ref:
-    # TODO : ref for tag when merged
     branch: add-pluginbarmancloud-chart
     commit: cb3645cd3f838e22fba1c3ba182a4e4d28c99b51
     # tag: 0.1.0

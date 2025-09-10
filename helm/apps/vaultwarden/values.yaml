@@ -81,4 +81,4 @@ vaultwarden:
       enabled: false # Disable postgres as we use our own db
   ingress:
     main:
-      required: false # TODO : change this to true when ingress is set up
+      required: false

@@ -9,7 +9,6 @@
 #   }
 # }
 
-# TODO : manage images containing nvidia drivers
 data "http" "talos_factory_schematic_id" {
   url    = "https://factory.talos.dev/schematics"
   method = "POST"
