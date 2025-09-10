@@ -30,16 +30,25 @@ resource "helm_release" "nvidia_device_plugin" {
   chart      = "nvidia-device-plugin"
   version    = "0.17.4"
   # https://github.com/NVIDIA/k8s-device-plugin/blob/main/deployments/helm/nvidia-device-plugin/values.yaml
-  values = []
-  # values = [file("./nvidia_values.yaml")]
-  wait = true
-  set = [{
-    name  = "runtimeClassName"
-    value = "nvidia"
-    },
-    {
-      name  = "gfd.enabled"
-      value = "true"
-    }
+  values = [
+    <<-EOF
+    gfd:
+      enabled: true
+    runtimeClassName: nvidia
+    config:
+      map:
+        default: |-
+          version: v1
+          flags:
+            migStrategy: none
+          sharing:
+            timeSlicing:
+              renameByDefault: false
+              failRequestsGreaterThanOne: false
+              resources:
+                - name: nvidia.com/gpu
+                  replicas: 5
+    EOF
   ]
+  wait = true
 }
