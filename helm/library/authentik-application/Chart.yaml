@@ -1,8 +1,0 @@
-apiVersion: v2
-name: authentik-application
-description: "A Chart to deploy a secret for the authentik blueprint-sidecar."
-type: application
-version: "0.4.3"
-maintainers:
-  - name: WrenIX
-    url: https://wrenix.eu
