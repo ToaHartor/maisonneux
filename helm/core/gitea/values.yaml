@@ -12,8 +12,8 @@ redis:
   url: dragonfly-cluster.dragonfly.svc.cluster.local
 
 ingress:
-  host: git.example.com
-  certSecret: ingress-tls
+  domain: git.example.com
+  externalUrl: https://git.example.com
 
 gitea:
   resources:
@@ -25,18 +25,15 @@ gitea:
       memory: 512Mi
 
   gitea:
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
     additionalConfigSources:
       - configMap:
           name: gitea-app-ini
       # - secret:
       #     name: gitea-app-ini-secret
-    # TODO : try when cluster is live
-    # oauth:
-    #   - name: "Authentik"
-    #     provider: "openidConnect"
-    #    # Existing secret contains key: as accessKey and secret: as secretKey
-    #     existingSecret: gitea-oauth-secret
-    #     autoDiscoverUrl: "https://auth.example.com/.well-known/openid-configuration"
 
   # TODO : check signing (trust-manager ?)
   # https://gitea.com/gitea/helm-chart/#configure-commit-signing
@@ -55,9 +52,3 @@ gitea:
   # Disable embedded valkey
   valkey-cluster:
     enabled: false
-  # TODO : Requires prometheus operator
-  # https://gitea.com/gitea/helm-chart/#metrics-and-profiling
-  # metrics:
-  #   enabled: true
-  #   serviceMonitor:
-  #     enabled: true

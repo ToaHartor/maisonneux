@@ -4,8 +4,10 @@ metadata:
   name: gitea-app-ini
   namespace: {{ .Release.Namespace }}
 data:
-  # server: |
-  #   ENABLE_PPROF=true
+  server: |
+    ROOT_URL={{ .Values.ingress.externalUrl }}
+    DOMAIN={{ .Values.ingress.domain }}
+    ENABLE_PPROF=true
   database: |
     DB_TYPE=postgres
     HOST={{ .Values.database.postgres.clusterName }}-rw.{{ .Values.namespaces.postgresNamespace }}.svc.cluster.local
@@ -23,3 +25,8 @@ data:
     MINIO_INSECURE_SKIP_VERIFY=true
   service: |
     DISABLE_REGISTRATION=true
+  oauth2_client: |
+    OPENID_CONNECT_SCOPES=email profile
+    ENABLE_AUTO_REGISTRATION=true
+    UPDATE_AVATAR=true
+    ACCOUNT_LINKING=auto
