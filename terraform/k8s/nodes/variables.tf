@@ -95,6 +95,12 @@ variable "node_distribution" {
   description = "A collection of node definitions to define which node is created on which proxmox node. A cluster should have at least one controller and one worker. In our current setup, the first controller must be placed on the same node as the OPNsense VM for the cluster init to work."
 }
 
+variable "use_nvidia_gpu" {
+  description = "Does the cluster have at least one node with a NVIDIA GPU attached to it"
+  type        = bool
+  default     = false
+}
+
 variable "cluster_name" {
   description = "A name to provide for the Talos cluster"
   type        = string
