@@ -2,6 +2,8 @@ namespaces:
   postgresNamespace: &psqlNs postgres
 
 external:
+  jellyseerr:
+    apiKey: # Completed by FluxCD
   sonarr:
     hostname:
     externalUrl:
@@ -15,8 +17,12 @@ external:
     externalUrl:
     apiKey: # Completed by FluxCD
   jellyfin:
+    hostname:
     externalHostname:    
     apiKey:
+
+ingress:
+  domain: jellyseerr.example.com
 
 jellyseerr:
   # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
@@ -25,6 +31,11 @@ jellyseerr:
     repository: docker.io/library/busybox
     tag: latest
     pullPolicy: IfNotPresent
+  jqImage:
+    repository: docker.io/badouralix/curl-jq
+    tag: latest
+    pullPolicy: IfNotPresent
+
   resources:
     limits:
       cpu: 500m
@@ -47,12 +58,17 @@ jellyseerr:
             env:
               POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
+          mergeconfig:
+            enabled: true
+            type: init
+            imageSelector: jqImage
+            command: ['sh', '-c', '/shared/scripts/merge-config.sh']
         containers:
           main:
             env:
               # User Defined
               # JELLYFIN_TYPE: ""
-              LOG_LEVEL: "info"
+              LOG_LEVEL: "debug" # "info"
 
               DB_TYPE: "postgres" # Which DB engine to use, either "sqlite" or "postgres". The default is "sqlite".
               DB_HOST: "postgres-db-rw.postgres.svc.cluster.local" # (optional) The host (URL) of the database. The default is "localhost".
@@ -72,20 +88,38 @@ jellyseerr:
       type: pvc
       size: 1Gi # Should be enough
       storageClass: default
+      targetSelector:
+        main:
+          mergeconfig:
+            mountPath: /app/config
+          main:
+            mountPath: /app/config
 
+    copyconfig:
+      enabled: true
+      type: secret
+      readOnly: false
+      defaultMode: "0777"
+      objectName: jellyseerr-config
+      expandObjectName: false
+      targetSelector:
+        main:
+          mergeconfig:
+            mountPath: /shared/config/settings.json
+            subPath: settings.json
+    copyconfig-script:
+      enabled: true
+      type: configmap
+      readOnly: false
+      defaultMode: "0777"
+      objectName: jellyseerr-config-script
+      expandObjectName: false
+      targetSelector:
+        main:
+          mergeconfig:
+            mountPath: /shared/scripts/merge-config.sh
+            subPath: merge-config.sh
 
-
-
-    #   type: secret
-    #   readOnly: false
-    #   defaultMode: "0777"
-    #   objectName: jellyseerr-config
-    #   expandObjectName: false
-    #   targetSelector:
-    #     main:
-    #       main:
-    #         mountPath: /app/config/settings.json
-    #         subPath: settings.json
     # logs:
     #   enabled: true
     #   type: emptyDir

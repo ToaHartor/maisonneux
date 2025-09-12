@@ -23,35 +23,47 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
-  # valuesFrom:
-  #   - kind: Secret
-  #     name: sonarr-api-key
-  #     valuesKey: SONARR__AUTH__APIKEY
-  #     targetPath: external.sonarr.apiKey
-  #   - kind: Secret
-  #     name: radarr-api-key
-  #     valuesKey: RADARR__AUTH__APIKEY
-  #     targetPath: external.radarr.apiKey
-  #   - kind: Secret
-  #     name: radarr4k-api-key
-  #     valuesKey: RADARR__AUTH__APIKEY
-  #     targetPath: external.radarr4k.apiKey
+  valuesFrom:
+    - kind: Secret
+      name: sonarr-api-key
+      valuesKey: secretKey
+      targetPath: external.sonarr.apiKey
+    - kind: Secret
+      name: radarr-api-key
+      valuesKey: secretKey
+      targetPath: external.radarr.apiKey
+    - kind: Secret
+      name: radarr4k-api-key
+      valuesKey: secretKey
+      targetPath: external.radarr4k.apiKey
+    - kind: Secret
+      name: jellyseerr-api-key
+      valuesKey: secretKey
+      targetPath: external.jellyseerr.apiKey
+
   # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
   # see documentation https://truecharts.org/charts/stable/jellyseerr/
   values:
-    # external:
-    #   sonarr:
-    #     hostname: sonarr.media.svc.cluster.local
-    #     externalUrl: ""
-    #     # apiKey: # valueFrom
-    #   radarr:
-    #     hostname: radarr.media.svc.cluster.local
-    #     externalUrl: ""
-    #     # apiKey: # valueFrom
-    #   radarr4k:
-    #     hostname: radarr4k.media.svc.cluster.local
-    #     externalUrl: ""
-    #     # apiKey: # valueFrom
+    external:
+      sonarr:
+        hostname: sonarr.media.svc.cluster.local
+        externalUrl: "https://tv.${main_domain_websecure}"
+        # apiKey: # valueFrom
+      radarr:
+        hostname: radarr.media.svc.cluster.local
+        externalUrl: "https://movies.${main_domain_websecure}"
+        # apiKey: # valueFrom
+      radarr4k:
+        hostname: radarr4k.media.svc.cluster.local
+        externalUrl: "https://4kmovies.${main_domain_websecure}"
+        # apiKey: # valueFrom
+      jellyfin:
+        hostname: jellyfin.jellyfin.svc.cluster.local
+        externalHostname: "jellyfin.${main_domain_websecure}"
+        apiKey: # Entered with the interface
+
+    ingress:
+      domain: requests.${main_domain}
 
     jellyseerr:
       persistence:

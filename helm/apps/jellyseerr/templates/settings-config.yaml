@@ -1,277 +1,258 @@
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: jellyseerr-config
-#   namespace: {{ .Release.Namespace }}
-# type: Opaque
-# stringData:
-#   # From https://github.com/fallenbagel/jellyseerr/blob/develop/cypress/config/settings.cypress.json
-#   # Settings details from https://github.com/fallenbagel/jellyseerr/blob/develop/server/lib/settings/index.ts
-#   # Permissions from https://github.com/fallenbagel/jellyseerr/blob/develop/server/lib/permissions.ts
-#   # Media server type from https://github.com/fallenbagel/jellyseerr/blob/develop/server/constants/server.ts#L1
-#   settings.json: |
-#     {
-#       "clientId": "{{ uuidv4 }}",
-#       "vapidPrivate": "{{ randAlphaNum 43 }}",
-#       "vapidPublic": "{{ randAlphaNum 87 }}",
-#       "main": {
-#         "apiKey": "{{ randAlphaNum 64 }}",
-#         "applicationTitle": "Jellyseerr",
-#         "applicationUrl": "",
-#         "cacheImages": false,
-#         "defaultPermissions": 32,
-#         "defaultQuotas": {
-#           "movie": {},
-#           "tv": {}
-#         },
-#         "hideAvailable": false,
-#         "localLogin": true,
-#         "newPlexLogin": true,
-#         "discoverRegion": "",
-#         "streamingRegion": "",
-#         "originalLanguage": "",
-#         "blacklistedTags": "",
-#         "blacklistedTagsLimit": 50,
-#         "trustProxy": false,
-#         "mediaServerType": 1,
-#         "partialRequestsEnabled": true,
-#         "enableSpecialEpisodes": false,
-#         "locale": "en",
-#         "youtubeUrl": ""
-#       },
-#       "plex": {
-#         "name": "",
-#         "ip": "",
-#         "port": 32400,
-#         "useSsl": false,
-#         "libraries": [
-#           {
-#             "id": "1",
-#             "name": "Movies",
-#             "enabled": true,
-#             "type": "movie"
-#           }
-#         ]
-#       },
-#       "jellyfin": {
-#         "name": "",
-#         "ip": "",
-#         "port": 8096,
-#         "useSsl": false,
-#         "urlBase": "",
-#         "externalHostname": "",
-#         "jellyfinForgotPasswordUrl": "",
-#         "libraries": [],
-#         "serverId": "",
-#         "apiKey": ""
-#       },
-#       "tautulli": {},
-#       "radarr": [
-#         {
-#           "id": 1,
-#           "name": "Radarr",
-#           "hostname": "{{ .Values.external.radarr.hostname }}",
-#           "port": 7878,
-#           "apiKey": "{{ .Values.external.radarr.apiKey }}",
-#           "useSsl": false,
-#           "activeProfileId": 0,
-#           "activeProfileName": "",
-#           "activeDirectory": "",
-#           "tags": [],
-#           "is4k": false,
-#           "isDefault": false,
-#           "externalUrl": "{{ .Values.external.radarr.externalUrl }}",
-#           "syncEnabled": false,
-#           "preventSearch": false,
-#           "tagRequests": false,
-#           "overrideRule": []
-#         },
-#         {
-#           "id": 2,
-#           "name": "Radarr4K",
-#           "hostname": "{{ .Values.external.radarr4k.hostname }}",
-#           "port": 7878,
-#           "apiKey": "{{ .Values.external.radarr4k.apiKey }}",
-#           "useSsl": false,
-#           "activeProfileId": 0,
-#           "activeProfileName": "",
-#           "activeDirectory": "",
-#           "tags": [],
-#           "is4k": true,
-#           "isDefault": false,
-#           "externalUrl": "{{ .Values.external.radarr4k.externalUrl }}",
-#           "syncEnabled": false,
-#           "preventSearch": false,
-#           "tagRequests": false,
-#           "overrideRule": []
-#         }
-#       ],
-#       "sonarr": [
-#         {
-#           "id": 1,
-#           "name": "Sonarr",
-#           "hostname": "{{ .Values.external.sonarr.hostname }}",
-#           "port": 8989,
-#           "apiKey": "{{ .Values.external.sonarr.apiKey }}",
-#           "useSsl": false,
-#           "activeProfileId": 0,
-#           "activeProfileName": "",
-#           "activeDirectory": "",
-#           "tags": [],
-#           "is4k": true,
-#           "isDefault": false,
-#           "externalUrl": "{{ .Values.external.sonarr.externalUrl }}",
-#           "syncEnabled": false,
-#           "preventSearch": false,
-#           "tagRequests": false,
-#           "overrideRule": [],
-#           "seriesType": "standard",
-#           "animeSeriesType": "anime",
-#           "enableSeasonFolders": false
-#         }
-#       ],
-#       "public": {
-#         "initialized": true
-#       },
-#       "notifications": {
-#         "agents": {
-#           "email": {
-#             "enabled": false,
-#             "options": {
-#               "userEmailRequired": false,
-#               "emailFrom": "",
-#               "smtpHost": "",
-#               "smtpPort": 587,
-#               "secure": false,
-#               "ignoreTls": false,
-#               "requireTls": false,
-#               "allowSelfSigned": false,
-#               "senderName": "Jellyseerr"
-#             }
-#           },
-#           "discord": {
-#             "enabled": false,
-#             "types": 0,
-#             "options": {
-#               "webhookUrl": "",
-#               "webhookRoleId": "",
-#               "enableMentions": true
-#             }
-#           },
-#           "slack": {
-#             "enabled": false,
-#             "types": 0,
-#             "options": {
-#               "webhookUrl": ""
-#             }
-#           },
-#           "telegram": {
-#             "enabled": false,
-#             "types": 0,
-#             "options": {
-#               "botAPI": "",
-#               "chatId": "",
-#               "messageThreadId": "",
-#               "sendSilently": false
-#             }
-#           },
-#           "pushbullet": {
-#             "enabled": false,
-#             "types": 0,
-#             "options": {
-#               "accessToken": ""
-#             }
-#           },
-#           "pushover": {
-#             "enabled": false,
-#             "types": 0,
-#             "options": {
-#               "accessToken": "",
-#               "userToken": ""
-#             }
-#           },
-#           "webhook": {
-#             "enabled": false,
-#             "types": 0,
-#             "options": {
-#               "webhookUrl": "",
-#               "jsonPayload": "IntcbiAgICBcIm5vdGlmaWNhdGlvbl90eXBlXCI6IFwie3tub3RpZmljYXRpb25fdHlwZX19XCIsXG4gICAgXCJldmVudFwiOiBcInt7ZXZlbnR9fVwiLFxuICAgIFwic3ViamVjdFwiOiBcInt7c3ViamVjdH19XCIsXG4gICAgXCJtZXNzYWdlXCI6IFwie3ttZXNzYWdlfX1cIixcbiAgICBcImltYWdlXCI6IFwie3tpbWFnZX19XCIsXG4gICAgXCJ7e21lZGlhfX1cIjoge1xuICAgICAgICBcIm1lZGlhX3R5cGVcIjogXCJ7e21lZGlhX3R5cGV9fVwiLFxuICAgICAgICBcInRtZGJJZFwiOiBcInt7bWVkaWFfdG1kYmlkfX1cIixcbiAgICAgICAgXCJ0dmRiSWRcIjogXCJ7e21lZGlhX3R2ZGJpZH19XCIsXG4gICAgICAgIFwic3RhdHVzXCI6IFwie3ttZWRpYV9zdGF0dXN9fVwiLFxuICAgICAgICBcInN0YXR1czRrXCI6IFwie3ttZWRpYV9zdGF0dXM0a319XCJcbiAgICB9LFxuICAgIFwie3tyZXF1ZXN0fX1cIjoge1xuICAgICAgICBcInJlcXVlc3RfaWRcIjogXCJ7e3JlcXVlc3RfaWR9fVwiLFxuICAgICAgICBcInJlcXVlc3RlZEJ5X2VtYWlsXCI6IFwie3tyZXF1ZXN0ZWRCeV9lbWFpbH19XCIsXG4gICAgICAgIFwicmVxdWVzdGVkQnlfdXNlcm5hbWVcIjogXCJ7e3JlcXVlc3RlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICAgICAgXCJyZXF1ZXN0ZWRCeV9hdmF0YXJcIjogXCJ7e3JlcXVlc3RlZEJ5X2F2YXRhcn19XCJcbiAgICB9LFxuICAgIFwie3tpc3N1ZX19XCI6IHtcbiAgICAgICAgXCJpc3N1ZV9pZFwiOiBcInt7aXNzdWVfaWR9fVwiLFxuICAgICAgICBcImlzc3VlX3R5cGVcIjogXCJ7e2lzc3VlX3R5cGV9fVwiLFxuICAgICAgICBcImlzc3VlX3N0YXR1c1wiOiBcInt7aXNzdWVfc3RhdHVzfX1cIixcbiAgICAgICAgXCJyZXBvcnRlZEJ5X2VtYWlsXCI6IFwie3tyZXBvcnRlZEJ5X2VtYWlsfX1cIixcbiAgICAgICAgXCJyZXBvcnRlZEJ5X3VzZXJuYW1lXCI6IFwie3tyZXBvcnRlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICAgICAgXCJyZXBvcnRlZEJ5X2F2YXRhclwiOiBcInt7cmVwb3J0ZWRCeV9hdmF0YXJ9fVwiXG4gICAgfSxcbiAgICBcInt7Y29tbWVudH19XCI6IHtcbiAgICAgICAgXCJjb21tZW50X21lc3NhZ2VcIjogXCJ7e2NvbW1lbnRfbWVzc2FnZX19XCIsXG4gICAgICAgIFwiY29tbWVudGVkQnlfZW1haWxcIjogXCJ7e2NvbW1lbnRlZEJ5X2VtYWlsfX1cIixcbiAgICAgICAgXCJjb21tZW50ZWRCeV91c2VybmFtZVwiOiBcInt7Y29tbWVudGVkQnlfdXNlcm5hbWV9fVwiLFxuICAgICAgICBcImNvbW1lbnRlZEJ5X2F2YXRhclwiOiBcInt7Y29tbWVudGVkQnlfYXZhdGFyfX1cIlxuICAgIH0sXG4gICAgXCJ7e2V4dHJhfX1cIjogW11cbn0i"
-#             }
-#           },
-#           "webpush": {
-#             "enabled": false,
-#             "options": {}
-#           },
-#           "gotify": {
-#             "enabled": false,
-#             "types": 0,
-#             "options": {
-#               "url": "",
-#               "token": "",
-#               "priority": 0
-#             }
-#           },
-#           "ntfy": {
-#             "enabled": false,
-#             "types": 0,
-#             "options": {
-#               "url": "",
-#               "topic": ""
-#             }
-#           }
-#         }
-#       },
-#       "jobs": {
-#         "plex-recently-added-scan": {
-#           "schedule": "0 */5 * * * *"
-#         },
-#         "plex-full-scan": {
-#           "schedule": "0 0 3 * * *"
-#         },
-#         "radarr-scan": {
-#           "schedule": "0 0 4 * * *"
-#         },
-#         "sonarr-scan": {
-#           "schedule": "0 30 4 * * *"
-#         },
-#         "plex-watchlist-sync": {
-#           "schedule": "0 */10 * * * *"
-#         },
-#         "availability-sync": {
-#           "schedule": "0 0 5 * * *"
-#         },
-#         "download-sync": {
-#           "schedule": "0 * * * * *"
-#         },
-#         "download-sync-reset": {
-#           "schedule": "0 0 1 * * *"
-#         },
-#         "jellyfin-recently-added-scan": {
-#           "schedule": "0 */5 * * * *"
-#         },
-#         "jellyfin-full-scan": {
-#           "schedule": "0 0 3 * * *"
-#         },
-#         "image-cache-cleanup": {
-#           "schedule": "0 0 5 * * *"
-#         },
-#         "process-blacklisted-tags": {
-#           "schedule": "0 30 1 */7 * *"
-#         }
-#       },
-#       "network": {
-#         "csrfProtection": false,
-#         "forceIpv4First": false,
-#         "trustProxy": false,
-#         "proxy": {
-#           "enabled": false,
-#           "hostname": "",
-#           "port": 8080,
-#           "useSsl": false,
-#           "user": "",
-#           "password": "",
-#           "bypassFilter": "",
-#           "bypassLocalAddresses": true
-#         }
-#       }
-#     }
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jellyseerr-config
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+stringData:
+  # From https://github.com/fallenbagel/jellyseerr/blob/develop/cypress/config/settings.cypress.json
+  # Settings details from https://github.com/fallenbagel/jellyseerr/blob/develop/server/lib/settings/index.ts
+  # Permissions from https://github.com/fallenbagel/jellyseerr/blob/develop/server/lib/permissions.ts
+  # Media server type from https://github.com/fallenbagel/jellyseerr/blob/develop/server/constants/server.ts#L1
+  # For jellyfin api setup, we will need to go through the wizard anyway, so in the initcontainer
+  # instead of copying the settings.json, we'll merge the existing with the jellyseerr config from the pvc
+  # check merge-config.sh to see which settings are persisted when modified through the GUI
+  settings.json: |
+    {
+      "clientId": "{{ uuidv4 }}",
+      "vapidPrivate": "{{ randAlphaNum 43 }}",
+      "vapidPublic": "{{ randAlphaNum 87 }}",
+      "main": {
+        "apiKey": "{{ .Values.external.jellyseerr.apiKey }}",
+        "applicationTitle": "Jellyseerr",
+        "applicationUrl": "",
+        "cacheImages": false,
+        "defaultPermissions": 32,
+        "defaultQuotas": {
+          "movie": {},
+          "tv": {}
+        },
+        "hideAvailable": false,
+        "localLogin": false,
+        "newPlexLogin": true,
+        "discoverRegion": "",
+        "streamingRegion": "",
+        "originalLanguage": "",
+        "blacklistedTags": "",
+        "blacklistedTagsLimit": 50,
+        "trustProxy": false,
+        "mediaServerType": 4,
+        "partialRequestsEnabled": true,
+        "enableSpecialEpisodes": false,
+        "locale": "en",
+        "youtubeUrl": ""
+      },
+      "plex": {},
+      "jellyfin": {},
+      "tautulli": {},
+      "radarr": [
+        {
+          "id": 1,
+          "name": "Radarr",
+          "hostname": "{{ .Values.external.radarr.hostname }}",
+          "port": 7878,
+          "apiKey": "{{ .Values.external.radarr.apiKey }}",
+          "useSsl": false,
+          "activeProfileId": 4,
+          "activeProfileName": "HD-1080p",
+          "activeDirectory": "",
+          "tags": [],
+          "is4k": false,
+          "isDefault": true,
+          "externalUrl": "{{ .Values.external.radarr.externalUrl }}",
+          "syncEnabled": false,
+          "preventSearch": true,
+          "tagRequests": false,
+          "overrideRule": []
+        },
+        {
+          "id": 2,
+          "name": "Radarr4K",
+          "hostname": "{{ .Values.external.radarr4k.hostname }}",
+          "port": 7878,
+          "apiKey": "{{ .Values.external.radarr4k.apiKey }}",
+          "useSsl": false,
+          "activeProfileId": 5,
+          "activeProfileName": "Ultra-HD",
+          "activeDirectory": "",
+          "tags": [],
+          "is4k": true,
+          "isDefault": true,
+          "externalUrl": "{{ .Values.external.radarr4k.externalUrl }}",
+          "syncEnabled": false,
+          "preventSearch": true,
+          "tagRequests": false,
+          "overrideRule": []
+        }
+      ],
+      "sonarr": [
+        {
+          "id": 1,
+          "name": "Sonarr",
+          "hostname": "{{ .Values.external.sonarr.hostname }}",
+          "port": 8989,
+          "apiKey": "{{ .Values.external.sonarr.apiKey }}",
+          "useSsl": false,
+          "activeProfileId": 4,
+          "activeProfileName": "HD-1080p",
+          "activeDirectory": "",
+          "tags": [],
+          "is4k": false,
+          "isDefault": true,
+          "externalUrl": "{{ .Values.external.sonarr.externalUrl }}",
+          "syncEnabled": false,
+          "preventSearch": true,
+          "tagRequests": false,
+          "overrideRule": [],
+          "seriesType": "standard",
+          "animeSeriesType": "anime",
+          "activeAnimeProfileId": 4,
+          "activeAnimeProfileName": "HD-1080p",
+          "enableSeasonFolders": false
+        }
+      ],
+      "public": {
+        "initialized": false
+      },
+      "notifications": {
+        "agents": {
+          "email": {
+            "enabled": false,
+            "options": {
+              "userEmailRequired": false,
+              "emailFrom": "",
+              "smtpHost": "",
+              "smtpPort": 587,
+              "secure": false,
+              "ignoreTls": false,
+              "requireTls": false,
+              "allowSelfSigned": false,
+              "senderName": "Jellyseerr"
+            }
+          },
+          "discord": {
+            "enabled": false,
+            "types": 0,
+            "options": {
+              "webhookUrl": "",
+              "webhookRoleId": "",
+              "enableMentions": true
+            }
+          },
+          "slack": {
+            "enabled": false,
+            "types": 0,
+            "options": {
+              "webhookUrl": ""
+            }
+          },
+          "telegram": {
+            "enabled": false,
+            "types": 0,
+            "options": {
+              "botAPI": "",
+              "chatId": "",
+              "messageThreadId": "",
+              "sendSilently": false
+            }
+          },
+          "pushbullet": {
+            "enabled": false,
+            "types": 0,
+            "options": {
+              "accessToken": ""
+            }
+          },
+          "pushover": {
+            "enabled": false,
+            "types": 0,
+            "options": {
+              "accessToken": "",
+              "userToken": ""
+            }
+          },
+          "webhook": {
+            "enabled": false,
+            "types": 0,
+            "options": {
+              "webhookUrl": "",
+              "jsonPayload": "IntcbiAgICBcIm5vdGlmaWNhdGlvbl90eXBlXCI6IFwie3tub3RpZmljYXRpb25fdHlwZX19XCIsXG4gICAgXCJldmVudFwiOiBcInt7ZXZlbnR9fVwiLFxuICAgIFwic3ViamVjdFwiOiBcInt7c3ViamVjdH19XCIsXG4gICAgXCJtZXNzYWdlXCI6IFwie3ttZXNzYWdlfX1cIixcbiAgICBcImltYWdlXCI6IFwie3tpbWFnZX19XCIsXG4gICAgXCJ7e21lZGlhfX1cIjoge1xuICAgICAgICBcIm1lZGlhX3R5cGVcIjogXCJ7e21lZGlhX3R5cGV9fVwiLFxuICAgICAgICBcInRtZGJJZFwiOiBcInt7bWVkaWFfdG1kYmlkfX1cIixcbiAgICAgICAgXCJ0dmRiSWRcIjogXCJ7e21lZGlhX3R2ZGJpZH19XCIsXG4gICAgICAgIFwic3RhdHVzXCI6IFwie3ttZWRpYV9zdGF0dXN9fVwiLFxuICAgICAgICBcInN0YXR1czRrXCI6IFwie3ttZWRpYV9zdGF0dXM0a319XCJcbiAgICB9LFxuICAgIFwie3tyZXF1ZXN0fX1cIjoge1xuICAgICAgICBcInJlcXVlc3RfaWRcIjogXCJ7e3JlcXVlc3RfaWR9fVwiLFxuICAgICAgICBcInJlcXVlc3RlZEJ5X2VtYWlsXCI6IFwie3tyZXF1ZXN0ZWRCeV9lbWFpbH19XCIsXG4gICAgICAgIFwicmVxdWVzdGVkQnlfdXNlcm5hbWVcIjogXCJ7e3JlcXVlc3RlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICAgICAgXCJyZXF1ZXN0ZWRCeV9hdmF0YXJcIjogXCJ7e3JlcXVlc3RlZEJ5X2F2YXRhcn19XCJcbiAgICB9LFxuICAgIFwie3tpc3N1ZX19XCI6IHtcbiAgICAgICAgXCJpc3N1ZV9pZFwiOiBcInt7aXNzdWVfaWR9fVwiLFxuICAgICAgICBcImlzc3VlX3R5cGVcIjogXCJ7e2lzc3VlX3R5cGV9fVwiLFxuICAgICAgICBcImlzc3VlX3N0YXR1c1wiOiBcInt7aXNzdWVfc3RhdHVzfX1cIixcbiAgICAgICAgXCJyZXBvcnRlZEJ5X2VtYWlsXCI6IFwie3tyZXBvcnRlZEJ5X2VtYWlsfX1cIixcbiAgICAgICAgXCJyZXBvcnRlZEJ5X3VzZXJuYW1lXCI6IFwie3tyZXBvcnRlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICAgICAgXCJyZXBvcnRlZEJ5X2F2YXRhclwiOiBcInt7cmVwb3J0ZWRCeV9hdmF0YXJ9fVwiXG4gICAgfSxcbiAgICBcInt7Y29tbWVudH19XCI6IHtcbiAgICAgICAgXCJjb21tZW50X21lc3NhZ2VcIjogXCJ7e2NvbW1lbnRfbWVzc2FnZX19XCIsXG4gICAgICAgIFwiY29tbWVudGVkQnlfZW1haWxcIjogXCJ7e2NvbW1lbnRlZEJ5X2VtYWlsfX1cIixcbiAgICAgICAgXCJjb21tZW50ZWRCeV91c2VybmFtZVwiOiBcInt7Y29tbWVudGVkQnlfdXNlcm5hbWV9fVwiLFxuICAgICAgICBcImNvbW1lbnRlZEJ5X2F2YXRhclwiOiBcInt7Y29tbWVudGVkQnlfYXZhdGFyfX1cIlxuICAgIH0sXG4gICAgXCJ7e2V4dHJhfX1cIjogW11cbn0i"
+            }
+          },
+          "webpush": {
+            "enabled": false,
+            "options": {}
+          },
+          "gotify": {
+            "enabled": false,
+            "types": 0,
+            "options": {
+              "url": "",
+              "token": "",
+              "priority": 0
+            }
+          },
+          "ntfy": {
+            "enabled": false,
+            "types": 0,
+            "options": {
+              "url": "",
+              "topic": ""
+            }
+          }
+        }
+      },
+      "jobs": {
+        "plex-recently-added-scan": {
+          "schedule": "0 */5 * * * *"
+        },
+        "plex-full-scan": {
+          "schedule": "0 0 3 * * *"
+        },
+        "radarr-scan": {
+          "schedule": "0 0 4 * * *"
+        },
+        "sonarr-scan": {
+          "schedule": "0 30 4 * * *"
+        },
+        "plex-watchlist-sync": {
+          "schedule": "0 */10 * * * *"
+        },
+        "availability-sync": {
+          "schedule": "0 0 5 * * *"
+        },
+        "download-sync": {
+          "schedule": "0 * * * * *"
+        },
+        "download-sync-reset": {
+          "schedule": "0 0 1 * * *"
+        },
+        "jellyfin-recently-added-scan": {
+          "schedule": "0 */5 * * * *"
+        },
+        "jellyfin-full-scan": {
+          "schedule": "0 0 3 * * *"
+        },
+        "image-cache-cleanup": {
+          "schedule": "0 0 5 * * *"
+        },
+        "process-blacklisted-tags": {
+          "schedule": "0 30 1 */7 * *"
+        }
+      },
+      "network": {
+        "csrfProtection": false,
+        "forceIpv4First": false,
+        "trustProxy": false,
+        "proxy": {
+          "enabled": false,
+          "hostname": "",
+          "port": 8080,
+          "useSsl": false,
+          "user": "",
+          "password": "",
+          "bypassFilter": "",
+          "bypassLocalAddresses": true
+        }
+      }
+    }

@@ -1,0 +1,7 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: jellyseerr-config-script
+  namespace: {{ .Release.Namespace }}
+data:
+{{ (.Files.Glob "files/*").AsConfig | indent 2 }}
