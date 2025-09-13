@@ -1,0 +1,25 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+      kind: Gateway
+
+  hostnames:
+    - {{ .Values.ingress.domain }}
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: {{ .Release.Name }}
+        namespace: {{ .Release.Namespace }}
+        port: {{ .Values.jellystat.service.main.ports.main.port }}

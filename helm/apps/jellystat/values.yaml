@@ -4,9 +4,12 @@ namespaces:
 backupLabel:
   homelab/backup-resource: "true"
 
+ingress:
+  domain: jellystat.example.com
+
 jellystat:
-  # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
-  # see documentation https://truecharts.org/charts/stable/jellyseerr/
+  # see https://github.com/truecharts/public/blob/master/charts/stable/jellystat/values.yaml
+  # see documentation https://truecharts.org/charts/stable/jellystat/
   waitPsqlImage:
     repository: docker.io/library/busybox
     tag: latest

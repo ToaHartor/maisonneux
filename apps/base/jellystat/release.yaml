@@ -25,4 +25,7 @@ spec:
     storage:
       persistentClassName: ${fastdata_storage}-ha
     
+    ingress:
+      domain: jellystat.${main_domain}
+
     # jellystat:
