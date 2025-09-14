@@ -5,6 +5,8 @@ metadata:
   namespace: media
 spec:
   releaseName: qbittorrent
+  dependsOn:
+    - name: qbittorrent-proxy
   chart:
     spec:
       chart: qbittorrent
@@ -45,3 +47,38 @@ spec:
         server: ${nfs_server}
         path: ${nfs_path_download}
         mountPath: /downloads
+
+    extraTpl:
+      - |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: {{ .Release.Name }}
+          namespace: {{ .Release.Namespace }}
+        spec:
+          parentRefs:
+            - name: traefik-gateway
+              namespace: traefik
+              sectionName: websecure
+              kind: Gateway
+
+          hostnames:
+            - torrent.${main_domain}
+
+          rules:
+            - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+
+              backendRefs:
+              - name: {{ .Release.Name }}
+                namespace: {{ .Release.Namespace }}
+                port: {{ .Values.service.main.ports.main.port }}
+
+              filters:
+                - type: ExtensionRef
+                  extensionRef:
+                    group: traefik.io
+                    kind: Middleware
+                    name: chain-forwardauth

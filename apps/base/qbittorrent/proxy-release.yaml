@@ -1,0 +1,55 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: qbittorrent-proxy
+  namespace: media
+spec:
+  releaseName: qbittorrent-proxy
+  dependsOn:
+    - name: authentik
+      namespace: authentik
+  chart:
+    spec:
+      chart: authentik-application
+      # renovate: datasource=docker depName=authentik-application registryUrl=oci://codeberg.org/wrenix/helm-charts
+      version: "0.4.9"
+      sourceRef:
+        kind: HelmRepository
+        name: wrenix
+        namespace: flux-system
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  values:
+    # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml   
+    # Provider is added to the via blueprint in Authentik chart
+    blueprint:
+      authentik:
+        domain: "https://auth.${main_domain_websecure}"
+      provider:
+        enabled: true
+        name: "QBittorrent"
+        type: "proxy"
+        proxy:
+          externalHost: "https://torrent.${main_domain_websecure}"
+          skipPathRegex: ""
+          cookieDomain: ""
+          ingress:
+            enabled: false
+      application:
+        name: "QBittorrent"
+        slug: "qbittorrent"
+        # -- put this application in authentik in group
+        group: "Media"
+        launchURL: "https://torrent.${main_domain_websecure}"
+        openInNewTab: false
+        icon: ""
+        description: "Torrent client"
+        bindPolicyID:
+        policyEngineMode: "any"
+      groups:
+        - slug: "app: qbittorrent"
+          parent: "Media Admins"
+          bindID: "20cb7811-1f49-45e5-82fc-6abbd3b0ac97" # arbitrary uuid
