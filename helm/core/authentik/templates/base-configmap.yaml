@@ -41,3 +41,22 @@ data:
         # attrs:
         #   is_superuser: false
         id: users-group
+
+  default_scope_mappings.yaml: |
+    version: 1
+    metadata:
+      name: scope-mapping-jellyfin-groups
+      labels:
+        blueprints.goauthentik.io/description: |
+          This blueprint configures additional scope mappings to be used by providers
+
+    entries:
+      - model: authentik_providers_oauth2.scopemapping
+        identifiers:
+          name: "Jellyfin Groups"
+        attrs:
+          name: "Jellyfin Groups"
+          scope_name: groups
+          description: "Group mapping for Jellyfin"
+          expression: |
+            return [group.name for group in user.ak_groups.all()]

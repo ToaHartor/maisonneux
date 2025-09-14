@@ -1,0 +1,63 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyfin-oidc
+  namespace: jellyfin
+spec:
+  releaseName: jellyfin-oidc
+  dependsOn:
+    - name: authentik
+      namespace: authentik
+  chart:
+    spec:
+      chart: authentik-application
+      # renovate: datasource=docker depName=authentik-application registryUrl=oci://codeberg.org/wrenix/helm-charts
+      version: "0.4.9"
+      sourceRef:
+        kind: HelmRepository
+        name: wrenix
+        namespace: flux-system
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml
+    blueprint:
+      authentik:
+        domain: "https://auth.${main_domain_websecure}"
+      provider:
+        enabled: true
+        name: "Jellyfin"
+        type: "oidc"
+        oidc:
+          clientType: "confidential"
+          # clientID:
+          # clientSecret:
+          redirectURL: "https://jellyfin.${main_domain_websecure}/sso/OID/redirect/Authentik"
+          signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
+          tokenDuration: "minutes=5"
+          scopes:
+            - name: "authentik default OAuth Mapping: OpenID 'openid'"
+            - name: "authentik default OAuth Mapping: OpenID 'email'"
+            - name: "authentik default OAuth Mapping: OpenID 'profile'"
+            - name: "Jellyfin Groups" # Reference to the group mappings defined in jellyfin-groups-mapping.yaml
+      application:
+        name: "Jellyfin"
+        slug: "jellyfin"
+        group: "Medias"
+        launchURL: "https://jellyfin.${main_domain_websecure}"
+        openInNewTab: false
+        icon: ""
+        description: "Media server"
+        # publisher: "Publisher"
+        bindPolicyID:
+        policyEngineMode: "any"
+      groups:
+        - slug: "app: jellyfin"
+          bindID: "964bd0a3-426d-467f-a21f-5adf2cf8b317" # arbitrary uuid
+
+
+      

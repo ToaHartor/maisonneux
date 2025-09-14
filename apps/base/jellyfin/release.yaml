@@ -5,8 +5,8 @@ metadata:
   namespace: jellyfin
 spec:
   releaseName: jellyfin
-  # dependsOn:
-  #   - name: jellyfin-oidc
+  dependsOn:
+    - name: jellyfin-oidc
   chart:
     spec:
       chart: jellyfin

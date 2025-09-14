@@ -2,16 +2,61 @@
 
 ## Prerequisites
 
-The media stack setup requires NFS storages for 
+The media stack setup requires NFS storage mounts to persist downloads and medias in general.
+
+The mount creation guide in TrueNAS is handled in nfs-mounts.md, so this is a prerequisite to the media environment.
 
 ## Jellyfin wizard
 
-As we can't bootstrap
+Jellyfin needs to be set up with the wizard. We create an admin user and password that will be used for the next steps to generate API keys.
 
+Keep in mind that we can add additional users including admins using the OIDC provider.
 
 ### OIDC setup
 
+Retrieve the oidc secret : `kubectl get secret/jellyfin-oidc-authentik-application -n jellyfin -o yaml`.
 
+We can directly decode the data for our needs.
+
+- OIDC id : `kubectl get secret/jellyfin-oidc-authentik-application -n jellyfin --output=jsonpath='{.data.clientID}' | base64 -d`
+- OIDC secret : `kubectl get secret/jellyfin-oidc-authentik-application -n jellyfin --output=jsonpath='{.data.clientSecret}' | base64 -d`
+- Issuer URL : `kubectl get secret/jellyfin-oidc-authentik-application -n jellyfin --output=jsonpath='{.data.issuerURL}' | base64 -d`
+
+With the data from the secret, follow the setup with Authentik on Jellyfin's side.
+
+- Name of the OID Provider : `Authentik`
+- OID endpoint : issuer URL
+- Client ID and secret : OIDC id and secret
+- Roles :
+
+```text
+Admins
+Media Users
+```
+
+- Admin Roles :
+
+```text
+Admins
+```
+
+- Enable role-based folder access
+
+Do the folder mapping for each listed role and allow access in accordance to the groups.
+
+- Role Claim
+
+```text
+groups
+```
+
+- Request Additional Scopes
+
+```text
+groups
+```
+
+- Scheme override : `https`
 
 ## Jellyseerr wizard
 
@@ -36,4 +81,3 @@ Therefore, we have to go through the wizard to link the Jellyfin server.
 1. Go to the Jellystat main page
 2. Enter credentials to create the admin user and confirm
 3. Enter `http://jellyfin.jellyfin.svc.cluster.local:8096` as the server `URL` and enter the created API key in `0.` in `API key`, then save details.
-
