@@ -10,6 +10,9 @@ spec:
       namespace: cert-manager
     - name: traefik-crds
       namespace: traefik
+    - name: crowdsec
+      namespace: crowdsec
+
   chart:
     spec:
       chart: traefik
@@ -47,16 +50,17 @@ spec:
     #   loadBalancerClass: io.cilium/node
     logs:
       general:
-        level: "DEBUG" # Temp
-        # format: json
+        level: "INFO" # Temp
+        format: json
       access:
         enabled: true
-        # format: json
+        format: json
 
     ingressClass:
       name: traefik
     providers:
       kubernetesCRD:
+        enabled: true
         allowCrossNamespace: true
         ingressClass: traefik
       kubernetesIngress:
@@ -70,7 +74,13 @@ spec:
     additionalArguments:
       - "--serversTransport.insecureSkipVerify=true"
       - "--providers.kubernetesingress.ingressendpoint.publishedservice=traefik/traefik"
-    
+
+    experimental:
+      plugins:
+        crowdsec-bouncer:
+          moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+          version: v1.4.5
+
     # Default certificate
     tlsStore:
       # Creates a TLSStore resource "default" with the certificate
@@ -122,10 +132,16 @@ spec:
             scheme: https
             # Higher priority than any rule per default to redirect everything to https. If no redirection is required, put a higher priority to the rule.
             priority: 1000
+        middlewares:
+          - traefik-crowdsecbouncer@kubernetescrd
+
       websecure:
         exposedPort: ${traefik_websecure_lb_port}
         tls:
           enabled: true
+        middlewares:
+          - traefik-crowdsecbouncer@kubernetescrd
+          - traefik-secure-headers@kubernetescrd
     
     gateway:
       enabled: true
@@ -150,7 +166,7 @@ spec:
         kind: Middleware
         metadata:
           name: ratelimit
-          namespace: traefik
+          namespace: "{{ .Release.Namespace }}"
         spec:
           rateLimit:
             average: 200
@@ -159,7 +175,7 @@ spec:
         kind: Middleware
         metadata:
           name: secure-headers
-          namespace: traefik
+          namespace: "{{ .Release.Namespace }}"
         spec:
           headers:
             accessControlAllowMethods: 
@@ -188,14 +204,14 @@ spec:
         kind: Middleware
         metadata:
           name: compress
-          namespace: traefik
+          namespace: "{{ .Release.Namespace }}"
         spec:
           compress: {}
       - apiVersion: traefik.io/v1alpha1
         kind: Middleware
         metadata:
           name: local-ip
-          namespace: traefik
+          namespace: "{{ .Release.Namespace }}"
         spec:
           ipWhiteList:
             sourceRange:
@@ -206,7 +222,7 @@ spec:
         kind: Middleware
         metadata:
           name: authentik-plex
-          namespace: traefik
+          namespace: "{{ .Release.Namespace }}"
         spec:
           forwardAuth:
             # This address should point to the cluster endpoint provided by the kubernetes service, not the Ingress.
@@ -231,7 +247,7 @@ spec:
         kind: Middleware
         metadata:
           name: authentik
-          namespace: traefik
+          namespace: "{{ .Release.Namespace }}"
         spec:
           forwardAuth:
             # This address should point to the cluster endpoint provided by the kubernetes service, not the Ingress.
@@ -258,7 +274,7 @@ spec:
         kind: Middleware
         metadata:
           name: chain-forwardauth
-          namespace: traefik
+          namespace: "{{ .Release.Namespace }}"
         spec:
           chain:
             middlewares:
@@ -273,9 +289,9 @@ spec:
           chain:
             middlewares:
               - name: secure-headers
-                namespace: traefik
+                namespace: "{{ .Release.Namespace }}"
               - name: authentik
-                namespace: traefik
+                namespace: "{{ .Release.Namespace }}"
       - apiVersion: traefik.io/v1alpha1
         kind: Middleware
         metadata:
@@ -285,15 +301,15 @@ spec:
           chain:
             middlewares:
               - name: secure-headers
-                namespace: traefik
+                namespace: "{{ .Release.Namespace }}"
               - name: authentik
-                namespace: traefik
+                namespace: "{{ .Release.Namespace }}"
       ## Other middlewares
       - apiVersion: traefik.io/v1alpha1
         kind: Middleware
         metadata:
           name: chain-forwardauth-plex
-          namespace: traefik
+          namespace: "{{ .Release.Namespace }}"
         spec:
           chain:
             middlewares:
@@ -303,24 +319,8 @@ spec:
         kind: Middleware
         metadata:
           name: chain-noauth
-          namespace: traefik
+          namespace: "{{ .Release.Namespace }}"
         spec:
           chain:
             middlewares:
               - name: secure-headers
-
-
-
-
-      # experimental:
-      #   plugins:
-      #     demo:
-      #       moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
-      #       version: v1.3.5
-
-            # http:
-  # middlewares:
-  #   crowdsec-bouncer:
-  #     forwardauth:
-  #       address: http://bouncer_traefik:8080/api/v1/forwardAuth
-  #       trustForwardHeader: true

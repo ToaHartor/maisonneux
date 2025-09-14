@@ -36,7 +36,7 @@ spec:
   kind: Password
   generator:
     passwordSpec:
-      length: 50
+      length: 64
       digits: 10
       symbols: 5
       symbolCharacters: "-_"

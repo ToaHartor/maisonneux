@@ -18,6 +18,7 @@ resources:
   - ../base/dragonfly-cluster
   - ../base/victoriametrics-operator
   - ../base/grafana
+  - ../base/crowdsec
 # patches:
 #   - path: cert-manager-ovh-values.yaml
 #     target:

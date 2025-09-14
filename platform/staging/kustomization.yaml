@@ -18,6 +18,7 @@ resources:
   - ../base/dragonfly-cluster
   - ../base/victoriametrics-operator
   - ../base/grafana
+  - ../base/crowdsec
 patches:
   # Remove all topologySpreadConstraints and reduce replicas in non-production cluster
   # We also reduce default volume storage size

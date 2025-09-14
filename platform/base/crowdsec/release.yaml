@@ -1,0 +1,33 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: crowdsec
+  namespace: crowdsec
+spec:
+  releaseName: crowdsec
+  dependsOn:
+    - name: psql-cluster
+      namespace: postgres
+    - name: traefik-crds
+      namespace: traefik
+  chart:
+    spec:
+      chart: helm/platform/crowdsec
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+
+  valuesFrom:
+    - kind: Secret
+      name: crowdsec-lapi-key
+      valuesKey: secretKey
+      targetPath: crowdsec.lapi.secrets.csLapiSecret
+
+  # values:
