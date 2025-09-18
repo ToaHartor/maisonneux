@@ -44,6 +44,9 @@ spec:
             - name: "authentik default OAuth Mapping: OpenID 'email'"
             - name: "authentik default OAuth Mapping: OpenID 'profile'"
             - name: "Jellyfin Groups" # Reference to the group mappings defined in jellyfin-groups-mapping.yaml
+              scope_name: "groups"
+              expression: |
+                return [group.name for group in user.ak_groups.all()]
       application:
         name: "Jellyfin"
         slug: "jellyfin"
