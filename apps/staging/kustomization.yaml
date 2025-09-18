@@ -22,6 +22,7 @@ resources:
   - ../base/suwayomi
   - ../base/immich
   - ../base/jellyfin
+  - ../base/minio
 patches:
   # Reduce PVC sizes
   # We also change the storageclass to non-ha in this scenario

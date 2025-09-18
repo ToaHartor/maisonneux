@@ -127,6 +127,7 @@ variable "truenas_nfs_paths" {
     immich    = string
     paperless = string
     seafile   = string
+    minio     = string
   })
   description = "TrueNAS list of NFS paths"
 }

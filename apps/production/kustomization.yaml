@@ -22,6 +22,7 @@ resources:
   - ../base/suwayomi
   - ../base/immich
   - ../base/jellyfin
+  - ../base/minio
 patches:
   - target:
       kind: HelmRelease
