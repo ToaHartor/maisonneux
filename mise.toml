@@ -1,0 +1,33 @@
+[env]
+# Automatic use of venv
+_.python.venv = { path = ".venv", create = true, uv_create_args = ['--seed'] }
+
+[settings]
+python.uv_venv_auto = true
+
+[tools]
+k9s = "latest"
+cilium-cli = "latest"
+cilium-hubble = "latest"
+# talosctl may need to be at the same version than the cluster
+talosctl = "1.10.7"
+tekton-cli = "latest"
+flux2 = "latest"
+# Fixed to target kubernetes version ?
+kubectl = "1.33.4"
+opentofu = "1.10.6"
+velero = "latest"
+jq = "latest"
+yq = "latest"
+helm = "latest"
+# Python
+python = "3.13"
+uv = "latest"
+ruff = "latest"
+
+[tasks.venv]
+description = "Install python dependencies"
+alias = "v"
+run = "uv pip install -r dev/dev-requirements.txt"
+
+# TODO : move Makefile content here

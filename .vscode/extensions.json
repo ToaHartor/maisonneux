@@ -1,0 +1,3 @@
+{
+  "recommendations": ["redhat.vscode-yaml", "hverlin.mise-vscode", "Tim-Koehler.helm-intellisense", "ms-kubernetes-tools.vscode-kubernetes-tools", "opentofu.vscode-opentofu", "charliermarsh.ruff", "timonwong.shellcheck", "DavidAnson.vscode-markdownlint", "redhat.ansible"]
+}

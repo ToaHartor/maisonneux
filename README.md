@@ -31,16 +31,17 @@ Each directory represents a deployment stage, contains a folder for production a
 
 FluxCD reads the files in `clusters/{env}` then each describing a deployment stage points to a folder containing a Kustomization referencing the common .yaml files and eventual particularities.
 
+## Tools
+
+All the required tools are managed and versioned by [mise](https://github.com/jdx/mise).
+
+To install the tools, use
+
+```bash
+mise install
+mise run venv
+```
+
 ## Issues
 
 Issues are not opened, as I'm not supposed to give support for the softwares/technologies I'm using. For that, please refer to their own repositories or forums. However, I'm open to any advice and discussion in the Discussion section.
-
-## Tools
-
-- Terraform/[OpenTofu](https://opentofu.org/)
-- [Talosctl](https://www.talos.dev/install)
-- [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
-- [K9s](https://k9scli.io/topics/install/)
-- [Docker](https://www.docker.com/)
-- [helm](https://helm.sh/)
-- [helmfile](https://github.com/helmfile/helmfile)
