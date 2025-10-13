@@ -12,9 +12,10 @@ resource "helm_release" "cilium" {
   values = [file("./cilium_values.yaml")]
   wait   = false # Do not wait for resources as the chart is designed like this
   set = [
+    // Setting api server URLs manually with https://github.com/siderolabs/talos/discussions/11513
     {
-      name  = "k8sServicePort"
-      value = var.kubeprism_port
+      name  = "k8s.apiServerURLs"
+      value = join(" ", [for ip in local.control_plane_ips : "https://${ip}:6443"])
     },
     {
       name  = "ipv4NativeRoutingCIDR"

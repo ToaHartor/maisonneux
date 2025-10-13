@@ -100,8 +100,8 @@ cgroup:
     enabled: false
   hostRoot: "/sys/fs/cgroup"
 
-k8sServiceHost: localhost
-k8sServicePort: 0
+# k8sServiceHost: localhost
+# k8sServicePort: 0
 kubeProxyReplacement: true
 autoDirectNodeRoutes: true
 routingMode: native

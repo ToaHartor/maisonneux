@@ -35,7 +35,9 @@ locals {
   kubeconfig_raw  = yamldecode(file(local.kubeconfig_path))
   talosconfig_raw = yamldecode(file("../../../tmp/talosconfig-${var.deploy_env}.yaml"))
 
-  opnsense_bgp_asn = 64555
+  opnsense_bgp_asn  = 64555
+  control_plane_ips = split(",", var.controllers)
+
 
   talosconfig = {
     ca            = local.talosconfig_raw.contexts[var.cluster_name].ca

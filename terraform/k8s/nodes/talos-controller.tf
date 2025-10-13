@@ -200,11 +200,11 @@ data "talos_machine_configuration" "controller" {
         clusterName                    = var.cluster_name
         allowSchedulingOnControlPlanes = var.schedule_pods_on_control_plane_nodes
         // solves https://github.com/siderolabs/talos/issues/9980 for k8s 1.32+
-        apiServer = {
-          extraArgs = {
-            feature-gates = "AuthorizeNodeWithSelectors=false"
-          }
-        }
+        # apiServer = {
+        #   extraArgs = {
+        #     feature-gates = "AuthorizeNodeWithSelectors=false"
+        #   }
+        # }
         # Proxmox csi driver for storage
         externalCloudProvider = {
           enabled = true

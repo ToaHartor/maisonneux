@@ -10,11 +10,11 @@ k9s = "latest"
 cilium-cli = "latest"
 cilium-hubble = "latest"
 # talosctl may need to be at the same version than the cluster
-talosctl = "1.10.7"
+talosctl = "1.11.2"
 tekton-cli = "latest"
 flux2 = "latest"
 # Fixed to target kubernetes version ?
-kubectl = "1.33.4"
+kubectl = "1.34.1"
 opentofu = "1.10.6"
 velero = "latest"
 jq = "latest"
@@ -28,6 +28,9 @@ ruff = "latest"
 [tasks.venv]
 description = "Install python dependencies"
 alias = "v"
-run = "uv pip install -r dev/dev-requirements.txt"
+run = [
+  "uv pip install -r dev/dev-requirements.txt",
+  "ansible-galaxy collection install ansibleguy.opnsense --force",
+]
 
 # TODO : move Makefile content here
