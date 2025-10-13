@@ -7,7 +7,7 @@ spec:
   interval: 10m
   ref:
     # renovate: datasource=github-tags depName=external-secrets/external-secrets extractVersion=^(?<version>.+)$
-    tag: v0.19.2
+    tag: v0.20.3
   url: http://github.com/external-secrets/external-secrets
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
