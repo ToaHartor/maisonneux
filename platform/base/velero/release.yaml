@@ -60,6 +60,12 @@ spec:
     upgradeCRDs: true
     cleanUpCRDs: false
 
+    # TODO : remove when https://github.com/vmware-tanzu/helm-charts/issues/698 is solved
+    kubectl:
+      image:
+        repository: bitnamilegacy/kubectl
+        tag: 1.33.4
+
     credentials:
       useSecret: true
       name: s3-backup-aws-creds-file # Same name as in external-secrets.yaml
