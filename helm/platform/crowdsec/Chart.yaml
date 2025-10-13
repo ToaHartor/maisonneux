@@ -3,7 +3,7 @@ name: crowdsec
 description: Custom helm wrapper for Crowdsec Helm chart
 dependencies:
   - name: crowdsec
-    version: "0.20.0"
+    version: "0.20.1"
     repository: https://crowdsecurity.github.io/helm-charts
   - name: common
     # renovate: datasource=local-dependency
