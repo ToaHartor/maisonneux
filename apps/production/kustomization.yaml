@@ -23,6 +23,7 @@ resources:
   - ../base/immich
   - ../base/jellyfin
   - ../base/minio
+  - ../base/legacyapps
 patches:
   - target:
       kind: HelmRelease

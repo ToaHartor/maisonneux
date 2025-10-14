@@ -1,0 +1,76 @@
+{{- $serviceName := "asphyxia"}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  {{- range $server := .Values.asphyxia }}
+    - name: {{ $server.subdomain }}
+      port: {{ $server.port }}
+      targetPort: {{ $server.port }}
+  {{- end }}
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: {{ $serviceName }}-endpoint
+  namespace: {{ .Release.Namespace }}
+  labels:
+    kubernetes.io/service-name: {{ $serviceName }}
+    endpointslice.kubernetes.io/managed-by: legacy-vm
+addressType: IPv4
+endpoints:
+  - addresses:
+      - {{ .Values.legacyVmIp }}
+    conditions:
+      ready: true
+ports:
+{{- range $server := .Values.asphyxia }}
+  - name: {{ $server.subdomain }}
+    port: {{ $server.port }}
+    protocol: TCP
+{{- end }}
+{{- $root := . }}
+{{- range $server := .Values.asphyxia}}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: "asphyxia-{{ $server.subdomain }}"
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: "web"
+      kind: Gateway
+
+  hostnames:
+    - {{ printf "%s.%s" $server.subdomain $root.Values.ingress.domain }}
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+        method: POST
+        headers:
+          - type: Exact
+            name: User-Agent
+            value: EAMUSE.XRPC/1.0
+        queryParams:
+          - type: RegularExpression
+            name: model
+            value: "(KFC|LDJ):[A-Z]:[A-Z]:[A-Z]:[0-9]{10}"
+          - type: RegularExpression
+            name: f
+            value: ".*"
+
+
+      backendRefs:
+      - name: {{ $serviceName }}
+        port: {{ $server.port }}
+---
+{{- end }}

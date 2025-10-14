@@ -1,0 +1,56 @@
+{{- $serviceName := "bucket"}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: server
+      port: 9000
+      targetPort: 19000
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: {{ $serviceName }}-endpoint
+  namespace: {{ .Release.Namespace }}
+  labels:
+    kubernetes.io/service-name: {{ $serviceName }}
+    endpointslice.kubernetes.io/managed-by: legacy-vm
+addressType: IPv4
+endpoints:
+  - addresses:
+      - {{ .Values.legacyVmIp }}
+    conditions:
+      ready: true
+ports:
+  - name: server
+    port: 19000
+    protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: "websecure"
+      kind: Gateway
+
+  hostnames:
+    - "bucket.{{ .Values.ingress.domain }}"
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: {{ $serviceName }}
+        port: 9000

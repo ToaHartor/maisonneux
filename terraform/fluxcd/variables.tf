@@ -184,3 +184,13 @@ variable "k8s_lb_influxdb_ip" {
     error_message = "Must be a valid IPv4 CIDR block address."
   }
 }
+
+# Legacy VM options, to be deleted when fully migrated
+variable "legacy_vm_ip" {
+  type        = string
+  description = "IP address of the VM hosting the legacy services"
+  validation {
+    condition     = can(cidrnetmask("${var.legacy_vm_ip}/32"))
+    error_message = "Must be a valid IPv4 CIDR block address."
+  }
+}

@@ -30,7 +30,7 @@ locals {
     "minio_backup_bucket"       = var.minio_backup_bucket
     "acme_server_url"           = var.use_letsencrypt_production_server ? "https://acme-v02.api.letsencrypt.org/directory" : "https://acme-staging-v02.api.letsencrypt.org/directory"
     "main_domain"               = var.main_domain
-    "secondary_domain"          = var.second_domain
+    "second_domain"             = var.second_domain
     "psql_suffix"               = var.cnpg_recovery ? "-temp" : ""
     "gpu_runtime_class"         = var.use_nvidia_gpu ? "nvidia" : "null"
     "fastdata_storage"          = var.storage.fastdata
@@ -41,6 +41,7 @@ locals {
     "traefik_web_lb_port"       = local.ingress_ports.web
     "traefik_websecure_lb_port" = local.ingress_ports.websecure
     "influxdb_lb_ip"            = var.k8s_lb_influxdb_ip
+    "legacy_vm_ip"              = var.legacy_vm_ip
     },
     { for k, v in local.ingress_ports : "main_domain_${k}" => join("", [var.main_domain, (var.is_internet_ingress ? "" : ":${v}")]) },
     var.second_domain != "" ? { for k, v in local.ingress_ports : "second_domain_${k}" => join("", [var.second_domain, (var.is_internet_ingress ? "" : ":${v}")]) } : {},

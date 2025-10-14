@@ -1,0 +1,14 @@
+
+ingress:
+  domain: example.com
+  externalUrl:
+    web: example.com:80
+    websecure: example.com:443
+
+legacyVmIp: 192.168.0.1
+
+asphyxia:
+  - subdomain: sdvx
+    port: 10883
+  - subdomain: sdvxplus
+    port: 10884

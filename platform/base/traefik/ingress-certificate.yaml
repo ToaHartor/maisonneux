@@ -12,3 +12,18 @@ spec:
     kind: ClusterIssuer
     group: cert-manager.io
   secretName: ${main_domain}-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${second_domain}-cert
+  namespace: traefik
+spec:
+  dnsNames:
+  - "${second_domain}"
+  - "*.${second_domain}"
+  issuerRef:
+    name: "letsencrypt"
+    kind: ClusterIssuer
+    group: cert-manager.io
+  secretName: ${second_domain}-tls

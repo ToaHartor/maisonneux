@@ -50,7 +50,7 @@ spec:
     #   loadBalancerClass: io.cilium/node
     logs:
       general:
-        level: "INFO" # Temp
+        level: "DEBUG" # Temp
         format: json
       access:
         enabled: true
@@ -87,6 +87,7 @@ spec:
       default:
         certificates:
           - secretName: ${main_domain}-tls
+          - secretName: ${second_domain}-tls
         defaultCertificate:
           secretName: ${main_domain}-tls
       # Add more certificates if needed
@@ -126,12 +127,12 @@ spec:
       # http redirect to https
       web:
         exposedPort: ${traefik_web_lb_port}
-        redirections:
-          entryPoint:
-            to: websecure
-            scheme: https
-            # Higher priority than any rule per default to redirect everything to https. If no redirection is required, put a higher priority to the rule.
-            priority: 1000
+        # redirections:
+        #   entryPoint:
+        #     to: websecure
+        #     scheme: https
+        #     # Higher priority than any rule per default to redirect everything to https. If no redirection is required, put a higher priority to the rule.
+        #     priority: 1000
         middlewares:
           - traefik-crowdsecbouncer@kubernetescrd
 
@@ -142,6 +143,15 @@ spec:
         middlewares:
           - traefik-crowdsecbouncer@kubernetescrd
           - traefik-secure-headers@kubernetescrd
+      # websecure-legacy:
+      #   port: 8443
+      #   exposedPort: ${traefik_websecure_lb_port}
+      #   tls:
+      #     enabled: true
+      #   middlewares:
+      #     - traefik-crowdsecbouncer@kubernetescrd
+      #     - traefik-secure-headers@kubernetescrd
+
     
     gateway:
       enabled: true
@@ -155,11 +165,22 @@ spec:
         websecure:
           port: 8443
           protocol: HTTPS
+          # hostname: "*.${main_domain}"
           namespacePolicy:
             from: All
           certificateRefs:
             - name: ${main_domain}-tls
           mode: Terminate
+        # TODO : add another web/websecure endpoint if the standard ones don't work
+        # websecure-legacy:
+        #   port: 8443
+        #   protocol: HTTPS
+        #   hostname: ""
+        #   namespacePolicy:
+        #     from: All
+        #   certificateRefs:
+        #     - name: ${second_domain}-tls
+        #   mode: Terminate
 
     extraObjects:
       - apiVersion: traefik.io/v1alpha1
@@ -184,6 +205,7 @@ spec:
               - PUT
             accessControlAllowOriginListRegex:
               - "https://([a-z]*\\.)?${main_domain}"
+              - "https://([a-z]*\\.)?${second_domain}"
             addVaryHeader: true
             accessControlMaxAge: 100
             hostsProxyHeaders: 
@@ -192,7 +214,7 @@ spec:
             stsIncludeSubdomains: true
             stsPreload: true
             forceSTSHeader: true
-            contentSecurityPolicy: "frame-ancestors 'self' ${main_domain} *.${main_domain}"
+            contentSecurityPolicy: "frame-ancestors 'self' ${main_domain} *.${main_domain} ${second_domain} *.${second_domain}"
             contentTypeNosniff: true
             browserXssFilter: true
             referrerPolicy: "strict-origin"

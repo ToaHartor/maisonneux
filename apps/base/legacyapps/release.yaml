@@ -1,0 +1,30 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: legacyapps
+  namespace: services
+spec:
+  releaseName: legacyapps
+  chart:
+    spec:
+      chart: helm/apps/legacyapps
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    ingress:
+      domain: ${second_domain}
+      externalUrl:
+        web: ${second_domain_web}
+        websecure: ${second_domain_websecure}
+    legacyVmIp: ${legacy_vm_ip}
+

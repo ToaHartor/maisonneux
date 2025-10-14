@@ -1,0 +1,145 @@
+{{- $serviceName := "artemis"}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: frontend
+      port: 8090
+      targetPort: 8090
+      protocol: TCP
+    - name: title
+      port: 80
+      targetPort: 10880
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: {{ $serviceName }}-endpoint
+  namespace: {{ .Release.Namespace }}
+  labels:
+    kubernetes.io/service-name: {{ $serviceName }}
+    endpointslice.kubernetes.io/managed-by: legacy-vm
+addressType: IPv4
+endpoints:
+  - addresses:
+      - {{ .Values.legacyVmIp }}
+    conditions:
+      ready: true
+ports:
+  - name: frontend
+    port: 8090
+    protocol: TCP
+  - name: title
+    port: 10880
+    protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $serviceName }}-frontend
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: "websecure"
+      kind: Gateway
+
+  hostnames:
+    - "aime.{{ .Values.ingress.domain }}"
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: {{ $serviceName }}
+        port: 8090
+
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: chain-forwardauth
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $serviceName }}-naominet
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: "web"
+      kind: Gateway
+
+  hostnames:
+    - "naominet.jp"
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: {{ $serviceName }}
+        port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $serviceName }}-billing
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: "websecure"
+      kind: Gateway
+
+  hostnames:
+    - "ib.naominet.jp"
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: {{ $serviceName }}
+        port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $serviceName }}-title
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: "web"
+      kind: Gateway
+
+  hostnames:
+    - "artemis.{{ .Values.ingress.domain }}"
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: {{ $serviceName }}
+        port: 80

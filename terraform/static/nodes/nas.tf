@@ -80,10 +80,10 @@ resource "proxmox_virtual_environment_vm" "nas" {
     }
     iterator = data_disk
     content {
+      # file_format       = "qcow2"
       backup            = false
       datastore_id      = ""
       discard           = "ignore"
-      file_format       = "qcow2"
       interface         = "scsi${data_disk.key + 2}" # +2 for previous setup
       iothread          = false
       path_in_datastore = data_disk.value.path_in_datastore
@@ -234,6 +234,25 @@ resource "proxmox_virtual_environment_firewall_rules" "nas_inbound" {
     action  = "ACCEPT"
     comment = "Traefik HTTP"
     dport   = "80"
+    proto   = "tcp"
+    log     = "nolog"
+  }
+
+  // Rules for legacy apps
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Legacy otoge"
+    dport   = "10880:10896"
+    proto   = "tcp"
+    log     = "nolog"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Legacy bucket"
+    dport   = "19000"
     proto   = "tcp"
     log     = "nolog"
   }

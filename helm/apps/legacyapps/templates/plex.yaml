@@ -1,0 +1,81 @@
+{{- $serviceName := "plex"}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 32400
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: {{ $serviceName }}-endpoint
+  namespace: {{ .Release.Namespace }}
+  labels:
+    kubernetes.io/service-name: {{ $serviceName }}
+    endpointslice.kubernetes.io/managed-by: legacy-vm
+addressType: IPv4
+endpoints:
+  - addresses:
+      - {{ .Values.legacyVmIp }}
+    # mandatory otherwise traffic will not be rooted there
+    conditions:
+      ready: true
+ports:
+  - name: http
+    port: 32400
+    protocol: TCP
+---
+{{- $domain := printf "plex.%s" .Values.ingress.domain }}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: plex-redirect
+  namespace: {{ .Release.Namespace }}
+spec:
+  redirectRegex:
+    regex: "^https://{{ .Values.ingress.externalUrl.websecure }}/+$"
+    replacement: "https://{{ .Values.ingress.externalUrl.websecure }}/web/index.html"
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: "websecure"
+      kind: Gateway
+
+  hostnames:
+    - {{ $domain }}
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: {{ $serviceName }}
+        port: 80
+
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: plex-redirect
+        # - type: ExtensionRef
+        #   extensionRef:
+        #     group: traefik.io
+        #     kind: Middleware
+        #     name: chain-forwardauth
