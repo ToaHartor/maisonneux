@@ -1,17 +1,15 @@
-# TODO : Use the chart from the pull request until it is merged to the main repository
-# https://github.com/cloudnative-pg/charts/pull/598
+# TODO : Use the chart from the helm repository when available
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: cnpg-barman-cloud-pr
+  name: cnpg-barman-cloud
   namespace: flux-system
 spec:
   interval: 10m
   ref:
-    branch: add-pluginbarmancloud-chart
-    commit: cb3645cd3f838e22fba1c3ba182a4e4d28c99b51
-    # tag: 0.1.0
-  url: https://github.com/QuantumEnigmaa/charts/
+    commit: 35c6715be9aa467420a16a7cc690ba3609ebc163
+    # tag: 0.2.0
+  url: https://github.com/cloudnative-pg/charts/
 
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
@@ -27,7 +25,7 @@ spec:
       interval: 12h
       sourceRef:
         kind: GitRepository
-        name: cnpg-barman-cloud-pr
+        name: cnpg-barman-cloud
         namespace: flux-system
       reconcileStrategy: Revision
   interval: 50m
@@ -37,7 +35,7 @@ spec:
       retries: 3
 
   values:
-    # https://github.com/QuantumEnigmaa/charts/blob/add-pluginbarmancloud-chart/charts/plugin-barman-cloud/values.yaml
+    # https://github.com/cloudnative-pg/charts/blob/main/charts/plugin-barman-cloud/values.yaml
     replicaCount: 1
 
     crds:
