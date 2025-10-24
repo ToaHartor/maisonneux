@@ -9,6 +9,11 @@
   separateMajorMinor: false,
   separateMultipleMajor: true,
   separateMinorPatch: false,
+  lockFileMaintenance: {
+    enabled: true,
+    automerge: true,
+    automergeType: "pr",
+  },
   // flux: {
   //   fileMatch: ["(apps|core|platform|system)/base/.+\\.yaml$"],
   // },
