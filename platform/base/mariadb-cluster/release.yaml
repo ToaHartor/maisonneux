@@ -30,5 +30,5 @@ spec:
       enableAntiAffinity: true
       image:
         # renovate: datasource=helm depName=mariadb-operator registryUrl=https://helm.mariadb.com/mariadb-operator
-        tag: 25.8.4
+        tag: 25.10.1
     

@@ -12,7 +12,7 @@ spec:
     spec:
       chart: mariadb-operator
       # renovate: datasource=helm depName=mariadb-operator registryUrl=https://helm.mariadb.com/mariadb-operator
-      version: "25.8.4"
+      version: "25.10.1"
       sourceRef:
         kind: HelmRepository
         name: mariadb-operator
