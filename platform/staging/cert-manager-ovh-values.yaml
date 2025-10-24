@@ -21,6 +21,6 @@ spec:
           applicationSecretRef:
             name: external-ovh-secrets
             key: applicationSecret
-          consumerKeyRef:
+          applicationConsumerKeyRef:
             name: external-ovh-secrets
             key: consumerKey
