@@ -7,7 +7,7 @@ resource "helm_release" "cilium" {
   name       = "cilium"
   repository = "https://helm.cilium.io"
   chart      = "cilium"
-  version    = "1.18.2"
+  version    = "1.18.3"
   # values     = [local.cilium_values]
   values = [file("./cilium_values.yaml")]
   wait   = false # Do not wait for resources as the chart is designed like this
