@@ -4,7 +4,7 @@ description: Custom helm wrapper for Lidarr Helm chart
 dependencies:
   - name: lidarr
     # Version from https://github.com/truecharts/public/blob/master/charts/stable/lidarr/Chart.yaml
-    version: "26.2.0"
+    version: "27.0.1"
     repository: oci://tccr.io/truecharts
   - name: common
     version: "0.0.1"
