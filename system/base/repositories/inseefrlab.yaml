@@ -5,4 +5,4 @@ metadata:
   namespace: flux-system
 spec:
   interval: 5m
-  url: https://inseefrlab.github.io/helm-charts
+  url: https://inseefrlab.github.io/s3-operator

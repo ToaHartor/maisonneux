@@ -9,8 +9,8 @@ spec:
   chart:
     spec:
       chart: s3-operator
-      # renovate: datasource=helm depName=s3-operator registryUrl=https://inseefrlab.github.io/helm-charts
-      version: "0.6.0"
+      # renovate: datasource=helm depName=s3-operator registryUrl=https://inseefrlab.github.io/s3-operator
+      version: "0.9.0"
       sourceRef:
         kind: HelmRepository
         name: inseefrlab
@@ -22,8 +22,7 @@ spec:
       retries: 3
 
   values:
-    # see https://github.com/InseeFrLab/helm-charts/tree/master/charts/s3-operator
-    # see https://github.com/InseeFrLab/helm-charts/blob/master/charts/s3-operator/values.yaml
+    # see https://github.com/InseeFrLab/s3-operator/blob/main/deploy/charts/s3-operator/values.yaml
     crds:
       install: true
       keep: false # true for persistency
@@ -45,17 +44,18 @@ spec:
           - --useSsl=false
 
     s3:
-      endpointUrl: ${minio_url}
-      existingSecret: minio-external-secret
+      default:
+        url: ${minio_url}
+        secretRef: minio-external-secret
 
-      # accessKey:
-      # secretKey:
+        # accessKey:
+        # secretKey:
 
-      deletion:
-        bucket: false
-        path: false
-        policy: true
-        s3user: true
+        deletion:
+          bucket: false
+          path: false
+          policy: true
+          s3user: true
 
-      s3user:
-        overrideExistingSecret: true
+        s3user:
+          overrideExistingSecret: true
