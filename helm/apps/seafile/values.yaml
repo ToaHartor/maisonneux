@@ -44,6 +44,8 @@ seafile:
               # SEAFILE_VOLUME: /opt/seafile-data
               CLUSTER_INIT_MEMCACHED_HOST: "dragonfly-cluster.dragonfly.svc.cluster.local"
               CACHE_PROVIDER: redis
+              REDIS_HOST: "dragonfly-cluster.dragonfly.svc.cluster.local"
+              REDIS_PORT: 6379
               CLUSTER_SERVER: "false"
               CLUSTER_INIT_MODE: "false"
               JWT_PRIVATE_KEY:
@@ -207,5 +209,5 @@ seafile:
         size: 1Gi
         storageClass: default
   
-  memcached:
+  redis:
     enabled: false # use dragonfly 
