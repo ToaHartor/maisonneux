@@ -91,7 +91,7 @@ EOF
 resource "helm_release" "fluxcd" {
   repository = "https://fluxcd-community.github.io/helm-charts"
   chart      = "flux2"
-  version    = "2.16.4"
+  version    = "2.17.0"
   name       = "flux2"
   namespace  = "flux-system"
 
