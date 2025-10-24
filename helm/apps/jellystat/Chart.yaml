@@ -4,7 +4,7 @@ description: Custom helm wrapper for Jellystat Helm chart
 dependencies:
   - name: jellystat
     # Version from https://github.com/truecharts/public/blob/master/charts/stable/jellystat/Chart.yaml
-    version: "6.3.3"
+    version: "6.11.1"
     repository: oci://tccr.io/truecharts
   - name: common
     version: "0.0.1"
