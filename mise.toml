@@ -9,11 +9,11 @@ python.uv_venv_auto = true
 k9s = "latest"
 cilium-cli = "latest"
 cilium-hubble = "latest"
-# talosctl may need to be at the same version than the cluster
+# renovate: datasource=github-releases depName=siderolabs/talos
 talosctl = "1.11.2"
 tekton-cli = "latest"
 flux2 = "latest"
-# Fixed to target kubernetes version ?
+# renovate: datasource=github-releases depName=siderolabs/kubelet
 kubectl = "1.34.1"
 opentofu = "1.10.6"
 velero = "latest"
