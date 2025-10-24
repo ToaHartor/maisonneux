@@ -9,7 +9,7 @@ spec:
     spec:
       chart: prometheus-operator-crds
       # renovate: datasource=helm depName=prometheus-operator-crds registryUrl=https://prometheus-community.github.io/helm-charts
-      version: "23.0.0"
+      version: "24.0.1"
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
