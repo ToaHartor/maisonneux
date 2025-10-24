@@ -101,7 +101,7 @@ resource "helm_release" "fluxcd" {
 resource "helm_release" "fluxcd_sync" {
   repository = "https://fluxcd-community.github.io/helm-charts"
   chart      = "flux2-sync"
-  version    = "1.13.4"
+  version    = "1.14.0"
 
   # Note: Do not change the name or namespace of this resource. The below mimics the behaviour of "flux bootstrap".
   name      = "flux-system"
