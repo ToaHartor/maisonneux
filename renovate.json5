@@ -12,7 +12,7 @@
   lockFileMaintenance: {
     enabled: true,
     automerge: true,
-    automergeType: "pr",
+    automergeType: "branch",
   },
   // flux: {
   //   fileMatch: ["(apps|core|platform|system)/base/.+\\.yaml$"],
@@ -123,6 +123,7 @@
       matchCurrentVersion: "!/^0/",
       ignoreTests: true,
       automerge: true,
+      automergeType: "branch",
     },
     // * Non major updates for truecharts
     {
@@ -132,6 +133,7 @@
       matchCurrentVersion: "!/^0/",
       ignoreTests: true,
       automerge: true,
+      automergeType: "branch",
     },
   ],
 }
