@@ -107,7 +107,7 @@ outline:
 
               LOG_LEVEL: info
               WEB_CONCURRENCY: "1"
-              MAXIMUM_IMPORT_SIZE: "5120000"
+              FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"
   # Disable cnpg and redis deployments as we use our own
   redis:
     enabled: false
