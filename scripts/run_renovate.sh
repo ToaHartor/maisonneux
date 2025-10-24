@@ -51,6 +51,7 @@ podman run \
   --env RENOVATE_ENDPOINT=$gitea_url \
   --env RENOVATE_TOKEN=$(cat tmp/renovate/renovate-gitea-token.txt) \
   --env RENOVATE_REPOSITORIES=$GITEA_USERNAME/$gitea_local_repo_name \
+  --env RENOVATE_RECREATE_WHEN=always \
   --env RENOVATE_PR_HOURLY_LIMIT=0 \
   --env RENOVATE_PR_CONCURRENT_LIMIT=0 \
   --env RENOVATE_BASE_BRANCHES=$(git rev-parse --abbrev-ref HEAD) \
@@ -112,7 +113,7 @@ show_dependencies 'Dependencies Updates' tmp/renovate/renovate-dependencies-upda
 
 if [[ $DRY_RUN_ARG = "" ]]; then
     # show the gitea project.
-    show_title "See PRs at $gitea_url/$RENOVATE_USERNAME/$gitea_local_repo_name/pulls (you can login as $RENOVATE_USERNAME:$RENOVATE_PASSWORD)"
+    show_title "See PRs at $gitea_url/$RENOVATE_USERNAME/$gitea_local_repo_name/pulls (you can login as $RENOVATE_USERNAME:$RENOVATE_PASSWORD) and use 'Rebase then fast-forward' merge style. Some changes will be automerged (currently two by two as limited by Renovate), but several runs of this script will be needed to automerge everything."
 else
     echo "Run 'make renovate' to generate PRs for dependencies" 
 fi
