@@ -75,7 +75,7 @@ crowdsec:
         user:     ${DB_USER}
         password: ${DB_PASSWORD}
         db_name:  ${DB_NAME}
-        host:     psql-cluster-rw.postgres.svc.cluster.local
+        host:     postgres-db-rw.postgres.svc.cluster.local
         port:     5432
       api:
         server:
