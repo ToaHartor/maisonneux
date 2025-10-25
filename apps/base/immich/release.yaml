@@ -57,7 +57,7 @@ spec:
         user: immich
         database: immich
         creds:
-          host: immich-db-rw
+          host: postgres-db-rw.postgres.svc.cluster.local
           # password: "" # Filled by secrets
     
     redis:

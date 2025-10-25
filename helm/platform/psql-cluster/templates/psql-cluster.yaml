@@ -9,6 +9,8 @@ spec:
   instances: 3
   primaryUpdateStrategy: unsupervised
 
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.0-standard-trixie@sha256:e49b9c7942d794dea5979a1b9ca2e4bff418ee96e060f67660150b05ea169e28
+
   enableSuperuserAccess: true
   superuserSecret:
     name: psql-admin-secret
@@ -34,6 +36,15 @@ spec:
       wal_keep_size: "5GB" 
       max_slot_wal_keep_size: "5GB"
       hot_standby_feedback: "on"
+    
+    extensions:
+      - name: vchord
+        image:
+          reference: ghcr.io/tensorchord/vchord-scratch:pg18-v0.5.3@sha256:c310ede47f7f82bd257c3e53806d60680d5899c318ca946fb313efad9a90a78e 
+        dynamic_library_path:
+          - /usr/lib/postgresql/18/lib
+        extension_control_path:
+          - /usr/share/postgresql/18/
 
   plugins:
   - name: barman-cloud.cloudnative-pg.io

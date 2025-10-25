@@ -60,3 +60,4 @@ spec:
         - paperless
         - grafana
         - crowdsec
+        - immich

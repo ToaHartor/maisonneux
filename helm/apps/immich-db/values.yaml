@@ -1,22 +1,4 @@
-s3:
-  secretName: # Completed in fluxcd
-  bucketName: # Completed in fluxcd
-  endpoint: # Completed in fluxcd
-  customDomain: # Completed in fluxcd
-
-database:
-  postgres:
-    clusterName: immich-psql-cluster
-
-storage:
-  size: 1Gi
-
 immich:
   database:
-    image:
-      repository: ghcr.io/tensorchord/cloudnative-vectorchord
-      tag: 16-0.4.4@sha256:bdb8d8829bd68c9204628cde5c495db9db0d2b45e958ddd17de1703338a3b98b
-      pullPolicy: IfNotPresent
-    adminUser: postgres # Should not change
     user: immich
     name: immich
