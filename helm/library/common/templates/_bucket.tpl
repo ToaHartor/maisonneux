@@ -19,7 +19,8 @@ spec:
   quota:
     default: {{ default 1000000000 .BucketQuota }} # Quota defaults to 1GB
     # override: 20000000
-
+  # operator namespace / s3 instance name
+  s3InstanceRef: "operators/default"
 ---
 apiVersion: s3.onyxia.sh/v1alpha1
 kind: Policy
@@ -45,6 +46,7 @@ spec:
       }
       ]
     }
+  s3InstanceRef: "operators/default"
 ---
 apiVersion: s3.onyxia.sh/v1alpha1
 kind: S3User
@@ -55,4 +57,5 @@ spec:
   accessKey: {{ $user }}
   policies:
     - "{{ $user }}-bucket-policy"
+  s3InstanceRef: "operators/default"
 {{- end -}}

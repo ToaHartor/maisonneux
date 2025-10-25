@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - external-minio-secret.yaml
   - release.yaml
+  - s3-instance-release.yaml

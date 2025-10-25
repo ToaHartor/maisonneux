@@ -20,3 +20,4 @@ resources:
   - victoriametrics.yaml
   - vmware-tanzu.yaml
   - piraeus.yaml
+  - wikimedia.yaml

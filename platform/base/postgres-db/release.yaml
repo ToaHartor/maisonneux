@@ -12,7 +12,7 @@ spec:
     - name: cnpg-barman-cloud
       namespace: operators
     # Also needs the s3 operator for distant storage
-    - name: s3-operator
+    - name: s3-instance
       namespace: operators
   chart:
     spec:

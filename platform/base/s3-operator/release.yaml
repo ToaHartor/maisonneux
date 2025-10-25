@@ -5,7 +5,6 @@ metadata:
   namespace: operators
 spec:
   releaseName: s3-operator
-  # targetNamespace: operators
   chart:
     spec:
       chart: s3-operator
@@ -17,9 +16,12 @@ spec:
         namespace: flux-system
   interval: 50m
   install:
+    crds: CreateReplace
     createNamespace: true
     remediation:
       retries: 3
+  upgrade:
+    crds: CreateReplace
 
   values:
     # see https://github.com/InseeFrLab/s3-operator/blob/main/deploy/charts/s3-operator/values.yaml
@@ -37,25 +39,31 @@ spec:
       #     requests:
       #       cpu:
       #       memory:
-      manager:
-        image: # workaround for: https://github.com/InseeFrLab/helm-charts/issues/84
-          tag: v0.11.0 
-        extraArgs:
-          - --useSsl=false
+      # manager:
+        # image: # workaround for: https://github.com/InseeFrLab/helm-charts/issues/84
+        #   tag: v0.11.0 
+        # extraArgs:
+        #   - --useSsl=false
+
+    kubernetes:
+      overrideExistingSecret: true
 
     s3:
       default:
-        url: ${minio_url}
-        secretRef: minio-external-secret
+        # We need to deploy it manually as it conflicts with the CRD deployment...
+        enabled: false
+        # createNamespace: false
+        # s3Provider: minio
+        # namespace:
+        # url: http://${minio_url}
+        # secretRef: minio-external-secret
 
-        # accessKey:
-        # secretKey:
+        # # accessKey: ""
+        # # secretKey: ""
 
-        deletion:
-          bucket: false
-          path: false
-          policy: true
-          s3user: true
-
-        s3user:
-          overrideExistingSecret: true
+        # region: ""
+        # deletion:
+        #   bucket: false
+        #   path: false
+        #   policy: true
+        #   s3user: true
