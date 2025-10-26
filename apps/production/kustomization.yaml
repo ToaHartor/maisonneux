@@ -63,3 +63,33 @@ patches:
                                     operator: In
                                     values: ["config"]
                               topologyKey: kubernetes.io/hostname
+  - target:
+      kind: HelmRelease
+      name: immich
+      namespace: immich
+    patch: |-
+      - op: add
+        path: /spec/values/resources/limits
+        value:
+          nvidia.com/gpu: 1
+      # Patchception to patch the helmrelease, which patches the deployment
+      - op: add
+        path: /spec/postRenderers
+        value:
+          - kustomize:
+              patches:
+                - target:
+                    version: v1
+                    kind: Deployment
+                    name: immich-machinelearning
+                  patch: |-
+                    - op: replace
+                      path: /spec/template/spec/affinity
+                      value:
+                        nodeAffinity:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            nodeSelectorTerms:
+                            - matchExpressions:
+                              - key: nvidia.com/gpu.present
+                                operator: In
+                                values: ["true"]

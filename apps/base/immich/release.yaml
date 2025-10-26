@@ -103,7 +103,9 @@ spec:
       #       protocol: http
       #       targetPort: 8082
       #       targetSelector: microservices
-
+    containerOptions:
+      NVIDIA_CAPS:
+        - all
     workload:
       main:
         podSpec:
@@ -142,12 +144,13 @@ spec:
     #                   name: immich-db-creds
     #                   key: password
       
-      # machinelearning:
-      #   podSpec:
-      #     containers:
-      #       machinelearning:
-      #         env:
-
+      machinelearning:
+        podSpec:
+          runtimeClassName: ${gpu_runtime_class}
+          containers:
+            machinelearning:
+              env:
+                NVIDIA_VISIBLE_DEVICES: all
 
     # https://immich.app/docs/install/config-file/
     configmap:
