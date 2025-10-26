@@ -36,6 +36,7 @@ spec:
               main:
                 env:
                   URL: https://wiki.${main_domain_websecure}
+                  LOG_LEVEL: debug
                   OIDC_CLIENT_ID:
                     secretKeyRef:
                       # {oidc-release-name}-{chart-name}
@@ -55,8 +56,10 @@ spec:
                   OIDC_DISPLAY_NAME: Authentik
                   OIDC_SCOPES: openid profile email
 
+                  AWS_S3_UPLOAD_BUCKET_URL: http://${minio_url}
+
                   # WARNING : ONLY FOR DEBUG https://github.com/outline/outline/discussions/2606
-                  NODE_TLS_REJECT_UNAUTHORIZED: "0"
+                  # NODE_TLS_REJECT_UNAUTHORIZED: "0"
       
       redis:
         creds:

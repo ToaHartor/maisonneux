@@ -65,7 +65,7 @@ outline:
               
               PGSSLMODE: disable
 
-              URL:
+              URL: ""
               DATABASE_URL:
                 secretKeyRef:
                   name: outline-db-creds
@@ -101,13 +101,13 @@ outline:
               # AWS_S3_ACCELERATE_URL:
               AWS_S3_UPLOAD_BUCKET_URL: https://bucket.example.com # Should be accessible from outside, especially for image display
               AWS_S3_UPLOAD_BUCKET_NAME: "{{ .Values.s3.bucketName }}"
-              FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
-              # AWS_S3_FORCE_PATH_STYLE: true
-              # AWS_S3_ACL: private
+              AWS_S3_FORCE_PATH_STYLE: true
+              AWS_S3_ACL: private
 
               LOG_LEVEL: info
               WEB_CONCURRENCY: "1"
               FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"
+              FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
   # Disable cnpg and redis deployments as we use our own
   redis:
     enabled: false
