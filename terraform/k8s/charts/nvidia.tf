@@ -7,7 +7,9 @@ resource "helm_release" "nvidia_custom_resources" {
   namespace  = "kube-system"
   repository = "https://helm-charts.wikimedia.org/stable/"
   chart      = "raw"
-  version    = "0.3.0"
+  # Waiting for https://github.com/hashicorp/terraform-provider-helm/issues/1689 (next release)
+  # upgrade_install = true
+  version = "0.3.0"
   values = [
     <<-EOF
     resources:
@@ -16,6 +18,12 @@ resource "helm_release" "nvidia_custom_resources" {
         metadata:
           name: nvidia
         handler: nvidia
+      - apiVersion: scheduling.k8s.io/v1
+        kind: PriorityClass
+        metadata:
+          name: nvidia
+        value: 100000000
+        globalDefault: false
     EOF
   ]
 }
@@ -28,7 +36,8 @@ resource "helm_release" "nvidia_device_plugin" {
   name       = "nvidia-device-plugin"
   repository = "https://nvidia.github.io/k8s-device-plugin"
   chart      = "nvidia-device-plugin"
-  version    = "0.18.0"
+  # upgrade_install = true
+  version = "0.18.0"
   # https://github.com/NVIDIA/k8s-device-plugin/blob/main/deployments/helm/nvidia-device-plugin/values.yaml
   values = [
     <<-EOF

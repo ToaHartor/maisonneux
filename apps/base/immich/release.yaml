@@ -146,6 +146,7 @@ spec:
       
       machinelearning:
         podSpec:
+          priorityClassName: ${gpu_runtime_class}
           runtimeClassName: ${gpu_runtime_class}
           containers:
             machinelearning:

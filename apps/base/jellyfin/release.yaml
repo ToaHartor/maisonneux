@@ -53,6 +53,7 @@ spec:
           maxUnavailable: 0
           maxSurge: 1
         podSpec:
+          priorityClassName: ${gpu_runtime_class}
           runtimeClassName: ${gpu_runtime_class}
           containers:
             main:
