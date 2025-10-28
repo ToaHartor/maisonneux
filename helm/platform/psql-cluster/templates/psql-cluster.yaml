@@ -33,8 +33,10 @@ spec:
       number: 1
       dataDurability: required
     parameters:
-      wal_keep_size: "5GB" 
-      max_slot_wal_keep_size: "5GB"
+      wal_keep_size: "1GB" 
+      max_slot_wal_keep_size: "1GB"
+      max_connections: "100"
+      shared_buffers: "128MB"
       hot_standby_feedback: "on"
     
     shared_preload_libraries:
