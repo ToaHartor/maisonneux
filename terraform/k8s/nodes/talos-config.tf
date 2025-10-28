@@ -113,6 +113,8 @@ locals {
           # To solve "failed to create pod sandbox : no space left on device"
           # https://serverfault.com/questions/1189137/talos-os-and-truecharts-failed-to-create-network-namespace-for-sandbox-error
           # feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
+          # For CNPG extensions
+          feature-gates = "ImageVolume=true"
         }
       }
       # sysctls = {
@@ -152,9 +154,10 @@ locals {
       # Base from https://www.talos.dev/v1.7/reference/configuration/v1alpha1/config/#Config.cluster.apiServer.admissionControl.
       apiServer = {
         # User namespace feature
-        # extraArgs = {
-        #   feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
-        # }
+        extraArgs = {
+          # feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
+          feature-gates = "ImageVolume=true"
+        }
         admissionControl = [
           {
             name = "PodSecurity"

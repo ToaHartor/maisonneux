@@ -37,6 +37,9 @@ spec:
       max_slot_wal_keep_size: "5GB"
       hot_standby_feedback: "on"
     
+    shared_preload_libraries:
+      - "vchord.so"
+    
     extensions:
       - name: vchord
         image:
