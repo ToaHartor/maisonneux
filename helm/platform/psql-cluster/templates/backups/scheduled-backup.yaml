@@ -4,7 +4,7 @@ metadata:
   name: psql-cluster-backup
   namespace: {{ .Release.Namespace }}
 spec:
-  schedule: "0 0 4 * * *"
+  schedule: "0 0 */4 * * *"
   backupOwnerReference: self
   immediate: false
   cluster:
