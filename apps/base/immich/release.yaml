@@ -129,14 +129,15 @@ spec:
                 #       key: password
 
       
-      # microservices:
-      #   podSpec:
+      microservices:
+        podSpec:
       #     annotations:
       #       prometheus.io/port: "8082"
       #       prometheus.io/scrape: "true"
-      #     containers:
-      #       microservices:
-      #         env:
+          containers:
+            microservices:
+              env:
+                IMMICH_CONFIG_FILE: /config/immich-config.yaml
     #             REDIS_DBINDEX: ""
     #             DB_PASSWORD:
     #               valueFrom:
@@ -201,6 +202,8 @@ spec:
         targetSelector:
           main:
             main: {}
+          microservices:
+            microservices: {}
     
       library:
         enabled: true

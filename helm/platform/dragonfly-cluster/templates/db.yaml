@@ -10,6 +10,8 @@ metadata:
   name: dragonfly-cluster
   namespace: {{ .Release.Namespace }}
 spec:
+  args:
+    - "--default_lua_flags=allow-undeclared-keys"
   replicas: {{ .Values.replicas }}
   resources:
     requests:
