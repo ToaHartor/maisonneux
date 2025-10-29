@@ -9,7 +9,7 @@ spec:
     spec:
       chart: victoria-metrics-operator-crds
       # renovate: datasource=helm depName=victoria-metrics-operator-crds registryUrl=https://victoriametrics.github.io/helm-charts
-      version: "0.5.1"
+      version: "0.6.0"
       sourceRef:
         kind: HelmRepository
         name: victoriametrics
