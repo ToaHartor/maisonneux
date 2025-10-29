@@ -4,7 +4,7 @@ terraform {
     # see https://github.com/hashicorp/terraform-provider-helm
     helm = {
       source  = "hashicorp/helm"
-      version = "3.0.2"
+      version = "3.1.0"
     }
     # see https://registry.terraform.io/providers/hashicorp/kubernetes
     kubernetes = {
