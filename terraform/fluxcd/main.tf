@@ -89,11 +89,12 @@ EOF
 
 # example from https://github.com/fluxcd/terraform-provider-flux/blob/main/examples/helm-install/main.tf
 resource "helm_release" "fluxcd" {
-  repository = "https://fluxcd-community.github.io/helm-charts"
-  chart      = "flux2"
-  version    = "2.17.0"
-  name       = "flux2"
-  namespace  = "flux-system"
+  repository      = "https://fluxcd-community.github.io/helm-charts"
+  chart           = "flux2"
+  version         = "2.17.0"
+  name            = "flux2"
+  namespace       = "flux-system"
+  upgrade_install = true
 
   depends_on = [kubernetes_secret.flux_git_credentials]
 }
@@ -104,8 +105,9 @@ resource "helm_release" "fluxcd_sync" {
   version    = "1.14.0"
 
   # Note: Do not change the name or namespace of this resource. The below mimics the behaviour of "flux bootstrap".
-  name      = "flux-system"
-  namespace = "flux-system"
+  name            = "flux-system"
+  namespace       = "flux-system"
+  upgrade_install = true
 
   values     = [yamlencode(local.flux_sync_helm_values)]
   depends_on = [helm_release.fluxcd]

@@ -9,8 +9,9 @@ resource "helm_release" "cilium" {
   chart      = "cilium"
   version    = "1.18.3"
   # values     = [local.cilium_values]
-  values = [file("./cilium_values.yaml")]
-  wait   = false # Do not wait for resources as the chart is designed like this
+  values          = [file("./cilium_values.yaml")]
+  wait            = false # Do not wait for resources as the chart is designed like this
+  upgrade_install = true
   set = [
     // Setting api server URLs manually with https://github.com/siderolabs/talos/discussions/11513
     {
@@ -50,11 +51,12 @@ data "talos_cluster_health" "k8s_network_health" {
 resource "helm_release" "cilium_custom_resources" {
   depends_on = [data.talos_cluster_health.k8s_network_health]
 
-  name       = "cilium-custom-resources"
-  namespace  = "kube-system"
-  repository = "https://helm-charts.wikimedia.org/stable/"
-  chart      = "raw"
-  version    = "0.3.0"
+  name            = "cilium-custom-resources"
+  namespace       = "kube-system"
+  repository      = "https://helm-charts.wikimedia.org/stable/"
+  chart           = "raw"
+  upgrade_install = true
+  version         = "0.3.0"
   values = [
     <<-EOF
     resources:
