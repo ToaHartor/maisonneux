@@ -151,6 +151,8 @@ spec:
           runtimeClassName: ${gpu_runtime_class}
           containers:
             machinelearning:
+              resources:
+                limits:
               env:
                 NVIDIA_VISIBLE_DEVICES: all
 
