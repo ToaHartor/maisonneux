@@ -1,7 +1,7 @@
 apiVersion: barmancloud.cnpg.io/v1
 kind: ObjectStore
 metadata:
-  name: minio-backup
+  name: s3-backup
   namespace: {{ .Release.Namespace }}
 spec:
   configuration:

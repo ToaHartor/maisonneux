@@ -55,7 +55,7 @@ spec:
   - name: barman-cloud.cloudnative-pg.io
     isWALArchiver: true
     parameters:
-      barmanObjectName: minio-backup # Ref to the ObjectStore resource
+      barmanObjectName: s3-backup # Ref to the ObjectStore resource
 
   # Restore section added in restore script
   # bootstrap:
@@ -67,7 +67,7 @@ spec:
   #   plugin:
   #     name: barman-cloud.cloudnative-pg.io
   #     parameters:
-  #       barmanObjectName: minio-backup
+  #       barmanObjectName: s3-backup
   #       serverName: psql-cluster
 
   managed:

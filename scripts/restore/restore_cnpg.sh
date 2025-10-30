@@ -7,7 +7,7 @@ set -euo pipefail
 cnpgRecoveryPrefix="$(kubectl get configmap -n flux-system general-config -o=jsonpath='{.data.psql_suffix}')"
 
 # cnpgRecoveryPrefix=""
-backupSource="minio-backup" # ObjectStore names
+backupSource="s3-backup" # ObjectStore names
 # targetTime="2025-08-02 22:10:50.00000+02"
 
 # Using current time does not seem to work, as last WAL does not exist ? https://github.com/cloudnative-pg/cloudnative-pg/discussions/2989
@@ -24,7 +24,8 @@ if [ $# -eq 0 ] || [ "$1" == "schedule" ]; then
 else
   targetBackup="$1"
   # targetTime="$(date -d "$1" --rfc-3339=seconds)"
-  recoveryPatch="{\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"backupID\": \"$targetBackup\"}}}"
+  # We can also add \"targetTime\": \"$targetTime\" instead of targetImmediate
+  recoveryPatch="{\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"backupID\": \"$targetBackup\", \"targetImmediate\": true}}}"
 fi
 
 # Also suspend corresponding Kustomization
@@ -56,8 +57,11 @@ function restore_database() {
   # Wait PVC deletion
   sleep 5
 
+  # Get primary pod
+  primaryPod=$(kubectl cnpg status --output json "${sourceRecoveryCluster}" -n "$namespace" | jq -r '.cluster.status.currentPrimary')
+
   # Wait until primary pod is deleted
-  kubectl wait --for=delete "pod/${sourceRecoveryCluster}-1" -n "$namespace" --timeout=10m
+  kubectl wait --for=delete "pod/${primaryPod}" -n "$namespace" --timeout=10m
 
 
   # Patch new target name
@@ -140,13 +144,6 @@ fi
 
 # Arguments : <namespace> <helmrelease> <target restore cluster> <replicas>
 restore_database "postgres" "psql-cluster" "psql-cluster" 3
-
-# Apps
-if [[ -n "$cnpgRecoveryPrefix" ]]; then
-  flux suspend kustomization apps
-fi
-restore_database "immich" "immich-db" "immich-psql-cluster" 1
-
 
 if [[ -n "$cnpgRecoveryPrefix" ]]; then
   echo "Last step : disable cnpg_recovery in terraform fluxcd, then resume Kustomization"
