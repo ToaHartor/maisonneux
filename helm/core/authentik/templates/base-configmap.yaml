@@ -34,6 +34,25 @@ data:
           name: "Media Users"
           parent: !Find [authentik_core.group, [name, "Media Admins"]]
         id: media-users-group
+      ## Users which can manage drive service
+      - model: authentik_core.group
+        state: present
+        identifiers:
+          name: "Drive Admins"
+        attrs:
+          name: "Drive Admins"
+          parent: !Find [authentik_core.group, [name, "authentik Admins"]]
+        id: drive-admins-group
+      ## Users which can use the drive service
+      - model: authentik_core.group
+        state: present
+        identifiers:
+          name: "Drive Users"
+        attrs:
+          name: "Drive Users"
+          parent: !Find [authentik_core.group, [name, "Drive Admins"]]
+        id: drive-users-group
+      ## Default group
       - model: authentik_core.group
         state: present
         identifiers:
