@@ -37,6 +37,8 @@ locals {
     "git_repo_url"              = local.flux_sync_helm_values.gitRepository.spec.url
     "git_branch"                = var.flux_git_branch
     "nfs_server"                = var.truenas_vm_host
+    "patch_dns"                 = !var.is_internet_ingress # Patch only when it's not an ingress
+    "local_dns_server"          = var.is_internet_ingress ? "" : var.local_dns_server
     "traefik_lb_ip"             = var.k8s_lb_traefik_ip
     "traefik_web_lb_port"       = local.ingress_ports.web
     "traefik_websecure_lb_port" = local.ingress_ports.websecure

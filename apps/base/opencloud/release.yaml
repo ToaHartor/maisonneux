@@ -1,0 +1,93 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opencloud
+  namespace: services
+  # annotations:
+  #   # Escape variable with quote as patch_dns is a boolean
+  #   use-local-dns: ${quote}${patch_dns:=false}${quote}
+spec:
+  releaseName: opencloud
+  dependsOn:
+    # Wait for OIDC config creation
+    - name: opencloud-oidc
+    - name: opencloud-desktop-oidc
+  chart:
+    spec:
+      chart: helm/apps/opencloud
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # Patch only when local dns is used
+  # Using postRenderers instead of patches in kustomizations, as variable substitution is not performed already
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "${traefik_lb_ip}"
+                    hostnames:
+                    - "auth.${main_domain}"
+                    - "${second_domain}"
+            target:
+              kind: Deployment
+              name: opencloud
+              namespace: services
+              annotationSelector: homelab/use-local-dns=true
+
+  valuesFrom:
+    - kind: Secret
+      name: opencloud-oidc-authentik-application
+      valuesKey: clientID
+      targetPath: app.controllers.opencloud.containers.app.env.OC_OIDC_CLIENT_ID
+
+  values:
+    oidc:
+      url: "https://auth.${main_domain_websecure}"
+    s3:
+      secretName: &s3SecretName opencloud-${environment}-s3user
+      bucketName: &bucketName opencloud-${environment}
+      endpoint: &s3endpoint http://${minio_url}
+      customDomain: ${minio_url}/opencloud-${environment}
+    app:
+      persistence:
+        data:
+          labels:
+            homelab/backup-resource: "true"
+          storageClass: ${fastdata_storage}-ha
+      controllers:
+        opencloud:
+          annotations:
+            homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
+          containers:
+            app:
+              env:
+                OC_URL: https://drive.${main_domain_websecure}
+                IDP_DOMAIN: auth.${main_domain}
+                # opencloud-oidc-authentik-application
+                # OIDC
+                OC_OIDC_ISSUER: https://auth.${main_domain_websecure}/application/o/opencloud/
+                # WEB_OIDC_CLIENT_ID:  # Filled by fluxcd
+                WEB_OPTION_ACCOUNT_EDIT_LINK_HREF: https://auth.${main_domain_websecure}/if/user/#/settings;%7B%22page%22%3A%22page-details%22%7D                
+
+                # S3 for data storage
+                STORAGE_USERS_DECOMPOSEDS3_ENDPOINT: *s3endpoint
+                STORAGE_USERS_DECOMPOSEDS3_ACCESS_KEY:
+                  secretKeyRef:
+                    name: *s3SecretName
+                    key: accessKey
+                STORAGE_USERS_DECOMPOSEDS3_SECRET_KEY:
+                  secretKeyRef:
+                    name: *s3SecretName
+                    key: secretKey
+                STORAGE_USERS_DECOMPOSEDS3_BUCKET: *bucketName

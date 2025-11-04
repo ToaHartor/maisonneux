@@ -157,8 +157,14 @@ variable "ovh_consumer_key" {
 variable "is_internet_ingress" {
   type        = bool
   description = "Is the ingress domain reachable on internet. If yes, ports will not appear in the referenced ingress domain (example.com instead of example.com:10080)"
+  default     = true
 }
 
+variable "local_dns_server" {
+  type        = string
+  description = "DNS server to use when ingress is not exposed to the internet (for pods making requests using the ingress, like OIDC clients with Authentik)"
+  default     = ""
+}
 
 variable "opnsense_base_port_number" {
   type        = number

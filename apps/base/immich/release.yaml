@@ -41,6 +41,26 @@ spec:
       valuesKey: issuerURL
       targetPath: authentikOidc.issuerUrl
 
+  # Patch only when local dns is used
+  # Using postRenderers instead of patches in kustomizations, as variable substitution is not performed already
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "${traefik_lb_ip}"
+                    hostnames:
+                    - "auth.${main_domain}"
+                    - "${second_domain}"
+
+            target:
+              kind: Deployment
+              name: immich
+              namespace: immich
+              annotationSelector: homelab/use-local-dns=true
+
   # see https://github.com/truecharts/public/blob/master/charts/stable/immich/values.yaml
   values:
     # storage:
@@ -108,6 +128,8 @@ spec:
         - all
     workload:
       main:
+        annotations:
+          homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
         podSpec:
           annotations:
             prometheus.io/port: "8081"

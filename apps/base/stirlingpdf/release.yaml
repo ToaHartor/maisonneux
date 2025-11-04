@@ -21,12 +21,34 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+  # Patch only when local dns is used
+  # Using postRenderers instead of patches in kustomizations, as variable substitution is not performed already
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "${traefik_lb_ip}"
+                    hostnames:
+                    - "auth.${main_domain}"
+                    - "${second_domain}"
+            target:
+              kind: Deployment
+              name: stirlingpdf
+              namespace: services
+              annotationSelector: homelab/use-local-dns=true
+
   # see https://github.com/Stirling-Tools/Stirling-PDF-chart/blob/main/charts/stirling-pdf/values.yaml
   values:
     ingress:
       domain: "pdf.${main_domain}"
     # Additional environment variable for configuration : https://docs.stirlingpdf.com/Advanced%20Configuration/How%20to%20add%20configurations/
     stirlingpdf:
+      deployment:
+        annotations:
+          homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
       envs:
         - name: SECURITY_LOGINMETHOD
           value: "oauth2"

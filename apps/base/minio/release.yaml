@@ -22,6 +22,24 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+  # Patch only when local dns is used
+  # Using postRenderers instead of patches in kustomizations, as variable substitution is not performed already
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "${traefik_lb_ip}"
+                    hostnames:
+                    - "auth.${main_domain}"
+                    - "${second_domain}"
+            target:
+              kind: Deployment
+              name: minio
+              namespace: services
+              annotationSelector: homelab/use-local-dns=true
 
   values:
     securityContext:
@@ -33,8 +51,9 @@ spec:
 
     workload:
       main:
+        annotations:
+          homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
         podSpec:
-          dnsPolicy: ClusterFirstWithHostNet
           containers:
             main:
               env:
