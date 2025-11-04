@@ -18,3 +18,5 @@ spec:
       - kind: ConfigMap
         name: general-config
         optional: false
+    substitute:
+      quote: '"' # double quote var for boolean/numeral values
