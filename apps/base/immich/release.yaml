@@ -12,7 +12,7 @@ spec:
   chart:
     spec:
       chart: immich
-      # renovate: datasource=docker depName=immich registryUrl=oci://tccr.io/truecharts
+      # renovate: datasource=docker depName=immich registryUrl=oci://oci.trueforge.org/truecharts
       version: "25.5.0"
       sourceRef:
         kind: HelmRepository

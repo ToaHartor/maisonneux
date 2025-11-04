@@ -5,7 +5,7 @@ dependencies:
   - name: outline
     # Version from https://github.com/truecharts/public/blob/master/charts/stable/outline/Chart.yaml
     version: "17.0.0"
-    repository: oci://tccr.io/truecharts
+    repository: oci://oci.trueforge.org/truecharts
   - name: common
     # renovate: datasource=local-dependency
     version: "0.0.1"

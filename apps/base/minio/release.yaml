@@ -11,7 +11,7 @@ spec:
   chart:
     spec:
       chart: minio
-      # renovate: datasource=docker depName=minio registryUrl=oci://tccr.io/truecharts
+      # renovate: datasource=docker depName=minio registryUrl=oci://oci.trueforge.org/truecharts
       version: "16.11.2"
       sourceRef:
         kind: HelmRepository

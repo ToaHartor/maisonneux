@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: jellyfin
-      # renovate: datasource=docker depName=jellyfin registryUrl=oci://tccr.io/truecharts
+      # renovate: datasource=docker depName=jellyfin registryUrl=oci://oci.trueforge.org/truecharts
       version: "21.12.2"
       sourceRef:
         kind: HelmRepository

@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: jdownloader2
-      # renovate: datasource=docker depName=jdownloader2 registryUrl=oci://tccr.io/truecharts
+      # renovate: datasource=docker depName=jdownloader2 registryUrl=oci://oci.trueforge.org/truecharts
       version: "20.12.1"
       sourceRef:
         kind: HelmRepository

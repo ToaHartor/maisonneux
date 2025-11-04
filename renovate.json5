@@ -71,18 +71,18 @@
     //   sourceUrl: "https://github.com/mittwald/kubernetes-secret-generator",
     // },
     // TrueCharts packages
-    // All of them can't be matched with packageNames tccr.io/truecharts/*, so we're matching the registryUrl
+    // All of them can't be matched with packageNames oci.trueforge.org/truecharts/*, so we're matching the registryUrl
     {
       matchDatasources: ["docker"],
-      // matchPackageNames: ["tccr.io/truecharts/*"],
-      matchJsonata: ["registryUrl = 'https://tccr.io'"], // Using Jsonata to match specific deps fields
+      // matchPackageNames: ["oci.trueforge.org/truecharts/*"],
+      matchJsonata: ["registryUrl = 'https://oci.trueforge.org'"], // Using Jsonata to match specific deps fields
       sourceUrl: "",
       changelogUrl: "https://truecharts.org/charts/stable/{{depName}}/changelog/",
     },
     // * Override stable charts with premium
     {
       matchDatasources: ["docker"],
-      matchPackageNames: ["tccr.io/truecharts/vaultwarden"],
+      matchPackageNames: ["oci.trueforge.org/truecharts/vaultwarden"],
       sourceUrl: "",
       changelogUrl: "https://truecharts.org/charts/premium/{{depName}}/changelog/",
     },
@@ -128,7 +128,7 @@
     // * Non major updates for truecharts
     {
       matchDatasources: ["docker"],
-      matchJsonata: ["registryUrl = 'https://tccr.io'"],
+      matchJsonata: ["registryUrl = 'https://oci.trueforge.org'"],
       matchUpdateTypes: ["minor", "patch"],
       matchCurrentVersion: "!/^0/",
       ignoreTests: true,

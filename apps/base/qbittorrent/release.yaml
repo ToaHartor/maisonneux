@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: qbittorrent
-      # renovate: datasource=docker depName=qbittorrent registryUrl=oci://tccr.io/truecharts
+      # renovate: datasource=docker depName=qbittorrent registryUrl=oci://oci.trueforge.org/truecharts
       version: "23.11.1"
       sourceRef:
         kind: HelmRepository

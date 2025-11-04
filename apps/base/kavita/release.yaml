@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: kavita
-      # renovate: datasource=docker depName=kavita registryUrl=oci://tccr.io/truecharts
+      # renovate: datasource=docker depName=kavita registryUrl=oci://oci.trueforge.org/truecharts
       version: "12.12.3"
       sourceRef:
         kind: HelmRepository

@@ -5,7 +5,7 @@ dependencies:
   - name: jellyseerr
     # Version from https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/Chart.yaml
     version: "13.11.1"
-    repository: oci://tccr.io/truecharts
+    repository: oci://oci.trueforge.org/truecharts
   - name: common
     version: "0.0.1"
     repository: "file://../../library/common"
