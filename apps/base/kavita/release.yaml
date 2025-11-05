@@ -9,7 +9,7 @@ spec:
     spec:
       chart: kavita
       # renovate: datasource=docker depName=kavita registryUrl=oci://oci.trueforge.org/truecharts
-      version: "12.12.3"
+      version: "12.12.5"
       sourceRef:
         kind: HelmRepository
         name: truecharts
