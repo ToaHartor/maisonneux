@@ -11,7 +11,7 @@ spec:
     spec:
       chart: cyberchef
       # renovate: datasource=docker depName=cyberchef registryUrl=oci://oci.trueforge.org/truecharts
-      version: "12.11.1"
+      version: "12.11.3"
       sourceRef:
         kind: HelmRepository
         name: truecharts
