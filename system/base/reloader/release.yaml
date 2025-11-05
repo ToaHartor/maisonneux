@@ -10,7 +10,7 @@ spec:
     spec:
       chart: reloader
       # renovate: datasource=helm depName=reloader registryUrl=https://stakater.github.io/stakater-charts
-      version: "2.2.4"
+      version: "2.2.5"
       sourceRef:
         kind: HelmRepository
         name: stakater-charts
