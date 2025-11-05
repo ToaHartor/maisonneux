@@ -7,7 +7,7 @@ spec:
   interval: 10m
   ref:
     # renovate: datasource=github-tags depName=piraeusdatastore/piraeus-operator extractVersion=^(?<version>.+)$
-    tag: v2.9.1
+    tag: v2.10.0
   url: http://github.com/piraeusdatastore/piraeus-operator
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
