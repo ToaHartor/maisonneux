@@ -9,7 +9,7 @@ spec:
     spec:
       chart: tachidesk-docker
       # renovate: datasource=docker depName=tachidesk-docker registryUrl=oci://oci.trueforge.org/truecharts
-      version: "9.11.5"
+      version: "9.11.8"
       sourceRef:
         kind: HelmRepository
         name: truecharts
