@@ -178,67 +178,67 @@ spec:
           hooks:
             resources: []
 
-      mariadb:
-        # Maybe include DB root password here as well
-        disabled: false
-        annotations:
-          velero.io/csi-volumesnapshot-class_linstor.csi.linbit.com: "linstor-csi-snapshot-s3"
-        schedule: "0 */4 * * *" # 4AM schedule
+      # mariadb:
+      #   # Maybe include DB root password here as well
+      #   disabled: false
+      #   annotations:
+      #     velero.io/csi-volumesnapshot-class_linstor.csi.linbit.com: "linstor-csi-snapshot-s3"
+      #   schedule: "0 */4 * * *" # 4AM schedule
 
-        useOwnerReferencesInBackup: false
-        paused: false
-        skipImmediately: false
-        template:
-          ttl: "24h0m0s" # "240h"
-          storageLocation: default
-          # https://velero.io/docs/v1.16/resource-filtering/
+      #   useOwnerReferencesInBackup: false
+      #   paused: false
+      #   skipImmediately: false
+      #   template:
+      #     ttl: "24h0m0s" # "240h"
+      #     storageLocation: default
+      #     # https://velero.io/docs/v1.16/resource-filtering/
 
-          uploaderConfig:
-            parallelFileUpload: 10
+      #     uploaderConfig:
+      #       parallelFileUpload: 10
 
-          # Resource selection
-          # labelSelector:
-          #   matchLabels:
-          #     homelab/backup-mariadb: "true" # Mark PVCs 
+      #     # Resource selection
+      #     # labelSelector:
+      #     #   matchLabels:
+      #     #     homelab/backup-mariadb: "true" # Mark PVCs 
 
-          includedNamespaces:
-            - mariadb
-          includedResources:
-            - persistentvolumeclaim # Backuping PVC allows to perform volume snapshot
+      #     includedNamespaces:
+      #       - mariadb
+      #     includedResources:
+      #       - persistentvolumeclaim # Backuping PVC allows to perform volume snapshot
 
-          # Volume snapshot
-          snapshotVolumes: true
-          snapshotMoveData: true
-          volumeSnapshotLocations:
-            - default
+      #     # Volume snapshot
+      #     snapshotVolumes: true
+      #     snapshotMoveData: true
+      #     volumeSnapshotLocations:
+      #       - default
 
-          hooks:
-            resources:
-              - name: mariadb-safe-lock-hook
-                # Only run the hook on pod zero
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/instance: mariadb-galera
-                    app.kubernetes.io/name: mariadb
-                    statefulset.kubernetes.io/pod-name: mariadb-galera-0
-                pre:
-                  - exec:
-                      container: mariadb
-                      command:
-                        - /bin/sh
-                        - -c
-                        - mariadb -u root --password=$MARIADB_ROOT_PASSWORD -e "FLUSH TABLES WITH READ LOCK"
-                      onError: Fail
-                      timeout: 1m
-                post:
-                  - exec:
-                      container: mariadb
-                      command:
-                        - /bin/sh
-                        - -c
-                        - mariadb -u root --password=$MARIADB_ROOT_PASSWORD -e "UNLOCK TABLES"
-                      onError: Fail
-                      timeout: 10s
+      #     hooks:
+      #       resources:
+      #         - name: mariadb-safe-lock-hook
+      #           # Only run the hook on pod zero
+      #           labelSelector:
+      #             matchLabels:
+      #               app.kubernetes.io/instance: mariadb-galera
+      #               app.kubernetes.io/name: mariadb
+      #               statefulset.kubernetes.io/pod-name: mariadb-galera-0
+      #           pre:
+      #             - exec:
+      #                 container: mariadb
+      #                 command:
+      #                   - /bin/sh
+      #                   - -c
+      #                   - mariadb -u root --password=$MARIADB_ROOT_PASSWORD -e "FLUSH TABLES WITH READ LOCK"
+      #                 onError: Fail
+      #                 timeout: 1m
+      #           post:
+      #             - exec:
+      #                 container: mariadb
+      #                 command:
+      #                   - /bin/sh
+      #                   - -c
+      #                   - mariadb -u root --password=$MARIADB_ROOT_PASSWORD -e "UNLOCK TABLES"
+      #                 onError: Fail
+      #                 timeout: 10s
 
 
     extraObjects:

@@ -5,8 +5,8 @@ resources:
   - ../base/velero
   - ../base/cloudnative-pg
   - ../base/postgres-db
-  - ../base/mariadb-operator
-  - ../base/mariadb-cluster
+  # - ../base/mariadb-operator
+  # - ../base/mariadb-cluster
   # - ../base/mongodb
   # - ../base/mongodb-cluster
   - ../base/cert-manager-webhook-ovh

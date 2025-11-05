@@ -27,7 +27,8 @@ function restore_handler() {
 }
 
 restore_handler "restore_cluster"
-restore_handler "restore_mariadb"
+# Mariadb cluster is disabled
+# restore_handler "restore_mariadb"
 
 # CNPG has a bug when restoring the latest backup with targetTime, so we need to specify a target backup
 # https://github.com/cloudnative-pg/cloudnative-pg/issues/5177
