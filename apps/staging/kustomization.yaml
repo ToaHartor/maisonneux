@@ -15,7 +15,7 @@ resources:
   - ../base/cyberchef
   - ../base/jellyseerr
   - ../base/jellystat
-  - ../base/paperless-ngx
+  # - ../base/paperless-ngx
   # - ../base/seafile
   - ../base/jdownloader
   - ../base/kavita
