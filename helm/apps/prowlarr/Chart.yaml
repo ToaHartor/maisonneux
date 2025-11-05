@@ -4,7 +4,7 @@ description: Custom helm wrapper for Prowlarr Helm chart
 dependencies:
   - name: prowlarr
     # Version from https://github.com/truecharts/public/blob/master/charts/stable/prowlarr/Chart.yaml
-    version: "20.12.3"
+    version: "20.12.5"
     repository: oci://oci.trueforge.org/truecharts
   - name: common
     version: "0.0.1"
