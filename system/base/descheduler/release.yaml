@@ -59,6 +59,8 @@ spec:
                 topologyBalanceNodeFit: true
             - name: LowNodeUtilization
               args:
+                metricsUtilization:
+                  source: KubernetesMetrics
                 thresholds:
                   cpu: 20
                   memory: 20
@@ -67,6 +69,18 @@ spec:
                   cpu: 70
                   memory: 70
                   pods: 70
+            - name: RemoveFailedPods
+              args:
+                reasons:
+                  - ContainerStatusUnknown
+                  - NodeAffinity
+                  - NodeShutdown
+                  - Terminated
+                  - UnexpectedAdmissionError
+                includingInitContainers: true
+                excludeOwnerKinds:
+                  - Job
+                minPodLifetimeSeconds: 1800
           plugins:
             balance:
               enabled:
@@ -75,6 +89,7 @@ spec:
                 - LowNodeUtilization
             deschedule:
               enabled:
+                - RemoveFailedPods
                 - RemovePodsHavingTooManyRestarts
                 - RemovePodsViolatingNodeTaints
                 - RemovePodsViolatingNodeAffinity
