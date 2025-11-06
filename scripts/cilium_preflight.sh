@@ -36,7 +36,7 @@ function pre_flight_wait_confirm() {
 }
 
 # Set target context
-make use-context "$ENVIRONMENT"
+mise run context "$ENVIRONMENT"
 
 
 API_SERVER_PORT=$(jq '.outputs.kubeprism_port.value' "terraform/k8s/nodes/terraform.tfstate.d/${ENVIRONMENT}/terraform.tfstate")

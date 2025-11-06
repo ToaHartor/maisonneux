@@ -9,7 +9,7 @@ export REPO_PATH=$(dirname $(dirname $(realpath "$0")))
 
 # Shut down instance if it exists
 echo "Stopping running instance"
-make stop-devenv || true
+mise run devenv stop || true
 
 # Remove persistent data from old instances
 sudo rm -rf tmp/gitea
@@ -28,7 +28,7 @@ export GITEA_NAME="localdev"
 export GITEA_INSTANCE_NAME="dev_gitea"
 
 echo "Starting the local gitea stack"
-make start-devenv
+mise run devenv start
 # ensure everything has the right permissions again
 sudo chown -R 525287:525287 tmp/gitea
 

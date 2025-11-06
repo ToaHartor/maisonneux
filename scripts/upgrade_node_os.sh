@@ -59,7 +59,7 @@ esac
 # https://www.talos.dev/v1.9/kubernetes-guides/upgrading-kubernetes/
 
 # Get node ip list and retrieve control plane ip
-make tf-output "k8s-${ENVIRONMENT}"
+mise run terraform output "k8s-${ENVIRONMENT}"
 
 ## Retrieve output dump in tmp/datavalue_k8s.json and get ips
 CONTROLPLANE_IPS=$(jq -r '.controllers.value' tmp/datavalue_k8s.json)
