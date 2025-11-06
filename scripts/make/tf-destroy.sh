@@ -26,6 +26,7 @@ if [ "${TF_FOLDER}" == "k8s" ]; then
         echo "Removing tfstate in charts folder"
         rm terraform.tfstate*
     popd
+    rm "tmp/*config-${TF_DEPLOY_ENV}.yaml"
 else
     tofu apply -destroy -var-file="${TF_CONFIG_VARS_FILE}" -var-file='../env/credentials.tfvars'
 fi
