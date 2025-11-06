@@ -33,4 +33,167 @@ run = [
   "ansible-galaxy collection install ansibleguy.opnsense --force",
 ]
 
-# TODO : move Makefile content here
+[tasks.devenv]
+description = "Start/stop development stack"
+alias = "dv"
+usage = '''
+arg "<action>" help="Action on devenv" {
+  choices "start" "stop"
+}
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+ACTION="${usage_action?}"
+case "$ACTION" in
+  "start")
+    bash ./scripts/start_devenv.sh
+    ;;
+  "stop")
+    bash ./scripts/stop_devenv.sh
+    ;;
+  *)
+    echo "Unknown action $ACTION, exiting..."
+    exit 1
+esac
+'''
+
+[tasks.context]
+description = "Select context"
+alias = "ctx"
+usage = '''
+arg "<environment>" help="Target environment" {
+  choices "staging" "production"
+}
+'''
+run = '''
+bash ./scripts/make/use-context.sh "${usage_environment?}"
+'''
+
+[tasks.renovate]
+description = "Run renovate to check and update dependencies"
+# Option --dry-run for mise run already exists
+usage = '''
+flag "--dry" {
+  help "Preview updates without creating PRs"
+}
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+DRY_RUN="${usage_dry:-false}"
+
+ARG=""
+if [[ "${DRY_RUN}" == "true" ]]; then
+  ARG="--dry-run"
+  echo "Running renovate in dry-run mode..."
+fi
+
+bash ./scripts/run_renovate.sh "${ARG}"
+'''
+
+[tasks.generate-uuid]
+description = "Use python to generate a UUIDv4 for groups"
+alias = "uuid"
+run = "python3 -c 'import uuid; print(uuid.uuid4());'"
+
+# terraform providers / k8s / talos
+[tasks.upgrade]
+description = "Upgrade Kubernetes, Talos Linux or Terraform providers"
+usage = '''
+arg "<target>" help="Resource to be upgraded" {
+  choices "providers" "k8s" "talos"
+}
+
+arg "<environment>" help="Target environment" {
+  choices "staging" "production"
+}
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENVIRONMENT="${usage_environment?}"
+case "${usage_target?}" in
+  "providers")
+    echo "Upgrading terraform providers for all environments"
+    bash ./scripts/make/tf-upgrade.sh static
+    # Using the production workspace for provider upgrade, it will still upgrade for all the others
+    bash ./scripts/make/tf-upgrade.sh k8s-production
+    bash ./scripts/make/tf-upgrade.sh fluxcd-production
+    ;;
+  "k8s")
+    mise run ctx "${ENVIRONMENT}"
+    echo "Upgrading Kubernetes on ${ENVIRONMENT} cluster"
+    bash ./scripts/upgrade_k8s.sh "${ENVIRONMENT}"
+    ;;
+  "talos")
+    mise run ctx "${ENVIRONMENT}"
+    echo "Upgrading Talos on ${ENVIRONMENT} cluster"
+    bash ./scripts/upgrade_node_os.sh "${ENVIRONMENT}"
+    ;;
+  *)
+    echo "Unknown target ${usage_target?}, exiting..."
+    exit 1
+esac
+'''
+
+[tasks.terraform]
+description = "Terraform actions"
+alias = "tf"
+# deploy action does plan + apply
+usage = '''
+arg "<action>" help="Terraform action" {
+  choices "init" "plan" "apply" "deploy" "destroy" "output"
+}
+
+arg "<workspace>" help="Target workspace" {
+  choices "static" "k8s-production" "k8s-staging" "fluxcd-production" "fluxcd-staging"
+}
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+WORKSPACE="${usage_workspace?}"
+case "${usage_action?}" in
+  "init")
+    bash ./scripts/make/tf-init.sh "${WORKSPACE}"
+    ;;
+  "plan")
+    bash ./scripts/make/tf-plan.sh "${WORKSPACE}"
+    ;;
+  "apply")
+    bash ./scripts/make/tf-apply.sh "${WORKSPACE}"
+    ;;
+  "deploy")
+    bash ./scripts/make/tf-plan.sh "${WORKSPACE}"
+    bash ./scripts/make/tf-apply.sh "${WORKSPACE}"
+    ;;
+  "output")
+    bash ./scripts/make/tf-output.sh "${WORKSPACE}"
+    ;;
+  *)
+    echo "Unknown action ${usage_action?}, exiting..."
+    exit 1
+esac
+'''
+
+[tasks.restore]
+description = "Restore backups (velero/postgres)"
+usage = '''
+arg "<environment>" help="Target environment" {
+  choices "staging" "production"
+}
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENVIRONMENT="${usage_environment?}"
+mise run ctx "${ENVIRONMENT}"
+echo "Restoring cluster ${ENVIRONMENT}"
+bash scripts/restore/restore.sh
+'''

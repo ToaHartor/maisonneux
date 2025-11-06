@@ -8,6 +8,11 @@ mkdir -p ~/.talos
 ENV=$1
 TALOSCONFIG="tmp/talosconfig-${ENV}.yaml"
 
+if [ ! -f "$TALOSCONFIG" ]; then
+  echo "talosconfig does not exist for the environment $ENV, exiting..."
+  exit 1
+fi
+
 # Get cluster name from config outputs
 CONTEXT=$(yq -r '.context' "$TALOSCONFIG")
 

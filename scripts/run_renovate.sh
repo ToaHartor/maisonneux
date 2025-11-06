@@ -115,5 +115,5 @@ if [[ $DRY_RUN_ARG = "" ]]; then
     # show the gitea project.
     show_title "See PRs at $gitea_url/$RENOVATE_USERNAME/$gitea_local_repo_name/pulls (you can login as $RENOVATE_USERNAME:$RENOVATE_PASSWORD) and use 'Rebase then fast-forward' merge style. Some changes will be automerged (currently two by two as limited by Renovate), but several runs of this script will be needed to automerge everything."
 else
-    echo "Run 'make renovate' to generate PRs for dependencies" 
+    echo "Run 'mise run renovate' to generate PRs for dependencies" 
 fi
