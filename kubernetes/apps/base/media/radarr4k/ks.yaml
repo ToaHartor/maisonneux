@@ -1,0 +1,76 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: radarr4k
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: radarr4k
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: radarr4k-proxy
+      namespace: media
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: radarr4k
+      namespace: media
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/proxy-application
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/cnpg/log-db
+    - ../../../../../common/components/httproute/proxyauth
+    - ../../../../../common/components/secret/key
+  path: "./kubernetes/apps/base/media/radarr4k/app"
+  postBuild:
+    substitute:
+      APP: radarr4k
+      SUBDOMAIN: 4kmovies
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Media
+      DESCRIPTION: 4K movies PVR
+      ## Database
+      PSQL_DB_USER: radarr4k
+      PSQL_DB_NAME: radarr4k-main
+      PSQL_LOG_DB_NAME: radarr4k-log
+      ## Gateway
+      GATEWAY_SVC_NAME: radarr4k
+      GATEWAY_SVC_PORT: "7878"
+      ## API key
+      SECRET_KEY_NAME: radarr4k-api-key
+      SECRET_KEY_TYPE: api-key
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      fastdata_storage: ${fastdata_storage}
+      nfs_server: ${nfs_server}
+      nfs_path_download: ${nfs_path_download}
+      nfs_path_media_1: ${nfs_path_media_1}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: radarr4k"
+            parent: "Media Admins"
+            bindID: "c2464fd3-ba4d-47e0-9653-3b22ea1f194b" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  timeout: 5m

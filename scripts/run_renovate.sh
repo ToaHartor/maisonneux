@@ -4,7 +4,7 @@ set -euo pipefail
 
 # see https://hub.docker.com/r/renovate/renovate/tags
 # renovate: datasource=docker depName=renovate/renovate
-renovate_version='42.0.1'
+renovate_version='42.38.0'
 
 DRY_RUN_ARG=""
 if [ $# -eq 1 ]; then
@@ -48,6 +48,7 @@ podman run \
   --interactive \
   --net host \
   --env GITHUB_COM_TOKEN \
+  --env NODE_OPTIONS=--no-deprecation \
   --env RENOVATE_ENDPOINT=$gitea_url \
   --env RENOVATE_TOKEN=$(cat tmp/renovate/renovate-gitea-token.txt) \
   --env RENOVATE_REPOSITORIES=$GITEA_USERNAME/$gitea_local_repo_name \

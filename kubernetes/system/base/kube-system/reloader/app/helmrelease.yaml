@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: reloader
+spec:
+  releaseName: reloader
+  chartRef:
+    kind: OCIRepository
+    name: reloader
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    # https://github.com/stakater/Reloader/blob/master/deployments/kubernetes/chart/reloader/values.yaml
+    reloader:
+      autoReloadAll: false
+
+      enableHA: true
+      readOnlyRootFileSystem: true
+    
+      deployment:
+        replicas: 2
+
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+
+        topologySpreadConstraints:
+          # Maximum 1 pod per Proxmox hypervisor
+          - maxSkew: 1
+            topologyKey: topology.kubernetes.io/zone
+            whenUnsatisfiable: ScheduleAnyway
+            labelSelector:
+              matchLabels:
+                app: reloader-reloader
+          # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app: reloader-reloader
+
+        containerSecurityContext:
+          capabilities:
+            drop:
+              - ALL
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true

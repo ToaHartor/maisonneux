@@ -1,0 +1,17 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: crowdsecbouncer
+spec:
+  plugin:
+    crowdsec-bouncer:
+      enabled: true
+      logLevel: DEBUG
+      crowdsecMode: stream
+      # crowdsecMode: appsec
+      # crowdsecAppsecEnabled: true
+      # crowdsecAppsecHost: crowdsec-appsec-service:7422
+      crowdsecLapiScheme: http
+      crowdsecLapiHost: crowdsec-service.ingress.svc.cluster.local:8080
+      # Secret is mounted in traefik pods
+      crowdsecLapiKeyFile: /etc/secrets/crowdsec-lapi-key/secretKey

@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: ${PSQL_DB_NAME}
+spec:
+  name: ${PSQL_DB_NAME}
+  ensure: present
+  owner: ${PSQL_DB_USER}
+  cluster:
+    name: ${psql_cluster_name}
+  extensions: ${EXTENSIONS:=${emptyArray}}

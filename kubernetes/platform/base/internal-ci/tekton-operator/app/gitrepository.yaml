@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/gitrepository-source-v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: tekton-operator
+spec:
+  interval: 10m
+  ref:
+    # renovate: datasource=github-tags depName=tektoncd/operator extractVersion=^(?<version>.+)$
+    tag: v0.77.0
+  url: http://github.com/tektoncd/operator

@@ -1,0 +1,90 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: descheduler
+spec:
+  releaseName: descheduler
+  chartRef:
+    kind: OCIRepository
+    name: descheduler
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    # https://github.com/kubernetes-sigs/descheduler/blob/master/charts/descheduler/values.yaml
+    kind: CronJob
+    timeZone: Europe/Paris
+    schedule: "*/20 * * * *"
+
+    deschedulerPolicy:
+        profiles:
+        # From default values
+        - name: default
+          pluginConfig:
+            - name: DefaultEvictor
+              args:
+                ignorePvcPods: true
+                evictLocalStoragePods: true
+                evictFailedBarePods: true
+                evictDaemonSetPods: true
+                nodeFit: true
+            - name: RemoveDuplicates
+            - name: RemovePodsHavingTooManyRestarts
+              args:
+                podRestartThreshold: 100
+                includingInitContainers: true
+            - name: RemovePodsViolatingNodeAffinity
+              args:
+                nodeAffinityType:
+                - requiredDuringSchedulingIgnoredDuringExecution
+            - name: RemovePodsViolatingNodeTaints
+            - name: RemovePodsViolatingInterPodAntiAffinity
+              args:
+                namespaces:
+                  exclude: []
+            - name: RemovePodsViolatingTopologySpreadConstraint
+              args:
+                constraints:
+                  - DoNotSchedule
+                  - ScheduleAnyway
+                topologyBalanceNodeFit: true
+            - name: LowNodeUtilization
+              args:
+                metricsUtilization:
+                  source: KubernetesMetrics
+                thresholds:
+                  cpu: 20
+                  memory: 20
+                  pods: 20
+                targetThresholds:
+                  cpu: 70
+                  memory: 70
+                  pods: 70
+            - name: RemoveFailedPods
+              args:
+                reasons:
+                  - ContainerStatusUnknown
+                  - NodeAffinity
+                  - NodeShutdown
+                  - Terminated
+                  - UnexpectedAdmissionError
+                includingInitContainers: true
+                excludeOwnerKinds:
+                  - Job
+                minPodLifetimeSeconds: 1800
+          plugins:
+            balance:
+              enabled:
+                - RemoveDuplicates
+                - RemovePodsViolatingTopologySpreadConstraint
+                - LowNodeUtilization
+            deschedule:
+              enabled:
+                - RemoveFailedPods
+                - RemovePodsHavingTooManyRestarts
+                - RemovePodsViolatingNodeTaints
+                - RemovePodsViolatingNodeAffinity
+                - RemovePodsViolatingInterPodAntiAffinity

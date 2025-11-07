@@ -1,0 +1,53 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dragonfly-operator
+spec:
+  releaseName: dragonfly-operator
+  chartRef:
+    kind: OCIRepository
+    name: dragonfly-operator
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # https://github.com/dragonflydb/dragonfly-operator/blob/main/charts/dragonfly-operator/values.yaml
+    replicaCount: 2
+
+    crds:
+      install: true
+      keep: true
+    
+    manager:
+      resources:
+        limits:
+          cpu: 500m
+          memory: 128Mi
+        requests:
+          cpu: 10m
+          memory: 64Mi
+
+      topologySpreadConstraints:
+        # Maximum 1 pod per Proxmox hypervisor
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+        # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+    # Monitoring
+    serviceMonitor:
+      enabled: true
+    
+    grafanaDashboard:
+      enabled: true
+      folder: database
+      labels:
+        name: grafana_dashboard
+        value: "1"

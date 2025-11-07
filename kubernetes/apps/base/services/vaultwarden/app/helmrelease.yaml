@@ -1,0 +1,115 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vaultwarden
+spec:
+  releaseName: vaultwarden
+  chartRef:
+    kind: OCIRepository
+    name: vaultwarden
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: vaultwarden-admin-key
+      valuesKey: secretKey
+      targetPath: vaultwarden.admin.token
+    # SMTP configuration mirrored from the external-secrets secret store
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_username
+      targetPath: vaultwarden.smtp.user
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_username
+      targetPath: vaultwarden.smtp.from
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_token
+      targetPath: vaultwarden.smtp.password
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_server
+      targetPath: vaultwarden.smtp.host
+    - kind: Secret
+      name: smtp-config
+      valuesKey: smtp_port
+      targetPath: vaultwarden.smtp.port
+
+
+  # see https://github.com/truecharts/public/blob/master/charts/premium/vaultwarden/values.yaml
+  values:
+    waitPsqlImage:
+      repository: docker.io/library/busybox
+      tag: latest
+      pullPolicy: IfNotPresent
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 250Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+
+    workload:
+      main:
+        podSpec:
+          # As UserNamespaces are not enabled on Talos
+          hostUsers: true
+          initContainers:
+            waitpsql:
+              enabled: true
+              type: init
+              imageSelector: waitPsqlImage
+              command: ['sh', '-c', 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+              env:
+                POD_NAME: postgres-db-rw # service name for psql rw operations
+                POD_NAMESPACE: ${psql_database_namespace}
+          containers:
+            main:
+              env:
+                DATABASE_URL:
+                  secretKeyRef:
+                    name: vaultwarden-db-creds
+                    key: uri
+                    expandObjectName: false
+              # TODO : RSA key generation at /data/rsa_key.pem (with "BEGIN RSA PRIVATE KEY" format), see if data needs persistency for attachments/icon_cache
+    database:
+      type: postgresql
+      wal: false # disable if not using sqlite
+    vaultwarden:
+      allowSignups: false
+      showPasswordHint: false
+      allowInvitation: true
+      admin:
+        enabled: true
+        disableAdminToken: false
+        token: # Filled in valuesFrom
+      smtp:
+        enabled: true
+        # host: ""  # Filled in valuesFrom
+        # from: "" # Filled in valuesFrom
+        security: starttls
+        # port: 587 # Filled in valuesFrom
+        # user: ""  # Filled in valuesFrom
+        # password: ""  # Filled in valuesFrom
+      yubico:
+        enabled: false
+      push:
+        enabled: false
+    persistence:
+      data:
+        enabled: true
+        type: emptyDir
+    cnpg:
+      main:
+        enabled: false # Disable postgres as we use our own db
+    ingress:
+      main:
+        required: false    

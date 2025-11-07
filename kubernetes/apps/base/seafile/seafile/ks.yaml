@@ -1,0 +1,61 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: seafile-db
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: seafile
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: seafile-db
+      namespace: seafile
+  interval: 1h
+  path: "./kubernetes/apps/base/seafile/seafile/db"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: seafile
+  timeout: 5m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: seafile
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: seafile
+  dependsOn:
+    - name: seafile-db
+    # - name: seafile-oidc
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: seafile
+      namespace: seafile
+  interval: 1h
+  path: "./kubernetes/apps/base/seafile/seafile/app"
+  postBuild:
+    substitute:
+      SUBDOMAIN: cloud
+      # inherited variables
+      nfs_server: ${nfs_server}
+      nfs_path_seafile: ${nfs_path_seafile}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      auth_subdomain: ${auth_subdomain}
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: seafile
+  timeout: 5m

@@ -1,0 +1,62 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: qbittorrent
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: qbittorrent
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: qbittorrent-proxy
+      namespace: media
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: qbittorrent
+      namespace: media
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/proxy-application
+    - ../../../../../common/components/httproute/proxyauth
+  path: "./kubernetes/apps/base/media/qbittorrent/app"
+  postBuild:
+    substitute:
+      APP: qbittorrent
+      SUBDOMAIN: torrent
+      DOMAIN: ${main_domain}
+      # DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Media
+      DESCRIPTION: Torrent manager
+      GATEWAY_SVC_NAME: qbittorrent
+      GATEWAY_SVC_PORT: "10095"
+      # inherited variables
+      fastdata_storage: ${fastdata_storage}
+      nfs_server: ${nfs_server}
+      nfs_path_download: ${nfs_path_download}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: qbittorrent"
+            parent: "Media Admins"
+            bindID: "20cb7811-1f49-45e5-82fc-6abbd3b0ac97" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  timeout: 5m

@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trust-manager
+spec:
+  releaseName: trust-manager
+  dependsOn:
+    - name: cert-manager
+  chartRef:
+    kind: OCIRepository
+    name: trust-manager
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    # https://artifacthub.io/packages/helm/cert-manager/trust-manager?modal=values
+    replicaCount: 2
+
+    resources:
+      limits:
+        cpu: 20m
+        memory: 40Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
+
+    topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: trust-manager
+            app.kubernetes.io/instance: trust-manager
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: trust-manager
+            app.kubernetes.io/instance: trust-manager
+
+    secretTargets:
+      enabled: true
+      authorizedSecretsAll: true

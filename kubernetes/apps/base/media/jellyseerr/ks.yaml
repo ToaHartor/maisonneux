@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jellyseerr
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: jellyseerr
+  dependsOn:
+    - name: sonarr
+    - name: radarr
+    - name: radarr4k
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: jellyseerr
+      namespace: media
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/httproute/common
+    - ../../../../../common/components/secret/key
+  path: "./kubernetes/apps/base/media/jellyseerr/app"
+  postBuild:
+    substitute:
+      APP: jellyseerr
+      SUBDOMAIN: requests
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      # TODO : other subdomain variables ?
+      ## Database
+      PSQL_DB_USER: jellyseerr
+      PSQL_DB_NAME: jellyseerr
+      ## Gateway
+      GATEWAY_SVC_NAME: jellyseerr
+      GATEWAY_SVC_PORT: "10241"
+      ## API key
+      SECRET_KEY_NAME: jellyseerr-api-key
+      SECRET_KEY_TYPE: api-key
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      fastdata_storage: ${fastdata_storage}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  timeout: 5m

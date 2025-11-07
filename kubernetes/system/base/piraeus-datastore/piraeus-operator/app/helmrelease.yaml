@@ -1,0 +1,71 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: piraeus-operator
+spec:
+  releaseName: piraeus
+  chart:
+    spec:
+      chart: charts/piraeus
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: piraeus-operator
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    installCRDs: true
+
+    replicaCount: 1
+
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+
+    # TopologySpreadConstraints are not supported in the chart
+    affinity:
+      podAntiAffinity:
+        # Refuse if possible to schedule two pods on the same hypervisor (e.g node)
+        # If it does not, they also won't be scheduled on the same pod unless necessary
+        preferredDuringSchedulingIgnoredDuringExecution:
+          # Anti affinity on the same hypervisor
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - piraeus-datastore
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - piraeus-operator
+          # Anti affinity on the same node
+          - weight: 50
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - piraeus-datastore
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - piraeus-operator

@@ -1,0 +1,63 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: authentik
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: authentik
+  dependsOn:
+    - name: psql-cluster
+      namespace: ${psql_database_namespace}
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: authentik
+      namespace: authentik
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/s3bucket
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/httproute/common
+    - ../../../../../common/components/secret/creds
+    - ../../../../../common/components/secret/key
+  path: "./kubernetes/core/base/authentik/authentik/app"
+  postBuild:
+    substitute:
+      APP: authentik
+      SUBDOMAIN: ${auth_subdomain}
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      ## S3 storage
+      S3_USER: authentik-${environment}
+      BUCKET_NAME: authentik-${environment}
+      ## Database
+      PSQL_DB_USER: authentik
+      PSQL_DB_NAME: authentik
+      ## Gateway
+      GATEWAY_SVC_NAME: authentik-server
+      GATEWAY_SVC_PORT: "80"
+      ## Admin secrets
+      SECRET_CREDS_NAME: authentik-akadmin
+      SECRET_CREDS_USER: akadmin
+      ## Secret key
+      SECRET_KEY_NAME: authentik-secret-key
+      SECRET_KEY_TYPE: secret-key
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      environment: ${environment}
+      minio_url: ${minio_url}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: authentik
+  timeout: 5m

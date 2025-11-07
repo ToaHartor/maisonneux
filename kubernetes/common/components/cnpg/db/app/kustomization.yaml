@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - database.yaml
+# patches:
+#   - target:
+#       kind: Database
+#       name: ${PSQL_DATABASE_NAME}
+#     patch: |-
+#       - op: replace
+#         field: /metadata/namespace
+#         value: ${psql_database_namespace}

@@ -1,0 +1,42 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: paperless-ngx
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: paperless-ngx
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: paperless-ngx
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/cnpg/db
+  path: "./kubernetes/apps/base/services/paperless-ngx/app"
+  postBuild:
+    substitute:
+      SUBDOMAIN: paper
+      PSQL_DB_USER: paperless
+      PSQL_DB_NAME: paperless
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      fastdata_storage: ${fastdata_storage}
+      environment: ${environment}
+      minio_url: ${minio_url}
+      nfs_server: ${nfs_server}
+      nfs_path_paperless: ${nfs_path_paperless}
+      main_domain: ${main_domain}
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 5m

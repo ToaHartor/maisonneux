@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: proxmox-csi-plugin
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: proxmox-csi-plugin
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: proxmox-csi-plugin
+      namespace: kube-system
+  interval: 1h
+  path: "./kubernetes/system/base/kube-system/proxmox-csi-plugin/app"
+  postBuild:
+    substitute:
+      # inherited variables
+      fastdata_storage: ${fastdata_storage}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: kube-system
+  timeout: 5m

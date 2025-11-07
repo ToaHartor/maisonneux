@@ -1,0 +1,75 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: sonarr
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: sonarr
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: sonarr-proxy
+      namespace: media
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: sonarr
+      namespace: media
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/proxy-application
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/cnpg/log-db
+    - ../../../../../common/components/httproute/proxyauth
+    - ../../../../../common/components/secret/key
+  path: "./kubernetes/apps/base/media/sonarr/app"
+  postBuild:
+    substitute:
+      APP: sonarr
+      SUBDOMAIN: tv
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Media
+      DESCRIPTION: Series PVR
+      ## Database
+      PSQL_DB_USER: sonarr
+      PSQL_DB_NAME: sonarr-main
+      PSQL_LOG_DB_NAME: sonarr-log
+      ## Gateway
+      GATEWAY_SVC_NAME: sonarr
+      GATEWAY_SVC_PORT: "8989"
+      ## API key
+      SECRET_KEY_NAME: sonarr-api-key
+      SECRET_KEY_TYPE: api-key
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      fastdata_storage: ${fastdata_storage}
+      nfs_server: ${nfs_server}
+      nfs_path_download: ${nfs_path_download}
+      nfs_path_media_1: ${nfs_path_media_1}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: sonarr"
+            parent: "Media Admins"
+            bindID: "4fc54e7f-a85f-4110-b105-cecdf50c0c11" # arbitrary uuid
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  timeout: 5m

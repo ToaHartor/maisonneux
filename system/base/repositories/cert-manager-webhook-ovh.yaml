@@ -1,8 +1,0 @@
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
-  name: cert-manager-webhook-ovh
-  namespace: flux-system
-spec:
-  interval: 10m
-  url: https://aureq.github.io/cert-manager-webhook-ovh

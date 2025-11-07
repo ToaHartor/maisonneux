@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: proxmox-csi-plugin
+spec:
+  releaseName: proxmox-csi-plugin
+  chartRef:
+    kind: OCIRepository
+    name: csi-proxmox
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    # Created with TF
+    existingConfigSecret: proxmox-csi-creds
+    
+    storageClass:
+      - name: ${fastdata_storage}
+        storage: fastdata-raw
+        reclaimPolicy: Delete
+        fstype: ext4
+    
+    node:
+      nodeSelector:
+        node.cloudprovider.kubernetes.io/platform: nocloud
+    
+      tolerations:
+        - operator: Exists
+
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+    
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule

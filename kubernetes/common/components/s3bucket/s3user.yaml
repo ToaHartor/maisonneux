@@ -1,0 +1,10 @@
+---
+apiVersion: s3.onyxia.sh/v1alpha1
+kind: S3User
+metadata:
+  name: ${S3_USER}-s3user
+spec:
+  accessKey: ${S3_USER}
+  policies:
+    - "${S3_USER}-bucket-policy"
+  s3InstanceRef: "operators/default"

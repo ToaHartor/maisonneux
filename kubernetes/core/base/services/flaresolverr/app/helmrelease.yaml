@@ -1,0 +1,71 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: flaresolverr
+spec:
+  releaseName: flaresolverr
+  chartRef:
+    kind: OCIRepository
+    name: flaresolverr
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/flaresolverr/values.yaml
+  values:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi
+    securityContext:
+      container:
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+
+    service:
+      metrics:
+        enabled: true
+        type: "ClusterIP"
+        ports:
+          metrics:
+            enabled: true
+            port: 8192
+            targetPort: 8192
+
+    workload:
+      main:
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+        podSpec:
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "8192"
+            prometheus.io/path: "/metrics"
+          containers:
+            main:
+              env:
+                # TEST_URL: "https://www.google.com"
+                # BROWSER_TIMEOUT: 40000
+                HEADLESS: true
+                LOG_LEVEL: info
+                LOG_HTML: false
+                # At this time none of the captcha solvers work, defaults to none.
+                CAPTCHA_SOLVER: none
+                PROMETHEUS_ENABLED: true
+                PROMETHEUS_PORT: 8192
+
+    persistence:
+      config:
+        enabled: true
+        type: emptyDir
+        mountPath: "/config"

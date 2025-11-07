@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dragonfly-cluster
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: dragonfly-cluster
+  dependsOn:
+    - name: dragonfly-operator
+      namespace: operators
+  healthChecks:
+    - apiVersion: dragonflydb.io/v1alpha1
+      kind: Dragonfly
+      name: dragonfly-cluster
+      namespace: dragonfly
+  healthCheckExprs:
+    - apiVersion: dragonflydb.io/v1alpha1
+      current: status.phase == 'Ready'
+      inProgress: status.phase == 'Configuring'
+      kind: Dragonfly
+  interval: 1h
+  path: "./kubernetes/platform/base/dragonfly/dragonfly-cluster/app"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: dragonfly
+  timeout: 5m

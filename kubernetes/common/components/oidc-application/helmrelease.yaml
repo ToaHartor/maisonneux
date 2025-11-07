@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+# Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION, REDIRECT_URL, auth_subdomain, main_domain_websecure
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ${APP}-oidc
+  labels:
+    homelab/auth-component: "true"
+spec:
+  releaseName: ${APP}-oidc
+  chartRef:
+    kind: OCIRepository
+    name: authentik-application
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml
+    blueprint:
+      authentik:
+        domain: "https://${auth_subdomain}.${main_domain_websecure}"
+      provider:
+        enabled: true
+        name: "${APP}"
+        type: "oidc"
+        oidc:
+          clientType: "confidential"
+          # clientID:
+          # clientSecret:
+          redirectURL:
+          - "${REDIRECT_URL}"
+          tokenDuration: "minutes=5"
+          signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
+          scopes:
+            - name: "authentik default OAuth Mapping: OpenID 'openid'"
+            - name: "authentik default OAuth Mapping: OpenID 'email'"
+            - name: "authentik default OAuth Mapping: OpenID 'profile'"
+            # Add scopes via 
+            # - name:
+            #   scope_name:
+            #   expression:
+      application:
+        name: "${APP}"
+        slug: "${APP}"
+        group: "${GROUP}"
+        launchURL: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
+        openInNewTab: false
+        icon: ""
+        description: "${DESCRIPTION}"
+        bindPolicyID:
+        policyEngineMode: "any"
+      groups: []
+        # Add groups via patch

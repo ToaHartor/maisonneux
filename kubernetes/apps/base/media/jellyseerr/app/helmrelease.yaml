@@ -1,0 +1,68 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyseerr
+spec:
+  releaseName: jellyseerr
+  chart:
+    spec:
+      chart: helm/apps/jellyseerr
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: sonarr-api-key
+      valuesKey: secretKey
+      targetPath: external.sonarr.apiKey
+    - kind: Secret
+      name: radarr-api-key
+      valuesKey: secretKey
+      targetPath: external.radarr.apiKey
+    - kind: Secret
+      name: radarr4k-api-key
+      valuesKey: secretKey
+      targetPath: external.radarr4k.apiKey
+    - kind: Secret
+      name: jellyseerr-api-key
+      valuesKey: secretKey
+      targetPath: external.jellyseerr.apiKey
+
+  # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/jellyseerr/
+  values:
+    external:
+      sonarr:
+        hostname: sonarr.media.svc.cluster.local
+        externalUrl: "https://tv.${DOMAIN_WEBSECURE}"
+        # apiKey: # valueFrom
+      radarr:
+        hostname: radarr.media.svc.cluster.local
+        externalUrl: "https://movies.${DOMAIN_WEBSECURE}"
+        # apiKey: # valueFrom
+      radarr4k:
+        hostname: radarr4k.media.svc.cluster.local
+        externalUrl: "https://4kmovies.${DOMAIN_WEBSECURE}"
+        # apiKey: # valueFrom
+      jellyfin:
+        hostname: jellyfin.jellyfin.svc.cluster.local
+        externalHostname: "jellyfin.${DOMAIN_WEBSECURE}"
+        apiKey: # Entered with the interface
+
+    ingress:
+      domain: ${SUBDOMAIN}.${DOMAIN}
+
+    jellyseerr:
+      persistence:
+        config:
+          storageClass: ${fastdata_storage}-ha

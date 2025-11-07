@@ -1,1 +1,0 @@
-{{ include "common.psqldb" (dict "DatabaseNamespace" .Values.namespaces.postgresNamespace "DatabaseName" .Values.jellystat.workload.main.podSpec.containers.main.env.POSTGRES_DB "DatabaseOwner" .Values.jellystat.workload.main.podSpec.containers.main.env.POSTGRES_USER "PsqlClusterName" .Values.database.postgres.clusterName) }}

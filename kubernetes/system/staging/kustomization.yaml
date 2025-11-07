@@ -1,0 +1,111 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base/cert-manager
+  - ../base/external-secrets
+  - ../base/kube-system
+  - ../base/opentelemetry
+  - ../base/piraeus-datastore
+patches:
+  # Remove all topologySpreadConstraints and reduce replicas in non-production cluster
+  - target:
+      kind: HelmRelease
+      name: trust-manager
+      namespace: cert-manager
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: reloader
+      namespace: kube-system
+    patch: |-
+      - op: replace
+        path: /spec/values/reloader/deployment/replicas
+        value: 1
+      - op: remove
+        path: /spec/values/reloader/deployment/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: opentelemetry-kube-stack
+      namespace: opentelemetry
+    patch: |-
+      - op: replace
+        path: /spec/values/opentelemetry-operator/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/opentelemetry-operator/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: metrics-server
+      namespace: kube-system
+    patch: |-
+      - op: replace
+        path: /spec/values/replicas
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: external-secrets
+      namespace: external-secrets
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/webhook/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/webhook/topologySpreadConstraints
+  - target:
+      kind: HelmRelease
+      name: cert-manager
+      namespace: cert-manager
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: replace
+        path: /spec/values/podDisruptionBudget/enabled
+        value: false
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+
+      - op: replace
+        path: /spec/values/webhook/replicaCount
+        value: 1
+      - op: replace
+        path: /spec/values/webhook/podDisruptionBudget/enabled
+        value: false
+      - op: remove
+        path: /spec/values/webhook/topologySpreadConstraints
+      
+      - op: replace
+        path: /spec/values/cainjector/replicaCount
+        value: 1
+      - op: replace
+        path: /spec/values/cainjector/podDisruptionBudget/enabled
+        value: false
+      - op: remove
+        path: /spec/values/cainjector/topologySpreadConstraints
+
+  # Manage descheduler to function on tight resource clusters
+  - target:
+      kind: HelmRelease
+      name: descheduler
+      namespace: kube-system
+    patch: |-
+      - op: replace
+        path: /spec/values/deschedulerPolicy/profiles/0/pluginConfig/7/args/targetThresholds
+        value:
+          cpu: 85
+          memory: 85
+          pods: 85

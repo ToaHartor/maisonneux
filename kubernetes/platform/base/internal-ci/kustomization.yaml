@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: internal-ci
+resources:
+  - ./namespace.yaml
+  - ./tekton-operator/ks.yaml
+  - ./tekton-pipelines/ks.yaml
+  - ./zot/ks.yaml
+transformers:
+  - ./transformers

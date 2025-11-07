@@ -1,0 +1,11 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: chain-forwardauth
+spec:
+  chain:
+    middlewares:
+      - name: secure-headers
+        namespace: ingress
+      - name: authentik
+        namespace: ingress

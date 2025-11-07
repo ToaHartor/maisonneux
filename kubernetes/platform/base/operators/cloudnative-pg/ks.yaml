@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cloudnative-pg
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: cloudnative-pg
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: cloudnative-pg
+      namespace: operators
+  interval: 1h
+  path: "./kubernetes/platform/base/operators/cloudnative-pg/app"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: operators
+  timeout: 5m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cnpg-barman-cloud
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: cnpg-barman-cloud
+  dependsOn:
+    - name: cloudnative-pg
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: cnpg-barman-cloud
+      namespace: operators
+  interval: 1h
+  path: "./kubernetes/platform/base/operators/cloudnative-pg/barman-cloud"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: operators
+  timeout: 5m

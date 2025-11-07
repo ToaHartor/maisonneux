@@ -1,1 +1,0 @@
-{{- include "common.secret.key" (dict "SecretName" .Values.prowlarr.workload.main.podSpec.containers.main.env.PROWLARR__AUTH__APIKEY.secretKeyRef.name "SecretNamespace" .Release.Namespace "SecretType" "apiKey") }}

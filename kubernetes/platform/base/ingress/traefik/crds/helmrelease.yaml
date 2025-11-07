@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik-crds
+spec:
+  releaseName: traefik-crds
+  chartRef:
+    kind: OCIRepository
+    name: traefik-crds
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  values:
+    # From https://github.com/traefik/traefik-helm-chart/blob/master/traefik-crds/values.yaml
+    # Install gatewayAPI CRD
+    gatewayAPI: true

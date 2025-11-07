@@ -1,0 +1,32 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ${APP}
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: ingress
+      sectionName: ${GATEWAY_ENDPOINT:=websecure}
+      kind: Gateway
+
+  hostnames:
+    - ${GATEWAY_DOMAIN:=${SUBDOMAIN}.${DOMAIN}}
+
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: ${GATEWAY_SVC_NAME}
+        # namespace: 
+        port: ${GATEWAY_SVC_PORT}
+      
+      # Add filters for proxy providers
+      filters: 
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: chain-forwardauth

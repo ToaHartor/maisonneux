@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: velero
+spec:
+  dependsOn:
+    # Needs monitoring CRDs as it is required by some options
+    - name: prometheus-crds
+      namespace: opentelemetry
+    - name: snapshot-controller
+    - name: s3-instance
+      namespace: operators
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: velero
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: velero
+      namespace: velero
+  interval: 1h
+  path: "./kubernetes/platform/base/velero/velero/app"
+  postBuild:
+    substitute:
+      # inherited variables
+      minio_url: ${minio_url}
+      minio_backup_bucket: ${minio_backup_bucket}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: velero
+  timeout: 5m

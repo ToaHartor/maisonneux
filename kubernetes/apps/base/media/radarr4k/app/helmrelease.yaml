@@ -1,0 +1,109 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: radarr4k
+spec:
+  releaseName: radarr4k
+  dependsOn:
+    - name: ${APP}-proxy
+  chartRef:
+    kind: OCIRepository
+    name: radarr4k
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/radarr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/radarr/
+  values:
+    waitPsqlImage:
+      repository: docker.io/library/busybox
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    securityContext:
+      pod:
+        fsGroup: 1000
+      container:
+        runAsUser: 1000
+        runAsGroup: 1000
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 250Mi
+      requests:
+        cpu: 20m
+        memory: 100Mi
+    workload:
+      main:
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+        annotations:
+          # Reload pod on secret change
+          # secret.reloader.stakater.com/reload: "radarr-psql-secret" 
+        podSpec:
+          initContainers:
+            waitpsql:
+              enabled: true
+              type: init
+              imageSelector: waitPsqlImage
+              command: ['sh', '-c', 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+              env:
+                POD_NAME: postgres-db-rw # service name for psql rw operations
+                POD_NAMESPACE: ${psql_database_namespace}
+          containers:
+            main:
+              env:
+                RADARR__AUTH__APIKEY:
+                  secretKeyRef:
+                    name: ${SECRET_KEY_NAME}
+                    key: secretKey
+                    expandObjectName: false
+                RADARR__AUTH__METHOD: External
+                RADARR__APP__INSTANCENAME: Radarr4K
+                RADARR__APP__THEME: dark
+                RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
+                RADARR__LOG__LEVEL: info
+                RADARR__UPDATE__BRANCH: develop
+                RADARR__POSTGRES__HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
+                RADARR__POSTGRES__PORT: "5432"
+                RADARR__POSTGRES__USER: ${PSQL_DB_USER}
+                RADARR__POSTGRES__PASSWORD:
+                  secretKeyRef:
+                    name: ${APP}-db-creds
+                    key: password
+                    expandObjectName: false
+                RADARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
+                RADARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}
+            exportarr:
+              env:
+                API_KEY:
+                  secretKeyRef:
+                    name: ${SECRET_KEY_NAME}
+                    key: secretKey
+                    expandObjectName: false
+    persistence:
+      config:
+        enabled: true
+        type: emptyDir
+      downloads:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_download}
+        mountPath: /downloads
+      media:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_media_1}
+        mountPath: /movies
+    metrics:
+      main:
+        enabled: true

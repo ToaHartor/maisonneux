@@ -1,0 +1,75 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: radarr
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: radarr
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: radarr-proxy
+      namespace: media
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: radarr
+      namespace: media
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/proxy-application
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/cnpg/log-db
+    - ../../../../../common/components/httproute/proxyauth
+    - ../../../../../common/components/secret/key
+  path: "./kubernetes/apps/base/media/radarr/app"
+  postBuild:
+    substitute:
+      APP: radarr
+      SUBDOMAIN: movies
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Media
+      DESCRIPTION: Movies PVR
+      ## Database
+      PSQL_DB_USER: radarr
+      PSQL_DB_NAME: radarr-main
+      PSQL_LOG_DB_NAME: radarr-log
+      ## Gateway
+      GATEWAY_SVC_NAME: radarr
+      GATEWAY_SVC_PORT: "7878"
+      ## API key
+      SECRET_KEY_NAME: radarr-api-key
+      SECRET_KEY_TYPE: api-key
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      fastdata_storage: ${fastdata_storage}
+      nfs_server: ${nfs_server}
+      nfs_path_download: ${nfs_path_download}
+      nfs_path_media_1: ${nfs_path_media_1}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: radarr"
+            parent: "Media Admins"
+            bindID: "a009f7b2-aba4-40fd-a1b7-ed7f1f7c20d7" # arbitrary uuid
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  timeout: 5m

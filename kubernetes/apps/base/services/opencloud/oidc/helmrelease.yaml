@@ -1,0 +1,154 @@
+---
+# Manual definition of OIDC applications, waiting for a unification of clients on OpenCloud side
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opencloud-oidc
+spec:
+  releaseName: opencloud-oidc
+  dependsOn:
+    - name: authentik
+      namespace: authentik
+  chartRef:
+    kind: OCIRepository
+    name: authentik-application
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml
+    blueprint:
+      authentik:
+        domain: "https://${auth_subdomain}.${main_domain_websecure}"
+      provider:
+        enabled: true
+        name: "Opencloud"
+        type: "oidc"
+        authorizationFlow: "default-provider-authorization-explicit-consent"
+        oidc:
+          clientType: "public"
+          # clientID:
+          # clientSecret:
+          redirectURL:
+            - "https://${SUBDOMAIN}.${main_domain_websecure}/"
+            - "https://${SUBDOMAIN}.${main_domain_websecure}/oidc-callback.html"
+            - "https://${SUBDOMAIN}.${main_domain_websecure}/oidc-silent-redirect.html"
+          signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
+          tokenDuration: "hours=24"
+          # Data from https://github.com/goauthentik/authentik/blob/main/blueprints/system/providers-oauth2.yaml
+          scopes:
+            - name: "authentik default OAuth Mapping: OpenID 'openid'"
+            - name: "authentik default OAuth Mapping: OpenID 'email'"
+            - name: "authentik default OAuth Mapping: OpenID 'profile'"
+            - name: "Opencloud groups"
+              scope_name: "groups"
+              # Only add groups + parents that are not individual groups dedicated to apps
+              # from https://github.com/goauthentik/authentik/discussions/16282#discussioncomment-14698978
+              expression: |
+                from authentik.core.models import Group
+
+                user_groups = {group.name for group in user.all_groups()}
+                effective = set(user_groups)
+
+                for group in Group.objects.all():
+                  parent = group.parent
+                  while parent:
+                    if parent.name in user_groups:
+                      if not group.name.startswith("app: "):
+                        effective.add(group.name)
+                      break
+                    parent = parent.parent
+                return {
+                  "groups": list(effective)
+                }
+            # - name:
+            #   scope_name:
+            #   expression:
+      application:
+        name: "Opencloud"
+        slug: "opencloud"
+        group: "Services"
+        launchURL: "https://${SUBDOMAIN}.${main_domain_websecure}"
+        openInNewTab: false
+        icon: ""
+        description: "Drive"
+        # publisher: "Publisher"
+        bindPolicyID:
+        policyEngineMode: "any"
+      groups:
+        - slug: "app: opencloud"
+          parent: "Drive Users"
+          bindID: "36bf7d6b-8cd5-4bba-8a1e-fb9631dee3ff" # arbitrary uuid
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opencloud-desktop-oidc
+spec:
+  releaseName: opencloud-desktop-oidc
+  dependsOn:
+    - name: authentik
+      namespace: authentik
+  chartRef:
+    kind: OCIRepository
+    name: authentik-application
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml
+    blueprint:
+      authentik:
+        domain: "https://${auth_subdomain}.${main_domain_websecure}"
+      provider:
+        enabled: true
+        name: "Opencloud Desktop"
+        authorizationFlow: "default-provider-authorization-explicit-consent"
+        type: "oidc"
+        oidc:
+          clientType: "public"
+          clientID: OpenCloudDesktop
+          # clientSecret:
+          redirectURL:
+            - "http://127.0.0.1.*"
+            - "http://localhost.*"
+          signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
+          tokenDuration: "hours=24"
+          # Data from https://github.com/goauthentik/authentik/blob/main/blueprints/system/providers-oauth2.yaml
+          scopes:
+            - name: "authentik default OAuth Mapping: OpenID 'openid'"
+            - name: "authentik default OAuth Mapping: OpenID 'email'"
+            - name: "authentik default OAuth Mapping: OpenID 'profile'"
+            - name: "authentik default OAuth Mapping: OpenID 'offline_access'"
+            - name: "Opencloud groups"
+            #   scope_name: "groups"
+            #   expression: |
+            #     return [group.name for group in user.ak_groups.all()]
+            # - name:
+            #   scope_name:
+            #   expression:
+      application:
+        name: "Opencloud Desktop"
+        slug: "opencloud-desktop"
+        group: "Services"
+        launchURL: "blank://blank"
+        openInNewTab: false
+        icon: ""
+        description: "Drive"
+        # publisher: "Publisher"
+        bindPolicyID:
+        policyEngineMode: "any"
+      groups:
+        - slug: "app: opencloud-desktop"
+          parent: "Drive Users"
+          bindID: "0f28cabc-0ad9-4cd6-be29-28e04c40b17d" # arbitrary uuid
+
+      

@@ -1,0 +1,85 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: piraeus-operator
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: piraeus-operator
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: piraeus-operator
+      namespace: piraeus-datastore
+  interval: 1h
+  path: "./kubernetes/system/base/piraeus-datastore/piraeus-operator/app"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: piraeus-datastore
+  timeout: 5m
+
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: piraeus-resources
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: piraeus-operator
+  dependsOn:
+    - name: piraeus-operator
+  healthCheckExprs:
+    # Operator status
+    - apiVersion: piraeus.io/v1
+      kind: LinstorCluster
+      failed: status.conditions.filter(e, e.type == 'Available').all(e, e.status == 'False')
+      inProgress: status.conditions.filter(e, e.type == 'Configured').all(e, e.status == 'Unknown')
+      current: status.conditions.filter(e, e.type == 'Available').all(e, e.status == 'True')
+    ## Satellites status
+    - apiVersion: piraeus.io/v1
+      kind: LinstorSatellite
+      failed: status.conditions.filter(e, e.type == 'Available').all(e, e.status == 'False')
+      inProgress: status.conditions.filter(e, e.type == 'Configured').all(e, e.status == 'Unknown')
+      current: status.conditions.filter(e, e.type == 'Available').all(e, e.status == 'True')
+  wait: true
+  interval: 1h
+  path: "./kubernetes/system/base/piraeus-datastore/piraeus-operator/resources"
+  postBuild:
+    substitute:
+      # inherited variables
+      fastdata_storage: ${fastdata_storage}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: piraeus-datastore
+  timeout: 5m
+
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: piraeus-monitoring
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: piraeus-operator
+  dependsOn:
+    - name: piraeus-resources
+  interval: 1h
+  path: ./config/extras/monitoring
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: piraeus-operator
+  targetNamespace: piraeus-datastore
+  timeout: 5m

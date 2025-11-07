@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mongodb-operator
+spec:
+  releaseName: mongodb-operator
+  chart:
+    spec:
+      chart: community-operator
+      # renovate: datasource=helm depName=community-operator registryUrl=https://mongodb.github.io/helm-charts
+      version: "0.13.0"
+      sourceRef:
+        kind: HelmRepository
+        name: mongodb
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # see https://github.com/mongodb/helm-charts/blob/main/charts/community-operator/values.yaml
+    community-operator-crds:
+      enabled: true
+
+    operator:
+      replicas: 1 # Apparently this is optimized
+      watchNamespace: mongodb

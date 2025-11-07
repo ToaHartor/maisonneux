@@ -25,13 +25,20 @@ locals {
   }
 
   general_config = merge({
-    "environment"               = terraform.workspace
-    "minio_url"                 = var.minio_access_url
-    "minio_backup_bucket"       = var.minio_backup_bucket
-    "acme_server_url"           = var.use_letsencrypt_production_server ? "https://acme-v02.api.letsencrypt.org/directory" : "https://acme-staging-v02.api.letsencrypt.org/directory"
-    "main_domain"               = var.main_domain
-    "second_domain"             = var.second_domain
-    "psql_suffix"               = var.cnpg_recovery ? "-temp" : ""
+    "environment" = terraform.workspace
+    # s3 stuff
+    "minio_url"           = var.minio_access_url
+    "minio_backup_bucket" = var.minio_backup_bucket
+    # certificate stuff
+    "acme_server_url" = var.use_letsencrypt_production_server ? "https://acme-v02.api.letsencrypt.org/directory" : "https://acme-staging-v02.api.letsencrypt.org/directory"
+    "main_domain"     = var.main_domain
+    "second_domain"   = var.second_domain
+    "auth_subdomain"  = "auth"
+    # postgres stuff
+    "psql_suffix"             = var.cnpg_recovery ? "-temp" : ""
+    "psql_database_namespace" = "postgres"
+    "psql_cluster_name"       = "psql-cluster"
+    # other stuff
     "gpu_runtime_class"         = var.use_nvidia_gpu ? "nvidia" : "null"
     "fastdata_storage"          = var.storage.fastdata
     "git_repo_url"              = local.flux_sync_helm_values.gitRepository.spec.url
@@ -67,15 +74,16 @@ locals {
 # Ignore all folders, but include the ones with cluster resources
 /*
 # Cluster folders include
-!/clusters/${terraform.workspace}
-!/apps/
-!/core/
-!/platform/
-!/system/
+!/kubernetes/clusters/${terraform.workspace}
+!/kubernetes/apps/
+!/kubernetes/core/
+!/kubernetes/common/
+!/kubernetes/platform/
+!/kubernetes/system/
 # Include helm charts folder as well
 !/helm/
 # Remove flux-system as well
-clusters/**/flux-system/"
+kubernetes/clusters/**/flux-system/"
 EOF
       }
     }
@@ -83,7 +91,7 @@ EOF
       spec = {
         prune = true
         force = true
-        path  = "./clusters/${terraform.workspace}"
+        path  = "./kubernetes/clusters/${terraform.workspace}"
       }
     }
   }

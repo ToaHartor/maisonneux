@@ -4,7 +4,14 @@
 // see https://docs.renovatebot.com/configuration-options/
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  enabledManagers: ["terraform", "helm-values", "helmv3", "regex"], // Only enable comments
+  enabledManagers: [
+    "terraform",
+    "helm-values",
+    "helmv3",
+    "flux",
+    "regex",
+    "mise",
+  ], // Only enable comments
   // Group major-minor-patch PRs
   separateMajorMinor: false,
   separateMultipleMajor: true,
@@ -14,9 +21,10 @@
     automerge: true,
     automergeType: "branch",
   },
-  // flux: {
-  //   fileMatch: ["(apps|core|platform|system)/base/.+\\.yaml$"],
-  // },
+  flux: {
+    // fileMatch: ["(apps|core|platform|system)/base/.+\\.yaml$"],
+    managerFilePatterns: ["/(^|/)kubernetes/.+\\.ya?ml$/"],
+  },
   ignorePaths: [
     "**/docker-compose/**", // Exclude legacy stacks
     "**/helm/maisonneux/**", // Exclude testing charts from previous helmfile

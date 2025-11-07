@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: stirlingpdf
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: stirlingpdf
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: stirlingpdf-oidc
+      namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: stirlingpdf
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/httproute/common
+  path: "./kubernetes/apps/base/services/stirlingpdf/app"
+  postBuild:
+    substitute:
+      APP: stirlingpdf
+      SUBDOMAIN: pdf
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: PDF utilities
+      REDIRECT_URL: "https://pdf.${main_domain_websecure}/login/oauth2/code/oidc"
+      PSQL_DB_USER: stirlingpdf
+      PSQL_DB_NAME: stirlingpdf
+      GATEWAY_SVC_NAME: stirlingpdf
+      GATEWAY_SVC_PORT: "8080"
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      quote: '"'
+      patch_dns: ${quote}${patch_dns:=false}${quote}
+      traefik_lb_ip: ${traefik_lb_ip}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+      auth_subdomain: ${auth_subdomain}
+
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: stirlingpdf"
+            parent: "Users"
+            bindID: "948eaabd-8a84-48fd-a48c-aad99932b40d" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 5m

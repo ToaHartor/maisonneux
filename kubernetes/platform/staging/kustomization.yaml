@@ -1,0 +1,177 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base/cert-manager
+  - ../base/dragonfly
+  - ../base/internal-ci
+  - ../base/ingress
+  # - ../base/mariadb
+  # - ../base/mongodb
+  - ../base/monitoring
+  - ../base/operators
+  - ../base/postgres
+  - ../base/velero
+patches:
+  # Remove all topologySpreadConstraints and reduce replicas in non-production cluster
+  # We also reduce default volume storage size
+  - target:
+      kind: HelmRelease
+      name: snapshot-controller
+      namespace: velero
+    patch: |-
+      - op: replace
+        path: /spec/values/controller/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/controller/topologySpreadConstraints
+
+  - target:
+      kind: HelmRelease
+      name: victoria-metrics-operator
+      namespace: monitoring
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: replace
+        path: /spec/values/podDisruptionBudget/enabled
+        value: false
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+      
+      - op: replace
+        path: /spec/values/extraObjects/0/spec/vmstorage/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/0/spec/vmstorage/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/extraObjects/0/spec/vmstorage/storage/volumeClaimTemplate/spec/resources/requests/storage
+        value: 1Gi
+      - op: replace
+        path: /spec/values/extraObjects/0/spec/vmselect/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/0/spec/vmselect/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/extraObjects/0/spec/vminsert/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/0/spec/vminsert/topologySpreadConstraints
+
+      - op: replace
+        path: /spec/values/extraObjects/1/spec/vlstorage/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/1/spec/vlstorage/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/extraObjects/1/spec/vlstorage/storage/volumeClaimTemplate/spec/resources/requests/storage
+        value: 1Gi
+      - op: replace
+        path: /spec/values/extraObjects/1/spec/vlselect/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/1/spec/vlselect/topologySpreadConstraints
+      - op: replace
+        path: /spec/values/extraObjects/1/spec/vlinsert/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/extraObjects/1/spec/vlinsert/topologySpreadConstraints
+
+  - target:
+      kind: HelmRelease
+      name: mariadb-operator
+      namespace: operators
+    patch: |-
+      - op: replace
+        path: /spec/values/ha/enabled
+        value: false
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+
+      - op: replace
+        path: /spec/values/webhook/ha/enabled
+        value: false
+      - op: remove
+        path: /spec/values/webhook/topologySpreadConstraints
+
+      - op: replace
+        path: /spec/values/pdb/enabled
+        value: false
+
+  - target:
+      kind: HelmRelease
+      name: dragonfly-operator
+      namespace: operators
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/manager/topologySpreadConstraints
+
+  - target:
+      kind: HelmRelease
+      name: cloudnative-pg
+      namespace: operators
+    patch: |-
+      - op: replace
+        path: /spec/values/replicaCount
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints
+
+  - target:
+      kind: HelmRelease
+      name: psql-cluster
+      namespace: ${psql_database_namespace}
+    patch: |-
+      - op: replace
+        path: /spec/values/storage/size
+        value: 10Gi
+      - op: replace
+        path: /spec/values/database/enableAntiAffinity
+        value: false
+  
+  - target:
+      kind: HelmRelease
+      name: mariadb-cluster
+      namespace: mariadb
+    patch: |-
+      - op: replace
+        path: /spec/values/storage/size
+        value: 5Gi
+      - op: replace
+        path: /spec/values/mariadb/enableAntiAffinity
+        value: false
+
+  - target:
+      kind: HelmRelease
+      name: dragonfly-cluster
+      namespace: dragonfly
+    patch: |-
+      - op: replace
+        path: /spec/values/replicas
+        value: 1
+
+  # - target:
+  #     kind: HelmRelease
+  #     name: mongodb-cluster
+  #     namespace: mongodb
+  #   patch: |-
+  #     - op: replace
+  #       path: /spec/values/storage/size
+  #       value: 1Gi
+  #     - op: replace
+  #       path: /spec/values/storage/logsSize
+  #       value: 1Gi
+
+  - target:
+      kind: HelmRelease
+      name: cert-manager-webhook-ovh
+      namespace: cert-manager
+    patch: |-
+      - op: replace
+        path: /spec/values/replicas
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints

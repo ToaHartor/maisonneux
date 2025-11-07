@@ -1,6 +1,0 @@
-apiVersion: v2
-name: cert-manager-crs
-description: Cert-manager custom cluster ressources
-# dependencies:
-# Implicit dependencies : cert-manager CRDs
-version: 0.0.0

@@ -1,0 +1,12 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: ${PSQL_LOG_DB_NAME}
+  # namespace: ${psql_database_namespace}
+spec:
+  name: ${PSQL_LOG_DB_NAME}
+  ensure: present
+  owner: ${PSQL_DB_USER}
+  cluster:
+    name: ${psql_cluster_name}
+  extensions: ${EXTENSIONS:=${emptyArray}}

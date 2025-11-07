@@ -15,7 +15,7 @@ exports:
       postgresNamespace: postgres
       mariadbNamespace: mariadb
       secretsNamespace: external-secrets
-      traefikNamespace: traefik
+      traefikNamespace: ingress
 
     database:
       postgres:
@@ -26,7 +26,7 @@ exports:
         clusterSecretName: mariadb-secrets
     
     secretGenerators:
-      databasePassword: database-password
+      databasePassword: db-password-generator
       password: password
       secretKey: secret-key
       apiKey: api-key

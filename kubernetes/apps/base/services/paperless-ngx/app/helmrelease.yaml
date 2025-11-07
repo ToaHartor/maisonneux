@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: paperless-ngx
+spec:
+  releaseName: paperless-ngx
+  # dependsOn:
+  #   # Wait for OIDC config creation
+  #   - name: paperless-ngx-proxy
+  chart:
+    spec:
+      chart: helm/apps/paperless-ngx
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  values:
+    storage:
+      persistentClassName: ${fastdata_storage}-ha
+    
+    paperless:
+      s3:
+        secretName: paperless-${environment}-s3user
+        bucketName: paperless-${environment}
+        endpoint: http://${minio_url}
+        customDomain: ${minio_url}/paperless-${environment}
+
+      persistence:
+        media:
+          server: ${nfs_server}
+          path: ${nfs_path_paperless}
+
+      workload:
+        main:
+          podSpec:
+            containers:
+              main:
+                env:
+                  PAPERLESS_URL: https://${SUBDOMAIN}.${main_domain}
+                  PAPERLESS_DBHOST: postgres-db-rw.postgres.svc.cluster.local
+                  PAPERLESS_REDIS: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379

@@ -1,0 +1,25 @@
+---
+apiVersion: s3.onyxia.sh/v1alpha1
+kind: Policy
+metadata:
+  name: "${S3_USER}-bucket-policy"
+spec:
+  # Policy name (on S3 server, as opposed to the name of the CR)
+  name: "${S3_USER}-bucket-policy"
+  policyContent: >-
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:*"
+        ],
+        "Resource": [
+          "arn:aws:s3:::${BUCKET_NAME}",
+          "arn:aws:s3:::${BUCKET_NAME}/*"
+        ]
+      }
+      ]
+    }
+  s3InstanceRef: "operators/default"

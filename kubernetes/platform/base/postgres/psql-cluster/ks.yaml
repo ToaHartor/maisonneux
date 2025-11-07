@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: psql-cluster
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: psql-cluster
+  dependsOn:
+    - name: cloudnative-pg
+      namespace: operators
+    - name: cnpg-barman-cloud
+      namespace: operators
+    # Also needs the s3 operator for distant storage
+    - name: s3-instance
+      namespace: operators
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: psql-cluster
+      namespace: ${psql_database_namespace}
+    - apiVersion: &postgresVersion postgresql.cnpg.io/v1
+      kind: &postgresKind Cluster
+      name: ${psql_cluster_name}${psql_suffix:=}
+      namespace: ${psql_database_namespace}
+  healthCheckExprs:
+    - apiVersion: *postgresVersion
+      kind: *postgresKind
+      failed: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'False')
+      inProgress: status.conditions.filter(e, e.type == 'Ready').all(e, e.reason == 'ClusterIsNotReady')
+      current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/s3bucket
+  path: "./kubernetes/platform/base/postgres/psql-cluster/app"
+  postBuild:
+    substitute:
+      S3_USER: cnpg-${environment}
+      BUCKET_NAME: cnpg-${environment}
+      BUCKET_QUOTA: "20000000000"
+      # inherited variables
+      environment: ${environment}
+      minio_url: ${minio_url}
+      fastdata_storage: ${fastdata_storage}
+      psql_cluster_name: ${psql_cluster_name}
+      psql_suffix: ${quote}${psql_suffix:=}${quote}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ${psql_database_namespace}
+  timeout: 5m

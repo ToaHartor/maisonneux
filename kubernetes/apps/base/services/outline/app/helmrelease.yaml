@@ -1,0 +1,171 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: outline
+spec:
+  releaseName: outline
+  dependsOn:
+    - name: ${APP}-oidc
+  chartRef:
+    kind: OCIRepository
+    name: outline
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # Patch only when local dns is used
+  # Using postRenderers instead of patches in kustomizations, as variable substitution is not performed already
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "${traefik_lb_ip}"
+                    hostnames:
+                    - "${auth_subdomain}.${main_domain}"
+                    - "${second_domain}"
+
+            target:
+              kind: Deployment
+              name: outline
+              namespace: services
+              annotationSelector: homelab/use-local-dns=true
+
+  values:
+    securityContext:
+      container:
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+
+    resources:
+      limits:
+        cpu: 1
+        memory: 800Mi
+      requests:
+        cpu: 200m
+        memory: 400Mi
+
+    workload:
+      main:
+        annotations:
+          homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+        podSpec:
+          initContainers:
+            1-migratedb:
+              env:
+                DATABASE_URL:
+                  secretKeyRef:
+                    name: outline-db-creds
+                    key: uri
+                    expandObjectName: false
+                REDIS_URL:
+                  secretKeyRef:
+                    name: outline-secrets
+                    key: REDIS_CUSTOM_URL
+                    expandObjectName: false
+                SECRET_KEY:
+                  secretKeyRef:
+                    name: outline-secrets
+                    key: SECRET_KEY
+                    expandObjectName: false
+                UTILS_SECRET:
+                  secretKeyRef:
+                    name: outline-secrets
+                    key: UTILS_SECRET
+                    expandObjectName: false
+
+          containers:
+            main:
+              env:
+                URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+                LOG_LEVEL: debug
+
+                # WARNING : ONLY FOR DEBUG https://github.com/outline/outline/discussions/2606
+                # NODE_TLS_REJECT_UNAUTHORIZED: "0"
+                NODE_ENV: production
+                PGSSLMODE: disable
+
+                OIDC_CLIENT_ID:
+                  secretKeyRef:
+                    # {oidc-release-name}-{chart-name}
+                    name: ${APP}-oidc-authentik-application
+                    key: clientID
+                    expandObjectName: false
+                OIDC_CLIENT_SECRET:
+                  secretKeyRef:
+                    name: ${APP}-oidc-authentik-application
+                    key: clientSecret
+                    expandObjectName: false
+                OIDC_AUTH_URI: https://${auth_subdomain}.${main_domain_websecure}/application/o/authorize/
+                OIDC_TOKEN_URI: https://${auth_subdomain}.${main_domain_websecure}/application/o/token/
+                OIDC_USERINFO_URI: https://${auth_subdomain}.${main_domain_websecure}/application/o/userinfo/
+                OIDC_LOGOUT_URI: https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/end-session/
+                OIDC_USERNAME_CLAIM: preferred_username
+                OIDC_DISPLAY_NAME: Authentik
+                OIDC_SCOPES: openid profile email
+
+                DATABASE_URL:
+                  secretKeyRef:
+                    name: ${APP}-db-creds
+                    key: uri
+                    expandObjectName: false
+                REDIS_URL:
+                  secretKeyRef:
+                    name: outline-secrets
+                    key: REDIS_CUSTOM_URL
+                    expandObjectName: false
+                SECRET_KEY:
+                  secretKeyRef:
+                    name: outline-secrets
+                    key: SECRET_KEY
+                    expandObjectName: false
+                UTILS_SECRET:
+                  secretKeyRef:
+                    name: outline-secrets
+                    key: UTILS_SECRET
+                    expandObjectName: false
+
+                AWS_ACCESS_KEY_ID:
+                  secretKeyRef:
+                    name: "${S3_USER}-s3user"
+                    key: accessKey
+                    expandObjectName: false
+                AWS_SECRET_ACCESS_KEY:
+                  secretKeyRef:
+                    name: "${S3_USER}-s3user"
+                    key: secretKey
+                    expandObjectName: false
+                # AWS_REGION: 
+                # AWS_S3_ACCELERATE_URL:
+                AWS_S3_UPLOAD_BUCKET_URL: http://${minio_url}
+                AWS_S3_UPLOAD_BUCKET_NAME: ${BUCKET_NAME}
+                AWS_S3_FORCE_PATH_STYLE: true
+                AWS_S3_ACL: private
+
+                WEB_CONCURRENCY: "1"
+                FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"
+                FILE_STORAGE_UPLOAD_MAX_SIZE: "26214400"
+    # Disable cnpg and redis deployments as we use our own
+    redis:
+      enabled: false
+      creds:
+        url: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379
+    cnpg:
+      main:
+        enabled: false
+
+    persistence:
+      data:
+        enabled: true
+        type: emptyDir

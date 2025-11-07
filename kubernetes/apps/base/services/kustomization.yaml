@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: services
+resources:
+  - ./namespace.yaml
+  - ./cyberchef/ks.yaml
+  - ./gitea/ks.yaml
+  - ./immich/ks.yaml
+  - ./legacyapps/ks.yaml
+  - ./minio/ks.yaml
+  - ./opencloud/ks.yaml
+  - ./outline/ks.yaml
+  # - ./paperless-ngx/ks.yaml
+  - ./stirlingpdf/ks.yaml
+  - ./vaultwarden/ks.yaml
+  - ./wakapi/ks.yaml
+transformers:
+  - ./transformers
+components:
+  - ../../../common/components/repos/authentik-application

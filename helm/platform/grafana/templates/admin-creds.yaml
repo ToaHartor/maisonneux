@@ -1,1 +1,0 @@
-{{- include "common.secret.creds" (dict "Username" "admin" "SecretName" .Values.grafana.admin.existingSecret "SecretNamespace" .Release.Namespace) }}

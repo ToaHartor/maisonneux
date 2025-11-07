@@ -1,0 +1,13 @@
+---
+apiVersion: s3.onyxia.sh/v1alpha1
+kind: Bucket
+metadata:
+  name: "${BUCKET_NAME}-bucket"
+spec:
+  # Bucket name (on S3 server, as opposed to the name of the CR)
+  name: ${BUCKET_NAME}
+  quota:
+    default: ${BUCKET_QUOTA:=1000000000} # Quota defaults to 1GB
+    # override: 20000000
+  # operator namespace / s3 instance name
+  s3InstanceRef: "operators/default"

@@ -1,0 +1,62 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jdownloader2
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: jdownloader2
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: jdownloader2-proxy
+      namespace: media
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: jdownloader2
+      namespace: media
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/proxy-application
+    - ../../../../../common/components/httproute/proxyauth
+  path: "./kubernetes/apps/base/media/jdownloader2/app"
+  postBuild:
+    substitute:
+      APP: jdownloader2
+      SUBDOMAIN: jdl
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Media
+      DESCRIPTION: DDL manager
+      GATEWAY_SVC_NAME: jdownloader2
+      GATEWAY_SVC_PORT: "10054"
+      # inherited variables
+      nfs_server: ${nfs_server}
+      nfs_path_download: ${nfs_path_download}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: jdownloader"
+            parent: "Media Admins"
+            bindID: "010683f6-5639-483a-a206-c2729d37e8e7" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  timeout: 5m

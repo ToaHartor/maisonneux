@@ -1,0 +1,75 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: lidarr
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: lidarr
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: lidarr-proxy
+      namespace: media
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: lidarr
+      namespace: media
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/proxy-application
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/cnpg/log-db
+    - ../../../../../common/components/httproute/proxyauth
+    - ../../../../../common/components/secret/key
+  path: "./kubernetes/apps/base/media/lidarr/app"
+  postBuild:
+    substitute:
+      APP: lidarr
+      SUBDOMAIN: music
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Media
+      DESCRIPTION: Music PVR
+      ## Database
+      PSQL_DB_USER: lidarr
+      PSQL_DB_NAME: lidarr-main
+      PSQL_LOG_DB_NAME: lidarr-log
+      ## Gateway
+      GATEWAY_SVC_NAME: lidarr
+      GATEWAY_SVC_PORT: "8686"
+      ## API key
+      SECRET_KEY_NAME: lidarr-api-key
+      SECRET_KEY_TYPE: api-key
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      nfs_server: ${nfs_server}
+      nfs_path_download: ${nfs_path_download}
+      nfs_path_media_1: ${nfs_path_media_1}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: lidarr"
+            parent: "Media Admins"
+            bindID: "04bd37e5-dc02-4729-b021-20c917c17dd1" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  timeout: 5m

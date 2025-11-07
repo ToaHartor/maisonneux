@@ -1,0 +1,58 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base/jellyfin
+  - ../base/media
+  # - ../base/seafile
+  - ../base/services
+patches:
+  # Reduce PVC sizes
+  # We also change the storageclass to non-ha in this scenario
+  - target:
+      kind: HelmRelease
+      name: kavita
+      namespace: media
+    patch: |-
+      - op: replace
+        path: /spec/values/persistence/config/size
+        value: 500Mi
+      - op: replace
+        path: /spec/values/persistence/config/storageClass
+        value: ${fastdata_storage}
+  - target:
+      kind: HelmRelease
+      name: immich-db
+      namespace: immich
+    patch: |-
+      - op: replace
+        path: /spec/values/storage/size
+        value: 5Gi
+      - op: replace
+        path: /spec/values/storage/persistentClassName
+        value: ${fastdata_storage}
+  - target:
+      kind: HelmRelease
+      name: jellyseerr
+      namespace: media
+    patch: |-
+      - op: replace
+        path: /spec/values/jellyseerr/persistence/config/storageClass
+        value: ${fastdata_storage}
+  - target:
+      kind: HelmRelease
+      name: qbittorrent
+      namespace: media
+    patch: |-
+      - op: replace
+        path: /spec/values/persistence/config/storageClass
+        value: ${fastdata_storage}
+  - target:
+      kind: HelmRelease
+      name: suwayomi
+      namespace: media
+    patch: |-
+      - op: replace
+        path: /spec/values/persistence/appdata/storageClass
+        value: ${fastdata_storage}

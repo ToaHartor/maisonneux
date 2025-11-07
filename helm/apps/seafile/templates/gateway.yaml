@@ -9,7 +9,7 @@ metadata:
 spec:
   parentRefs:
     - name: traefik-gateway
-      namespace: traefik
+      namespace: ingress
       sectionName: {{ ternary "websecure" "web" (eq $domainSplit.Protocol "https")}}
       kind: Gateway
 

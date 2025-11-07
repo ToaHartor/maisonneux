@@ -1,0 +1,71 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: prowlarr
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: prowlarr
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: prowlarr-proxy
+      namespace: media
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: prowlarr
+      namespace: media
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/proxy-application
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/cnpg/log-db
+    - ../../../../../common/components/httproute/proxyauth
+    - ../../../../../common/components/secret/key
+  path: "./kubernetes/apps/base/media/prowlarr/app"
+  postBuild:
+    substitute:
+      APP: prowlarr
+      SUBDOMAIN: indexer
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Media
+      DESCRIPTION: Indexer
+      ## Database
+      PSQL_DB_USER: prowlarr
+      PSQL_DB_NAME: prowlarr-main
+      PSQL_LOG_DB_NAME: prowlarr-log
+      ## Gateway
+      GATEWAY_SVC_NAME: prowlarr
+      GATEWAY_SVC_PORT: "9696"
+      ## API key
+      SECRET_KEY_NAME: prowlarr-api-key
+      SECRET_KEY_TYPE: api-key
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: prowlarr"
+            parent: "Media Admins"
+            bindID: "8763c9ca-5d75-41e6-92a0-983055216961" # arbitrary uuid
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  timeout: 5m

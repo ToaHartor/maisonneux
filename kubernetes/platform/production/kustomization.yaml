@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base/cert-manager
+  - ../base/dragonfly
+  - ../base/ingress
+  - ../base/internal-ci
+  # - ../base/mariadb
+  # - ../base/mongodb
+  - ../base/monitoring
+  - ../base/operators
+  - ../base/postgres
+  - ../base/velero
+# patches:
+#   - path: cert-manager-ovh-values.yaml
+#     target:
+#       name: cert-manager-webhook-ovh
+#       namespace: cert-manager
+#       kind: HelmRelease

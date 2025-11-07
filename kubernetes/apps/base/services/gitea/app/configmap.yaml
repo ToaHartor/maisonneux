@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-app-ini
+data:
+  server: |
+    ROOT_URL=https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+    DOMAIN=${SUBDOMAIN}.${DOMAIN}
+    ENABLE_PPROF=true
+  database: |
+    DB_TYPE=postgres
+    HOST=postgres-db-rw.${psql_database_namespace}.svc.cluster.local
+    NAME=${PSQL_DB_NAME}
+    USER=${PSQL_DB_USER}
+  queue:
+    TYPE=redis
+    CONN_STR=redis://dragonfly-cluster.dragonfly.svc.cluster.local/0
+  storage: |
+    STORAGE_TYPE=minio
+    SERVE_DIRECT=false
+    MINIO_ENDPOINT=${minio_url}
+    MINIO_BUCKET=${BUCKET_NAME}
+    MINIO_USE_SSL=false
+    MINIO_INSECURE_SKIP_VERIFY=true
+  service: |
+    DISABLE_REGISTRATION=true
+  oauth2_client: |
+    OPENID_CONNECT_SCOPES=email profile
+    ENABLE_AUTO_REGISTRATION=true
+    UPDATE_AVATAR=true
+    ACCOUNT_LINKING=auto

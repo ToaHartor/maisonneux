@@ -1,0 +1,9 @@
+apiVersion: builtin
+kind: AnnotationsTransformer
+metadata:
+  name: annotation-ns
+annotations:
+  kustomize.toolkit.fluxcd.io/prune: disabled
+fieldSpecs:
+  - path: metadata/annotations
+    kind: Namespace

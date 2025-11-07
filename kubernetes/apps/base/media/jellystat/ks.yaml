@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jellystat
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: jellystat
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: jellystat
+      namespace: media
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/secret/key
+    - ../../../../../common/components/secret/creds
+  path: "./kubernetes/apps/base/media/jellystat/app"
+  postBuild:
+    substitute:
+      APP: jellystat
+      SUBDOMAIN: jellystat
+      DOMAIN: ${main_domain}
+      # DOMAIN_WEBSECURE: ${main_domain_websecure}
+      ## Database
+      PSQL_DB_USER: jellystat
+      PSQL_DB_NAME: jellystat
+      ## Gateway
+      GATEWAY_SVC_NAME: jellystat
+      GATEWAY_SVC_PORT: "10681"
+      ## Generated secrets
+      SECRET_KEY_NAME: jellystat-jwt
+      SECRET_KEY_TYPE: secret-key
+      SECRET_CREDS_NAME: jellystat-masteruser
+      SECRET_CREDS_USER: admin
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      fastdata_storage: ${fastdata_storage}
+      main_domain: ${main_domain}
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  timeout: 5m

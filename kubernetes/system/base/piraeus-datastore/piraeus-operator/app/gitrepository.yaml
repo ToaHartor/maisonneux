@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/gitrepository-source-v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: piraeus-operator
+spec:
+  interval: 1h
+  ref:
+    # renovate: datasource=github-tags depName=piraeusdatastore/piraeus-operator extractVersion=^(?<version>.+)$
+    tag: v2.10.2
+  url: http://github.com/piraeusdatastore/piraeus-operator

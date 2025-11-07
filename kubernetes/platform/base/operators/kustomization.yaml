@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: operators
+resources:
+  - ./namespace.yaml
+  - ./cloudnative-pg/ks.yaml
+  - ./dragonfly-operator/ks.yaml
+  # - ./mariadb-operator/ks.yaml
+  # - ./mongodb/ks.yaml
+  - ./s3-operator/ks.yaml
+transformers:
+  - ./transformers

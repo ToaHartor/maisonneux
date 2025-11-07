@@ -1,0 +1,78 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base/jellyfin
+  - ../base/media
+  # - ../base/seafile
+  - ../base/services
+patches:
+  - target:
+      kind: HelmRelease
+      name: jellyfin
+      namespace: jellyfin
+    patch: |-
+      - op: add
+        path: /spec/values/resources/limits
+        value:
+          nvidia.com/gpu: 1
+      # Patchception to patch the helmrelease, which patches the deployment
+      - op: add
+        path: /spec/postRenderers
+        value:
+          - kustomize:
+              patches:
+                - target:
+                    version: v1
+                    kind: Deployment
+                    name: jellyfin
+                  patch: |-
+                    - op: replace
+                      path: /spec/template/spec/affinity
+                      value:
+                        nodeAffinity:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            nodeSelectorTerms:
+                            - matchExpressions:
+                              - key: nvidia.com/gpu.present
+                                operator: In
+                                values: ["true"]
+                        podAffinity:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            - labelSelector:
+                                matchExpressions:
+                                  - key: truecharts.org/pvc
+                                    operator: In
+                                    values: ["config"]
+                              topologyKey: kubernetes.io/hostname
+  - target:
+      kind: HelmRelease
+      name: immich
+      namespace: immich
+    patch: |-
+      - op: add
+        path: /spec/values/workload/machinelearning/podSpec/containers/machinelearning/resources/limits
+        value:
+          nvidia.com/gpu: 1
+      # Patchception to patch the helmrelease, which patches the deployment
+      - op: add
+        path: /spec/postRenderers
+        value:
+          - kustomize:
+              patches:
+                - target:
+                    version: v1
+                    kind: Deployment
+                    name: immich-machinelearning
+                  patch: |-
+                    - op: replace
+                      path: /spec/template/spec/affinity
+                      value:
+                        nodeAffinity:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            nodeSelectorTerms:
+                            - matchExpressions:
+                              - key: nvidia.com/gpu.present
+                                operator: In
+                                values: ["true"]

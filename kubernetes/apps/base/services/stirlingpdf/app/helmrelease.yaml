@@ -1,0 +1,132 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: stirlingpdf
+spec:
+  releaseName: stirlingpdf
+  dependsOn:
+    - name: ${APP}-oidc
+  chart:
+    spec:
+      chart: stirling-pdf-chart
+      version: "2.2.0"
+      sourceRef:
+        kind: HelmRepository
+        name: stirlingpdf
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # Patch only when local dns is used
+  # Using postRenderers instead of patches in kustomizations, as variable substitution is not performed already
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "${traefik_lb_ip}"
+                    hostnames:
+                    - "${auth_subdomain}.${main_domain}"
+                    - "${second_domain}"
+            target:
+              kind: Deployment
+              name: stirlingpdf-stirling-pdf-chart
+              namespace: services
+              annotationSelector: homelab/use-local-dns=true
+
+  # see https://github.com/Stirling-Tools/Stirling-PDF-chart/blob/main/charts/stirling-pdf/values.yaml
+  values:
+    # Additional environment variable for configuration : https://docs.stirlingpdf.com/Advanced%20Configuration/How%20to%20add%20configurations/
+    # https://github.com/Stirling-Tools/Stirling-PDF-chart/blob/main/charts/stirling-pdf/values.yaml
+    strategy:
+      type: RollingUpdate
+    securityContext:
+      pod:
+        fsGroup: 1000
+      container:
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+
+    ingress:
+      enabled: false
+
+    service:
+      servicename: ${GATEWAY_SVC_NAME}
+      # externalPort:
+
+    serviceMonitor:
+      enabled: true
+    
+    resources:
+      limits:
+        cpu: 2
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+    deployment:
+      annotations:
+        homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
+    envs:
+      - name: SECURITY_LOGINMETHOD
+        value: "oauth2"
+      - name: SECURITY_OAUTH2_ENABLED
+        value: "true"
+      - name: SECURITY_OAUTH2_ISSUER
+        valueFrom:
+          secretKeyRef:
+            name: ${APP}-oidc-authentik-application
+            key: issuerURL
+      - name: SECURITY_OAUTH2_CLIENTID
+        valueFrom:
+          secretKeyRef:
+            name: ${APP}-oidc-authentik-application
+            key: clientID
+      - name: SECURITY_OAUTH2_CLIENTSECRET
+        valueFrom:
+          secretKeyRef:
+            name: ${APP}-oidc-authentik-application
+            key: clientSecret
+      - name: SECURITY_OAUTH2_AUTOCREATEUSER
+        value: "true"
+      - name: SECURITY_OAUTH2_BLOCKREGISTRATION
+        value: "false"
+      - name: SECURITY_OAUTH2_USEASUSERNAME
+        value: "email"
+      - name: SECURITY_OAUTH2_SCOPES
+        value: "openid, profile, email"
+      - name: SECURITY_OAUTH2_PROVIDER
+        value: "authentik"
+      - name: SYSTEM_DATASOURCE_ENABLECUSTOMDATABASE
+        value: "true"
+      - name: SYSTEM_DATASOURCE_CUSTOMDATABASEURL
+        valueFrom:
+          secretKeyRef:
+            name: ${APP}-db-creds
+            key: jdbc-uri
+      - name: SYSTEM_DATASOURCE_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: ${APP}-db-creds
+            key: username
+      - name: SYSTEM_DATASOURCE_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: ${APP}-db-creds
+            key: password
+      - name: DOCKER_ENABLE_SECURITY
+        value: "true"
+      - name: SYSTEM_GOOGLEVISIBILITY
+        value: "false"
+      - name: SYSTEM_ENABLEANALYTICS
+        value: "false"
+      - name: SECURITY_ENABLELOGIN
+        value: "true"

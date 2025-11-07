@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager-csi-driver
+spec:
+  releaseName: cert-manager-csi-driver
+  dependsOn:
+    - name: cert-manager
+  chartRef:
+    kind: OCIRepository
+    name: cert-manager-csi-driver
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  values:
+    # https://github.com/cert-manager/csi-driver/blob/main/deploy/charts/csi-driver/values.yaml
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi

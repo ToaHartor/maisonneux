@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opencloud-config
+data:
+  csp.yaml: |
+    directives:
+      child-src:
+        - '''self'''
+      connect-src:
+        - '''self'''
+        - 'blob:'
+        - 'https://raw.githubusercontent.com/opencloud-eu/awesome-apps/'
+        - 'https://${auth_subdomain}.${main_domain_websecure}'
+      default-src:
+        - '''none'''
+      font-src:
+        - '''self'''
+      frame-ancestors:
+        - '''self'''
+      frame-src:
+        - '''self'''
+        - 'blob:'
+        # This is needed for the external-sites web extension when embedding sites
+        - 'https://docs.opencloud.eu'
+      img-src:
+        - '''self'''
+        - 'data:'
+        - 'blob:'
+        - 'https://raw.githubusercontent.com/opencloud-eu/awesome-apps/'
+      manifest-src:
+        - '''self'''
+      media-src:
+        - '''self'''
+      object-src:
+        - '''self'''
+        - 'blob:'
+      script-src:
+        - '''self'''
+        - '''unsafe-inline'''
+      style-src:
+        - '''self'''
+        - '''unsafe-inline'''
+
+  proxy.yaml: |
+    role_assignment:
+      driver: oidc
+      oidc_role_mapper:
+        role_claim: groups
+        role_mapping:
+          - role_name: admin 
+            claim_value: Drive Admins
+          - role_name: user
+            claim_value: Drive Users
+          - role_name: guest
+            claim_value: Guests 

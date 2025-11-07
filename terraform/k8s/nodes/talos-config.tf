@@ -163,7 +163,7 @@ locals {
             name = "PodSecurity"
             configuration = {
               exemptions = {
-                namespaces = ["cert-manager", "flux-system", "piraeus-datastore", "opentelemetry", "velero", "crowdsec"]
+                namespaces = ["cert-manager", "flux-system", "piraeus-datastore", "opentelemetry", "velero", "ingress"]
               }
             }
           }

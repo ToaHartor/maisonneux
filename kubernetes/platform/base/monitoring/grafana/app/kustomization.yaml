@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# TODO : uncomment the following with json dashboards in the folder
+# configMapGenerator:
+#   - name: grafana-dashboards
+#     files:
+#       - dashboards/test.json
+
+# generatorOptions:
+#   disableNameSuffixHash: true
+
+resources:
+  - ocirepository.yaml
+  - helmrelease.yaml

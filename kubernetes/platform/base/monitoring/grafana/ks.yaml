@@ -1,0 +1,73 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: grafana
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: grafana
+  dependsOn:
+    - name: victoria-metrics-operator
+    # - name: grafana-oidc
+    - name: psql-cluster
+      namespace: ${psql_database_namespace}
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: grafana-oidc
+      namespace: monitoring
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: grafana
+      namespace: monitoring
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/secret/creds
+  path: "./kubernetes/platform/base/monitoring/grafana/app"
+  postBuild:
+    substitute:
+      APP: grafana
+      SUBDOMAIN: monitoring
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Admin
+      DESCRIPTION: Monitoring platform
+      REDIRECT_URL: "https://monitoring.${main_domain_websecure}/login/generic_oauth"
+      ## Database
+      PSQL_DB_USER: grafana
+      PSQL_DB_NAME: grafana
+      ## Admin secrets
+      SECRET_CREDS_NAME: grafana-admin-creds
+      SECRET_CREDS_USER: admin
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: grafana"
+            parent: "authentik Admins"
+            bindID: "6bee1134-3cc7-4cfc-a2e3-e60705928ecd" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: monitoring
+  timeout: 5m

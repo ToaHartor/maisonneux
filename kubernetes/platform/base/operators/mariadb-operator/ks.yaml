@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: mariadb-operator-crds
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: mariadb-operator
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: mariadb-operator-crds
+      namespace: operators
+  interval: 1h
+  path: "./kubernetes/platform/base/operators/mariadb-operator/crds"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: operators
+  timeout: 5m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: mariadb-operator
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: mariadb-operator
+  dependsOn:
+    - name: mariadb-operator-crds
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: mariadb-operator
+      namespace: operators
+  interval: 1h
+  path: "./kubernetes/platform/base/operators/mariadb-operator/app"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: operators
+  timeout: 5m

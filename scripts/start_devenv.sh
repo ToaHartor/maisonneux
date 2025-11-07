@@ -22,5 +22,6 @@ MINIO_ADDRESS=$(tfutils::get_tfvars_quoted_key "minio_access_url" "${TARGET_TFVA
 
 # Set zot remote storage to the minio bucket in truenas
 jq ".storage.storageDriver.regionendpoint |= \"http://${MINIO_ADDRESS}\"" "${REPO_PATH}/dev/zot-config.json" > "${REPO_PATH}/tmp/zot-config.json"
+mkdir -p "${REPO_PATH}/tmp/zot"
 
 podman compose -f "$SCRIPTPATH/../dev/docker-compose.yaml" up -d

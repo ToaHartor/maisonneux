@@ -38,7 +38,7 @@ metadata:
 spec:
   parentRefs:
     - name: traefik-gateway
-      namespace: traefik
+      namespace: ingress
       sectionName: "websecure"
       kind: Gateway
 

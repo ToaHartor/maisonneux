@@ -1,0 +1,65 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jellyfin
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: jellyfin
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: jellyfin
+      namespace: jellyfin
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/httproute/common
+  path: "./kubernetes/apps/base/jellyfin/jellyfin/app"
+  postBuild:
+    substitute:
+      APP: jellyfin
+      SUBDOMAIN: jellyfin
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Media
+      DESCRIPTION: Streaming platform
+      REDIRECT_URL: "https://jellyfin.${main_domain_websecure}/sso/OID/redirect/Authentik"
+      GATEWAY_SVC_NAME: jellyfin
+      GATEWAY_SVC_PORT: "8096"
+      # inherited variables
+      gpu_runtime_class: ${gpu_runtime_class}
+      fastdata_storage: ${fastdata_storage}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      nfs_server: ${nfs_server}
+      nfs_path_media_1: ${nfs_path_media_1}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: jellyfin"
+            bindID: "964bd0a3-426d-467f-a21f-5adf2cf8b317" # arbitrary uuid
+        - op: add
+          path: '/spec/values/blueprint/provider/oidc/scopes/-'
+          value:
+            name: "Jellyfin Groups" # Reference to the group mappings defined in jellyfin-groups-mapping.yaml
+            scope_name: "groups"
+            expression: |
+              return [group.name for group in user.ak_groups.all()]
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: jellyfin
+  timeout: 5m

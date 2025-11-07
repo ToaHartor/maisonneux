@@ -1,0 +1,17 @@
+apiVersion: builtin
+kind: NamespaceTransformer
+metadata:
+  name: apply-ns
+  namespace: _
+unsetOnly: true
+fieldSpecs:
+  - path: metadata/name
+    kind: Namespace
+    create: true
+  - path: metadata/namespace
+    create: true
+  # Do not enable the following when
+  # - path: spec/targetNamespace
+  #   group: kustomize.toolkit.fluxcd.io
+  #   kind: Kustomization
+  #   create: true

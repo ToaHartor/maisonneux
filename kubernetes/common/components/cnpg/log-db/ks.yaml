@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: ${APP}-logdb
+spec:
+  dependsOn:
+    - name: psql-cluster
+      namespace: ${psql_database_namespace}
+  healthChecks:
+    - name: ${PSQL_LOG_DB_NAME}
+      namespace: ${psql_database_namespace}
+      kind: Database
+      apiVersion: postgresql.cnpg.io/v1
+  interval: 1h
+  path: "./kubernetes/common/components/cnpg/log-db/app"
+  postBuild:
+    substitute:
+      PSQL_DB_USER: ${PSQL_DB_USER}
+      PSQL_LOG_DB_NAME: ${PSQL_LOG_DB_NAME}
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      # psql_database_namespace: ${psql_database_namespace}
+
+      EXTENSIONS: ${q:='}${DATABASE_EXTENSIONS}${q:='}
+      emptyArray: '[]'
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  # We want to declare the database in the same namespace as the cluster
+  targetNamespace: ${psql_database_namespace}
+  timeout: 5m

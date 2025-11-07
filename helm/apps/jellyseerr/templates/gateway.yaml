@@ -1,3 +1,4 @@
+{{/*
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -6,7 +7,7 @@ metadata:
 spec:
   parentRefs:
     - name: traefik-gateway
-      namespace: traefik
+      namespace: ingress
       sectionName: websecure
       kind: Gateway
 
@@ -23,3 +24,4 @@ spec:
       - name: {{ .Release.Name }}
         namespace: {{ .Release.Namespace }}
         port: {{ .Values.jellyseerr.service.main.ports.main.port }}
+*/}}

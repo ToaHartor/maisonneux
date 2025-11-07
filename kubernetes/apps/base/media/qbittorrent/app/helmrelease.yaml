@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: qbittorrent
+spec:
+  releaseName: qbittorrent
+  dependsOn:
+    - name: ${APP}-proxy
+  chartRef:
+    kind: OCIRepository
+    name: qbittorrent
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/qbittorrent/values.yaml
+  values:
+    # workload:
+    #   main:
+    #     podSpec:
+    #       containers:
+    #         main:
+    #           env:
+    #             TZ: Europe/Paris
+    #             PUID: 1000 # User ID, should have the rights on the NFS share and the dataset
+    #             PGID: 1000 # Group ID
+    persistence:
+      config:
+        enabled: true
+        labels:
+          homelab/backup-resource: "true"
+        type: pvc
+        size: 1Gi
+        storageClass: ${fastdata_storage}-ha
+        mountPath: /config
+      downloads:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_download}
+        mountPath: /downloads

@@ -1,1 +1,0 @@
-{{- include "common.secret.key" (dict "SecretName" .Values.radarr.workload.main.podSpec.containers.main.env.RADARR__AUTH__APIKEY.secretKeyRef.name "SecretNamespace" .Release.Namespace "SecretType" "apiKey") }}

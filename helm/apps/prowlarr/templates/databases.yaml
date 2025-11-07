@@ -1,6 +1,0 @@
-{{- $root := . -}}
-{{- range $db := list .Values.prowlarr.workload.main.podSpec.containers.main.env.PROWLARR__POSTGRES__MAINDB .Values.prowlarr.workload.main.podSpec.containers.main.env.PROWLARR__POSTGRES__LOGDB -}}
----
-{{ include "common.psqldb" (dict "DatabaseNamespace" $root.Values.namespaces.postgresNamespace "DatabaseName" $db "DatabaseOwner" $root.Values.prowlarr.workload.main.podSpec.containers.main.env.PROWLARR__POSTGRES__USER "PsqlClusterName" $root.Values.database.postgres.clusterName) }}
----
-{{- end -}}

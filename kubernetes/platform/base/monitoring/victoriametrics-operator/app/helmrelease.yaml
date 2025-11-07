@@ -1,0 +1,218 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: victoria-metrics-operator
+spec:
+  releaseName: victoria-metrics-operator
+  chartRef:
+    kind: OCIRepository
+    name: victoria-metrics-operator
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # https://github.com/VictoriaMetrics/helm-charts/blob/master/charts/victoria-metrics-operator/values.yaml
+    crds:
+      enabled: false # Installed with dedicated chart
+
+    replicaCount: 2 # One per hypervisor
+
+    resources:
+      limits:
+        cpu: 120m
+        memory: 160Mi
+      requests:
+        cpu: 80m
+        memory: 80Mi
+
+    watchNamespaces: ["monitoring"] # All resources will be in the same namespace 
+
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+    
+    topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: victoria-metrics-operator
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: victoria-metrics-operator
+    
+    extraObjects:
+      # Metrics cluster storage
+      - apiVersion: operator.victoriametrics.com/v1beta1
+        kind: VMCluster
+        metadata:
+          name: metrics-datastore
+        spec:
+          replicationFactor: 1 # 2
+          vmstorage:
+            replicaCount: 2
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vmstorage
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vmstorage
+
+            storage:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: ${fastdata_storage}
+                  resources:
+                    requests:
+                      storage: 10Gi
+          vmselect:
+            replicaCount: 2
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vmselect
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vmselect
+
+          vminsert:
+            extraArgs:
+              opentelemetry.usePrometheusNaming: "true"
+            replicaCount: 2
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vminsert
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vminsert
+
+      # Logs cluster storage
+      - apiVersion: operator.victoriametrics.com/v1
+        kind: VLCluster
+        metadata:
+          name: logs-datastore
+        spec:
+          vlinsert:
+            replicaCount: 2
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlinsert
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlinsert
+
+
+          vlselect:
+            replicaCount: 2
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlselect
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlselect
+          vlstorage:
+            retentionPeriod: "4w"
+            replicaCount: 2
+            topologySpreadConstraints:
+              # Maximum 1 pod per Proxmox hypervisor
+              - maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlstorage
+              # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: vlstorage
+            storage:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: ${fastdata_storage}
+                  resources:
+                    requests:
+                      storage: 10Gi
+
+      # InfluxDB endpoint for proxmox to upload cluster metrics.
+      # API prefix must be set to /insert/0/influx in the proxmox config
+      - apiVersion: v1
+        kind: Service
+        metadata:
+          name: proxmox-influxcd-receiver
+          namespace: monitoring
+          annotations:
+            io.cilium/lb-ipam-ips: ${influxdb_lb_ip}
+          labels:
+            homelab/public-service: "true"
+        spec:
+          selector:
+            app.kubernetes.io/name: vminsert
+            app.kubernetes.io/component: monitoring
+            app.kubernetes.io/instance: metrics-datastore
+          type: LoadBalancer
+          sessionAffinity: None
+          externalTrafficPolicy: Local
+          internalTrafficPolicy: Cluster
+          ports:
+          - name: influxdb
+            protocol: TCP
+            port: 8086
+            targetPort: 8480

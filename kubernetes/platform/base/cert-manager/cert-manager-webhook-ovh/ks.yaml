@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager-webhook-ovh
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: cert-manager-webhook-ovh
+  dependsOn:
+    - name: cert-manager
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: cert-manager-webhook-ovh
+      namespace: cert-manager
+  interval: 1h
+  path: "./kubernetes/platform/base/cert-manager/cert-manager-webhook-ovh/app"
+  postBuild:
+    substitute:
+      # inherited variables
+      acme_server_url: ${acme_server_url}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: cert-manager
+  timeout: 5m

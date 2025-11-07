@@ -1,0 +1,86 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-secrets
+spec:
+  releaseName: external-secrets
+  chartRef:
+    kind: OCIRepository
+    name: external-secrets
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+
+  values:
+    installCRDs: true
+    leaderElect: true
+
+    replicaCount: &replicas 2
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    
+    # grafanaDashboard:
+    #   enabled: true
+    topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets
+
+    webhook:
+      replicaCount: *replicas
+
+      # Use cert-manager instead of the included cert-controller
+      certManager:
+        enabled: true
+        cert:
+          issuerRef:
+            name: homelab-issuer
+            kind: ClusterIssuer
+            group: cert-manager.io
+
+      resources:
+        limits:
+          cpu: 20m
+          memory: 64Mi
+        requests:
+          cpu: 10m
+          memory: 32Mi
+
+      topologySpreadConstraints:
+      # Maximum 1 pod per Proxmox hypervisor
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets-webhook
+      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets-webhook
+    
+    certController:
+      enabled: false

@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: media
+resources:
+  - ./namespace.yaml
+  - ./jdownloader2/ks.yaml
+  - ./jellyseerr/ks.yaml
+  - ./jellystat/ks.yaml
+  - ./kavita/ks.yaml
+  - ./lidarr/ks.yaml
+  - ./prowlarr/ks.yaml
+  - ./qbittorrent/ks.yaml
+  - ./radarr/ks.yaml
+  - ./radarr4k/ks.yaml
+  - ./sonarr/ks.yaml
+  - ./suwayomi/ks.yaml
+transformers:
+  - ./transformers
+components:
+  - ../../../common/components/repos/authentik-application

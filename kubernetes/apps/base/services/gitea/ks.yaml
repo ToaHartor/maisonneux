@@ -1,0 +1,76 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gitea
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: gitea
+  dependsOn:
+    - name: authentik
+      namespace: authentik
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: gitea-oidc
+      namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: gitea
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/s3bucket
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/httproute/common
+  path: "./kubernetes/apps/base/services/gitea/app"
+  postBuild:
+    substitute:
+      APP: gitea
+      SUBDOMAIN: gitea
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: Git server
+      REDIRECT_URL: "https://gitea.${main_domain_websecure}/user/oauth2/Authentik/callback"
+      S3_USER: gitea-${environment}
+      BUCKET_NAME: gitea-${environment}
+      PSQL_DB_USER: gitea
+      PSQL_DB_NAME: gitea
+      GATEWAY_SVC_NAME: gitea-http
+      GATEWAY_SVC_PORT: "3000"
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      quote: '"'
+      patch_dns: ${quote}${patch_dns:=false}${quote}
+      traefik_lb_ip: ${traefik_lb_ip}
+      environment: ${environment}
+      minio_url: ${minio_url}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+      auth_subdomain: ${auth_subdomain}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: gitea"
+            parent: "authentik Admins"
+            bindID: "53c0fd0e-9d9f-4825-b7a0-9ff505a28a91" # arbitrary uuid 
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 5m

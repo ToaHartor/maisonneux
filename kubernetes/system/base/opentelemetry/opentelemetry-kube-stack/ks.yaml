@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: prometheus-crds
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: prometheus-operator-crds
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: prometheus-operator-crds
+      namespace: opentelemetry
+  interval: 1h
+  path: "./kubernetes/system/base/opentelemetry/opentelemetry-kube-stack/prometheus-crds"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: opentelemetry
+  timeout: 5m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: opentelemetry-kube-stack
+spec:
+  dependsOn:
+    - name: prometheus-crds
+    - name: cert-manager
+      namespace: cert-manager
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: opentelemetry-kube-stack
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: opentelemetry-kube-stack
+      namespace: opentelemetry
+  interval: 1h
+  path: "./kubernetes/system/base/opentelemetry/opentelemetry-kube-stack/app"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: opentelemetry
+  timeout: 5m

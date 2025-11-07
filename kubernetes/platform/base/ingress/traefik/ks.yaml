@@ -1,0 +1,63 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: traefik-crds
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: traefik
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: traefik-crds
+      namespace: ingress
+  interval: 1h
+  path: "./kubernetes/platform/base/ingress/traefik/crds"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ingress
+  timeout: 5m
+
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: traefik
+spec:
+  dependsOn:
+    - name: traefik-crds
+    - name: cert-manager-webhook-ovh
+      namespace: cert-manager
+    - name: crowdsec
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: traefik
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: traefik
+      namespace: ingress
+  interval: 1h
+  path: "./kubernetes/platform/base/ingress/traefik/app"
+  postBuild:
+    substitute:
+      # inherited variables
+      main_domain: ${main_domain}
+      second_domain: ${second_domain}
+      traefik_lb_ip: ${traefik_lb_ip}
+      traefik_web_lb_port: ${quote}${traefik_web_lb_port}${quote}
+      traefik_websecure_lb_port: ${quote}${traefik_websecure_lb_port}${quote}
+      
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ingress
+  timeout: 5m

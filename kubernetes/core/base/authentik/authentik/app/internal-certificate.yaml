@@ -1,0 +1,64 @@
+# Define all certificate issuing resources
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: authentik-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authentik-ca
+spec:
+  isCA: true
+  commonName: authentik-ca
+  secretName: authentik-ca
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  duration: 25920h # 1080d
+  renewBefore: 1440h # 60d
+  issuerRef:
+    name: authentik-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: authentik-ca-issuer
+spec:
+  ca:
+    secretName: authentik-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authentik-cert
+spec:
+  # Secret names are always required.
+  secretName: authentik-cert-tls
+  secretTemplate:
+    labels:
+      goauthentik_cert: "1"
+  
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  
+  duration: 8640h # 360d
+  renewBefore: 1440h # 60d
+  isCA: false
+  usages:
+    - signing 
+  subject:
+    organizations:
+      - cert-manager
+
+  commonName: authentik.local
+
+  issuerRef:
+    name: authentik-ca-issuer

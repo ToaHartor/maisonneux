@@ -1,0 +1,79 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: minio
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: minio
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: minio-oidc
+      namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: minio
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+  path: "./kubernetes/apps/base/services/minio/app"
+  postBuild:
+    substitute:
+      APP: minio
+      SUBDOMAIN: bucket
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: S3 bucket service
+      REDIRECT_URL: "https://s3.${main_domain_websecure}/oauth_callback"
+      ADMIN_SUBDOMAIN: s3
+      # inherited variables
+      quote: '"'
+      patch_dns: ${quote}${patch_dns:=false}${quote}
+      traefik_lb_ip: ${traefik_lb_ip}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+      auth_subdomain: ${auth_subdomain}
+      nfs_server: ${nfs_server}
+      nfs_path_minio: ${nfs_path_minio}
+
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: minio"
+            bindID: "ad1a0614-c9df-4d21-b41b-6b4c27e0a4b6" # arbitrary uuid
+        - op: add
+          path: '/spec/values/blueprint/provider/oidc/scopes/-'
+          value:
+            name: "MinIO groups"
+            scope_name: "minio"
+            # Scope mapping to auto assign policies to users
+            expression: |
+              if ak_is_group_member(request.user, name="authentik Admins"):
+                return {
+                    "policy": "consoleAdmin",
+                }
+              elif ak_is_group_member(request.user, name="Tech"):
+                return {
+                    "policy": ["readwrite"]
+                }
+              return None
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 5m

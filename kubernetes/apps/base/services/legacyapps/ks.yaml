@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: legacyapps
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: legacyapps
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: legacyapps
+      namespace: services
+  interval: 1h
+  path: "./kubernetes/apps/base/services/legacyapps/resources"
+  postBuild:
+    substitute:
+      # inherited variables
+      second_domain: ${second_domain}
+      second_domain_web: ${second_domain_web}
+      second_domain_websecure: ${second_domain_websecure}
+      legacy_vm_ip: ${legacy_vm_ip}
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 5m

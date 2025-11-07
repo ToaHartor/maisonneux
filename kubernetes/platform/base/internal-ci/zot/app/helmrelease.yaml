@@ -1,0 +1,196 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zot
+spec:
+  releaseName: zot
+  chart:
+    spec:
+      chart: zot
+      # renovate: datasource=helm depName=zot registryUrl=http://zotregistry.dev/helm-charts
+      version: "0.1.89"
+      sourceRef:
+        kind: HelmRepository
+        name: zot
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  values:
+    env:
+      - name: "AWS_ACCESS_KEY_ID"
+        valueFrom:
+          secretKeyRef:
+            name: &s3user zot-${environment}-s3user
+            key: accessKey
+      - name: "AWS_SECRET_ACCESS_KEY"
+        valueFrom:
+          secretKeyRef:
+            name: *s3user
+            key: secretKey
+
+    replicaCount: 1
+    resources:
+      limits:
+        cpu: 1
+        memory: 500Mi
+      requests:
+        cpu: 100m
+        memory: 50Mi
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
+    service:
+      type: NodePort
+      nodePort: 32000
+    metrics:
+      enabled: true
+
+    mountConfig: true
+    configFiles:
+      config.json: |-
+        {
+          "distSpecVersion": "1.1.0",
+          "storage": {
+            "rootDirectory": "/tmp/zot/s3",
+            "dedupe": true,
+            "remoteCache": false,
+            "gc": true,
+            "gcDelay": "2h",
+            "gcInterval": "24h",
+            "storageDriver": {
+              "name": "s3",
+              "region": "auto",
+              "regionendpoint": "http://${minio_url}",
+              "bucket": "zot",
+              "forcepathstyle": true,
+              "secure": false,
+              "skipverify": false
+            }
+          },
+          "http": {
+              "address": "0.0.0.0",
+              "port": "5000",
+              "compat": ["docker2s2"]
+          },
+          "extensions": {
+            "ui": {
+              "enable": true
+            },
+            "search": {
+              "enable": true
+            },
+            "metrics": {
+              "enable": true,
+              "prometheus": {
+                "path": "/metrics"
+              }
+            },
+            "scrub": {
+              "interval": "24h"
+            },
+            "sync": {
+              "enable": true,
+              "downloadDir": "/tmp/zot/s3/mirror",
+              "registries": [
+                {
+                  "urls": [
+                    "https://index.docker.io"
+                  ],
+                  "content": [
+                    {
+                      "destination": "/docker.io",
+                      "prefix": "**"
+                    }
+                  ],
+                  "onDemand": true,
+                  "tlsVerify": true
+                },
+                {
+                  "urls": [
+                    "https://registry.gitlab.com"
+                  ],
+                  "content": [
+                    {
+                      "destination": "/registry.gitlab.com",
+                      "prefix": "**"
+                    }
+                  ],
+                  "onDemand": true,
+                  "tlsVerify": true
+                },
+                {
+                  "urls": [
+                    "https://ghcr.io"
+                  ],
+                  "content": [
+                    {
+                      "destination": "/ghcr.io",
+                      "prefix": "**"
+                    }
+                  ],
+                  "onDemand": true,
+                  "tlsVerify": true
+                },
+                {
+                  "urls": [
+                    "https://quay.io"
+                  ],
+                  "content": [
+                    {
+                      "destination": "/quay.io",
+                      "prefix": "**"
+                    }
+                  ],
+                  "onDemand": true,
+                  "tlsVerify": true
+                },
+                {
+                  "urls": [
+                    "https://gcr.io"
+                  ],
+                  "content": [
+                    {
+                      "destination": "/gcr.io",
+                      "prefix": "**"
+                    }
+                  ],
+                  "onDemand": true,
+                  "tlsVerify": true
+                },
+                {
+                  "urls": [
+                    "https://registry.k8s.io"
+                  ],
+                  "content": [
+                    {
+                      "destination": "/registry.k8s.io",
+                      "prefix": "**"
+                    }
+                  ],
+                  "onDemand": true,
+                  "tlsVerify": true
+                },
+                {
+                  "urls": [
+                    "https://nvcr.io"
+                  ],
+                  "content": [
+                    {
+                      "destination": "/nvcr.io",
+                      "prefix": "**"
+                    }
+                  ],
+                  "onDemand": true,
+                  "tlsVerify": true
+                }
+              ]
+            }
+          },
+          "log": { "level": "debug" }
+        }

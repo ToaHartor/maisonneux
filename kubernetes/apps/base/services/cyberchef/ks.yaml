@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cyberchef
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: cyberchef
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: cyberchef-proxy
+      namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: cyberchef
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/proxy-application
+    - ../../../../../common/components/httproute/proxyauth
+  path: "./kubernetes/apps/base/services/cyberchef/app"
+  postBuild:
+    substitute:
+      APP: cyberchef
+      SUBDOMAIN: cyberchef
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: Crypto utilities
+      GATEWAY_SVC_NAME: cyberchef
+      GATEWAY_SVC_PORT: "10219"
+      # inherited variables
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: cyberchef"
+            parent: "Users"
+            bindID: "377f9113-1047-4d6b-940e-c1ae0e7588ed" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 5m

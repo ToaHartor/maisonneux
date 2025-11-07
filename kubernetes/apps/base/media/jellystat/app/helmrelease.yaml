@@ -1,0 +1,86 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellystat
+spec:
+  releaseName: jellystat
+  chartRef:
+    kind: OCIRepository
+    name: jellystat
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/jellystat/values.yaml
+  # see documentation https://truecharts.org/charts/stable/jellystat/
+  values:
+    waitPsqlImage:
+      repository: docker.io/library/busybox
+      tag: latest
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 500m
+        memory: 250Mi
+      requests:
+        cpu: 10m
+        memory: 100Mi
+    workload:
+      main:
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+        annotations:
+          # Reload pod on secret change
+          # secret.reloader.stakater.com/reload: "jellystat-psql-secret" 
+        podSpec:
+          initContainers:
+            waitpsql:
+              enabled: true
+              type: init
+              imageSelector: waitPsqlImage
+              command: ['sh', '-c', 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+              env:
+                POD_NAME: postgres-db-rw # service name for psql rw operations
+                POD_NAMESPACE: ${psql_database_namespace}
+          containers:
+            main:
+              env:
+                POSTGRES_DB: ${PSQL_DB_NAME}
+                POSTGRES_USER: ${PSQL_DB_USER}
+                POSTGRES_PASSWORD:
+                  secretKeyRef:
+                    name: ${APP}-db-creds
+                    key: password
+                    expandObjectName: false
+                POSTGRES_IP: "postgres-db-rw.${psql_database_namespace}.svc.cluster.local"
+                POSTGRES_PORT: "5432"
+                JWT_SECRET:
+                  secretKeyRef:
+                    name: ${SECRET_KEY_NAME}
+                    key: secretKey
+                    expandObjectName: false
+                JS_USER:
+                  secretKeyRef:
+                    name: ${SECRET_CREDS_NAME}
+                    key: username
+                    expandObjectName: false
+                JS_PASSWORD:
+                  secretKeyRef:
+                    name: ${SECRET_CREDS_NAME}
+                    key: password
+                    expandObjectName: false
+
+    persistence:
+      backup:
+        enabled: false
+      # config:
+      #   enabled: true
+      #   type: emptyDir # persistent
+    cnpg:
+      main:
+        enabled: false

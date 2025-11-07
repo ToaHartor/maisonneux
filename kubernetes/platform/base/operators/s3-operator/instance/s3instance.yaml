@@ -1,0 +1,13 @@
+apiVersion: s3.onyxia.sh/v1alpha1
+kind: S3Instance
+metadata:
+  name: default
+spec:
+  s3Provider: minio
+  url: http://${minio_url}
+  secretRef: minio-external-secret
+  allowedNamespaces: ["*"]
+  s3UserDeletionEnabled: true
+  pathDeletionEnabled: false
+  policyDeletionEnabled: true
+  bucketDeletionEnabled: false
