@@ -129,6 +129,10 @@ resource "talos_machine_configuration_apply" "worker" {
   config_patches = [
     yamlencode({
       machine = {
+        // Specify installer to ease automatic upgrades with tuppr
+        install = {
+          image = "factory.talos.dev/installer/${jsondecode(local.worker_nodes[count.index].config.gpu != null ? data.http.talos_factory_nvidia_schematic_id.response_body : data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
+        }
         kubelet = {
           nodeIP = {
             validSubnets = [

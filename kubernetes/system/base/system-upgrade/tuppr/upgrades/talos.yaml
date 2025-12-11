@@ -1,0 +1,41 @@
+---
+apiVersion: tuppr.home-operations.com/v1alpha1
+kind: TalosUpgrade
+metadata:
+  name: talos
+spec:
+  talos:
+    # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
+    version: v1.11.3
+  policy:
+    rebootMode: powercycle # default
+    placement: hard
+  healthChecks:
+    # Check all nodes are ready
+    - apiVersion: v1
+      kind: Node
+      expr: |-
+        status.conditions.filter(c, c.type == "Ready").all(c, c.status == "True")
+    # Check storage cluster status
+    ## Controller
+    - apiVersion: piraeus.io/v1
+      kind: LinstorCluster
+      expr: |-
+        status.conditions.exists(c, c.type == "Available" && c.status == "True")
+    ## Satellites status
+    - apiVersion: piraeus.io/v1
+      kind: LinstorSatellite
+      expr: |-
+        status.conditions.filter(c, c.type == "Available").all(c, c.status == "True")
+    # Check cilium status
+    - apiVersion: apps/v1
+      kind: DaemonSet
+      name: cilium
+      namespace: kube-system
+      expr: status.currentNumberScheduled == status.desiredNumberScheduled && status.currentNumberScheduled == status.numberReady && status.currentNumberScheduled == status.updatedNumberScheduled
+    # Database status
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      name: ${psql_cluster_name}${psql_suffix:=}
+      namespace: ${psql_database_namespace}
+      expr: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')

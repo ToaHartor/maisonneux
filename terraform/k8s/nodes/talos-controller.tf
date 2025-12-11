@@ -186,11 +186,12 @@ data "talos_machine_configuration" "controller" {
           ]
         }
         features = {
-          # Enable Talos CCM
+          # Enable Talos CCM (reader)
+          # Allow API access for tuppr for automated system upgrades https://github.com/home-operations/tuppr/tree/main?tab=readme-ov-file#installation
           kubernetesTalosAPIAccess = {
             enabled                     = true
-            allowedRoles                = ["os:reader"]
-            allowedKubernetesNamespaces = ["kube-system"]
+            allowedRoles                = ["os:reader", "os:admin"]
+            allowedKubernetesNamespaces = ["kube-system", "system-upgrade"]
           }
         }
       }
@@ -271,6 +272,10 @@ resource "talos_machine_configuration_apply" "controller" {
   config_patches = [
     yamlencode({
       machine = {
+        // Specify installer to ease automatic upgrades with tuppr
+        install = {
+          image = "factory.talos.dev/installer/${jsondecode(data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
+        }
         kubelet = {
           nodeIP = {
             validSubnets = [
