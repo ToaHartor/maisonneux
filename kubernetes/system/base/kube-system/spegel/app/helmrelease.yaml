@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: spegel
+spec:
+  releaseName: spegel
+  chartRef:
+    kind: OCIRepository
+    name: spegel
+  interval: 50m
+  install:
+    remediation:
+      retries: 3
+  values:
+    service:
+      registry:
+        hostPort: 29999
+    serviceMonitor:
+      enabled: true
+    spegel:
+      appendMirrors: true
+      containerdRegistryConfigPath: /etc/cri/conf.d/hosts
+      containerdSock: /run/containerd/containerd.sock

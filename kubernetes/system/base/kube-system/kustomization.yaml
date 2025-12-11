@@ -8,6 +8,7 @@ resources:
   - ./descheduler/ks.yaml
   - ./metrics-server/ks.yaml
   - ./reloader/ks.yaml
+  - ./spegel/ks.yaml
   # - ./proxmox-csi-plugin/ks.yaml
 transformers:
   - ./transformers

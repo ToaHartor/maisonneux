@@ -63,6 +63,24 @@ locals {
         }
       } : {}
 
+      files = [
+        {
+          op      = "create"
+          path    = "/etc/cri/conf.d/20-customization.part"
+          content = <<-EOT
+          [plugins]
+            [plugins."io.containerd.grpc.v1.cri"]
+              enable_unprivileged_ports = true
+              enable_unprivileged_icmp = true
+          [plugins."io.containerd.cri.v1.images"]
+            discard_unpacked_layers = false
+          [plugins."io.containerd.cri.v1.runtime"]
+            cdi_spec_dirs = ["/var/cdi/static", "/var/cdi/dynamic"]
+            device_ownership_from_security_context = true
+          EOT
+        }
+      ]
+
       features = {
         # see https://www.talos.dev/v1.7/kubernetes-guides/configuration/kubeprism/
         # see talosctl -n $c0 read /etc/kubernetes/kubeconfig-kubelet | yq .clusters[].cluster.server
