@@ -14,7 +14,7 @@ talosctl = "1.11.2"
 tekton-cli = "latest"
 flux2 = "latest"
 # renovate: datasource=github-releases depName=siderolabs/kubelet
-kubectl = "1.34.1"
+kubectl = "1.34.2"
 opentofu = "1.10.6"
 velero = "latest"
 jq = "latest"
@@ -171,6 +171,9 @@ case "${usage_action?}" in
   "deploy")
     bash ./scripts/make/tf-plan.sh "${WORKSPACE}"
     bash ./scripts/make/tf-apply.sh "${WORKSPACE}"
+    ;;
+  "destroy")
+    bash ./scripts/make/tf-destroy.sh "${WORKSPACE}"
     ;;
   "output")
     bash ./scripts/make/tf-output.sh "${WORKSPACE}"
