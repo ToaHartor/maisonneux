@@ -3,7 +3,7 @@ set -euo pipefail
 
 # see https://github.com/siderolabs/talos/releases
 # renovate: datasource=github-releases depName=siderolabs/talos
-talos_version="1.11.3"
+talos_version="1.11.5"
 # https://github.com/siderolabs/pkgs/tags
 talos_pkg_branch="release-1.9"
 
