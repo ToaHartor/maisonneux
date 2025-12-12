@@ -88,14 +88,14 @@
       // matchPackageNames: ["oci.trueforge.org/truecharts/*"],
       matchJsonata: ["registryUrl = 'https://oci.trueforge.org'"], // Using Jsonata to match specific deps fields
       sourceUrl: "",
-      changelogUrl: "https://trueforge.org/truetech/truecharts/charts/stable/{{depName}}/changelog/",
+      changelogUrl: "https://trueforge.org/truetech/truecharts/charts/stable/{{replace 'oci.trueforge.org/truecharts/' '' depName}}/changelog/",
     },
     // * Override stable charts with premium
     {
       matchDatasources: ["docker"],
       matchPackageNames: ["oci.trueforge.org/truecharts/vaultwarden"],
       sourceUrl: "",
-      changelogUrl: "https://trueforge.org/truetech/truecharts/charts/premium/{{depName}}/changelog/",
+      changelogUrl: "https://trueforge.org/truetech/truecharts/charts/premium/{{replace 'oci.trueforge.org/truecharts/' '' depName}}/changelog/",
     },
     // Terraform providers
     {
