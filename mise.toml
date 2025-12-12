@@ -9,11 +9,11 @@ python.uv_venv_auto = true
 k9s = "latest"
 cilium-cli = "latest"
 cilium-hubble = "latest"
-# renovate: datasource=github-releases depName=siderolabs/talos
-talosctl = "1.11.2"
+# renovate: datasource=docker depName=ghcr.io/siderolabs/installer
+talosctl = "1.11.5"
 tekton-cli = "latest"
 flux2 = "latest"
-# renovate: datasource=github-releases depName=siderolabs/kubelet
+# renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
 kubectl = "1.34.2"
 opentofu = "1.10.6"
 velero = "latest"

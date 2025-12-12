@@ -7,6 +7,5 @@ metadata:
 spec:
   interval: 1h
   ref:
-    # renovate: datasource=github-tags depName=piraeusdatastore/piraeus-operator extractVersion=^(?<version>.+)$
     tag: v2.10.2
   url: http://github.com/piraeusdatastore/piraeus-operator

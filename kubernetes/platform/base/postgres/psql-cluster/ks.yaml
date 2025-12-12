@@ -53,4 +53,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: ${psql_database_namespace}
-  timeout: 5m
+  timeout: 20m

@@ -34,24 +34,42 @@ spec:
       app.kubernetes.io/name: seafile
   dependsOn:
     - name: seafile-db
-    # - name: seafile-oidc
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
       name: seafile
       namespace: seafile
   interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
   path: "./kubernetes/apps/base/seafile/seafile/app"
   postBuild:
     substitute:
+      APP: seafile
       SUBDOMAIN: cloud
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: Cloud
+      REDIRECT_URL: "https://cloud.${main_domain_websecure}/oauth/callback/"
       # inherited variables
       nfs_server: ${nfs_server}
       nfs_path_seafile: ${nfs_path_seafile}
       main_domain: ${main_domain}
       main_domain_websecure: ${main_domain_websecure}
       auth_subdomain: ${auth_subdomain}
-
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: seafile"
+            bindID: "89ca1beb-674a-4ecc-8c72-b3fa305681f1" # arbitrary uuid
   prune: true
   sourceRef:
     kind: GitRepository

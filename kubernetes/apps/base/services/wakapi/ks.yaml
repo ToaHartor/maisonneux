@@ -17,13 +17,18 @@ spec:
   components:
     # relative to spec.path
     - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/secret/key
   path: "./kubernetes/apps/base/services/wakapi/app"
   prune: true
   postBuild:
     substitute:
       APP: wakapi
+      # Database
       PSQL_DB_USER: wakapi
       PSQL_DB_NAME: wakapi
+      ## API key
+      SECRET_KEY_NAME: wakapi-password-salt
+      SECRET_KEY_TYPE: secret-key
       # inherited variables
       psql_cluster_name: ${psql_cluster_name}
       psql_database_namespace: ${psql_database_namespace}

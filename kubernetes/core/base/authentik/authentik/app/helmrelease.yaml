@@ -6,16 +6,6 @@ metadata:
   name: authentik
 spec:
   releaseName: authentik
-  # chart:
-  #   spec:
-  #     chart: helm/core/authentik
-  #     interval: 12h
-  #     # version: "2024.10.2"
-  #     sourceRef:
-  #       kind: GitRepository
-  #       name: flux-system
-  #       namespace: flux-system
-  #     reconcileStrategy: Revision
   chartRef:
     kind: OCIRepository
     name: authentik

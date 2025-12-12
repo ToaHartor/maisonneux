@@ -6,40 +6,118 @@ metadata:
   name: wakapi
 spec:
   releaseName: wakapi
-  chart:
-    spec:
-      chart: helm/apps/wakapi
-      interval: 12h
-      sourceRef:
-        kind: GitRepository
-        name: flux-system
-        namespace: flux-system
-      reconcileStrategy: Revision
+  chartRef:
+    kind: OCIRepository
+    name: app-template
   interval: 50m
   install:
     createNamespace: true
     remediation:
       retries: 3
-  # valuesFrom:
-  #   - kind: Secret
-  #     name: wakapi-password-salt
-  #     valuesKey: passwordSalt
-  #     targetPath: wakapi_config.security.password_salt
-  #   - kind: Secret
-  #     name: wakapi-psql-secret
-  #     valuesKey: username
-  #     targetPath: wakapi_config.db.user
-  #   - kind: Secret
-  #     name: wakapi-psql-secret
-  #     valuesKey: password
-  #     targetPath: wakapi_config.db.password
-  # see https://github.com/andreymaznyak/wakapi-helm-chart/blob/main/src/wakapi/values.yaml
   values:
-    config:
-      db:
-        host: postgres-db-rw.postgres.svc.cluster.local
-        port: 5432
-        name: wakapi
-      insecure_cookies: false # You need to set this to 'true' when on localhost
-      allow_signup: false
-      expose_metrics: false
+    controllers:
+      wakapi:
+        # annotations:
+        type: deployment
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          main:
+            securityContext:
+              capabilities:
+                drop:
+                  - ALL
+            image:
+              repository: ghcr.io/muety/wakapi
+              tag: 2.16.1@sha256:d26b5d9e786dd69c0602271a8d4560142f515f8680cd38db371b41e761d2f266
+              pullPolicy: IfNotPresent
+            env:
+              - name: ENVIRONMENT
+                value: prod
+              - name: WAKAPI_PORT
+                value: "3000"
+              - name: WAKAPI_PUBLIC_URL
+                value: "http://localhost:3000" # TODO : change when exposed
+              - name: WAKAPI_ALLOW_SIGNUP
+                value: "false"
+              - name: WAKAPI_EXPORT_METRICS
+                value: "false"
+              - name: WAKAPI_INSECURE_COOKIES
+                value: "false" # You need to set this to 'true' when on localhost
+              - name: WAKAPI_PASSWORD_SALT
+                valueFrom:
+                  secretKeyRef:
+                    name: wakapi-password-salt
+                    key: secretKey
+              - name: WAKAPI_DB_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: wakapi-db-creds
+                    key: username
+              - name: WAKAPI_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: wakapi-db-creds
+                    key: password
+              - name: WAKAPI_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: wakapi-db-creds
+                    key: host
+              - name: WAKAPI_DB_PORT
+                value: "5432"
+              - name: WAKAPI_DB_TYPE
+                value: postgres
+              - name: WAKAPI_DB_NAME
+                valueFrom:
+                  secretKeyRef:
+                    name: wakapi-db-creds
+                    key: dbname
+              # Set wakapi mail settings
+              - name: WAKAPI_MAIL_ENABLED
+                value: "false"
+            resources:
+              requests:
+                cpu: 10m
+                memory: 30Mi
+              limits:
+                cpu: 100m
+                memory: 100Mi
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: 3000
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: 3000
+
+    service:
+      main:
+        controller: wakapi
+        ports:
+          http:
+            port: 3000
+    
+    persistence:
+      data:
+        type: emptyDir
+        globalMounts:
+          - subPath: data
+            path: /data

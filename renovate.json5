@@ -10,7 +10,7 @@
     "helmv3",
     "flux",
     "regex",
-    "mise",
+    // "mise",
   ], // Only enable comments
   // Group major-minor-patch PRs
   separateMajorMinor: false,
@@ -22,7 +22,6 @@
     automergeType: "branch",
   },
   flux: {
-    // fileMatch: ["(apps|core|platform|system)/base/.+\\.yaml$"],
     managerFilePatterns: ["/(^|/)kubernetes/.+\\.ya?ml$/"],
   },
   ignorePaths: [
@@ -71,6 +70,10 @@
     {
       matchPackageNames: ["/victoria-metrics-operator/"],
       groupName: "victoria-metrics-operator",
+    },
+    {
+      matchPackageNames: ["/velero/"],
+      groupName: "velero",
     },
     // Source URL manual match
     // {

@@ -7,6 +7,5 @@ metadata:
 spec:
   interval: 10m
   ref:
-    # renovate: datasource=github-tags depName=tektoncd/operator extractVersion=^(?<version>.+)$
     tag: v0.77.0
   url: http://github.com/tektoncd/operator

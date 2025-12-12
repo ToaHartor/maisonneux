@@ -7,7 +7,6 @@ metadata:
 spec:
   interval: 10m
   ref:
-    # renovate: datasource=github-tags depName=alex1989hu/kubelet-serving-cert-approver extractVersion=^(?<version>.+)$
     tag: v0.9.3
   url: http://github.com/alex1989hu/kubelet-serving-cert-approver
 ---

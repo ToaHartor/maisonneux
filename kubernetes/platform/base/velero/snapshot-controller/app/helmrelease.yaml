@@ -9,7 +9,6 @@ spec:
   chart:
     spec:
       chart: snapshot-controller
-      # renovate: datasource=helm depName=snapshot-controller registryUrl=https://piraeus.io/helm-charts/
       version: "4.2.0"
       sourceRef:
         kind: HelmRepository

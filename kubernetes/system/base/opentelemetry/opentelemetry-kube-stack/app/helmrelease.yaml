@@ -9,7 +9,6 @@ spec:
   chart:
     spec:
       chart: opentelemetry-kube-stack
-      # renovate: datasource=helm depName=opentelemetry-kube-stack registryUrl=https://open-telemetry.github.io/opentelemetry-helm-charts
       version: "0.11.1"
       sourceRef:
         kind: HelmRepository

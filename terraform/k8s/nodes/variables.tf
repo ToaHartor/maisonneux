@@ -32,7 +32,7 @@ variable "proxmox_cluster_name" {
 # see https://www.talos.dev/v1.7/introduction/support-matrix/
 variable "talos_version" {
   type = string
-  # renovate: datasource=github-releases depName=siderolabs/talos
+  # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
   default = "1.11.5"
   validation {
     condition     = can(regex("^\\d+(\\.\\d+)+", var.talos_version))
@@ -44,8 +44,8 @@ variable "talos_version" {
 # see https://www.talos.dev/v1.7/introduction/support-matrix/
 variable "kubernetes_version" {
   type = string
-  # renovate: datasource=github-releases depName=siderolabs/kubelet
-  default = "1.34.3"
+  # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
+  default = "1.34.2"
   validation {
     condition     = can(regex("^\\d+(\\.\\d+)+", var.kubernetes_version))
     error_message = "Must be a version number."
