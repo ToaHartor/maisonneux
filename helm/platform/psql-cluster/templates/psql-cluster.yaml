@@ -5,6 +5,8 @@ kind: Cluster
 metadata:
   name: {{ .Values.database.postgres.clusterName }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: enabled
 spec:
   instances: 3
   primaryUpdateStrategy: unsupervised
