@@ -8,71 +8,83 @@ resources:
   # - ../base/seafile
   - ../base/services
 patches:
+  # Patchceptions : patch kustomization which will patch its own helmrelease with a patch on the target object/deployment
   - target:
-      kind: HelmRelease
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
       name: jellyfin
       namespace: jellyfin
     patch: |-
       - op: add
-        path: /spec/values/resources/limits
+        path: /spec/patches/1
         value:
-          nvidia.com/gpu: 1
-      # Patchception to patch the helmrelease, which patches the deployment
-      - op: add
-        path: /spec/postRenderers
-        value:
-          - kustomize:
-              patches:
-                - target:
-                    version: v1
-                    kind: Deployment
-                    name: jellyfin
-                  patch: |-
-                    - op: replace
-                      path: /spec/template/spec/affinity
-                      value:
-                        nodeAffinity:
-                          requiredDuringSchedulingIgnoredDuringExecution:
-                            nodeSelectorTerms:
-                            - matchExpressions:
-                              - key: nvidia.com/gpu.present
-                                operator: In
-                                values: ["true"]
-                        podAffinity:
-                          requiredDuringSchedulingIgnoredDuringExecution:
-                            - labelSelector:
-                                matchExpressions:
-                                  - key: truecharts.org/pvc
+          target:
+            group: helm.toolkit.fluxcd.io
+            version: v2
+            kind: HelmRelease
+            name: jellyfin
+          patch: |-
+            - op: add
+              path: /spec/values/resources/limits
+              value:
+                nvidia.com/gpu: 1
+            # Patchception to patch the helmrelease, which patches the deployment
+            - op: add
+              path: /spec/postRenderers
+              value:
+                - kustomize:
+                    patches:
+                      - target:
+                          version: v1
+                          kind: Deployment
+                          name: jellyfin
+                        patch: |-
+                          - op: add
+                            path: /spec/template/spec/affinity/nodeAffinity
+                            value:
+                              requiredDuringSchedulingIgnoredDuringExecution:
+                                nodeSelectorTerms:
+                                - matchExpressions:
+                                  - key: nvidia.com/gpu.present
                                     operator: In
-                                    values: ["config"]
-                              topologyKey: kubernetes.io/hostname
+                                    values: ["true"]
   - target:
-      kind: HelmRelease
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
       name: immich
-      namespace: immich
+      namespace: services
     patch: |-
       - op: add
-        path: /spec/values/workload/machinelearning/podSpec/containers/machinelearning/resources/limits
+        path: /spec/patches/1
         value:
-          nvidia.com/gpu: 1
-      # Patchception to patch the helmrelease, which patches the deployment
-      - op: add
-        path: /spec/postRenderers
-        value:
-          - kustomize:
-              patches:
-                - target:
-                    version: v1
-                    kind: Deployment
-                    name: immich-machinelearning
-                  patch: |-
-                    - op: replace
-                      path: /spec/template/spec/affinity
-                      value:
-                        nodeAffinity:
-                          requiredDuringSchedulingIgnoredDuringExecution:
-                            nodeSelectorTerms:
-                            - matchExpressions:
-                              - key: nvidia.com/gpu.present
-                                operator: In
-                                values: ["true"]
+          target:
+            group: helm.toolkit.fluxcd.io
+            version: v2
+            kind: HelmRelease
+            name: immich
+          patch: |-
+            - op: add
+              path: /spec/values/workload/machinelearning/podSpec/containers/machinelearning/resources/limits
+              value:
+                nvidia.com/gpu: 1
+            # Patchception to patch the helmrelease, which patches the deployment
+            - op: add
+              path: /spec/postRenderers
+              value:
+                - kustomize:
+                    patches:
+                      - target:
+                          version: v1
+                          kind: Deployment
+                          name: immich-machinelearning
+                        patch: |-
+                          - op: replace
+                            path: /spec/template/spec/affinity
+                            value:
+                              nodeAffinity:
+                                requiredDuringSchedulingIgnoredDuringExecution:
+                                  nodeSelectorTerms:
+                                  - matchExpressions:
+                                    - key: nvidia.com/gpu.present
+                                      operator: In
+                                      values: ["true"]
