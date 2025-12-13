@@ -106,7 +106,7 @@ resource "helm_release" "fluxcd" {
   namespace       = "flux-system"
   upgrade_install = true
 
-  depends_on = [kubernetes_secret.flux_git_credentials]
+  depends_on = [kubernetes_secret_v1.flux_git_credentials]
 }
 
 resource "helm_release" "fluxcd_sync" {

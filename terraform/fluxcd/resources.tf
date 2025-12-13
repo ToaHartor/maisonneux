@@ -1,7 +1,7 @@
-resource "kubernetes_secret" "flux_git_credentials" {
+resource "kubernetes_secret_v1" "flux_git_credentials" {
   metadata {
     name      = "flux-git-credentials"
-    namespace = kubernetes_namespace.flux_system.metadata[0].name
+    namespace = kubernetes_namespace_v1.flux_system.metadata[0].name
   }
 
   type = "Opaque"
@@ -16,7 +16,7 @@ resource "kubernetes_secret" "flux_git_credentials" {
 #   filename = "${path.module}/../../tmp/proxmoxcsi.yaml"
 # }
 
-# resource "kubernetes_secret" "proxmox_csi_creds" {
+# resource "kubernetes_secret_v1" "proxmox_csi_creds" {
 #   # Count = 1 if production env
 #   # count = 1
 #   metadata {
@@ -30,10 +30,10 @@ resource "kubernetes_secret" "flux_git_credentials" {
 #   }
 # }
 
-resource "kubernetes_secret" "external_minio_secrets" {
+resource "kubernetes_secret_v1" "external_minio_secrets" {
   metadata {
     name      = "external-minio-secrets"
-    namespace = kubernetes_namespace.external_secrets.metadata[0].name
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
   }
   type = "Opaque"
 
@@ -43,10 +43,10 @@ resource "kubernetes_secret" "external_minio_secrets" {
   }
 }
 
-resource "kubernetes_secret" "external_ovh_secrets" {
+resource "kubernetes_secret_v1" "external_ovh_secrets" {
   metadata {
     name      = "external-ovh-secrets"
-    namespace = kubernetes_namespace.external_secrets.metadata[0].name
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
   }
   type = "Opaque"
 
@@ -59,18 +59,18 @@ resource "kubernetes_secret" "external_ovh_secrets" {
   }
 }
 
-resource "kubernetes_config_map" "general_config" {
+resource "kubernetes_config_map_v1" "general_config" {
   metadata {
     name      = "general-config"
-    namespace = kubernetes_namespace.flux_system.metadata[0].name
+    namespace = kubernetes_namespace_v1.flux_system.metadata[0].name
   }
   data = local.general_config
 }
 
-resource "kubernetes_secret" "external_smtp_config" {
+resource "kubernetes_secret_v1" "external_smtp_config" {
   metadata {
     name      = "external-smtp-config"
-    namespace = kubernetes_namespace.external_secrets.metadata[0].name
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
   }
   type = "Opaque"
 
