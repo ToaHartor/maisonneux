@@ -10,5 +10,5 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 16.12.5
+    tag: 16.14.3
   url: oci://oci.trueforge.org/truecharts/flaresolverr
