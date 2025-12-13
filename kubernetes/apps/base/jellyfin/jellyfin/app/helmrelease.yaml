@@ -60,34 +60,38 @@ spec:
                 # JELLYFIN_DATA_DIR: /data
                 # JELLYFIN_CONFIG_DIR: /config
 
-    # /config/*.xml => pvc because config
-    # /config/data/data => pvc for database (no nfs of course)
-    # /config/data/metadata => nfs non-mirrored on ssd ? mainly image assets cache for studios/actors...
+    # /config/*.xml => pvc because config, maybe we switch to configmap but those files may need to be editable
+    # /data => pvc for database (no nfs of course)
+    # /data/metadata => nfs non-mirrored on ssd ? mainly image assets cache for studios/actors...
     persistence:
       config:
         enabled: true
         labels:
           homelab/backup-resource: "true"
         type: pvc
+        size: 1Gi
+        storageClass: ${fastdata_storage}
+        mountPath: "/config" # all config (database.xml, system.xml...)
+      data:
+        enabled: true
+        labels:
+          homelab/backup-resource: "true"
+        type: pvc
         size: 10Gi
         storageClass: ${fastdata_storage}
-        mountPath: "/config" # config includes database, but also metadata
-      metadata:
-        enabled: true
-        type: emptyDir
-        mountPath: "/config/metadata" # see if we need another pvc or if we use nfs for this
+        mountPath: "/data" # config includes database, but also metadata
       cache:
         enabled: true
-        mountPath: "/cache"
+        mountPath: "/cache" # also include transcodes/
         type: "emptyDir"
       logs:
         enabled: true
         mountPath: "/logs"
         type: "emptyDir"
-      transcode:
-        enabled: true
-        mountPath: "/config/transcodes"
-        type: "emptyDir"
+      # transcode:
+      #   enabled: true
+      #   mountPath: "/cache/transcodes"
+      #   type: "emptyDir"
       media-1:
         enabled: true
         type: nfs
