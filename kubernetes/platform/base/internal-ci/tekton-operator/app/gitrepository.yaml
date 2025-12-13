@@ -7,5 +7,5 @@ metadata:
 spec:
   interval: 10m
   ref:
-    tag: v0.77.0
+    tag: v0.78.0
   url: http://github.com/tektoncd/operator
