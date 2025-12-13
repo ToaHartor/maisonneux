@@ -10,5 +10,5 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.21.0 # TODO : locked at this tag for https://github.com/crowdsecurity/helm-charts/issues/319
+    tag: 0.20.1 # TODO : locked at this tag for https://github.com/crowdsecurity/helm-charts/issues/319
   url: oci://ghcr.io/crowdsecurity/helm-charts/crowdsec
