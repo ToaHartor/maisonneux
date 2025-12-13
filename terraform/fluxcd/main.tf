@@ -95,6 +95,19 @@ EOF
       }
     }
   }
+  fluxcd_helm_values = {
+    // Increase concurrent reconciliations for fluxcd controllers
+    kustomizeController = {
+      container = {
+        additionalArgs = ["--concurrent=15", "--concurrent-ssa=15"]
+      }
+    }
+    helmController = {
+      container = {
+        additionalArgs = ["--concurrent=15"]
+      }
+    }
+  }
 }
 
 # example from https://github.com/fluxcd/terraform-provider-flux/blob/main/examples/helm-install/main.tf
@@ -105,6 +118,7 @@ resource "helm_release" "fluxcd" {
   name            = "flux2"
   namespace       = "flux-system"
   upgrade_install = true
+  values          = [yamlencode(local.fluxcd_helm_values)]
 
   depends_on = [kubernetes_secret_v1.flux_git_credentials]
 }
