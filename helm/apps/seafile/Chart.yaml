@@ -4,7 +4,7 @@ description: Custom helm wrapper for Seafile Helm chart
 dependencies:
   - name: seafile
     # Version from https://github.com/truecharts/public/blob/master/charts/stable/seafile/Chart.yaml
-    version: "12.13.12"
+    version: "12.17.2"
     repository: oci://oci.trueforge.org/truecharts
   - name: common
     version: "0.0.1"
