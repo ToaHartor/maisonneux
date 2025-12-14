@@ -14,7 +14,7 @@ talosctl = "1.11.5"
 tekton-cli = "latest"
 flux2 = "latest"
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-kubectl = "1.34.2"
+kubectl = "1.34.3"
 opentofu = "1.10.6"
 velero = "latest"
 jq = "latest"
