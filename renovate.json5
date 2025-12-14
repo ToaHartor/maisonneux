@@ -34,7 +34,7 @@
     // For dependencies with OCI registries, use datasource=docker
     {
       customType: "regex",
-      fileMatch: ["\\.yaml$", "\\.tf$", "\\.sh$", "\\.md$"],
+      fileMatch: ["\\.yaml$", "\\.tf$", "\\.sh$", "\\.md$", "^mise\\.toml$"],
       matchStrings: [
         "# renovate: datasource=(?<datasource>[^:]+?) depName=(?<depName>.+?)( versioning=(?<versioning>.+?))?( extractVersion=(?<extractVersion>.+?))?( registryUrl=(?<ocimatch>oci:\\/\\/)?(?<registryUrl>.+?))?\\s.+?[:=]\\s*[\"']?(?<currentValue>.+?)[\"']?\\s",
       ],
