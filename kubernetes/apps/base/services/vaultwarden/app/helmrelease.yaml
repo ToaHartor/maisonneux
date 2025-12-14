@@ -74,12 +74,13 @@ spec:
           containers:
             main:
               env:
+                DOMAIN: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
                 DATABASE_URL:
                   secretKeyRef:
                     name: vaultwarden-db-creds
                     key: uri
                     expandObjectName: false
-              # TODO : RSA key generation at /data/rsa_key.pem (with "BEGIN RSA PRIVATE KEY" format), see if data needs persistency for attachments/icon_cache
+              # Maybe we do not need to manage the private key in /data/rsa_key.pem as it only manages the encryption of the JWT for login
     database:
       type: postgresql
       wal: false # disable if not using sqlite
