@@ -4,7 +4,7 @@ set -euo pipefail
 
 # see https://hub.docker.com/r/renovate/renovate/tags
 # renovate: datasource=docker depName=renovate/renovate
-renovate_version='42.57.1'
+renovate_version='42.59.1'
 
 DRY_RUN_ARG=""
 if [ $# -eq 1 ]; then
