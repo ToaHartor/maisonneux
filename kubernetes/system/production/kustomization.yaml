@@ -9,3 +9,4 @@ resources:
   - ../base/kube-system
   - ../base/opentelemetry
   - ../base/piraeus-datastore
+  - ../base/system-utils

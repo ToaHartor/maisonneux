@@ -9,6 +9,7 @@ resources:
   - ../base/kube-system
   - ../base/opentelemetry
   - ../base/piraeus-datastore
+  - ../base/system-utils
 patches:
   # Remove all topologySpreadConstraints and reduce replicas in non-production cluster
   - target:
@@ -24,7 +25,7 @@ patches:
   - target:
       kind: HelmRelease
       name: reloader
-      namespace: kube-system
+      namespace: system-utils
     patch: |-
       - op: replace
         path: /spec/values/reloader/deployment/replicas
@@ -102,7 +103,7 @@ patches:
   - target:
       kind: HelmRelease
       name: descheduler
-      namespace: kube-system
+      namespace: system-utils
     patch: |-
       - op: replace
         path: /spec/values/deschedulerPolicy/profiles/0/pluginConfig/7/args/targetThresholds
