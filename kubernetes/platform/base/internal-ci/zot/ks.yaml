@@ -35,4 +35,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: internal-ci
-  timeout: 5m
+  timeout: 10m

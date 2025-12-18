@@ -29,4 +29,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: dragonfly
-  timeout: 5m
+  timeout: 10m

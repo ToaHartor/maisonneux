@@ -60,4 +60,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: authentik
-  timeout: 5m
+  timeout: 10m

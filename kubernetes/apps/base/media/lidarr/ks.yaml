@@ -72,4 +72,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: media
-  timeout: 5m
+  timeout: 10m

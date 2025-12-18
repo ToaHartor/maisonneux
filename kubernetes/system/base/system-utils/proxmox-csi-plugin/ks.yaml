@@ -25,4 +25,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: system-utils
-  timeout: 5m
+  timeout: 10m

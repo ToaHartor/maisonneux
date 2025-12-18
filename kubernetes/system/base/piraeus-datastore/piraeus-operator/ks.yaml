@@ -21,7 +21,7 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: piraeus-datastore
-  timeout: 5m
+  timeout: 10m
 
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
@@ -61,7 +61,7 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: piraeus-datastore
-  timeout: 5m
+  timeout: 10m
 
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
@@ -82,4 +82,4 @@ spec:
     kind: GitRepository
     name: piraeus-operator
   targetNamespace: piraeus-datastore
-  timeout: 5m
+  timeout: 10m

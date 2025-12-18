@@ -28,4 +28,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: mariadb
-  timeout: 5m
+  timeout: 10m

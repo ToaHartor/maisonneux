@@ -33,4 +33,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: system-backup
-  timeout: 5m
+  timeout: 10m

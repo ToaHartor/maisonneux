@@ -41,4 +41,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: ingress
-  timeout: 5m
+  timeout: 10m

@@ -32,4 +32,4 @@ spec:
     namespace: flux-system
   # We want to declare the database in the same namespace as the cluster
   targetNamespace: ${psql_database_namespace}
-  timeout: 5m
+  timeout: 10m

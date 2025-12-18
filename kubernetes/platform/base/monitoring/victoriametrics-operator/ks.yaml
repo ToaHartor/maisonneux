@@ -51,4 +51,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: monitoring
-  timeout: 5m
+  timeout: 10m

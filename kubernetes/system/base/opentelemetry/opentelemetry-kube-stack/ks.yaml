@@ -49,4 +49,4 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: opentelemetry
-  timeout: 5m
+  timeout: 10m
