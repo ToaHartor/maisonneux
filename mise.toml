@@ -184,6 +184,23 @@ case "${usage_action?}" in
 esac
 '''
 
+[tasks.backup]
+description = "Backup cluster (velero/postgres)"
+usage = '''
+arg "<environment>" help="Target environment" {
+  choices "staging" "production"
+}
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENVIRONMENT="${usage_environment?}"
+mise run ctx "${ENVIRONMENT}"
+echo "Backuping cluster ${ENVIRONMENT}"
+bash scripts/backup/backup.sh
+'''
+
 [tasks.restore]
 description = "Restore backups (velero/postgres)"
 usage = '''

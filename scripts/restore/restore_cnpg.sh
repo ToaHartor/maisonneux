@@ -23,6 +23,9 @@ if [ $# -eq 0 ] || [ "$1" == "schedule" ]; then
   # recoveryPatch="{\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"targetTime\": \"$targetTime\"}}}"
 else
   targetBackup="$1"
+  # Format of backupId is 20251216T000000
+  if [[ ! "$targetBackup" =~ [0-9]{8}T[0-9]{6} ]]; then echo "Invalid backupID: $targetBackup" && exit 1; fi
+
   # targetTime="$(date -d "$1" --rfc-3339=seconds)"
   # We can also add \"targetTime\": \"$targetTime\" instead of targetImmediate
   recoveryPatch="{\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"backupID\": \"$targetBackup\", \"targetImmediate\": true}}}"
@@ -115,7 +118,7 @@ function restore_database() {
   ## ERROR: WAL archive check failed for server recoveredCluster: Expected empty archive
   # Finally, enable reconciliation
   kubectl patch cluster.postgresql.cnpg.io -n "$namespace" "$targetRestoreCluster" --type json -p \
-    "[{\"op\": \"add\", \"path\": \"/metadata/annotations/cnpg.io~1skipEmptyWalArchiveCheck\", \"value\": \"enabled\"}, {\"op\": \"replace\", \"path\": \"/spec/bootstrap\", \"value\": $recoveryPatch}, {\"op\": \"remove\", \"path\": \"/metadata/annotations/cnpg.io~1reconciliationLoop\"}]"
+    "[{\"op\": \"replace\", \"path\": \"/spec/bootstrap\", \"value\": $recoveryPatch}, {\"op\": \"remove\", \"path\": \"/metadata/annotations/cnpg.io~1reconciliationLoop\"}]"
   # Un-hibernate target cluster
   kubectl cnpg hibernate off "$targetRestoreCluster" -n "$namespace"
   kubectl cnpg maintenance unset "$targetRestoreCluster" -n "$namespace"
@@ -125,7 +128,7 @@ function restore_database() {
 
   # Delete bootstrap and externalClusters sections
   kubectl patch cluster.postgresql.cnpg.io -n "$namespace" "$targetRestoreCluster" --type json -p \
-    '[{"op": "remove", "path": "/spec/bootstrap"}, {"op": "remove", "path": "/spec/externalClusters"}, {"op": "remove", "path": "/metadata/annotations/cnpg.io~1skipEmptyWalArchiveCheck"}]'
+    '[{"op": "remove", "path": "/spec/bootstrap"}, {"op": "remove", "path": "/spec/externalClusters"}]'
 
   echo "Do not forget to clean the remaining PersistentVolumes :"
   kubectl get pv | grep Released | grep "$sourceRecoveryCluster"
