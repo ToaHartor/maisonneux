@@ -1,7 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../base/cert-manager
   - ../base/dragonfly
   - ../base/internal-ci
   - ../base/ingress
@@ -164,14 +163,3 @@ patches:
   #     - op: replace
   #       path: /spec/values/storage/logsSize
   #       value: 1Gi
-
-  - target:
-      kind: HelmRelease
-      name: cert-manager-webhook-ovh
-      namespace: cert-manager
-    patch: |-
-      - op: replace
-        path: /spec/values/replicas
-        value: 1
-      - op: remove
-        path: /spec/values/topologySpreadConstraints

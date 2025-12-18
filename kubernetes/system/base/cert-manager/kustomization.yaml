@@ -7,6 +7,7 @@ resources:
   - ./namespace.yaml
   - ./cert-manager/ks.yaml
   - ./cert-manager-csi-driver/ks.yaml
+  - ./cert-manager-webhook-ovh/ks.yaml
   - ./trust-manager/ks.yaml
 transformers:
   - ./transformers

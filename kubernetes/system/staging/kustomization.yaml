@@ -110,3 +110,13 @@ patches:
           cpu: 85
           memory: 85
           pods: 85
+  - target:
+      kind: HelmRelease
+      name: cert-manager-webhook-ovh
+      namespace: cert-manager
+    patch: |-
+      - op: replace
+        path: /spec/values/replicas
+        value: 1
+      - op: remove
+        path: /spec/values/topologySpreadConstraints

@@ -10,13 +10,16 @@ spec:
       app.kubernetes.io/name: cert-manager-webhook-ovh
   dependsOn:
     - name: cert-manager
+    # We need the clusterstore to be deployed to be able to reference 
+    - name: external-secrets-resources
+      namespace: external-secrets
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
       name: cert-manager-webhook-ovh
       namespace: cert-manager
   interval: 1h
-  path: "./kubernetes/platform/base/cert-manager/cert-manager-webhook-ovh/app"
+  path: "./kubernetes/system/base/cert-manager/cert-manager-webhook-ovh/app"
   postBuild:
     substitute:
       # inherited variables
