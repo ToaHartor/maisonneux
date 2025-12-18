@@ -143,7 +143,6 @@ spec:
             - secret
             - externalsecret
             - persistentvolumeclaim # Backuping PVC allows to perform volume snapshot
-            - persistentvolume
 
           # excludedNamespaceScopedResources:
           #   - '*'
