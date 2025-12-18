@@ -4,6 +4,8 @@ set -euo pipefail
 
 # This script is used to restore a backup on an existing cluster
 
+VELERO_NAMESPACE="system-backup"
+
 DEPLOYMENTS=(
   # When an annotation is added to a pvvc that should be backed up, add an entry to the following array
   # Format : "deployment, namespace, pvc1|pvc2, appname"
@@ -21,7 +23,7 @@ fi
 
 BACKUP_ARG="--from-schedule velero-global"
 if [[ $1 != "schedule" ]]; then
-  if ! velero get backup "$1" ; then
+  if ! velero get backup "$1" -n "$VELERO_NAMESPACE"; then
     echo "Backup $1 could not be found"
   fi
   echo "Using backup $1"
@@ -39,7 +41,7 @@ function restore_deploy_pvc() {
 
   pre_restore_deploy "$deploy" "$namespace" "$pvc"
   # shellcheck disable=SC2086
-  velero restore create --restore-volumes -l "app.kubernetes.io/name=${appname}" --exclude-resources externalsecrets,secrets,pv $BACKUP_ARG -w
+  velero restore create  -n "$VELERO_NAMESPACE" --restore-volumes -l "app.kubernetes.io/name=${appname}" --exclude-resources externalsecrets,secrets,pv $BACKUP_ARG -w
   post_restore_deploy "$deploy" "$namespace" "$pvc"
 }
 
@@ -92,7 +94,7 @@ function restore_all() {
 
   # Restore everything
   # shellcheck disable=SC2086
-  velero restore create --restore-volumes --include-cluster-resources --exclude-resources pv $BACKUP_ARG --existing-resource-policy update -w
+  velero restore create  -n "$VELERO_NAMESPACE" --restore-volumes --include-cluster-resources --exclude-resources pv $BACKUP_ARG --existing-resource-policy update -w
 
   # Wait for pvc to be bound
   for deployment in "${DEPLOYMENTS[@]}"
@@ -108,7 +110,7 @@ function restore_all() {
 function restore_staged() {
     # Restore externalsecrets and secrets
   # shellcheck disable=SC2086
-  velero restore create --include-cluster-resources --exclude-resources pv,pvc $BACKUP_ARG --existing-resource-policy update -w
+  velero restore create -n "$VELERO_NAMESPACE" --include-cluster-resources --exclude-resources pv,pvc $BACKUP_ARG --existing-resource-policy update -w
 
   # Restore individual pvc loop
   for deployment in "${DEPLOYMENTS[@]}"

@@ -9,14 +9,14 @@ resources:
   - ../base/monitoring
   - ../base/operators
   - ../base/postgres
-  - ../base/velero
+  - ../base/system-backup
 patches:
   # Remove all topologySpreadConstraints and reduce replicas in non-production cluster
   # We also reduce default volume storage size
   - target:
       kind: HelmRelease
       name: snapshot-controller
-      namespace: velero
+      namespace: system-backup
     patch: |-
       - op: replace
         path: /spec/values/controller/replicaCount

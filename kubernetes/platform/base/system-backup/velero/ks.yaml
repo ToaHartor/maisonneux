@@ -19,9 +19,9 @@ spec:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
       name: velero
-      namespace: velero
+      namespace: system-backup
   interval: 1h
-  path: "./kubernetes/platform/base/velero/velero/app"
+  path: "./kubernetes/platform/base/system-backup/velero/app"
   postBuild:
     substitute:
       # inherited variables
@@ -32,5 +32,5 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: velero
+  targetNamespace: system-backup
   timeout: 5m

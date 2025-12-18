@@ -9,4 +9,4 @@ resources:
   - ../base/monitoring
   - ../base/operators
   - ../base/postgres
-  - ../base/velero
+  - ../base/system-backup

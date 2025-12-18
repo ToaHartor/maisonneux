@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+VELERO_NAMESPACE="system-backup"
+
 if [ -z "$1" ]; then
   echo "No backup schedule or backup name is given. Parameter should be either 'schedule' for the latest schedule, or <backup-name> for a specific one."
   exit 1
@@ -9,7 +11,7 @@ fi
 
 BACKUP_ARG="--from-schedule velero-mariadb"
 if [[ $1 != "schedule" ]]; then
-  if ! velero get backup "$1" ; then
+  if ! velero get backup "$1" -n "$VELERO_NAMESPACE" ; then
     echo "Backup $1 could not be found"
   fi
   echo "Using backup $1"
@@ -38,7 +40,7 @@ done
 
 # Restore
 # shellcheck disable=SC2086
-velero restore create --restore-volumes --include-cluster-resources $BACKUP_ARG -w
+velero restore create  -n "$VELERO_NAMESPACE" --restore-volumes --include-cluster-resources $BACKUP_ARG -w
 
 for pvc in "${pvcs[@]}"
 do

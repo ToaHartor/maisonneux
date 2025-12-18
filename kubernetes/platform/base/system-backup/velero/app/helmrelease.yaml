@@ -235,7 +235,6 @@ spec:
         kind: Bucket
         metadata:
           name: "${minio_backup_bucket}-bucket"
-          namespace: velero
         spec:
           # Bucket name (on S3 server, as opposed to the name of the CR)
           name: "${minio_backup_bucket}"
@@ -248,7 +247,6 @@ spec:
         kind: ExternalSecret
         metadata:
           name: s3-backup-aws-creds-file
-          namespace: velero
         spec:
           data:
             - secretKey: access_key
