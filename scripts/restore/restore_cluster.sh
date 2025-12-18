@@ -11,7 +11,7 @@ DEPLOYMENTS=(
   "kavita, media, kavita-config, kavita"
   "opencloud, services, opencloud, opencloud"
   "qbittorrent, media, qbittorrent-config, qbittorrent"
-  "jellyfin, jellyfin, jellyfin-config|jellyfin-data, jellyfin"
+  "jellyfin, media, jellyfin-config|jellyfin-data, jellyfin"
 )
 
 if [ -z "$1" ]; then

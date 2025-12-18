@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: media
 resources:
   - ./namespace.yaml
+  - ./jellyfin/ks.yaml
   - ./jdownloader2/ks.yaml
   - ./jellyseerr/ks.yaml
   - ./jellystat/ks.yaml

@@ -12,13 +12,13 @@ spec:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
       name: jellyfin
-      namespace: jellyfin
+      namespace: media
   interval: 1h
   components:
     # relative to spec.path
     - ../../../../../common/components/oidc-application
     - ../../../../../common/components/httproute/common
-  path: "./kubernetes/apps/base/jellyfin/jellyfin/app"
+  path: "./kubernetes/apps/base/media/jellyfin/app"
   postBuild:
     substitute:
       APP: jellyfin
@@ -61,5 +61,5 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: jellyfin
+  targetNamespace: media
   timeout: 5m

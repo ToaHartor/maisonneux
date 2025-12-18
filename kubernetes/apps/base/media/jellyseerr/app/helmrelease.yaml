@@ -55,7 +55,7 @@ spec:
         externalUrl: "https://4kmovies.${DOMAIN_WEBSECURE}"
         # apiKey: # valueFrom
       jellyfin:
-        hostname: jellyfin.jellyfin.svc.cluster.local
+        hostname: jellyfin.media.svc.cluster.local
         externalHostname: "jellyfin.${DOMAIN_WEBSECURE}"
         apiKey: # Entered with the interface
 

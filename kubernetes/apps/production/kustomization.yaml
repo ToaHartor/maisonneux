@@ -3,7 +3,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../base/jellyfin
   - ../base/media
   # - ../base/seafile
   - ../base/services
@@ -13,7 +12,7 @@ patches:
       group: kustomize.toolkit.fluxcd.io
       kind: Kustomization
       name: jellyfin
-      namespace: jellyfin
+      namespace: media
     patch: |-
       - op: add
         path: /spec/patches/1
