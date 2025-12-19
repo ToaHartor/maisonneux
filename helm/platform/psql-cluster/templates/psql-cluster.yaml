@@ -37,7 +37,7 @@ spec:
     parameters:
       wal_keep_size: "128MB" 
       max_slot_wal_keep_size: "128MB"
-      max_connections: "100"
+      max_connections: "250"
       shared_buffers: "128MB"
       hot_standby_feedback: "on"
     
