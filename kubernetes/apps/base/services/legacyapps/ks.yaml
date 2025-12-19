@@ -18,9 +18,10 @@ spec:
   postBuild:
     substitute:
       # inherited variables
+      main_domain: ${main_domain}
+      main_domain_web: ${main_domain_web}
+      main_domain_websecure: ${main_domain_websecure}
       second_domain: ${second_domain}
-      second_domain_web: ${second_domain_web}
-      second_domain_websecure: ${second_domain_websecure}
       legacy_vm_ip: ${legacy_vm_ip}
 
   prune: true

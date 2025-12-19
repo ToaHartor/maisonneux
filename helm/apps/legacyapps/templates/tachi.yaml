@@ -50,7 +50,7 @@ spec:
       kind: Gateway
 
   hostnames:
-    - "xn--sck3h9451a.{{ .Values.ingress.domain }}"
+    - "xn--sck3h9451a.{{ .Values.ingress.otoge.domain }}"
 
   rules:
     - matches:
@@ -75,7 +75,7 @@ spec:
       kind: Gateway
 
   hostnames:
-    - "xn--sck3h9451a.{{ .Values.ingress.domain }}"
+    - "xn--sck3h9451a.{{ .Values.ingress.otoge.domain }}"
 
   rules:
     - matches:

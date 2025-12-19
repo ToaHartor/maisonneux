@@ -43,7 +43,7 @@ spec:
       kind: Gateway
 
   hostnames:
-    - "bucket.{{ .Values.ingress.domain }}"
+    - "bucket.{{ .Values.ingress.bucket.domain }}"
 
   rules:
     - matches:

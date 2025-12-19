@@ -31,7 +31,7 @@ ports:
     port: 32400
     protocol: TCP
 ---
-{{- $domain := printf "plex.%s" .Values.ingress.domain }}
+{{- $domain := printf "plex.%s" .Values.ingress.plex.domain }}
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -39,8 +39,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   redirectRegex:
-    regex: "^https://{{ .Values.ingress.externalUrl.websecure }}/+$"
-    replacement: "https://{{ .Values.ingress.externalUrl.websecure }}/web/index.html"
+    regex: "^https://{{ .Values.ingress.plex.externalUrl.websecure }}/+$"
+    replacement: "https://{{ .Values.ingress.plex.externalUrl.websecure }}/web/index.html"
 
 ---
 apiVersion: gateway.networking.k8s.io/v1

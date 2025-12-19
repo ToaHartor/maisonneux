@@ -50,7 +50,7 @@ spec:
       kind: Gateway
 
   hostnames:
-    - "aime.{{ .Values.ingress.domain }}"
+    - "aime.{{ .Values.ingress.otoge.domain }}"
 
   rules:
     - matches:
@@ -132,7 +132,7 @@ spec:
       kind: Gateway
 
   hostnames:
-    - "artemis.{{ .Values.ingress.domain }}"
+    - "artemis.{{ .Values.ingress.otoge.domain }}"
 
   rules:
     - matches:

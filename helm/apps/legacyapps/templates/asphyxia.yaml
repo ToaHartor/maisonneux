@@ -48,7 +48,7 @@ spec:
       kind: Gateway
 
   hostnames:
-    - {{ printf "%s.%s" $server.subdomain $root.Values.ingress.domain }}
+    - {{ printf "%s.%s" $server.subdomain $root.Values.ingress.otoge.domain }}
 
   rules:
     - matches:

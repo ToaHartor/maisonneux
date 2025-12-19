@@ -23,9 +23,14 @@ spec:
 
   values:
     ingress:
-      domain: ${second_domain}
-      externalUrl:
-        web: ${second_domain_web}
-        websecure: ${second_domain_websecure}
+      otoge:
+        domain: ${second_domain}
+      plex:
+        domain: ${main_domain}
+        externalUrl:
+          web: ${main_domain_web}
+          websecure: ${main_domain_websecure}
+      bucket:
+        domain: ${main_domain}
     legacyVmIp: ${legacy_vm_ip}
 
