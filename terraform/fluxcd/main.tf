@@ -70,21 +70,21 @@ locals {
           branch = var.flux_git_branch
         }
         interval = "1m"
-        ignore   = <<EOF
-# Ignore all folders, but include the ones with cluster resources
-/*
-# Cluster folders include
-!/kubernetes/clusters/${terraform.workspace}
-!/kubernetes/apps/
-!/kubernetes/core/
-!/kubernetes/common/
-!/kubernetes/platform/
-!/kubernetes/system/
-# Include helm charts folder as well
-!/helm/
-# Remove flux-system as well
-kubernetes/clusters/**/flux-system/"
-EOF
+        ignore   = <<-EOF
+        # Ignore all folders, but include the ones with cluster resources
+        /*
+        # Cluster folders include
+        !/kubernetes/clusters/${terraform.workspace}
+        !/kubernetes/apps/
+        !/kubernetes/core/
+        !/kubernetes/common/
+        !/kubernetes/platform/
+        !/kubernetes/system/
+        # Include helm charts folder as well
+        !/helm/
+        # Remove flux-system as well
+        kubernetes/clusters/**/flux-system/"
+        EOF
       }
     }
     kustomization = {

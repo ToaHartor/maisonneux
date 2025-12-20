@@ -6,7 +6,11 @@ resource "kubernetes_secret_v1" "flux_git_credentials" {
 
   type = "Opaque"
 
-  data = {
+  data = var.flux_git_ssh_config != null ? {
+    "identity"     = var.flux_git_ssh_config.private_key
+    "identity.pub" = var.flux_git_ssh_config.public_key
+    "known_hosts"  = var.flux_git_ssh_config.known_hosts
+    } : {
     "username" = var.flux_git_user
     "password" = var.flux_git_token
   }

@@ -65,11 +65,22 @@ variable "smtp_port" {
 
 # Fluxcd credentials
 variable "flux_git_user" {
-  type = string
+  type    = string
+  default = ""
 }
 
 variable "flux_git_token" {
-  type = string
+  type    = string
+  default = ""
+}
+
+variable "flux_git_ssh_config" {
+  type = object({
+    public_key  = string
+    private_key = string
+    known_hosts = string
+  })
+  default = null
 }
 
 variable "flux_git_branch" {
@@ -122,12 +133,12 @@ variable "truenas_vm_host" {
 
 variable "truenas_nfs_paths" {
   type = object({
-    media_1   = string
-    download  = string
-    immich    = string
-    paperless = string
-    seafile   = string
-    minio     = string
+    media_1  = string
+    download = string
+    immich   = string
+    # paperless = string
+    # seafile   = string
+    minio = string
   })
   description = "TrueNAS list of NFS paths"
 }
