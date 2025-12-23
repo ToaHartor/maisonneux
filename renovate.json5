@@ -124,6 +124,23 @@
       groupName: "terraform-talos",
       sourceUrl: "https://github.com/siderolabs/terraform-provider-talos",
     },
+    // Match OS and kubernetes versions
+    {
+      matchPackageNames: ["*/siderolabs/installer"],
+      groupName: "Talos Linux",
+      sourceUrl: "https://github.com/siderolabs/talos",
+    },
+    {
+      matchPackageNames: ["*/siderolabs/kubelet"],
+      groupName: "Kubernetes",
+    },
+    // * retrieve changelogs for non-patch versions of kubernetes
+    {
+      matchPackageNames: ["*/siderolabs/kubelet"],
+      matchUpdateTypes: ["major", "minor"],
+      sourceUrl: "https://github.com/kubernetes/kubernetes",
+      // changelogUrl: "https://github.com/kubernetes/kubernetes/blob/{{newVersion}}/CHANGELOG/CHANGELOG-{{newMajor}}.{{newMinor}}.md",
+    },
     // Automerge settings
     // Setting from https://docs.renovatebot.com/key-concepts/automerge/#automerge-non-major-updates
     // * Non major updates for development tools
