@@ -4,7 +4,7 @@ description: Custom helm wrapper for Jellyseerr Helm chart
 dependencies:
   - name: jellyseerr
     # Version from https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/Chart.yaml
-    version: "13.13.3"
+    version: "13.13.5"
     repository: oci://oci.trueforge.org/truecharts
   - name: common
     version: "0.0.1"
