@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: mariadb-operator
-      version: "25.10.2"
+      version: "25.10.3"
       sourceRef:
         kind: HelmRepository
         name: mariadb-operator
