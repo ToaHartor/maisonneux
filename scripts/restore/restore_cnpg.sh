@@ -14,8 +14,19 @@ backupSource="s3-backup" # ObjectStore names
 # WAL are archived by default every 5 minutes, if no timestamp is given, use current time minus 10 minutes to be safe ?
 # If an argument is given, we restore the target backup. As we synchronize the backup of the postgres clusters, the backup names are identical.
 if [ $# -eq 0 ] || [ "$1" == "schedule" ]; then
-  echo "Latest backup using targetTime does not currently work, please use the target backup name instead."
-  exit 1
+  # Retrieving the latest backup available in the cluster
+  targetBackupObj="$(kubectl get backups.postgresql.cnpg.io -A --sort-by=.status.stoppedAt --no-headers | { grep completed || true; } | awk '{print $1","$2;}' | head -n 1)"
+
+  if [ "$targetBackupObj" == "" ]; then
+    echo "Latest backup using targetTime does not currently work, please use the target backup name instead."
+    exit 1
+  fi
+
+  targetBackupNs="${targetBackupObj%,*}"
+  targetBackupName="${targetBackupObj#*,}"
+  
+  targetBackup=$(kubectl get "backups.postgresql.cnpg.io/$targetBackupName" -n "$targetBackupNs" -o jsonpath="{.status.backupId}")
+  echo "Finding latest backup available in the cluster : $targetBackup"
 
   # Uncomment when https://github.com/cloudnative-pg/cloudnative-pg/issues/5177 is resolved
   # targetTime="$(TZ="Europe/Paris" date -d '10 minutes ago' --rfc-3339=seconds)"
@@ -28,8 +39,8 @@ else
 
   # targetTime="$(date -d "$1" --rfc-3339=seconds)"
   # We can also add \"targetTime\": \"$targetTime\" instead of targetImmediate
-  recoveryPatch="{\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"backupID\": \"$targetBackup\", \"targetImmediate\": true}}}"
 fi
+recoveryPatch="{\"recovery\": {\"source\": \"$backupSource\", \"recoveryTarget\": {\"backupID\": \"$targetBackup\", \"targetImmediate\": true}}}"
 
 # Also suspend corresponding Kustomization
 # parentKustomization=$(kubectl get helmreleases.helm.toolkit.fluxcd.io "$helmrelease" -n "$namespace" -o=jsonpath='{.metadata.labels.kustomize\.toolkit\.fluxcd\.io/name}')
