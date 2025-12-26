@@ -62,38 +62,3 @@ spec:
         server: ${nfs_server}
         path: ${nfs_path_download}
         mountPath: "/output"
-    
-    extraTpl:
-      - |
-        apiVersion: gateway.networking.k8s.io/v1
-        kind: HTTPRoute
-        metadata:
-          name: {{ .Release.Name }}
-          namespace: {{ .Release.Namespace }}
-        spec:
-          parentRefs:
-            - name: traefik-gateway
-              namespace: ingress
-              sectionName: websecure
-              kind: Gateway
-
-          hostnames:
-            - ${SUBDOMAIN}.${main_domain}
-
-          rules:
-            - matches:
-              - path:
-                  type: PathPrefix
-                  value: /
-
-              backendRefs:
-              - name: {{ .Release.Name }}
-                namespace: {{ .Release.Namespace }}
-                port: {{ .Values.service.main.ports.main.port }}
-              
-              filters:
-                - type: ExtensionRef
-                  extensionRef:
-                    group: traefik.io
-                    kind: Middleware
-                    name: chain-forwardauth

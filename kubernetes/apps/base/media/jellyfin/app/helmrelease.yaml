@@ -97,4 +97,10 @@ spec:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_1}
-        mountPath: "/media"
+        mountPath: "/shared/media1/"
+      media-2:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_media_2}
+        mountPath: "/shared/media2/"

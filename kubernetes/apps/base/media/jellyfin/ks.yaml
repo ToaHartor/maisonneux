@@ -38,6 +38,7 @@ spec:
       main_domain_websecure: ${main_domain_websecure}
       nfs_server: ${nfs_server}
       nfs_path_media_1: ${nfs_path_media_1}
+      nfs_path_media_2: ${nfs_path_media_2}
   patches:
     - target:
         kind: HelmRelease

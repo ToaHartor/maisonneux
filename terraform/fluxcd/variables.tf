@@ -134,6 +134,7 @@ variable "truenas_vm_host" {
 variable "truenas_nfs_paths" {
   type = object({
     media_1  = string
+    media_2  = string
     download = string
     immich   = string
     # paperless = string

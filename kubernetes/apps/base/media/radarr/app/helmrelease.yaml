@@ -98,12 +98,19 @@ spec:
         server: ${nfs_server}
         path: ${nfs_path_download}
         mountPath: /downloads
-      media:
+      # TODO : check which mount is actually a movie mount
+      media-1:
         enabled: true
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_1}
-        mountPath: /movies
+        mountPath: "/shared/media1/"
+      media-2:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_media_2}
+        mountPath: "/shared/media2/"
     metrics:
       main:
         enabled: true
