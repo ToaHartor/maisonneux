@@ -75,16 +75,33 @@ function restore_database() {
   flux resume helmrelease "$helmrelease" -n "$namespace"
   # flux reconcile helmrelease "$helmrelease" -n "$namespace"
 
+  # Force set primary to the first pod otherwise the restore will not work
+  kubectl patch cluster.postgresql.cnpg.io -n "$namespace" "$targetRestoreCluster" --type=merge --subresource=status -p \
+    "{\"status\": {\"currentPrimary\": \"$targetRestoreCluster-1\", \"targetPrimary\": \"$targetRestoreCluster-1\"}}"
+
   # Add annotation to disable reconciliation
   kubectl patch cluster.postgresql.cnpg.io -n "$namespace" "$targetRestoreCluster" --type json -p \
     "[{\"op\": \"add\", \"path\": \"/metadata/annotations/cnpg.io~1reconciliationLoop\", \"value\": \"disabled\"}]"
 
+
+  # sync database credentials then credentials in app namespaces, apps will resync themselves automatically
+  # shellcheck disable=SC2063
+  for sec in $(kubectl get es --no-headers -n "$namespace" | awk '{print $1;}' | grep 'db-creds');
+  do
+    kubectl annotate es "$sec" force-sync="$(date +%s)" --overwrite -n "$namespace"
+  done
+
+  # shellcheck disable=SC2063
+  for sec in $(kubectl get es --no-headers -A | awk '{print $1","$2;}' | grep -P "^((?!$namespace).)*,(.*?)-db-creds$");
+  do
+    es_ns="${sec%,*}"
+    es_name="${sec#*,}"
+    kubectl annotate es "$es_name" force-sync="$(date +%s)" --overwrite -n "$es_ns"
+  done
+
   # Hibernate cluster once reconciliation is performed, as we do not want to create init
   kubectl cnpg hibernate on "$targetRestoreCluster" -n "$namespace" || true
   kubectl cnpg maintenance set "$targetRestoreCluster" -n "$namespace"
-
-  # Set primary to the first pod
-  # kubectl cnpg promote "$resource" 1 -n "$namespace"
 
   # Suspend again as we touch the Cluster resource
   flux suspend helmrelease "$helmrelease" -n "$namespace"
