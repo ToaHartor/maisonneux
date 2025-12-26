@@ -129,6 +129,7 @@
       matchPackageNames: ["*/siderolabs/installer"],
       groupName: "Talos Linux",
       sourceUrl: "https://github.com/siderolabs/talos",
+      minimumReleaseAge: "14 days",
     },
     {
       matchPackageNames: ["*/siderolabs/kubelet"],
@@ -139,6 +140,7 @@
       matchPackageNames: ["*/siderolabs/kubelet"],
       matchUpdateTypes: ["major", "minor"],
       sourceUrl: "https://github.com/kubernetes/kubernetes",
+      minimumReleaseAge: "14 days",
       // changelogUrl: "https://github.com/kubernetes/kubernetes/blob/{{newVersion}}/CHANGELOG/CHANGELOG-{{newMajor}}.{{newMinor}}.md",
     },
     // Automerge settings
