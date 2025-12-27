@@ -20,5 +20,5 @@ spec:
       # encryption: AES256
     data:
       compression: bzip2
-  # Retention policy currently not working well https://github.com/cloudnative-pg/cloudnative-pg/issues/3824
-  retentionPolicy: "1d" # min 1d
+  # Retention policy looks to be working, but still track https://github.com/cloudnative-pg/cloudnative-pg/issues/3824
+  retentionPolicy: "20d" # min 1d
