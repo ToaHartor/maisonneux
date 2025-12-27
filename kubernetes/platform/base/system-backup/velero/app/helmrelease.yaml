@@ -147,6 +147,7 @@ spec:
             - secret
             - externalsecret
             - persistentvolumeclaim # Backuping PVC allows to perform volume snapshot
+            # - pods # add pods to be able to execute hooks on it, but will not be saved because none of them have the annotation
 
           # excludedNamespaceScopedResources:
           #   - '*'
@@ -166,10 +167,9 @@ spec:
           snapshotMoveData: true
           volumeSnapshotLocations:
             - default
-          
+
           hooks:
             resources: []
-
       # mariadb:
       #   # Maybe include DB root password here as well
       #   disabled: false
