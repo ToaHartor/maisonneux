@@ -35,7 +35,7 @@ spec:
 
   valuesFrom:
     - kind: Secret
-      name: opencloud-oidc-authentik-application
+      name: ${APP}-oidc-authentik-application
       valuesKey: clientID
       targetPath: app.controllers.opencloud.containers.app.env.OC_OIDC_CLIENT_ID
 
@@ -43,7 +43,9 @@ spec:
     controllers:
       opencloud:
         annotations:
-          reloader.stakater.com/auto: "true"
+          # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+          secret.reloader.stakater.com/reload: "${S3_USER}-s3user,${SECRET_CREDS_NAME},${APP}-oidc-authentik-application,${APP}-desktop-oidc-authentik-application"
+          configmap.reloader.stakater.com/reload: "opencloud-config"
           homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
         pod:
           securityContext:
@@ -83,7 +85,7 @@ spec:
               IDM_ADMIN_PASSWORD:
                 valueFrom:
                   secretKeyRef:
-                    name: opencloud-admin-creds
+                    name: ${SECRET_CREDS_NAME}
                     key: password
               IDM_CREATE_DEMO_USERS: "false"
 

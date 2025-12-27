@@ -47,6 +47,9 @@ spec:
             sectionName: websecure
             kind: Gateway
     
+    annotations:
+      # Reload on secret change
+      secret.reloader.stakater.com/reload: "${SECRET_CREDS_NAME},${APP}-oidc-authentik-application"
 
     # Content of the grafana.ini file http://docs.grafana.org/installation/configuration/
     grafana.ini:

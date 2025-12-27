@@ -44,9 +44,9 @@ spec:
         rollingUpdate:
           maxUnavailable: 0
           maxSurge: 1
-        # annotations:
-        #   # Reload pod on secret change
-        #   secret.reloader.stakater.com/reload: "sonarr-db-creds" 
+        annotations:
+          # Reload pod on secret change
+          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
         podSpec:
           initContainers:
             waitpsql:

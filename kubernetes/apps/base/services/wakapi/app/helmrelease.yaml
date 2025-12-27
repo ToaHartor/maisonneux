@@ -17,7 +17,9 @@ spec:
   values:
     controllers:
       wakapi:
-        # annotations:
+        annotations:
+          # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
         type: deployment
         strategy: RollingUpdate
         rollingUpdate:
@@ -56,22 +58,22 @@ spec:
               - name: WAKAPI_PASSWORD_SALT
                 valueFrom:
                   secretKeyRef:
-                    name: wakapi-password-salt
+                    name: ${SECRET_KEY_NAME}
                     key: secretKey
               - name: WAKAPI_DB_USER
                 valueFrom:
                   secretKeyRef:
-                    name: wakapi-db-creds
+                    name: ${APP}-db-creds
                     key: username
               - name: WAKAPI_DB_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                    name: wakapi-db-creds
+                    name: ${APP}-db-creds
                     key: password
               - name: WAKAPI_DB_HOST
                 valueFrom:
                   secretKeyRef:
-                    name: wakapi-db-creds
+                    name: ${APP}-db-creds
                     key: host
               - name: WAKAPI_DB_PORT
                 value: "5432"
@@ -80,7 +82,7 @@ spec:
               - name: WAKAPI_DB_NAME
                 valueFrom:
                   secretKeyRef:
-                    name: wakapi-db-creds
+                    name: ${APP}-db-creds
                     key: dbname
               # Set wakapi mail settings
               - name: WAKAPI_MAIL_ENABLED

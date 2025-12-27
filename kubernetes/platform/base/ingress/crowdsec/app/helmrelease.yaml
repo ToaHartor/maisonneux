@@ -26,6 +26,11 @@ spec:
     tls:
       enabled: false
 
+    deploymentAnnotations:
+      # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+      secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
+      configmap.reloader.stakater.com/auto: "true"
+
     agent:
       # we are not setting up traefik but the acquisition section is required.
       acquisition:
@@ -59,6 +64,11 @@ spec:
           enabled: false
         data:
           enabled: false
+
+      deployAnnotations:
+        # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+        secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
+        configmap.reloader.stakater.com/auto: "true"
 
       env:
         ## Auto enroll traefik with this key

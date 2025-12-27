@@ -16,7 +16,7 @@ spec:
       retries: 3
   valuesFrom:
     - kind: Secret
-      name: vaultwarden-admin-key
+      name: ${SECRET_KEY_NAME}
       valuesKey: secretKey
       targetPath: vaultwarden.admin.token
     # SMTP configuration mirrored from the external-secrets secret store
@@ -59,6 +59,10 @@ spec:
 
     workload:
       main:
+        annotations:
+          # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds,smtp-config"
+          configmap.reloader.stakater.com/auto: "true"
         podSpec:
           # As UserNamespaces are not enabled on Talos
           hostUsers: true
@@ -77,7 +81,7 @@ spec:
                 DOMAIN: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
                 DATABASE_URL:
                   secretKeyRef:
-                    name: vaultwarden-db-creds
+                    name: ${APP}-db-creds
                     key: uri
                     expandObjectName: false
               # Maybe we do not need to manage the private key in /data/rsa_key.pem as it only manages the encryption of the JWT for login

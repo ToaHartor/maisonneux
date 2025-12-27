@@ -19,11 +19,14 @@ spec:
     remediation:
       retries: 3
   values:
+    deploymentAnnotations:
+      # Reload pod on secret/cm change
+      reloader.stakater.com/auto: "true"
     env:
       - name: "AWS_ACCESS_KEY_ID"
         valueFrom:
           secretKeyRef:
-            name: &s3user zot-${environment}-s3user
+            name: &s3user ${S3_USER}-s3user
             key: accessKey
       - name: "AWS_SECRET_ACCESS_KEY"
         valueFrom:

@@ -46,6 +46,7 @@ spec:
     workload:
       main:
         annotations:
+          secret.reloader.stakater.com/auto: "true"
           homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
         podSpec:
           containers:
@@ -72,13 +73,13 @@ spec:
                 # Admin user
                 MINIO_ROOT_USER:
                   secretKeyRef:
-                    name: minio-admin-creds
+                    name: ${SECRET_CREDS_NAME}
                     key: username
                     expandObjectName: false
 
                 MINIO_ROOT_PASSWORD:
                   secretKeyRef:
-                    name: minio-admin-creds
+                    name: ${SECRET_CREDS_NAME}
                     key: password
                     expandObjectName: false
 
@@ -91,32 +92,6 @@ spec:
         path: ${nfs_path_minio}
 
     extraTpl:
-      # Admin account
-      - |
-        apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
-        metadata:
-          name: minio-admin-creds
-          namespace: {{ .Release.Namespace }}
-          labels:
-            homelab/backup-resource: "true"
-        spec:
-          refreshPolicy: OnChange
-          dataFrom:
-          - sourceRef:
-              generatorRef:
-                apiVersion: generators.external-secrets.io/v1alpha1
-                kind: ClusterGenerator
-                name: "password"
-          target:
-            template:
-              metadata:
-                labels:
-                  homelab/backup-resource: "true"
-              data:
-                username: "minio"
-                password: "{{ `{{ .password }}` }}"
-              engineVersion: v2
       # Gateways
       - |
         apiVersion: gateway.networking.k8s.io/v1

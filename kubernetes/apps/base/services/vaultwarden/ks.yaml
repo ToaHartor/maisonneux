@@ -18,6 +18,7 @@ spec:
     # relative to spec.path
     - ../../../../../common/components/cnpg/db
     - ../../../../../common/components/httproute/common
+    - ../../../../../common/components/secret/key
   path: "./kubernetes/apps/base/services/vaultwarden/app"
   postBuild:
     substitute:
@@ -25,10 +26,15 @@ spec:
       SUBDOMAIN: vault
       DOMAIN: ${main_domain}
       DOMAIN_WEBSECURE: ${main_domain_websecure}
+      ## Database
       PSQL_DB_USER: vaultwarden
       PSQL_DB_NAME: vaultwarden
+      ## Gateway
       GATEWAY_SVC_NAME: vaultwarden
       GATEWAY_SVC_PORT: "10102"
+      ## API key
+      SECRET_KEY_NAME: vaultwarden-admin-key
+      SECRET_KEY_TYPE: secret-key
       # inherited variables
       psql_cluster_name: ${psql_cluster_name}
       psql_database_namespace: ${psql_database_namespace}

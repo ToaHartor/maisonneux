@@ -18,11 +18,11 @@ spec:
       retries: 3
   valuesFrom:
     - kind: Secret
-      name: gitea-oidc-authentik-application
+      name: ${APP}-oidc-authentik-application
       valuesKey: clientID
       targetPath: gitea.oauth[0].key
     - kind: Secret
-      name: gitea-oidc-authentik-application
+      name: ${APP}-oidc-authentik-application
       valuesKey: clientSecret
       targetPath: gitea.oauth[0].secret
   postRenderers:
@@ -51,6 +51,9 @@ spec:
 
     deployment:
       annotations:
+        # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+        secret.reloader.stakater.com/reload: "${S3_USER}-s3user,${APP}-db-creds,${APP}-oidc-authentik-application"
+        configmap.reloader.stakater.com/reload: "gitea-app-ini"
         homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
 
     gitea:

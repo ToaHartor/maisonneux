@@ -46,7 +46,7 @@ spec:
           maxSurge: 1
         annotations:
           # Reload pod on secret change
-          # secret.reloader.stakater.com/reload: "radarr-psql-secret" 
+          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
         podSpec:
           initContainers:
             waitpsql:

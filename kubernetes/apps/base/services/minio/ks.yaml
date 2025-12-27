@@ -21,6 +21,7 @@ spec:
   components:
     # relative to spec.path
     - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/secret/creds
   path: "./kubernetes/apps/base/services/minio/app"
   postBuild:
     substitute:
@@ -32,6 +33,9 @@ spec:
       DESCRIPTION: S3 bucket service
       REDIRECT_URL: "https://s3.${main_domain_websecure}/oauth_callback"
       ADMIN_SUBDOMAIN: s3
+      ## Generated secrets
+      SECRET_CREDS_NAME: minio-admin-creds
+      SECRET_CREDS_USER: minio
       # inherited variables
       quote: '"'
       patch_dns: ${quote}${patch_dns:=false}${quote}

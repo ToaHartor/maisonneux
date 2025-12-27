@@ -18,19 +18,19 @@ spec:
       retries: 3
   valuesFrom:
     - kind: Secret
-      name: immich-db-creds
+      name: ${APP}-db-creds
       valuesKey: password
       targetPath: cnpg.main.creds.password
     - kind: Secret
-      name: immich-oidc-authentik-application
+      name: ${APP}-oidc-authentik-application
       valuesKey: clientID
       targetPath: authentikOidc.clientId
     - kind: Secret
-      name: immich-oidc-authentik-application
+      name: ${APP}-oidc-authentik-application
       valuesKey: clientSecret
       targetPath: authentikOidc.clientSecret
     - kind: Secret
-      name: immich-oidc-authentik-application
+      name: ${APP}-oidc-authentik-application
       valuesKey: issuerURL
       targetPath: authentikOidc.issuerUrl
 
@@ -121,6 +121,9 @@ spec:
     workload:
       main:
         annotations:
+          # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+          secret.reloader.stakater.com/reload: "${APP}-db-creds,${APP}-oidc-authentik-application"
+          configmap.reloader.stakater.com/auto: "true"
           homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
         podSpec:
           annotations:

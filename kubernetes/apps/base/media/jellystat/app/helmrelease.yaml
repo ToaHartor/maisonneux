@@ -35,8 +35,8 @@ spec:
           maxUnavailable: 0
           maxSurge: 1
         annotations:
-          # Reload pod on secret change
-          # secret.reloader.stakater.com/reload: "jellystat-psql-secret" 
+          # Reload pod on secret/cm change
+          reloader.stakater.com/auto: "true"
         podSpec:
           initContainers:
             waitpsql:

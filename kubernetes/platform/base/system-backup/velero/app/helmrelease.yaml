@@ -36,6 +36,10 @@ spec:
     #         app.kubernetes.io/name: trust-manager
     #         app.kubernetes.io/instance: trust-manager
 
+    annotations:
+      # Reload pod on secret change
+      secret.reloader.stakater.com/reload: "s3-backup-aws-creds-file"
+
     initContainers:
       - name: velero-plugin-for-aws
         image: velero/velero-plugin-for-aws:v1.13.1
