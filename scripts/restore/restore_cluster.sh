@@ -121,11 +121,23 @@ function restore_staged() {
   done
 }
 
+echo "Set backup resource location to ReadOnly"
+kubectl patch backupstoragelocation default \
+    --namespace "$VELERO_NAMESPACE" \
+    --type merge \
+    --patch '{"spec":{"accessMode":"ReadOnly"}}'
+
 if [ $# -lt 2 ] || [ "$2" != "--staged" ]; then
   restore_all
 else
   restore_staged
 fi
+
+echo "Set backup resource location back to ReadWrite"
+kubectl patch backupstoragelocation default \
+    --namespace "$VELERO_NAMESPACE" \
+    --type merge \
+    --patch '{"spec":{"accessMode":"ReadWrite"}}'
 
 echo "Do not forget to clean the remaining PersistentVolumes :"
 kubectl get pv | grep Released
