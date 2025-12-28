@@ -18,17 +18,24 @@ spec:
     # relative to spec.path
     - ../../../../../common/components/cnpg/db
     - ../../../../../common/components/secret/key
+    - ../../../../../common/components/httproute/common
   path: "./kubernetes/apps/base/services/wakapi/app"
   prune: true
   postBuild:
     substitute:
       APP: wakapi
+      SUBDOMAIN: wakapi
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
       # Database
       PSQL_DB_USER: wakapi
       PSQL_DB_NAME: wakapi
       ## API key
       SECRET_KEY_NAME: wakapi-password-salt
       SECRET_KEY_TYPE: secret-key
+      ## Gateway
+      GATEWAY_SVC_NAME: wakapi
+      GATEWAY_SVC_PORT: "3000"
       # inherited variables
       psql_cluster_name: ${psql_cluster_name}
       psql_database_namespace: ${psql_database_namespace}

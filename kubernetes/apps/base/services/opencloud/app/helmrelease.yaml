@@ -131,7 +131,10 @@ spec:
               STORAGE_USERS_DECOMPOSEDS3_BUCKET: ${BUCKET_NAME}
 
               STORAGE_USERS_EVENTS_NUM_CONSUMERS: 5
-
+            ports:
+              - containerPort: 80
+                name: http
+                protocol: TCP
             probes:
               liveness:
                 enabled: true

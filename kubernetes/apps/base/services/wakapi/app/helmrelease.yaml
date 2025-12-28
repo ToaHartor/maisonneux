@@ -48,7 +48,7 @@ spec:
               - name: WAKAPI_PORT
                 value: "3000"
               - name: WAKAPI_PUBLIC_URL
-                value: "http://localhost:3000" # TODO : change when exposed
+                value: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
               - name: WAKAPI_ALLOW_SIGNUP
                 value: "false"
               - name: WAKAPI_EXPORT_METRICS
@@ -89,16 +89,24 @@ spec:
                 value: "false"
             resources:
               requests:
-                cpu: 10m
-                memory: 30Mi
-              limits:
                 cpu: 100m
-                memory: 100Mi
+                memory: 75Mi
+              limits:
+                cpu: 500m
+                memory: 200Mi
+            ports:
+              - containerPort: 3000
+                name: http
+                protocol: TCP
             probes:
               liveness:
                 enabled: true
                 custom: true
                 spec:
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
                   httpGet:
                     path: /api/health
                     port: 3000
@@ -106,6 +114,10 @@ spec:
                 enabled: true
                 custom: true
                 spec:
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
                   httpGet:
                     path: /api/health
                     port: 3000
@@ -116,7 +128,7 @@ spec:
         ports:
           http:
             port: 3000
-    
+
     persistence:
       data:
         type: emptyDir
