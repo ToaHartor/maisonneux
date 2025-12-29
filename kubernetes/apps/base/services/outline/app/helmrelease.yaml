@@ -148,7 +148,7 @@ spec:
                     name: "${S3_USER}-s3user"
                     key: secretKey
                     expandObjectName: false
-                # AWS_REGION: 
+                AWS_REGION: local
                 # AWS_S3_ACCELERATE_URL:
                 AWS_S3_UPLOAD_BUCKET_URL: http://${minio_url}
                 AWS_S3_UPLOAD_BUCKET_NAME: ${BUCKET_NAME}
