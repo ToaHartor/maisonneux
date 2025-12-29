@@ -50,8 +50,8 @@ spec:
       fastdata_storage: ${fastdata_storage}
       nfs_server: ${nfs_server}
       nfs_path_download: ${nfs_path_download}
-      nfs_path_media_1: ${nfs_path_media_1}
-      nfs_path_media_2: ${nfs_path_media_2}
+      nfs_path_media_3: ${nfs_path_media_3}
+      nfs_path_media_4: ${nfs_path_media_4}
       auth_subdomain: ${auth_subdomain}
       main_domain: ${main_domain}
       main_domain_websecure: ${main_domain_websecure}

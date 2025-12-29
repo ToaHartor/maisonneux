@@ -53,7 +53,12 @@ spec:
               enabled: true
               type: init
               imageSelector: waitPsqlImage
-              command: ['sh', '-c', 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+              command:
+                [
+                  "sh",
+                  "-c",
+                  'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;',
+                ]
               env:
                 POD_NAME: postgres-db-rw # service name for psql rw operations
                 POD_NAMESPACE: ${psql_database_namespace}
@@ -98,7 +103,6 @@ spec:
         server: ${nfs_server}
         path: ${nfs_path_download}
         mountPath: /downloads
-      # TODO : check which mount is actually a tv mount
       media-1:
         enabled: true
         type: nfs

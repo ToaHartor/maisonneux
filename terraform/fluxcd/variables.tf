@@ -135,6 +135,9 @@ variable "truenas_nfs_paths" {
   type = object({
     media_1  = string
     media_2  = string
+    media_3  = string
+    media_4  = string
+    media_5  = string
     download = string
     immich   = string
     # paperless = string

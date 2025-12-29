@@ -39,6 +39,9 @@ spec:
       nfs_server: ${nfs_server}
       nfs_path_media_1: ${nfs_path_media_1}
       nfs_path_media_2: ${nfs_path_media_2}
+      nfs_path_media_3: ${nfs_path_media_3}
+      nfs_path_media_4: ${nfs_path_media_4}
+      nfs_path_media_5: ${nfs_path_media_5}
   patches:
     - target:
         kind: HelmRelease

@@ -104,3 +104,21 @@ spec:
         server: ${nfs_server}
         path: ${nfs_path_media_2}
         mountPath: "/shared/media2/"
+      media-3:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_media_3}
+        mountPath: "/shared/media3/"
+      media-4:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_media_4}
+        mountPath: "/shared/media4/"
+      media-5:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_media_5}
+        mountPath: "/shared/media5/"
