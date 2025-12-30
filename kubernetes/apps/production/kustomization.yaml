@@ -29,24 +29,24 @@ patches:
                 nvidia.com/gpu: 1
             # Patchception to patch the helmrelease, which patches the deployment
             - op: add
-              path: /spec/postRenderers
+              path: /spec/postRenderers/1
               value:
-                - kustomize:
-                    patches:
-                      - target:
-                          version: v1
-                          kind: Deployment
-                          name: jellyfin
-                        patch: |-
-                          - op: add
-                            path: /spec/template/spec/affinity/nodeAffinity
-                            value:
-                              requiredDuringSchedulingIgnoredDuringExecution:
-                                nodeSelectorTerms:
-                                - matchExpressions:
-                                  - key: nvidia.com/gpu.present
-                                    operator: In
-                                    values: ["true"]
+                kustomize:
+                  patches:
+                    - target:
+                        version: v1
+                        kind: Deployment
+                        name: jellyfin
+                      patch: |-
+                        - op: add
+                          path: /spec/template/spec/affinity/nodeAffinity
+                          value:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                              nodeSelectorTerms:
+                              - matchExpressions:
+                                - key: nvidia.com/gpu.present
+                                  operator: In
+                                  values: ["true"]
   - target:
       group: kustomize.toolkit.fluxcd.io
       kind: Kustomization

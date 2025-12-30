@@ -31,11 +31,15 @@ spec:
       GATEWAY_SVC_NAME: jellyfin
       GATEWAY_SVC_PORT: "8096"
       # inherited variables
+      quote: '"'
+      patch_dns: ${quote}${patch_dns:=false}${quote}
+      traefik_lb_ip: ${traefik_lb_ip}
       gpu_runtime_class: ${gpu_runtime_class}
       fastdata_storage: ${fastdata_storage}
       auth_subdomain: ${auth_subdomain}
       main_domain: ${main_domain}
       main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
       nfs_server: ${nfs_server}
       nfs_path_media_1: ${nfs_path_media_1}
       nfs_path_media_2: ${nfs_path_media_2}
