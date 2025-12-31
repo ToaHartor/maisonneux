@@ -33,11 +33,11 @@ spec:
 
     resources:
       limits:
-        cpu: 500m
-        memory: 250Mi
+        cpu: 1500m
+        memory: 800Mi
       requests:
-        cpu: 20m
-        memory: 100Mi
+        cpu: 200m
+        memory: 200Mi
     workload:
       main:
         strategy: RollingUpdate

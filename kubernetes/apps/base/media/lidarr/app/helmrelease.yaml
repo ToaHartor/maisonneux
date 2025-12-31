@@ -33,11 +33,11 @@ spec:
 
     resources:
       limits:
-        cpu: 500m
-        memory: 250Mi
+        cpu: 1500m
+        memory: 800Mi
       requests:
-        cpu: 20m
-        memory: 100Mi
+        cpu: 200m
+        memory: 200Mi
     workload:
       main:
         strategy: RollingUpdate
@@ -53,7 +53,12 @@ spec:
               enabled: true
               type: init
               imageSelector: waitPsqlImage
-              command: ['sh', '-c', 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+              command:
+                [
+                  "sh",
+                  "-c",
+                  'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;',
+                ]
               env:
                 POD_NAME: postgres-db-rw # service name for psql rw operations
                 POD_NAMESPACE: ${psql_database_namespace}
