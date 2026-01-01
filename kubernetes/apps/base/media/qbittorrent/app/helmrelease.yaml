@@ -18,12 +18,15 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/qbittorrent/values.yaml
   values:
-    # workload:
-    #   main:
-    #     podSpec:
-    #       containers:
-    #         main:
-    #           env:
+    workload:
+      main:
+        podSpec:
+          containers:
+            main:
+              env:
+                QBT_DOWNLOADS_PATH: /downloads/complete
+                QBT_TEMP_PATH: /downloads/incomplete
+                QBT_TORRENT_PATH: /downloads/torrent
     #             TZ: Europe/Paris
     #             PUID: 1000 # User ID, should have the rights on the NFS share and the dataset
     #             PGID: 1000 # Group ID
