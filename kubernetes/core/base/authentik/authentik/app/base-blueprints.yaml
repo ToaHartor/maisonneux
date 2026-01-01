@@ -64,7 +64,7 @@ data:
     version: 1
     metadata:
       name: "authentik-outpost-proxy-association"
-    
+
     entries:
       - model: authentik_outposts.outpost
         identifiers: 
@@ -76,6 +76,8 @@ data:
             - !Find [authentik_providers_proxy.proxyprovider, [name, radarr]]
             - !Find [authentik_providers_proxy.proxyprovider, [name, radarr4k]]
             - !Find [authentik_providers_proxy.proxyprovider, [name, prowlarr]]
+            - !Find [authentik_providers_proxy.proxyprovider, [name, lidarr]]
+            - !Find [authentik_providers_proxy.proxyprovider, [name, qbittorrent]]
             - !Find [authentik_providers_proxy.proxyprovider, [name, jdownloader2]]
           config:
             authentik_host: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
