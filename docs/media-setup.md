@@ -6,6 +6,15 @@ The media stack setup requires NFS storage mounts to persist downloads and media
 
 The mount creation guide in TrueNAS is handled in nfs-mounts.md, so this is a prerequisite to the media environment.
 
+## Qbittorrent setup
+
+- In Downloads:
+  - Set `Default save path` to `/downloads/complete`
+  - Set `Keep incomplete torrents` to `/downloads/incomplete`
+  - Set `Copy .torrent files` to `/downloads/torrentfiles`
+
+TODO : VPN setup
+
 ## Jellyfin wizard
 
 Jellyfin needs to be set up with the wizard. We create an admin user and password that will be used for the next steps to generate API keys.
