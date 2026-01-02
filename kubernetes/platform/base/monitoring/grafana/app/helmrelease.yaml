@@ -37,7 +37,7 @@ spec:
     route:
       main:
         enabled: true
-        
+
         hostnames:
           - ${SUBDOMAIN}.${DOMAIN}
 
@@ -46,7 +46,7 @@ spec:
             namespace: ingress
             sectionName: websecure
             kind: Gateway
-    
+
     annotations:
       # Reload on secret change
       secret.reloader.stakater.com/reload: "${SECRET_CREDS_NAME},${APP}-oidc-authentik-application"
@@ -57,7 +57,7 @@ spec:
       instance_name: homelab
       analytics:
         reporting_enabled: false
-      
+
       database:
         # Connection url is built in pqsl-extsecret.yaml
         type: postgres
@@ -66,7 +66,7 @@ spec:
 
       auth:
         signout_redirect_url: "https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/end-session/"
-      
+
       auth.generic_oauth:
         enabled: true
         name: Authentik
@@ -80,7 +80,7 @@ spec:
         api_url: "https://${auth_subdomain}.${main_domain_websecure}/application/o/userinfo/"
         tls_skip_verify_insecure: true
         # Depends on groups assigned to users in Authentik
-        role_attribute_path: "contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'"
+        role_attribute_path: "contains(groups[*], 'authentik Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'"
 
       users:
         allow_sign_up: false
@@ -116,7 +116,7 @@ spec:
       existingSecret: ${SECRET_CREDS_NAME}
       userKey: username
       passwordKey: password
-    
+
     # Helm sidecar to handle dashboard provisioning with both other helm charts and personal dashboards
     sidecar:
       dashboards:
@@ -128,7 +128,7 @@ spec:
           disableDelete: false # true
           allowUiUpdates: false
           foldersFromFileStructure: false
-    
+
     plugins:
       # Datasource plugins
       - victoriametrics-metrics-datasource
@@ -158,7 +158,7 @@ spec:
             access: proxy
             isDefault: false
             editable: false
-    
+
     dashboards:
       default:
         # https://grafana.com/grafana/dashboards/14837-authentik/
@@ -194,16 +194,16 @@ spec:
       dashboardproviders.yaml:
         apiVersion: 1
         providers:
-        # Add downloaded dashboards in the providers list
-        # Dashboards provisioned by sidecar are automatically added, so no need to add them here
-        - name: 'downloads'
-          orgId: 1
-          folder: ''
-          type: file
-          disableDeletion: true
-          editable: false
-          options:
-            path: /var/lib/grafana/dashboards/default
+          # Add downloaded dashboards in the providers list
+          # Dashboards provisioned by sidecar are automatically added, so no need to add them here
+          - name: "downloads"
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: true
+            editable: false
+            options:
+              path: /var/lib/grafana/dashboards/default
 
     extraSecretMounts:
       - name: postgres-db-creds

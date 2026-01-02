@@ -63,6 +63,30 @@ spec:
             slug: "app: grafana"
             parent: "authentik Admins"
             bindID: "6bee1134-3cc7-4cfc-a2e3-e60705928ecd" # arbitrary uuid
+        - op: add
+          path: '/spec/values/blueprint/provider/oidc/scopes/-'
+          value:
+            name: "Grafana groups"
+            scope_name: "groups"
+            # Only add groups + parents that are not individual groups dedicated to apps
+            # from https://github.com/goauthentik/authentik/discussions/16282#discussioncomment-14698978
+            expression: |
+              from authentik.core.models import Group
+
+              user_groups = {group.name for group in user.all_groups()}
+              effective = set(user_groups)
+
+              for group in Group.objects.all():
+                parent = group.parent
+                while parent:
+                  if parent.name in user_groups:
+                    if not group.name.startswith("app: "):
+                      effective.add(group.name)
+                    break
+                  parent = parent.parent
+              return {
+                "groups": list(effective)
+              }
 
   prune: true
   sourceRef:
