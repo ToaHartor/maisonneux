@@ -83,7 +83,6 @@ spec:
                     key: password
                     expandObjectName: false
 
-
     persistence:
       config:
         enabled: true
@@ -119,29 +118,29 @@ spec:
               - name: {{ .Release.Name }}
                 namespace: {{ .Release.Namespace }}
                 port: {{ .Values.service.main.ports.main.port }}
-      - |
-        apiVersion: gateway.networking.k8s.io/v1
-        kind: HTTPRoute
-        metadata:
-          name: {{ .Release.Name }}-api
-          namespace: {{ .Release.Namespace }}
-        spec:
-          parentRefs:
-            - name: traefik-gateway
-              namespace: ingress
-              sectionName: websecure
-              kind: Gateway
+      # - |
+      #   apiVersion: gateway.networking.k8s.io/v1
+      #   kind: HTTPRoute
+      #   metadata:
+      #     name: {{ .Release.Name }}-api
+      #     namespace: {{ .Release.Namespace }}
+      #   spec:
+      #     parentRefs:
+      #       - name: traefik-gateway
+      #         namespace: ingress
+      #         sectionName: websecure
+      #         kind: Gateway
 
-          hostnames:
-            - ${SUBDOMAIN}.${main_domain}
+      #     hostnames:
+      #       - ${SUBDOMAIN}.${main_domain}
 
-          rules:
-            - matches:
-              - path:
-                  type: PathPrefix
-                  value: /
+      #     rules:
+      #       - matches:
+      #         - path:
+      #             type: PathPrefix
+      #             value: /
 
-              backendRefs:
-              - name: {{ .Release.Name }}-api
-                namespace: {{ .Release.Namespace }}
-                port: {{ .Values.service.api.ports.api.port }}
+      #         backendRefs:
+      #         - name: {{ .Release.Name }}-api
+      #           namespace: {{ .Release.Namespace }}
+      #           port: {{ .Values.service.api.ports.api.port }}
