@@ -20,7 +20,9 @@ spec:
     schedule: "*/20 * * * *"
 
     deschedulerPolicy:
-        profiles:
+      metricsProviders:
+        - source: KubernetesMetrics
+      profiles:
         # From default values
         - name: default
           pluginConfig:
@@ -39,7 +41,7 @@ spec:
             - name: RemovePodsViolatingNodeAffinity
               args:
                 nodeAffinityType:
-                - requiredDuringSchedulingIgnoredDuringExecution
+                  - requiredDuringSchedulingIgnoredDuringExecution
             - name: RemovePodsViolatingNodeTaints
             - name: RemovePodsViolatingInterPodAntiAffinity
               args:
@@ -57,12 +59,12 @@ spec:
                   source: KubernetesMetrics
                 thresholds:
                   cpu: 20
-                  memory: 20
-                  pods: 20
+                  memory: 30
+                  pods: 30
                 targetThresholds:
                   cpu: 70
-                  memory: 70
-                  pods: 70
+                  memory: 80
+                  pods: 80
             - name: RemoveFailedPods
               args:
                 reasons:
