@@ -21,7 +21,7 @@ spec:
   components:
     # relative to spec.path
     - ../../../../../common/components/cnpg/db
-    - ../../../../../common/components/httproute/common
+    # - ../../../../../common/components/httproute/common # TODO : enable this again when we finished to setup jellyseerr
     - ../../../../../common/components/secret/key
   path: "./kubernetes/apps/base/media/jellyseerr/app"
   postBuild:
