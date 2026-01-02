@@ -41,14 +41,13 @@ spec:
       valuesKey: smtp_port
       targetPath: vaultwarden.smtp.port
 
-
   # see https://github.com/truecharts/public/blob/master/charts/premium/vaultwarden/values.yaml
   values:
     waitPsqlImage:
       repository: docker.io/library/busybox
       tag: latest
       pullPolicy: IfNotPresent
-    
+
     resources:
       limits:
         cpu: 500m
@@ -71,7 +70,12 @@ spec:
               enabled: true
               type: init
               imageSelector: waitPsqlImage
-              command: ['sh', '-c', 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+              command:
+                [
+                  "sh",
+                  "-c",
+                  'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;',
+                ]
               env:
                 POD_NAME: postgres-db-rw # service name for psql rw operations
                 POD_NAMESPACE: ${psql_database_namespace}
@@ -93,7 +97,7 @@ spec:
       showPasswordHint: false
       allowInvitation: true
       admin:
-        enabled: true
+        enabled: false # true
         disableAdminToken: false
         token: # Filled in valuesFrom
       smtp:
@@ -117,4 +121,4 @@ spec:
         enabled: false # Disable postgres as we use our own db
     ingress:
       main:
-        required: false    
+        required: false
