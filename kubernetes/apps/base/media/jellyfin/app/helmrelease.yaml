@@ -143,3 +143,9 @@ spec:
         server: ${nfs_server}
         path: ${nfs_path_media_5}
         mountPath: "/shared/media5/"
+      media-6:
+        enabled: true
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_media_6}
+        mountPath: "/shared/music/"

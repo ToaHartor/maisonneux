@@ -52,7 +52,7 @@ spec:
       main_domain_websecure: ${main_domain_websecure}
       nfs_server: ${nfs_server}
       nfs_path_download: ${nfs_path_download}
-      nfs_path_media_1: ${nfs_path_media_1}
+      nfs_path_media_6: ${nfs_path_media_6}
   patches:
     - target:
         kind: HelmRelease

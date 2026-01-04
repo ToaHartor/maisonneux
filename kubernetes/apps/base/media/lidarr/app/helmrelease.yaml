@@ -103,12 +103,12 @@ spec:
         server: ${nfs_server}
         path: ${nfs_path_download}
         mountPath: /downloads
-      media:
+      media-6:
         enabled: true
         type: nfs
         server: ${nfs_server}
-        path: ${nfs_path_media_1}
-        mountPath: /music
+        path: ${nfs_path_media_6}
+        mountPath: "/shared/music/"
     metrics:
       main:
         enabled: true

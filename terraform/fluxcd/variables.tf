@@ -138,6 +138,7 @@ variable "truenas_nfs_paths" {
     media_3  = string
     media_4  = string
     media_5  = string
+    media_6  = string
     download = string
     immich   = string
     # paperless = string
