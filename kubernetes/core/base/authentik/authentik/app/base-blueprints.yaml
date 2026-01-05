@@ -79,6 +79,7 @@ data:
             - !Find [authentik_providers_proxy.proxyprovider, [name, lidarr]]
             - !Find [authentik_providers_proxy.proxyprovider, [name, qbittorrent]]
             - !Find [authentik_providers_proxy.proxyprovider, [name, jdownloader2]]
+            - !Find [authentik_providers_proxy.proxyprovider, [name, bentopdf]]
           config:
             authentik_host: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
 

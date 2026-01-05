@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: bentopdf
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: bentopdf
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: bentopdf-proxy
+      namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: bentopdf
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/proxy-application
+    - ../../../../../common/components/httproute/proxyauth
+  path: "./kubernetes/apps/base/services/bentopdf/app"
+  postBuild:
+    substitute:
+      APP: bentopdf
+      SUBDOMAIN: bentopdf
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: PDF utilities
+      GATEWAY_SVC_NAME: bentopdf
+      GATEWAY_SVC_PORT: "8080"
+      # inherited variables
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: bentopdf"
+            parent: "Users"
+            bindID: "29a2f44c-a863-41f5-b13a-b67efc593ace" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 10m
