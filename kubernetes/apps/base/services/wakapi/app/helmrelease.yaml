@@ -46,7 +46,7 @@ spec:
               - name: ENVIRONMENT
                 value: prod
               - name: WAKAPI_PORT
-                value: "3000"
+                value: ${GATEWAY_SVC_PORT}
               - name: WAKAPI_PUBLIC_URL
                 value: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
               - name: WAKAPI_ALLOW_SIGNUP
@@ -95,7 +95,7 @@ spec:
                 cpu: 500m
                 memory: 200Mi
             ports:
-              - containerPort: 3000
+              - containerPort: ${GATEWAY_SVC_PORT}
                 name: http
                 protocol: TCP
             probes:
@@ -109,7 +109,7 @@ spec:
                   failureThreshold: 3
                   httpGet:
                     path: /api/health
-                    port: 3000
+                    port: ${GATEWAY_SVC_PORT}
               readiness:
                 enabled: true
                 custom: true
@@ -120,14 +120,14 @@ spec:
                   failureThreshold: 3
                   httpGet:
                     path: /api/health
-                    port: 3000
+                    port: ${GATEWAY_SVC_PORT}
 
     service:
       main:
         controller: wakapi
         ports:
           http:
-            port: 3000
+            port: ${GATEWAY_SVC_PORT}
 
     persistence:
       data:
