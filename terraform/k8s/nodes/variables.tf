@@ -33,7 +33,7 @@ variable "proxmox_cluster_name" {
 variable "talos_version" {
   type = string
   # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
-  default = "1.11.6"
+  default = "1.12.1"
   validation {
     condition     = can(regex("^\\d+(\\.\\d+)+", var.talos_version))
     error_message = "Must be a version number."

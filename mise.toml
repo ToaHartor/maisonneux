@@ -10,7 +10,7 @@ k9s = "latest"
 cilium-cli = "latest"
 cilium-hubble = "latest"
 # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
-talosctl = "1.11.6"
+talosctl = "1.12.1"
 tekton-cli = "latest"
 flux2 = "latest"
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
