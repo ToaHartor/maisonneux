@@ -47,7 +47,7 @@ spec:
         - radarr4k
         - lidarr
         - prowlarr
-        - jellyseerr
+        - seerr
         - jellystat
         - paperless
         - grafana

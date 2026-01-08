@@ -3,12 +3,12 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: jellyseerr
+  name: seerr
 spec:
-  releaseName: jellyseerr
+  releaseName: seerr
   chart:
     spec:
-      chart: helm/apps/jellyseerr
+      chart: helm/apps/seerr
       interval: 12h
       sourceRef:
         kind: GitRepository
@@ -34,12 +34,12 @@ spec:
       valuesKey: secretKey
       targetPath: external.radarr4k.apiKey
     - kind: Secret
-      name: jellyseerr-api-key
+      name: seerr-api-key
       valuesKey: secretKey
-      targetPath: external.jellyseerr.apiKey
+      targetPath: external.seerr.apiKey
 
-  # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
-  # see documentation https://truecharts.org/charts/stable/jellyseerr/
+  # see https://github.com/truecharts/public/blob/master/charts/stable/seerr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/seerr/
   values:
     external:
       sonarr:
@@ -62,7 +62,7 @@ spec:
     ingress:
       domain: ${SUBDOMAIN}.${DOMAIN}
 
-    jellyseerr:
+    seerr:
       persistence:
         config:
           storageClass: ${fastdata_storage}-ha

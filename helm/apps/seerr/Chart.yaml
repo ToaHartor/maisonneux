@@ -1,10 +1,10 @@
 apiVersion: v2
-name: jellyseerr
+name: seerr
 description: Custom helm wrapper for Jellyseerr Helm chart
 dependencies:
-  - name: jellyseerr
-    # Version from https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/Chart.yaml
-    version: "13.13.7"
+  - name: seerr
+    # Version from https://github.com/truecharts/public/blob/master/charts/stable/seerr/Chart.yaml
+    version: "13.13.6"
     repository: oci://oci.trueforge.org/truecharts
   - name: common
     version: "0.0.1"

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: jellyseerr-config
+  name: seerr-config
   namespace: {{ .Release.Namespace }}
 type: Opaque
 stringData:
@@ -18,8 +18,8 @@ stringData:
       "vapidPrivate": "{{ randAlphaNum 43 }}",
       "vapidPublic": "{{ randAlphaNum 87 }}",
       "main": {
-        "apiKey": "{{ .Values.external.jellyseerr.apiKey }}",
-        "applicationTitle": "Jellyseerr",
+        "apiKey": "{{ .Values.external.seerr.apiKey }}",
+        "applicationTitle": "Seerr",
         "applicationUrl": "",
         "cacheImages": false,
         "defaultPermissions": 32,

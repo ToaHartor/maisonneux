@@ -2,7 +2,7 @@ namespaces:
   postgresNamespace: &psqlNs postgres
 
 external:
-  jellyseerr:
+  seerr:
     apiKey: # Completed by FluxCD
   sonarr:
     hostname:
@@ -18,15 +18,15 @@ external:
     apiKey: # Completed by FluxCD
   jellyfin:
     hostname:
-    externalHostname:    
+    externalHostname:
     apiKey:
 
 ingress:
-  domain: jellyseerr.example.com
+  domain: seerr.example.com
 
-jellyseerr:
-  # see https://github.com/truecharts/public/blob/master/charts/stable/jellyseerr/values.yaml
-  # see documentation https://truecharts.org/charts/stable/jellyseerr/
+seerr:
+  # see https://github.com/truecharts/public/blob/master/charts/stable/seerr/values.yaml
+  # see documentation https://truecharts.org/charts/stable/seerr/
   waitPsqlImage:
     repository: docker.io/library/busybox
     tag: latest
@@ -54,7 +54,12 @@ jellyseerr:
             enabled: true
             type: init
             imageSelector: waitPsqlImage
-            command: ['sh', '-c', 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            command:
+              [
+                "sh",
+                "-c",
+                'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;',
+              ]
             env:
               POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
@@ -62,7 +67,7 @@ jellyseerr:
             enabled: true
             type: init
             imageSelector: jqImage
-            command: ['sh', '-c', '/shared/scripts/merge-config.sh']
+            command: ["sh", "-c", "/shared/scripts/merge-config.sh"]
         containers:
           main:
             env:
@@ -73,13 +78,13 @@ jellyseerr:
               DB_TYPE: "postgres" # Which DB engine to use, either "sqlite" or "postgres". The default is "sqlite".
               DB_HOST: "postgres-db-rw.postgres.svc.cluster.local" # (optional) The host (URL) of the database. The default is "localhost".
               DB_PORT: "5432" # (optional) The port to connect to. The default is "5432".
-              DB_USER: "jellyseerr" # (required) Username used to connect to the database.
+              DB_USER: "seerr" # (required) Username used to connect to the database.
               DB_PASS: # (required) Password of the user used to connect to the database.
                 secretKeyRef:
-                  name: jellyseerr-db-creds
+                  name: seerr-db-creds
                   key: password
                   expandObjectName: false
-              DB_NAME: "jellyseerr" # (optional) The name of the database to connect to. The default is "jellyseerr".
+              DB_NAME: "seerr" # (optional) The name of the database to connect to. The default is "jellyseerr".
               DB_LOG_QUERIES: "false" # (optional) Whether to log the DB queries for debugging. The default is "false".
 
   persistence:
@@ -100,7 +105,7 @@ jellyseerr:
       type: secret
       readOnly: false
       defaultMode: "0777"
-      objectName: jellyseerr-config
+      objectName: seerr-config
       expandObjectName: false
       targetSelector:
         main:
@@ -112,7 +117,7 @@ jellyseerr:
       type: configmap
       readOnly: false
       defaultMode: "0777"
-      objectName: jellyseerr-config-script
+      objectName: seerr-config-script
       expandObjectName: false
       targetSelector:
         main:

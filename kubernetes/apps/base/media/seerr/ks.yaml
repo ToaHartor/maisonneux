@@ -3,11 +3,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: jellyseerr
+  name: seerr
 spec:
   commonMetadata:
     labels:
-      app.kubernetes.io/name: jellyseerr
+      app.kubernetes.io/name: seerr
   dependsOn:
     - name: sonarr
     - name: radarr
@@ -15,30 +15,30 @@ spec:
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
-      name: jellyseerr
+      name: seerr
       namespace: media
   interval: 1h
   components:
     # relative to spec.path
     - ../../../../../common/components/cnpg/db
-    # - ../../../../../common/components/httproute/common # TODO : enable this again when we finished to setup jellyseerr
+    # - ../../../../../common/components/httproute/common # TODO : enable this again when we finished to setup seerr
     - ../../../../../common/components/secret/key
-  path: "./kubernetes/apps/base/media/jellyseerr/app"
+  path: "./kubernetes/apps/base/media/seerr/app"
   postBuild:
     substitute:
-      APP: jellyseerr
+      APP: seerr
       SUBDOMAIN: requests
       DOMAIN: ${main_domain}
       DOMAIN_WEBSECURE: ${main_domain_websecure}
       # TODO : other subdomain variables ?
       ## Database
-      PSQL_DB_USER: jellyseerr
-      PSQL_DB_NAME: jellyseerr
+      PSQL_DB_USER: seerr
+      PSQL_DB_NAME: seerr
       ## Gateway
-      GATEWAY_SVC_NAME: jellyseerr
+      GATEWAY_SVC_NAME: seerr
       GATEWAY_SVC_PORT: "10241"
       ## API key
-      SECRET_KEY_NAME: jellyseerr-api-key
+      SECRET_KEY_NAME: seerr-api-key
       SECRET_KEY_TYPE: api-key
       # inherited variables
       psql_cluster_name: ${psql_cluster_name}
