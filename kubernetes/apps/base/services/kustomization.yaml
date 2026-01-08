@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: services
 resources:
   - ./namespace.yaml
+  - ./atuin/ks.yaml
   - ./cyberchef/ks.yaml
   - ./gitea/ks.yaml
   - ./immich/ks.yaml

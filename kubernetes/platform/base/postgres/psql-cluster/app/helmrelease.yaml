@@ -41,7 +41,7 @@ spec:
         - vaultwarden
         - wakapi
         - outline
-        - stirlingpdf
+        # - stirlingpdf
         - gitea
         - radarr
         - radarr4k
@@ -53,3 +53,4 @@ spec:
         - grafana
         - crowdsec
         - immich
+        - atuin

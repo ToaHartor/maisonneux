@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: atuin
+spec:
+  releaseName: atuin
+  chartRef:
+    kind: OCIRepository
+    name: atuin
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/atuin/values.yaml
+  values:
+    service:
+      main:
+        ports:
+          main:
+            port: ${GATEWAY_SVC_PORT}
+
+    resources:
+      limits:
+        cpu: 200m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 50Mi
+
+    workload:
+      main:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+        podSpec:
+          hostUsers: true
+          containers:
+            main:
+              env:
+                ATUIN_OPEN_REGISTRATION: "true"
+                ATUIN_DB_URI:
+                  secretKeyRef:
+                    name: ${APP}-db-creds
+                    key: uri
+                    expandObjectName: false
+                ATUIN_DB_USERNAME:
+                  secretKeyRef:
+                    name: ${APP}-db-creds
+                    key: username
+                    expandObjectName: false
+                ATUIN_DB_PASSWORD:
+                  secretKeyRef:
+                    name: ${APP}-db-creds
+                    key: password
+                    expandObjectName: false
+
+    persistence:
+      config:
+        enabled: true
+        type: emptyDir
+
+    cnpg:
+      main:
+        enabled: false
