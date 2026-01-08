@@ -27,7 +27,7 @@ spec:
   postBuild:
     substitute:
       APP: stirlingpdf
-      SUBDOMAIN: pdf
+      SUBDOMAIN: stirlingpdf
       DOMAIN: ${main_domain}
       DOMAIN_WEBSECURE: ${main_domain_websecure}
       GROUP: Services

@@ -26,7 +26,7 @@ spec:
   postBuild:
     substitute:
       APP: bentopdf
-      SUBDOMAIN: bentopdf
+      SUBDOMAIN: pdf
       DOMAIN: ${main_domain}
       DOMAIN_WEBSECURE: ${main_domain_websecure}
       GROUP: Services

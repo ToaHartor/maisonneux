@@ -14,7 +14,7 @@ resources:
   - ./outline/ks.yaml
   # - ./paperless-ngx/ks.yaml
   - ./bentopdf/ks.yaml
-  - ./stirlingpdf/ks.yaml
+  # - ./stirlingpdf/ks.yaml
   - ./vaultwarden/ks.yaml
   - ./wakapi/ks.yaml
 transformers:
