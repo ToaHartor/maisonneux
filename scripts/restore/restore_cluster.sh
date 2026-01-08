@@ -7,13 +7,14 @@ set -euo pipefail
 VELERO_NAMESPACE="system-backup"
 
 DEPLOYMENTS=(
-  # When an annotation is added to a pvvc that should be backed up, add an entry to the following array
+  # When an annotation is added to a pvc that should be backed up, add an entry to the following array
   # Format : "deployment, namespace, pvc1|pvc2, appname"
   "suwayomi-tachidesk-docker, media, suwayomi-tachidesk-docker-appdata, tachidesk-docker"
   "kavita, media, kavita-config, kavita"
   "opencloud, services, opencloud, opencloud"
   "qbittorrent, media, qbittorrent-config, qbittorrent"
   "jellyfin, media, jellyfin-config|jellyfin-data, jellyfin"
+  # "jellyseerr, media, jellyseerr-config, jellyseerr"
 )
 
 if [ -z "$1" ]; then
@@ -108,16 +109,27 @@ function restore_all() {
 }
 
 function restore_staged() {
-    # Restore externalsecrets and secrets
-  # shellcheck disable=SC2086
-  velero restore create -n "$VELERO_NAMESPACE" --include-cluster-resources --exclude-resources pv,pvc $BACKUP_ARG --existing-resource-policy update -w
+  # Restore externalsecrets and secrets
+
+  # shellcheck disable=SC2162
+  read -p "Restore secrets ? ([y]es/[n]o) : " restore_input
+
+  if [ "$restore_input" == "y" ]; then
+    # shellcheck disable=SC2086
+    velero restore create -n "$VELERO_NAMESPACE" --include-cluster-resources --exclude-resources pv,pvc $BACKUP_ARG --existing-resource-policy update -w
+  fi
 
   # Restore individual pvc loop
   for deployment in "${DEPLOYMENTS[@]}"
   do
     IFS=', ' read -r -a deployArgs <<< "$deployment"
-    restore_deploy_pvc "${deployArgs[@]}"
-    sleep 1 # in order to not have colliding restores if it already exists
+    # shellcheck disable=SC2162
+    read -p "Restore pvc ${deployArgs[1]}/${deployArgs[2]} ? ([y]es/[n]o) : " restore_input
+
+    if [ "$restore_input" == "y" ]; then
+      restore_deploy_pvc "${deployArgs[@]}"
+      sleep 1 # in order to not have colliding restores if it already exists
+    fi
   done
 }
 
@@ -127,10 +139,13 @@ kubectl patch backupstoragelocation default \
     --type merge \
     --patch '{"spec":{"accessMode":"ReadOnly"}}'
 
-if [ $# -lt 2 ] || [ "$2" != "--staged" ]; then
-  restore_all
-else
+
+# shellcheck disable=SC2162
+read -p "Ask for confirmation for each restore ? ([y]es/[n]o) : " confirm_input
+if [ "$confirm_input" == "y" ]; then
   restore_staged
+else
+  restore_all
 fi
 
 echo "Set backup resource location back to ReadWrite"

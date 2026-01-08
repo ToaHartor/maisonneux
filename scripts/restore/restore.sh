@@ -6,6 +6,7 @@ set -euo pipefail
 
 function restore_handler() {
   restore_script="$1"
+  # shellcheck disable=SC2162
   read -p "Running option for $restore_script, restoring secrets/pvc ([s]kip/[l]atest/backup name) : " backup_input
 
   case $backup_input in
