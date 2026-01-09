@@ -9,6 +9,7 @@ resources:
   - ./cyberchef/ks.yaml
   - ./gitea/ks.yaml
   - ./immich/ks.yaml
+  - ./karakeep/ks.yaml
   - ./legacyapps/ks.yaml
   - ./minio/ks.yaml
   - ./opencloud/ks.yaml

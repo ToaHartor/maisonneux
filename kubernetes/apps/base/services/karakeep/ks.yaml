@@ -1,0 +1,79 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: karakeep
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: karakeep
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: karakeep-oidc
+      namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: karakeep
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/s3bucket
+    - ../../../../../common/components/httproute/common
+    - ../../../../../common/components/secret/key
+    - ../../../../../common/components/secret/key2
+  path: "./kubernetes/apps/base/services/karakeep/app"
+  postBuild:
+    substitute:
+      APP: karakeep
+      SUBDOMAIN: keep
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: Bookmark and notes service
+      REDIRECT_URL: https://keep.${main_domain_websecure}/api/auth/callback/custom
+      ## S3 storage
+      S3_USER: karakeep-${environment}
+      BUCKET_NAME: karakeep-${environment}
+      ## Gateway
+      GATEWAY_SVC_NAME: karakeep
+      GATEWAY_SVC_PORT: "3000"
+      ## Nextauth jwt secret
+      SECRET_KEY_NAME: karakeep-jwt
+      SECRET_KEY_TYPE: api-key
+      SECRET2_KEY_NAME: karakeep-meili-key
+      SECRET2_KEY_TYPE: api-key
+      # inherited variables
+      minio_url: ${minio_url}
+      quote: '"'
+      patch_dns: ${quote}${patch_dns:=false}${quote}
+      traefik_lb_ip: ${traefik_lb_ip}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+      fastdata_storage: ${fastdata_storage}
+
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: karakeep"
+            parent: "Users"
+            bindID: "6945008e-4e96-43db-b8ff-afc1977689e0" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 10m

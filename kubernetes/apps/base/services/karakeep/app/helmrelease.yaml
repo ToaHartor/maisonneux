@@ -1,0 +1,224 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: karakeep
+spec:
+  dependsOn:
+    - name: ${APP}-oidc
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+  interval: 30m
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "${traefik_lb_ip}"
+                    hostnames:
+                    - "${auth_subdomain}.${main_domain}"
+                    - "${second_domain}"
+            target:
+              kind: Deployment
+              name: karakeep
+              annotationSelector: homelab/use-local-dns=true
+
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+
+    controllers:
+      karakeep:
+        forceRename: karakeep
+        annotations:
+          reloader.stakater.com/auto: "true"
+          homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
+        containers:
+          app:
+            image:
+              repository: ghcr.io/karakeep-app/karakeep
+              tag: 0.30.0@sha256:2724d4a9a6d13a7fa3babf53b9245767aae56c34f06042a8463ee983c6b41caf
+            env:
+              PORT: "${GATEWAY_SVC_PORT}"
+              BROWSER_WEB_URL: http://karakeep-chrome.services.svc.cluster.local:9222
+              CRAWLER_DOWNLOAD_BANNER_IMAGE: true
+              CRAWLER_ENABLE_ADBLOCKER: true
+              CRAWLER_STORE_SCREENSHOT: true
+              DATA_DIR: /data
+              DB_WAL_MODE: true # Increases performances
+              DISABLE_SIGNUPS: false # We disabled password auth so only signups using oauth are allowed
+              DISABLE_PASSWORD_AUTH: true
+              MEILI_ADDR: http://karakeep-meilisearch.services.svc.cluster.local:7700
+              MEILI_MASTER_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${SECRET2_KEY_NAME}
+                    key: secretKey
+              NEXTAUTH_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${SECRET_KEY_NAME}
+                    key: secretKey
+              NEXTAUTH_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+              DISABLE_NEW_RELEASE_CHECK: true
+              COREPACK_INTEGRITY_KEYS: 0
+              # S3 storage
+              ASSET_STORE_S3_ENDPOINT: http://${minio_url}
+              # ASSET_STORE_S3_REGION: default
+              ASSET_STORE_S3_BUCKET: ${BUCKET_NAME}
+              ASSET_STORE_S3_ACCESS_KEY_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${S3_USER}-s3user
+                    key: accessKey
+              ASSET_STORE_S3_SECRET_ACCESS_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${S3_USER}-s3user
+                    key: accessKey
+              ASSET_STORE_S3_FORCE_PATH_STYLE: true
+              # OIDC auth
+              OAUTH_WELLKNOWN_URL: "https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/.well-known/openid-configuration"
+              OAUTH_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${APP}-oidc-authentik-application
+                    key: clientID
+              OAUTH_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${APP}-oidc-authentik-application
+                    key: clientSecret
+              OAUTH_SCOPE: "openid email profile"
+              OAUTH_PROVIDER_NAME: Authentik
+              OAUTH_ALLOW_DANGEROUS_EMAIL_ACCOUNT_LINKING: true # We also own the oauth client anyway
+              # AI settings
+              # OLLAMA_BASE_URL:
+
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+            resources:
+              requests:
+                cpu: 10m
+                memory: 500Mi
+              limits:
+                memory: 1Gi
+
+      chrome:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: gcr.io/zenika-hub/alpine-chrome
+              tag: 124@sha256:1a0046448e0bb6c275c88f86e01faf0de62b02ec8572901256ada0a8c08be23f
+            command:
+              - chromium-browser
+            args:
+              - --headless
+              - --no-sandbox
+              - --disable-gpu
+              - --disable-dev-shm-usage
+              - --remote-debugging-address=0.0.0.0
+              - --remote-debugging-port=9222
+              - --hide-scrollbars
+            securityContext:
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 200Mi
+              limits:
+                memory: 1Gi
+
+      meilisearch:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                          - karakeep
+                      - key: app.kubernetes.io/controller
+                        operator: In
+                        values:
+                          - karakeep
+                  topologyKey: kubernetes.io/hostname
+        containers:
+          app:
+            image:
+              repository: docker.io/getmeili/meilisearch
+              tag: v1.31.0@sha256:1af40ecce0b3a21f9a4ff14defaa80da602af3d456ef40a81e83e20043e97485
+            args:
+              - /bin/meilisearch
+              - --experimental-dumpless-upgrade
+            env:
+              MEILI_NO_ANALYTICS: true
+              MEILI_MASTER_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${SECRET2_KEY_NAME}
+                    key: secretKey
+            resources:
+              requests:
+                cpu: 10m
+                memory: 200Mi
+              limits:
+                memory: 4Gi
+
+    service:
+      app:
+        forceRename: karakeep
+        primary: true
+        controller: karakeep
+        ports:
+          http:
+            port: ${GATEWAY_SVC_PORT}
+      chrome:
+        controller: chrome
+        ports:
+          http:
+            port: 9222
+      meilisearch:
+        controller: meilisearch
+        ports:
+          http:
+            port: 7700
+
+    persistence:
+      data:
+        labels:
+          homelab/backup-resource: "true"
+        storageClass: ${fastdata_storage}-ha
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        # existingClaim: karakeep-data
+        advancedMounts:
+          karakeep:
+            app:
+              - path: /data
+                subPath: karakeep
+          meilisearch:
+            app:
+              - path: /meili_data
+                subPath: meilisearch
