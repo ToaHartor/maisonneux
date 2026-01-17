@@ -84,7 +84,7 @@ spec:
                 valueFrom:
                   secretKeyRef:
                     name: ${S3_USER}-s3user
-                    key: accessKey
+                    key: secretKey
               ASSET_STORE_S3_FORCE_PATH_STYLE: true
               # OIDC auth
               OAUTH_WELLKNOWN_URL: "https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/.well-known/openid-configuration"
