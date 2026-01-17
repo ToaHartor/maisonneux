@@ -63,30 +63,6 @@ spec:
           maxUnavailable: 0
           maxSurge: 1
         podSpec:
-          initContainers:
-            1-migratedb:
-              env:
-                DATABASE_URL:
-                  secretKeyRef:
-                    name: ${APP}-db-creds
-                    key: uri
-                    expandObjectName: false
-                REDIS_URL:
-                  secretKeyRef:
-                    name: outline-secrets
-                    key: REDIS_CUSTOM_URL
-                    expandObjectName: false
-                SECRET_KEY:
-                  secretKeyRef:
-                    name: outline-secrets
-                    key: SECRET_KEY
-                    expandObjectName: false
-                UTILS_SECRET:
-                  secretKeyRef:
-                    name: outline-secrets
-                    key: UTILS_SECRET
-                    expandObjectName: false
-
           containers:
             main:
               env:
