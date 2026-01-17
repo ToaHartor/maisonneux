@@ -42,14 +42,14 @@ spec:
             matchLabels:
               app.kubernetes.io/name: snapshot-controller
               app.kubernetes.io/instance: snapshot-controller
-    
-      volumeSnapshotClasses:
-        # From https://linbit.com/blog/using-velero-linbit-sds-to-back-up-restore-a-kubernetes-deployment/
-        - name: linstor-csi-snapshot-s3
-          driver: linstor.csi.linbit.com
-          annotations:
-            snapshot.storage.kubernetes.io/is-default-class: "true"
-          labels:
-            velero.io/csi-volumesnapshot-class: "true"
-          deletionPolicy: Delete # Retain
-          # No need to put parameters as upload is handled by Velero
+
+    volumeSnapshotClasses:
+      # From https://linbit.com/blog/using-velero-linbit-sds-to-back-up-restore-a-kubernetes-deployment/
+      - name: linstor-csi-snapshot-s3
+        driver: linstor.csi.linbit.com
+        annotations:
+          snapshot.storage.kubernetes.io/is-default-class: "true"
+        labels:
+          velero.io/csi-volumesnapshot-class: "true"
+        deletionPolicy: Delete # Retain
+        # No need to put parameters as upload is handled by Velero
