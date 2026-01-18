@@ -203,8 +203,14 @@ spec:
               - OPTIONS
               - PUT
             accessControlAllowOriginListRegex:
-              - "https://([a-z]*\\.)?${main_domain}"
-              - "https://([a-z]*\\.)?${second_domain}"
+              - ".*://([a-z]*\\.)?${main_domain}"
+              - ".*://([a-z]*\\.)?${second_domain}"
+              # Karakeep specific
+              - "chrome-extension://kgcjekpmcjjogibpjebkhaanilehneje"
+              - "moz-extension://739b0e68-bf1f-49a8-9a11-ef362c1468cc"
+            accessControlAllowHeaders:
+              - Authorization
+              - Content-Type
             addVaryHeader: true
             accessControlMaxAge: 100
             hostsProxyHeaders:
