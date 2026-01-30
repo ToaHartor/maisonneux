@@ -125,24 +125,26 @@ spec:
     ports:
       # http redirect to https
       web:
-        exposedPort: ${traefik_web_lb_port}
-        # redirections:
-        #   entryPoint:
-        #     to: websecure
-        #     scheme: https
-        #     # Higher priority than any rule per default to redirect everything to https. If no redirection is required, put a higher priority to the rule.
-        #     priority: 1000
-        middlewares:
-          - ingress-crowdsecbouncer@kubernetescrd
-          - ingress-secure-headers@kubernetescrd
+        http:
+          exposedPort: ${traefik_web_lb_port}
+          # redirections:
+          #   entryPoint:
+          #     to: websecure
+          #     scheme: https
+          #     # Higher priority than any rule per default to redirect everything to https. If no redirection is required, put a higher priority to the rule.
+          #     priority: 1000
+          middlewares:
+            - ingress-crowdsecbouncer@kubernetescrd
+            - ingress-secure-headers@kubernetescrd
 
       websecure:
-        exposedPort: ${traefik_websecure_lb_port}
-        tls:
-          enabled: true
-        middlewares:
-          - ingress-crowdsecbouncer@kubernetescrd
-          - ingress-secure-headers@kubernetescrd
+        http:
+          exposedPort: ${traefik_websecure_lb_port}
+          tls:
+            enabled: true
+          middlewares:
+            - ingress-crowdsecbouncer@kubernetescrd
+            - ingress-secure-headers@kubernetescrd
       # websecure-legacy:
       #   port: 8443
       #   exposedPort: ${traefik_websecure_lb_port}
