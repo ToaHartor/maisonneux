@@ -10,5 +10,5 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 21.3.16
+    tag: 21.3.19
   url: oci://oci.trueforge.org/truecharts/prowlarr
