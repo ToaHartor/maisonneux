@@ -125,8 +125,8 @@ spec:
     ports:
       # http redirect to https
       web:
+        exposedPort: ${traefik_web_lb_port}
         http:
-          exposedPort: ${traefik_web_lb_port}
           # redirections:
           #   entryPoint:
           #     to: websecure
@@ -138,8 +138,8 @@ spec:
             - ingress-secure-headers@kubernetescrd
 
       websecure:
+        exposedPort: ${traefik_websecure_lb_port}
         http:
-          exposedPort: ${traefik_websecure_lb_port}
           tls:
             enabled: true
           middlewares:
