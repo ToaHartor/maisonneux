@@ -37,7 +37,7 @@ spec:
     #   loadBalancerClass: io.cilium/node
     logs:
       general:
-        level: "DEBUG" # Temp
+        level: "INFO" # Temp
         format: json
       access:
         enabled: true

@@ -6,7 +6,7 @@ spec:
   plugin:
     crowdsec-bouncer:
       enabled: true
-      logLevel: DEBUG
+      logLevel: INFO
       crowdsecMode: stream
       # crowdsecMode: appsec
       # crowdsecAppsecEnabled: true
