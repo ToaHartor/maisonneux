@@ -19,7 +19,7 @@ spec:
     crds:
       enabled: true
       keep: true
-    replicaCount: &replicas 2
+    replicaCount: &replicas 1
     podDisruptionBudget:
       enabled: true
       minAvailable: 1
@@ -58,7 +58,7 @@ spec:
       podDisruptionBudget:
         enabled: true
         minAvailable: 1
-      
+
       resources:
         limits:
           cpu: 10m
@@ -84,7 +84,7 @@ spec:
             matchLabels:
               app.kubernetes.io/instance: cert-manager
               app.kubernetes.io/component: webhook
-    
+
     cainjector:
       replicaCount: *replicas
       podDisruptionBudget:

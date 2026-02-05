@@ -17,12 +17,12 @@ spec:
 
   values:
     # https://github.com/dragonflydb/dragonfly-operator/blob/main/charts/dragonfly-operator/values.yaml
-    replicaCount: 2
+    replicaCount: 1
 
     crds:
       install: true
       keep: true
-    
+
     manager:
       resources:
         limits:
@@ -44,7 +44,7 @@ spec:
     # Monitoring
     serviceMonitor:
       enabled: true
-    
+
     grafanaDashboard:
       enabled: true
       folder: database

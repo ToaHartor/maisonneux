@@ -18,7 +18,7 @@ spec:
     installCRDs: true
     leaderElect: true
 
-    replicaCount: &replicas 2
+    replicaCount: &replicas 1
 
     resources:
       requests:
@@ -27,7 +27,7 @@ spec:
       limits:
         cpu: 100m
         memory: 128Mi
-    
+
     # grafanaDashboard:
     #   enabled: true
     topologySpreadConstraints:
@@ -67,20 +67,20 @@ spec:
           memory: 32Mi
 
       topologySpreadConstraints:
-      # Maximum 1 pod per Proxmox hypervisor
-      - maxSkew: 1
-        topologyKey: topology.kubernetes.io/zone
-        whenUnsatisfiable: ScheduleAnyway
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: external-secrets-webhook
-      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: DoNotSchedule
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: external-secrets-webhook
-    
+        # Maximum 1 pod per Proxmox hypervisor
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: external-secrets-webhook
+        # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: external-secrets-webhook
+
     certController:
       enabled: false

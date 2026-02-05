@@ -33,7 +33,7 @@ spec:
     certmanager:
       namespace: cert-manager
       serviceAccountName: cert-manager
-    replicas: 2
+    replicas: 1
 
     topologySpreadConstraints:
       # Maximum 1 pod per Proxmox hypervisor

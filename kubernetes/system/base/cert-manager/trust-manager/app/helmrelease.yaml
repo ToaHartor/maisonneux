@@ -17,7 +17,7 @@ spec:
       retries: 3
   values:
     # https://artifacthub.io/packages/helm/cert-manager/trust-manager?modal=values
-    replicaCount: 2
+    replicaCount: 1
 
     resources:
       limits:

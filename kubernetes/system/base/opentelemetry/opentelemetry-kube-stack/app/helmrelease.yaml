@@ -42,13 +42,13 @@ spec:
 
       crds:
         create: false # Disable as we install the CRDs globally
-      
-      replicaCount: 2 # Number of hypervisors
+
+      replicaCount: 1 # Number of hypervisors
 
       pdb:
         create: true
         minAvailable: 1
-      
+
       topologySpreadConstraints:
         # Maximum 1 pod per Proxmox hypervisor
         - maxSkew: 1
@@ -68,7 +68,6 @@ spec:
               app.kubernetes.io/component: controller-manager
 
     defaultCRConfig:
-
       observability:
         metrics:
           enableMetrics: true
@@ -81,8 +80,9 @@ spec:
               level: DEBUG
           pipelines:
             metrics:
-              exporters: &victoriametrics-exporter [otlphttp/victoriametrics, debug]
-        
+              exporters:
+                &victoriametrics-exporter [otlphttp/victoriametrics, debug]
+
         exporters:
           otlphttp/victoriametrics:
             compression: gzip
@@ -122,18 +122,18 @@ spec:
             prometheus:
               config:
                 scrape_configs:
-                # Overriden by targetAllocator config
-                - job_name: 'otel-collector'
-                  scrape_interval: 10s
-                  static_configs:
-                  - targets: [ '0.0.0.0:8888' ]
-                  metric_relabel_configs:
-                  - action: labeldrop
-                    regex: (id|name)
-                    replacement: $$1
-                  - action: labelmap
-                    regex: label_(.+)
-                    replacement: $$1
+                  # Overriden by targetAllocator config
+                  - job_name: "otel-collector"
+                    scrape_interval: 10s
+                    static_configs:
+                      - targets: ["0.0.0.0:8888"]
+                    metric_relabel_configs:
+                      - action: labeldrop
+                        regex: (id|name)
+                        replacement: $$1
+                      - action: labelmap
+                        regex: label_(.+)
+                        replacement: $$1
 
           processors:
             batch:
@@ -167,7 +167,6 @@ spec:
           clusterMetrics:
             enabled: true
 
-        
         # Should run as root to collect hostMetrics
         securityContext:
           # readOnlyRootFilesystem:
@@ -195,7 +194,7 @@ spec:
                 - type: time_parser
                   parse_from: body.talos-time
                   layout_type: strptime
-                  layout: '%Y-%m-%dT%H:%M:%S.%sZ'
+                  layout: "%Y-%m-%dT%H:%M:%S.%sZ"
                 - type: severity_parser
                   parse_from: body.talos-level
 
@@ -205,7 +204,7 @@ spec:
                 global:
                   scrape_timeout: 10s
                 scrape_configs:
-                # Prometheus scraping, from https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-kube-stack/daemon_scrape_configs.yaml
+                  # Prometheus scraping, from https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-kube-stack/daemon_scrape_configs.yaml
                   - job_name: kubernetes-pods
                     scrape_interval: 30s
                     kubernetes_sd_configs:
@@ -215,23 +214,35 @@ spec:
                             # only scrape data from pods running on the same node as collector
                             field: "spec.nodeName=$${env:OTEL_K8S_NODE_NAME}"
                     relabel_configs:
-                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                      - source_labels:
+                          [
+                            __meta_kubernetes_pod_annotation_prometheus_io_scrape,
+                          ]
                         action: keep
                         regex: true
                       - source_labels:
-                          [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
+                          [
+                            __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow,
+                          ]
                         action: drop
                         regex: true
-                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+                      - source_labels:
+                          [
+                            __meta_kubernetes_pod_annotation_prometheus_io_scheme,
+                          ]
                         action: replace
                         regex: (https?)
                         target_label: __scheme__
-                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+                      - source_labels:
+                          [__meta_kubernetes_pod_annotation_prometheus_io_path]
                         action: replace
                         target_label: __metrics_path__
                         regex: (.+)
                       - source_labels:
-                          [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+                          [
+                            __address__,
+                            __meta_kubernetes_pod_annotation_prometheus_io_port,
+                          ]
                         action: replace
                         regex: ([^:]+)(?::\d+)?;(\d+)
                         # NOTE: otel collector uses env var replacement. $$ is used as a literal $. We escape dollars once more as fluxcd also uses them.
@@ -253,7 +264,8 @@ spec:
                         regex: Pending|Succeeded|Failed|Completed
                         action: drop
                       - action: replace
-                        source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                        source_labels:
+                          [__meta_kubernetes_pod_label_app_kubernetes_io_name]
                         target_label: job
                   # This job is setup to scrape the node metrics on the same host as the daemonset
                   # https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29053
@@ -387,7 +399,8 @@ spec:
                   mode: watch
 
           service:
-            extensions: [k8s_leader_elector/k8s_cluster, k8s_leader_elector/k8s_objects]
+            extensions:
+              [k8s_leader_elector/k8s_cluster, k8s_leader_elector/k8s_objects]
             pipelines:
               logs/talos:
                 receivers: [udplog]
@@ -398,7 +411,8 @@ spec:
                 processors: [k8sattributes, resourcedetection/env, batch]
                 exporters: *victoriametrics-exporter
               metrics:
-                receivers: [otlp, prometheus, hostmetrics, kubeletstats, k8s_cluster]
+                receivers:
+                  [otlp, prometheus, hostmetrics, kubeletstats, k8s_cluster]
                 processors: [k8sattributes, resourcedetection/env, batch]
                 exporters: *victoriametrics-exporter
 
@@ -413,8 +427,8 @@ spec:
             app.kubernetes.io/component: opentelemetry-collector
           type: NodePort
           ports:
-          - name: opentelemetry-kube-stack-daemon-udp-logs
-            protocol: UDP
-            port: 30555
-            targetPort: 30555
-            nodePort: 30555
+            - name: opentelemetry-kube-stack-daemon-udp-logs
+              protocol: UDP
+              port: 30555
+              targetPort: 30555
+              nodePort: 30555
