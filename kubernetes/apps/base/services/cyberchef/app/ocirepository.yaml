@@ -10,5 +10,5 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 12.17.1
+    tag: 12.19.1
   url: oci://oci.trueforge.org/truecharts/cyberchef
