@@ -6,14 +6,18 @@ resource "kubernetes_secret_v1" "flux_git_credentials" {
 
   type = "Opaque"
 
-  data = var.flux_git_ssh_config != null ? {
+  # We need to provide git credentials for private Github pipelines
+  data = merge(var.flux_git_ssh_config != null ? {
     "identity"     = var.flux_git_ssh_config.private_key
     "identity.pub" = var.flux_git_ssh_config.public_key
     "known_hosts"  = var.flux_git_ssh_config.known_hosts
-    } : {
-    "username" = var.flux_git_user
-    "password" = var.flux_git_token
-  }
+    } : {}
+    ,
+    {
+      "username" = var.flux_git_user
+      "password" = var.flux_git_token
+    }
+  )
 }
 
 # data "local_sensitive_file" "proxmox_csi_creds_file" {
@@ -33,6 +37,22 @@ resource "kubernetes_secret_v1" "flux_git_credentials" {
 #     "config.yaml" = data.local_sensitive_file.proxmox_csi_creds_file.content
 #   }
 # }
+
+resource "kubernetes_secret_v1" "external_github_credentials" {
+  metadata {
+    name      = "external-github-credentials"
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    username                = var.github_user
+    password                = var.github_password
+    githubAppID             = var.github_app_config.app_id
+    githubAppInstallationID = var.github_app_config.installation_id
+    githubAppPrivateKey     = var.github_app_config.private_key
+  }
+}
 
 resource "kubernetes_secret_v1" "external_minio_secrets" {
   metadata {

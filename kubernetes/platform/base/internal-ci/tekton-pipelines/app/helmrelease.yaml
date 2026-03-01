@@ -28,5 +28,12 @@ spec:
       branch: ${git_branch}
     registry:
       url: zot.internal-ci.svc.cluster.local:5000
+      mirror: http://zot.internal-ci.svc.cluster.local:5000/v2
     storage:
       persistentClassName: ${fastdata_storage}-ephemeral
+    # Pipelines
+    apollo:
+      repository:
+        url: https://github.com/gigacigne/apollo
+        branch: develop # main
+        authServiceAccount: github-build-bot

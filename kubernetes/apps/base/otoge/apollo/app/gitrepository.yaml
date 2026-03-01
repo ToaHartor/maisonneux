@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/gitrepository-source-v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: apollo
+spec:
+  interval: 1h
+  ref:
+    branch: develop
+  secretRef:
+    name: flux-github-http-creds
+  # provider: github
+  url: http://github.com/gigacigne/apollo.git

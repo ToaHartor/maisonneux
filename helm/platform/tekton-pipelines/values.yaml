@@ -4,3 +4,23 @@ repository:
 
 registry:
   url: example.com:5000
+  mirror: example.com:5000
+
+apollo:
+  pipelineName: apollo
+  targetHelmChart: apollo
+  namespace: otoge
+  repository:
+    url: http://example.com/myrepo
+    branch: master
+    authServiceAccount: github-build-bot
+  containers:
+    - name: server
+      context: backend/
+      target: server
+    - name: worker
+      context: backend/
+      target: worker
+    - name: client
+      context: frontend/
+      target: release

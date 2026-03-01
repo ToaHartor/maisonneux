@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apollo
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: apollo
+  # dependsOn:
+  #   - name: tekton-operator # We do need the pipeline engine to create our pipelines. Other dependencies are put in
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: apollo
+      namespace: otoge
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/secret/key
+    - ../../../../../common/components/secret/key2
+    - ../../../../../common/components/secret/creds
+  path: "./kubernetes/apps/base/otoge/apollo/app"
+  postBuild:
+    substitute:
+      APP: apollo
+      # SUBDOMAIN:
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      ## Database
+      PSQL_DB_USER: apollo
+      PSQL_DB_NAME: apollo
+      ## API key
+      SECRET_KEY_NAME: apollo-secret-key
+      SECRET_KEY_TYPE: secret-key
+      SECRET2_KEY_NAME: apollo-admin-apikey
+      SECRET2_KEY_TYPE: api-key
+      # Admin creds
+      SECRET_CREDS_NAME: apollo-admin-creds
+      SECRET_CREDS_USER: admin
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: otoge
+  timeout: 10m

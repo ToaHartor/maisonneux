@@ -1,0 +1,65 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: {{ .Values.apollo.pipelineName }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    tekton.dev/payload-validation: "false"
+spec:
+  serviceAccountName: tekton-eventlistener-sa
+  triggers:
+    # Trigger def
+    - name: {{ .Values.apollo.pipelineName }}
+      # interceptors:
+      #   # Interceptor def
+      #   - ref:
+      #       name: cel
+      #     params:
+      #       # Transform the revision from FluxCD event to the actual commit SHA
+      #       # Sadly, not commit sha is available in the webhook
+      #       - name: "overlays"
+      #         value: 
+      #           - key: commit_sha
+      #             expression: body
+      # bindings:
+      #   # TriggerBinding def
+      #   - name: commit-sha
+      #     value: $(extensions.commit_sha)
+      template:
+        # TriggerTemplate def
+        spec:
+          resourcetemplates:
+            - apiVersion: tekton.dev/v1
+              kind: PipelineRun
+              metadata:
+                generateName: {{ .Values.apollo.pipelineName }}-run-
+              spec:
+                pipelineRef:
+                  name: {{ .Values.apollo.pipelineName }}
+                taskRunTemplate:
+                  # Reference service account linked with github credentials
+                  serviceAccountName: {{ .Values.apollo.repository.authServiceAccount }}
+                  podTemplate:
+                    securityContext:
+                      fsGroup: 65532
+                workspaces:
+                - name: shared-data
+                  volumeClaimTemplate:
+                    spec:
+                      accessModes:
+                      - ReadWriteOnce
+                      resources:
+                        requests:
+                          storage: 1Gi
+                      storageClassName: {{ .Values.storage.persistentClassName }}
+                # - name: docker-credentials
+                #   secret:
+                #     secretName: docker-credentials
+                params:
+                - name: repo-url
+                  value: {{ .Values.apollo.repository.url }}
+                - name: revision
+                  value: {{ .Values.apollo.repository.branch }}
+                - name: image-registry
+                  value: {{ .Values.registry.url }}
+    

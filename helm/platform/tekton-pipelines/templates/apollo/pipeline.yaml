@@ -1,0 +1,95 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: {{ .Values.apollo.pipelineName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  description: | 
+    This pipeline clones a git repo, builds a Docker image with Kaniko and
+    pushes it to a registry
+  params:
+  - name: repo-url
+    type: string
+  - name: revision
+    type: string
+  # - name: dockerfile-path
+  #   type: string
+  - name: image-registry
+    type: string
+  workspaces:
+  - name: shared-data
+  tasks:
+  # Clone the target repo
+  - name: fetch-source
+    taskRef:
+      resolver: bundles
+      params:
+        - name: bundle
+          value: ghcr.io/tektoncd/catalog/upstream/tasks/git-clone:0.10
+        - name: name
+          value: git-clone
+        - name: kind
+          value: Task
+    workspaces:
+    - name: output
+      workspace: shared-data
+    params:
+    - name: url
+      value: $(params.repo-url)
+    - name: revision
+      value: $(params.revision)
+  # ==========================
+  # Sequential build step : build containers one at a time to not exhaust resources
+  {{- $previousLoopTask := "fetch-source" -}}
+  {{- range $container := .Values.apollo.containers }}
+  # Retrieve image metadata from helm values
+  # Output: yq
+  - name: "get-image-meta-{{ $container.name }}"
+    runAfter:
+      - {{ $previousLoopTask }}
+    taskRef:
+      resolver: git
+      params:
+      - name: url
+        value: https://github.com/tektoncd/catalog.git
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: task/yq/0.5/yq.yaml
+      # Somehow, the OCI bundle for yq does not exist anymore ?
+      # resolver: bundles
+      # params:
+      #   - name: bundle
+      #     value: ghcr.io/tektoncd/catalog/upstream/tasks/yq:0.5
+      #   - name: name
+      #     value: yq
+      #   - name: kind
+      #     value: Task
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+    - name: SCRIPT
+      value: |
+        #! /bin/bash
+        cp ./openapi/openapi.yaml {{ $container.context }}
+        echo -n "$(/usr/bin/yq '.apollo.{{ $container.name }}.image.image' ./helm/apollo/values.yaml):$(/usr/bin/yq '.apollo.{{ $container.name }}.image.tag' ./helm/apollo/values.yaml)" | tee $(results.yq.path)
+  # Build the Docker image(s) and push to registry
+  - name: "kaniko-{{ $container.name }}"
+    runAfter:
+      - "get-image-meta-{{ $container.name }}"
+    taskRef:
+      name: kaniko-build
+    params:
+      - name: CONTEXT
+        value: "{{ $container.context }}"
+      - name: IMAGE
+        # results.yq contains image:tag
+        value: "$(params.image-registry)/$(tasks.get-image-meta-{{ $container.name }}.results.yq)"
+      - name: TARGET
+        value: "{{ $container.target }}"
+    workspaces:
+      - name: source
+        workspace: shared-data
+  {{- $previousLoopTask = printf "kaniko-%s" $container.name }}
+  {{- end }}

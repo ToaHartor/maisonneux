@@ -54,3 +54,5 @@ spec:
         - crowdsec
         - immich
         - atuin
+        # otoge
+        - apollo

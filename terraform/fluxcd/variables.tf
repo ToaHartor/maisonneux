@@ -63,6 +63,27 @@ variable "smtp_port" {
   description = "Port of the SMTP server"
 }
 
+# Github credentials (pipeline build)
+variable "github_user" {
+  type        = string
+  description = "GitHub username for auth (git for private access token)"
+}
+
+variable "github_password" {
+  type        = string
+  description = "GitHub password for auth (or private access token)"
+}
+
+variable "github_app_config" {
+  type = object({
+    app_id          = number
+    installation_id = number
+    private_key     = string
+  })
+  default = null
+}
+
+
 # Fluxcd credentials
 variable "flux_git_user" {
   type    = string

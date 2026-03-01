@@ -6,6 +6,7 @@ resources:
   - ../base/media
   # - ../base/seafile
   - ../base/services
+  - ../base/otoge
 patches:
   # Patchceptions : patch kustomization which will patch its own helmrelease with a patch on the target object/deployment
   - target:

@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: kaniko-build
+spec:
+  params:
+    - name: IMAGE
+      description: Name (reference) of the image to build
+    - name: DOCKERFILE
+      description: Path to the Dockerfile to build
+      default: ./Dockerfile
+    - name: CONTEXT
+      description: The build context used by Kaniko
+      default: ./
+    - name: TARGET
+      description: The target stage
+      default: base
+
+  workspaces:
+    - name: source
+      description: Holds the code to build
+    # - name: dockerconfig
+    #   description: Docker config.json for registry auth
+
+  steps:
+    - name: build-and-push
+      image: martizih/kaniko:v1.26.6
+      env:
+        - name: DOCKER_CONFIG
+          value: /kaniko/.docker
+      command:
+        - /kaniko/executor
+      args:
+        - --dockerfile=$(params.DOCKERFILE)
+        - --context=$(workspaces.source.path)/$(params.CONTEXT)
+        - --destination=$(params.IMAGE)
+        - --cache=true
+        - --cache-repo=$(params.IMAGE)/cache
+        - --registry-map="docker.io={{ .Values.registry.mirror }}/docker.io"
+        - --snapshot-mode=redo
+        - --target=$(params.TARGET)
+        - --skip-tls-verify # Somehow it fails to verify tls when pulling from registry
+      # volumeMounts:
+      #   - name: $(workspaces.dockerconfig.volume)
+      #     mountPath: /kaniko/.docker

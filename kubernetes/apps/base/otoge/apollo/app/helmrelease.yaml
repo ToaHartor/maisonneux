@@ -1,0 +1,97 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: apollo
+spec:
+  releaseName: apollo
+  chart:
+    spec:
+      chart: helm/apollo
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: apollo
+      reconcileStrategy: Revision
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    gateway:
+      hostname:
+        web: ${APP}.${second_domain}
+        game: eagate.${second_domain}
+      webParentRefs:
+        - name: traefik-gateway
+          namespace: ingress
+          sectionName: "websecure"
+          kind: Gateway
+      gameParentRefs:
+        - name: traefik-gateway
+          namespace: ingress
+          sectionName: "web"
+          kind: Gateway
+
+    apollo:
+      logLevel: INFO
+      redis:
+        url: dragonfly-cluster.dragonfly.svc.cluster.local:6379/7 # Using database 7 for redis
+      tachi:
+        customInstance: https://xn--sck3h9451a.${second_domain}
+      common:
+        env:
+          # Database config
+          - name: CONFIG__DATABASE__HOST
+            value: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
+          - name: CONFIG__DATABASE__PORT
+            value: "5432"
+          - name: CONFIG__DATABASE__DB
+            value: ${PSQL_DB_NAME}
+          - name: CONFIG__DATABASE__USER
+            value: ${PSQL_DB_USER}
+          - name: CONFIG__DATABASE__PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: ${APP}-db-creds
+      client:
+        image:
+          repository: localhost:32000
+          pullPolicy: Always
+
+      server:
+        image:
+          repository: localhost:32000
+          pullPolicy: Always
+        env:
+          - name: CONFIG__SERVER__SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                key: secretKey
+                name: ${SECRET_KEY_NAME}
+          - name: CONFIG__SERVER__ADMIN_USER
+            value: ${SECRET_CREDS_USER}
+          - name: CONFIG__SERVER__ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: ${SECRET_CREDS_NAME}
+          - name: CONFIG__SERVER__ADMIN_APIKEY
+            valueFrom:
+              secretKeyRef:
+                key: secretKey
+                name: ${SECRET2_KEY_NAME}
+          # CONFIG__S3__ENDPOINT: http://s3:9000
+          # CONFIG__S3__EXPOSED_ENDPOINT: http://s":9000
+          # CONFIG__S3__ACCESS_KEY: apollo
+          # CONFIG__S3__SECRET_KEY: apollopasswd
+          # CONFIG__S3__BUCKET: apollo
+          # CONFIG__S3__REGION: us-east-1
+      worker:
+        image:
+          repository: localhost:32000
+          pullPolicy: Always
