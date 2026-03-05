@@ -10,5 +10,5 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 28.6.1
+    tag: 28.7.0
   url: oci://oci.trueforge.org/truecharts/lidarr
