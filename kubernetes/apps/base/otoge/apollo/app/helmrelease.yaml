@@ -37,7 +37,7 @@ spec:
           kind: Gateway
 
     apollo:
-      logLevel: INFO
+      logLevel: DEBUG # INFO
       redis:
         url: dragonfly-cluster.dragonfly.svc.cluster.local:6379/7 # Using database 7 for redis
       tachi:
