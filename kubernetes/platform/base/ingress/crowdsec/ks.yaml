@@ -11,7 +11,7 @@ spec:
   dependsOn:
     - name: psql-cluster
       namespace: ${psql_database_namespace}
-    - name: traefik-crds
+    - name: traefik
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease

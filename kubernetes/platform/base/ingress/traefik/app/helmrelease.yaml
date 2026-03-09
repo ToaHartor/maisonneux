@@ -11,7 +11,7 @@ spec:
     name: traefik
   interval: 50m
   install:
-    crds: "Skip" # as we install it in a separate release before
+    crds: "CreateReplace"
     createNamespace: true
     remediation:
       retries: 3
