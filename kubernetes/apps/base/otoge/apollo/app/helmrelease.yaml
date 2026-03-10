@@ -58,6 +58,33 @@ spec:
               secretKeyRef:
                 key: password
                 name: ${APP}-db-creds
+          # - name: CONFIG__S3__ENDPOINT
+          #   valueFrom:
+          #     secretKeyRef:
+          #       key: endpoint
+          #       name: ${S3_USER}-garage
+          - name: CONFIG__S3__ENDPOINT
+            value: https://garage.${second_domain}
+          - name: CONFIG__S3__ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                key: accessKey
+                name: ${S3_USER}-garage
+          - name: CONFIG__S3__SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                key: secretKey
+                name: ${S3_USER}-garage
+          - name: CONFIG__S3__BUCKET
+            value: ${BUCKET_NAME}
+          - name: CONFIG__S3__REGION
+            valueFrom:
+              secretKeyRef:
+                key: region
+                name: ${S3_USER}-garage
+          - name: CONFIG__S3__EXPOSED_ENDPOINT
+            value: https://garage.${second_domain}
+
       client:
         image:
           repository: localhost:32000
@@ -85,12 +112,6 @@ spec:
               secretKeyRef:
                 key: secretKey
                 name: ${SECRET2_KEY_NAME}
-          # CONFIG__S3__ENDPOINT: http://s3:9000
-          # CONFIG__S3__EXPOSED_ENDPOINT: http://s":9000
-          # CONFIG__S3__ACCESS_KEY: apollo
-          # CONFIG__S3__SECRET_KEY: apollopasswd
-          # CONFIG__S3__BUCKET: apollo
-          # CONFIG__S3__REGION: us-east-1
       worker:
         image:
           repository: localhost:32000

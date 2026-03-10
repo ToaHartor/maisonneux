@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: garage-operator
+spec:
+  releaseName: garage-operator
+  chartRef:
+    kind: OCIRepository
+    name: garage-operator
+  interval: 50m
+  install:
+    crds: CreateReplace
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+
+  values:
+    # see https://github.com/rajsinghtech/garage-operator/blob/main/charts/garage-operator/values.yaml
+    replicaCount: 1
+
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        cpu: 10m
+    serviceMonitor:
+      enabled: true
+
+    webhooks:
+      enabled: false

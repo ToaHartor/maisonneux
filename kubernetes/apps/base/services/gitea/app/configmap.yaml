@@ -18,10 +18,10 @@ data:
   storage: |
     STORAGE_TYPE=minio
     SERVE_DIRECT=false
-    MINIO_ENDPOINT=${minio_url}
     MINIO_BUCKET=${BUCKET_NAME}
     MINIO_USE_SSL=false
     MINIO_INSECURE_SKIP_VERIFY=true
+    MINIO_BUCKET_LOOKUP_TYPE=path
   service: |
     DISABLE_REGISTRATION=true
   oauth2_client: |

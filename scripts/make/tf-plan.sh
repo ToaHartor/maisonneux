@@ -19,13 +19,15 @@ if [ "${TF_FOLDER}" == "fluxcd" ]; then \
     # Add additional variables to terraform deployment
     # Get ips from ../k8s/config.env.tfvars
     tfvars_file="terraform/k8s/config.${TF_DEPLOY_ENV}.tfvars"
-    # TODO : get input variables from tfstate instead ?
+    # TODO : get input variables from tfstate or output instead ?
     traefik_ip=$(tfutils::get_tfvars_quoted_key "k8s_lb_traefik_ip" "$tfvars_file")
     otelcol_ip=$(tfutils::get_tfvars_quoted_key "k8s_lb_influxdb_ip" "$tfvars_file")
+    garage_gateway_ip=$(tfutils::get_tfvars_quoted_key "k8s_lb_garage_gateway_ip" "$tfvars_file")
     baseport_number=$(tfutils::get_tfvars_number_key "opnsense_base_port_number" "$tfvars_file")
     use_nvidia_gpu=$(tfutils::get_tfvars_boolean_key "use_nvidia_gpu" "$tfvars_file")
     TF_CONFIG_VARS+=("-var=k8s_lb_traefik_ip=${traefik_ip}")
     TF_CONFIG_VARS+=("-var=k8s_lb_influxdb_ip=${otelcol_ip}")
+    TF_CONFIG_VARS+=("-var=k8s_lb_garage_gateway_ip=${garage_gateway_ip}")
     TF_CONFIG_VARS+=("-var=opnsense_base_port_number=${baseport_number}")
     TF_CONFIG_VARS+=("-var=use_nvidia_gpu=${use_nvidia_gpu}")
     # Set git remote domain for fluxcd

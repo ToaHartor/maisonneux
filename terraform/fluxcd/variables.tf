@@ -146,6 +146,30 @@ variable "minio_backup_bucket" {
   description = "External MinIO backup bucket"
 }
 
+# Garage
+variable "garage_storage_cluster_api_address" {
+  type        = string
+  description = "Address (host:port) of the admin endpoint of the garage storage node"
+}
+
+variable "garage_rpc_secret" {
+  type        = string
+  description = "Garage RPC secret"
+  sensitive   = true
+}
+
+variable "garage_admin_token" {
+  type        = string
+  description = "Garage admin token"
+  sensitive   = true
+}
+
+variable "garage_bootstrap_node" {
+  type        = string
+  description = "Garage bootstrap node (in another VM)"
+  sensitive   = true
+}
+
 # TrueNAS
 variable "truenas_vm_host" {
   type        = string
@@ -203,6 +227,15 @@ variable "local_dns_server" {
   default     = ""
 }
 
+variable "opnsense_exposed_ip" {
+  type        = string
+  description = "IP address of Traefik LB (must be in LB subnet)"
+  validation {
+    condition     = can(cidrnetmask("${var.opnsense_exposed_ip}/32"))
+    error_message = "Must be a valid IPv4 CIDR block address."
+  }
+}
+
 variable "opnsense_base_port_number" {
   type        = number
   description = "Starting port number on the router to expose services (e.g. value of 10000 will make the service with a base port of 80 be exposed on port 10080 on the router)"
@@ -224,6 +257,15 @@ variable "k8s_lb_influxdb_ip" {
   description = "IP address of InfluxDB collector in VictoriaMetrics (must be in LB subnet)"
   validation {
     condition     = can(cidrnetmask("${var.k8s_lb_influxdb_ip}/32"))
+    error_message = "Must be a valid IPv4 CIDR block address."
+  }
+}
+
+variable "k8s_lb_garage_gateway_ip" {
+  type        = string
+  description = "IP address of Garage gateway node (must be in LB subnet)"
+  validation {
+    condition     = can(cidrnetmask("${var.k8s_lb_garage_gateway_ip}/32"))
     error_message = "Must be a valid IPv4 CIDR block address."
   }
 }

@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rajsinghtech/garage-operator/refs/heads/main/schemas/garagekey_v1alpha1.json
+apiVersion: garage.rajsingh.info/v1alpha1
+kind: GarageKey
+metadata:
+  name: ${S3_USER}
+spec:
+  clusterRef:
+    name: garage-gateway
+    namespace: operators
+  secretTemplate:
+    name: ${S3_USER}-garage
+    accessKeyIdKey: accessKey
+    secretAccessKeyKey: secretKey
+    # endpointKey: endpoint
+    # hostKey: host
+    # regionKey: region
+    # schemeKey: scheme
+    type: Opaque
+  bucketPermissions:
+    - bucketRef: ${BUCKET_NAME}
+      read: true
+      write: true

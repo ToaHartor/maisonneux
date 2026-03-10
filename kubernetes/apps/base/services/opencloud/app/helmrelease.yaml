@@ -44,7 +44,7 @@ spec:
       opencloud:
         annotations:
           # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-          secret.reloader.stakater.com/reload: "${S3_USER}-s3user,${SECRET_CREDS_NAME},${APP}-oidc-authentik-application,${APP}-desktop-oidc-authentik-application"
+          secret.reloader.stakater.com/reload: "${S3_USER}-garage,${SECRET_CREDS_NAME},${APP}-oidc-authentik-application,${APP}-desktop-oidc-authentik-application"
           configmap.reloader.stakater.com/reload: "opencloud-config"
           homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
         pod:
@@ -60,20 +60,20 @@ spec:
             image:
               repository: opencloudeu/opencloud-rolling
               tag: 5.2.0@sha256:c840de29b7287da070ffc9d5eb52a1b291a046877402bf70f387ccf56c820aee
-            command: [ "/bin/sh", "-c", "opencloud init || true; opencloud server" ]
+            command:
+              ["/bin/sh", "-c", "opencloud init || true; opencloud server"]
             env:
               OC_INSECURE: true
               OC_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
               OC_EXCLUDE_RUN_SERVICES: idp
-              # OC_ADD_RUN_SERVICES: 
+              # OC_ADD_RUN_SERVICES:
 
               IDP_DOMAIN: ${auth_subdomain}.${main_domain}
               # opencloud-oidc-authentik-application
               # OIDC
               OC_OIDC_ISSUER: https://${auth_subdomain}.${main_domain_websecure}/application/o/opencloud/
               # WEB_OIDC_CLIENT_ID:  # Filled by fluxcd
-              WEB_OPTION_ACCOUNT_EDIT_LINK_HREF: https://${auth_subdomain}.${main_domain_websecure}/if/user/#/settings;%7B%22page%22%3A%22page-details%22%7D                
-
+              WEB_OPTION_ACCOUNT_EDIT_LINK_HREF: https://${auth_subdomain}.${main_domain_websecure}/if/user/#/settings;%7B%22page%22%3A%22page-details%22%7D
 
               PROXY_TLS: false
               PROXY_CSP_CONFIG_FILE_LOCATION: /etc/opencloud/csp.yaml
@@ -118,15 +118,21 @@ spec:
               # S3 storage
               STORAGE_USERS_DRIVER: decomposeds3
               STORAGE_SYSTEM_DRIVER: decomposed
-              STORAGE_USERS_DECOMPOSEDS3_REGION: default
-              STORAGE_USERS_DECOMPOSEDS3_ENDPOINT: http://${minio_url}
+              STORAGE_USERS_DECOMPOSEDS3_REGION:
+                secretKeyRef:
+                  name: ${S3_USER}-garage
+                  key: region
+              STORAGE_USERS_DECOMPOSEDS3_ENDPOINT:
+                secretKeyRef:
+                  name: ${S3_USER}-garage
+                  key: endpoint
               STORAGE_USERS_DECOMPOSEDS3_ACCESS_KEY:
                 secretKeyRef:
-                  name: ${S3_USER}-s3user
+                  name: ${S3_USER}-garage
                   key: accessKey
               STORAGE_USERS_DECOMPOSEDS3_SECRET_KEY:
                 secretKeyRef:
-                  name: ${S3_USER}-s3user
+                  name: ${S3_USER}-garage
                   key: secretKey
               STORAGE_USERS_DECOMPOSEDS3_BUCKET: ${BUCKET_NAME}
 

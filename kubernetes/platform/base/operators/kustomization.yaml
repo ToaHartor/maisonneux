@@ -10,5 +10,6 @@ resources:
   # - ./mariadb-operator/ks.yaml
   # - ./mongodb/ks.yaml
   - ./s3-operator/ks.yaml
+  - ./garage-operator/ks.yaml
 transformers:
   - ./transformers

@@ -56,7 +56,7 @@ spec:
       main:
         annotations:
           # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-          secret.reloader.stakater.com/reload: "${S3_USER}-s3user,${APP}-db-creds,${APP}-oidc-authentik-application"
+          secret.reloader.stakater.com/reload: "${S3_USER}-garage,${APP}-db-creds,${APP}-oidc-authentik-application"
           homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
         strategy: RollingUpdate
         rollingUpdate:
@@ -114,22 +114,28 @@ spec:
                     key: UTILS_SECRET
                     expandObjectName: false
 
+                # S3
+                FILE_STORAGE: s3
                 AWS_ACCESS_KEY_ID:
                   secretKeyRef:
-                    name: "${S3_USER}-s3user"
+                    name: "${S3_USER}-garage"
                     key: accessKey
                     expandObjectName: false
                 AWS_SECRET_ACCESS_KEY:
                   secretKeyRef:
-                    name: "${S3_USER}-s3user"
+                    name: "${S3_USER}-garage"
                     key: secretKey
                     expandObjectName: false
-                AWS_REGION: local
+                AWS_REGION:
+                  secretKeyRef:
+                    name: "${S3_USER}-garage"
+                    key: region
+                    expandObjectName: false
                 # AWS_S3_ACCELERATE_URL:
-                AWS_S3_UPLOAD_BUCKET_URL: http://${minio_url}
+                AWS_S3_UPLOAD_BUCKET_URL: https://garage.${main_domain}
                 AWS_S3_UPLOAD_BUCKET_NAME: ${BUCKET_NAME}
                 AWS_S3_FORCE_PATH_STYLE: true
-                AWS_S3_ACL: private
+                # AWS_S3_ACL: private
 
                 WEB_CONCURRENCY: "1"
                 FILE_STORAGE_IMPORT_MAX_SIZE: "5120000"

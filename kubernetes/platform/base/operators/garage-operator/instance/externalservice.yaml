@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: garage-gateway-external-rpc
+  annotations:
+    "io.cilium/lb-ipam-ips": "${garage_gateway_lb_ip}"
+  labels:
+    "homelab/public-service": "true"
+spec:
+  selector:
+    app.kubernetes.io/name: garage
+    app.kubernetes.io/instance: garage-gateway
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  internalTrafficPolicy: Cluster
+  ports:
+    - name: s3-api
+      port: 39000
+      protocol: TCP
+      targetPort: ${GARAGE_S3_PORT}
+    - name: rpc
+      port: 39001
+      protocol: TCP
+      targetPort: 39001
+    - name: s3-web
+      port: 39002
+      protocol: TCP
+      targetPort: 3902
+    - name: admin
+      port: 39003
+      protocol: TCP
+      targetPort: 3903

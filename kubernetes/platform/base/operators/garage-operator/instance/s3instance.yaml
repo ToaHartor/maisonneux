@@ -1,0 +1,66 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rajsinghtech/garage-operator/refs/heads/main/schemas/garagecluster_v1alpha1.json
+apiVersion: garage.rajsingh.info/v1alpha1
+kind: GarageCluster
+metadata:
+  name: garage-gateway
+spec:
+  logging:
+    level: "info"
+
+  gateway: true
+
+  admin:
+    adminTokenSecretRef:
+      key: GARAGE_ADMIN_TOKEN
+      name: garage-external-secret
+    enabled: true
+
+  connectTo:
+    bootstrapPeers:
+      - "${garage_bootstrap_node}" # <hash>@ip:port
+    rpcSecretRef:
+      key: GARAGE_RPC_SECRET
+      name: garage-external-secret
+    adminApiEndpoint: http://${garage_admin_endpoint}
+    adminTokenSecretRef:
+      key: GARAGE_ADMIN_TOKEN
+      name: garage-external-secret
+
+  network:
+    rpcPublicAddr: ${opnsense_exposed_ip}:39001
+    rpcBindPort: 39001
+    rpcSecretRef:
+      key: GARAGE_RPC_SECRET
+      name: garage-external-secret
+
+  zone: nas
+
+  s3Api:
+    region: garage
+    bindPort: ${GARAGE_S3_PORT}
+
+  replicas: 1
+  replication:
+    factor: 1 # Must match the external cluster
+
+  database:
+    engine: sqlite # From recommended gateway configuration https://deepwiki.com/rajsinghtech/garage-operator/3.1.5-database-and-block-storage#low-resource-gateway-cluster
+  storage:
+    metadata:
+      # We need to add pvc backup label (feature request submitted)
+      labels:
+        homelab/backup-resource: "true"
+      type: PersistentVolumeClaim
+      size: 1Gi
+      storageClassName: ${fastdata_storage}-ha
+    data:
+      type: EmptyDir # Gateway nodes do not store any block data
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

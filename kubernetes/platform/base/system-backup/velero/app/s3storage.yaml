@@ -1,0 +1,33 @@
+# ---
+# apiVersion: garage.rajsingh.info/v1alpha1
+# kind: GarageBucket
+# metadata:
+#   name: ${minio_backup_bucket}
+# spec:
+#   clusterRef:
+#     name: garage-gateway
+#     namespace: operators
+#   quotas:
+#     maxSize: 100Gi
+# ---
+# apiVersion: garage.rajsingh.info/v1alpha1
+# kind: GarageKey
+# metadata:
+#   name: ${minio_backup_bucket}
+# spec:
+#   clusterRef:
+#     name: garage-gateway
+#     namespace: operators
+#   secretTemplate:
+#     name: ${minio_backup_bucket}-garage
+#     accessKeyIdKey: access_key
+#     secretAccessKeyKey: secret_key
+#     # endpointKey: endpoint
+#     # hostKey: host
+#     regionKey: region
+#     # schemeKey: scheme
+#     type: Opaque
+#   bucketPermissions:
+#     - bucketRef: ${minio_backup_bucket}
+#       read: true
+#       write: true

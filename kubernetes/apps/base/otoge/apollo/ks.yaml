@@ -19,6 +19,7 @@ spec:
   components:
     # relative to spec.path
     - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/garage-bucket
     - ../../../../../common/components/secret/key
     - ../../../../../common/components/secret/key2
     - ../../../../../common/components/secret/creds
@@ -29,6 +30,10 @@ spec:
       # SUBDOMAIN:
       DOMAIN: ${main_domain}
       DOMAIN_WEBSECURE: ${main_domain_websecure}
+      # S3
+      S3_USER: apollo-${environment}
+      BUCKET_NAME: apollo-${environment}
+      BUCKET_QUOTA: 20Gi
       ## Database
       PSQL_DB_USER: apollo
       PSQL_DB_NAME: apollo

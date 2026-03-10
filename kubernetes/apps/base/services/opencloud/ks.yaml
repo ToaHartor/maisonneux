@@ -51,7 +51,7 @@ spec:
   interval: 1h
   components:
     # relative to spec.path
-    - ../../../../../common/components/s3bucket
+    - ../../../../../common/components/garage-bucket
     - ../../../../../common/components/httproute/common
     - ../../../../../common/components/secret/creds
   path: "./kubernetes/apps/base/services/opencloud/app"

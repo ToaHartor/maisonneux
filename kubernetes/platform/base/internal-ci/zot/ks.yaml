@@ -11,6 +11,8 @@ spec:
   dependsOn:
     - name: s3-instance # Required for persistency
       namespace: operators
+    - name: garage-instance # Required for persistency
+      namespace: operators
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
@@ -19,13 +21,15 @@ spec:
   interval: 1h
   components:
     # relative to spec.path
-    - ../../../../../common/components/s3bucket
+    - ../../../../../common/components/garage-bucket
   path: "./kubernetes/platform/base/internal-ci/zot/app"
   postBuild:
     substitute:
       S3_USER: zot-${environment}
       BUCKET_NAME: zot
-      BUCKET_QUOTA: "200000000000"
+      BUCKET_QUOTA: 200Gi
+      GARAGE_URL: garage-gateway.operators.svc.cluster.local:3900 # Same as the secret
+      GARAGE_REGION: garage # Same as the secret
       # inherited variables
       environment: ${environment}
       minio_url: ${minio_url}

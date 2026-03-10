@@ -1,0 +1,68 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: garage-operator
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: garage-operator
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: garage-operator
+      namespace: operators
+  interval: 1h
+  path: "./kubernetes/platform/base/operators/garage-operator/app"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: operators
+  timeout: 10m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: garage-instance
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: garage-instance
+  dependsOn:
+    - name: garage-operator
+    - name: traefik
+      namespace: ingress
+  healthChecks:
+    - apiVersion: garage.rajsingh.info/v1alpha1
+      kind: GarageCluster
+      name: garage-gateway
+      namespace: operators
+  healthCheckExprs:
+    - apiVersion: garage.rajsingh.info/v1alpha1
+      current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
+      inProgress: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'False')
+      kind: GarageCluster
+  interval: 1h
+  path: "./kubernetes/platform/base/operators/garage-operator/instance"
+  postBuild:
+    substitute:
+      GARAGE_S3_PORT: "3900"
+      # inherited variables
+      garage_admin_endpoint: ${garage_admin_endpoint}
+      garage_bootstrap_node: ${garage_bootstrap_node}
+      garage_gateway_lb_ip: ${garage_gateway_lb_ip}
+      opnsense_exposed_ip: ${opnsense_exposed_ip}
+      fastdata_storage: ${fastdata_storage}
+      main_domain: ${main_domain}
+      second_domain: ${second_domain}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: operators
+  timeout: 10m

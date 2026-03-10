@@ -64,9 +64,9 @@ spec:
       addPrometheusAnnotations: true
 
       deploymentAnnotations:
-        secret.reloader.stakater.com/reload: "${S3_USER}-s3user,${APP}-db-creds,smtp-config"
+        secret.reloader.stakater.com/reload: "${S3_USER}-garage,${APP}-db-creds,smtp-config"
         configmap.reloader.stakater.com/reload: "authentik-base-blueprints"
-    
+
       deploymentStrategy:
         type: RollingUpdate
         rollingUpdate:
@@ -77,18 +77,21 @@ spec:
           valueFrom:
             secretKeyRef:
               key: accessKey
-              name: ${S3_USER}-s3user
+              name: ${S3_USER}-garage
         - name: AUTHENTIK_STORAGE__MEDIA__S3__SECRET_KEY
           valueFrom:
             secretKeyRef:
               key: secretKey
-              name: ${S3_USER}-s3user
+              name: ${S3_USER}-garage
         - name: AUTHENTIK_STORAGE__MEDIA__S3__BUCKET_NAME
           value: ${BUCKET_NAME}
         - name: AUTHENTIK_STORAGE__MEDIA__S3__ENDPOINT
-          value: http://${minio_url}
+          valueFrom:
+            secretKeyRef:
+              key: endpoint
+              name: ${S3_USER}-garage
         - name: AUTHENTIK_STORAGE__MEDIA__S3__CUSTOM_DOMAIN
-          value: ${minio_url}/${BUCKET_NAME}
+          value: https://garage.${main_domain}/${BUCKET_NAME}
         - name: AUTHENTIK_REDIS__DB
           value: "15"
         - name: AUTHENTIK_BOOTSTRAP_PASSWORD
@@ -112,7 +115,7 @@ spec:
           emptyDir: {}
         - name: sidecar-certs
           emptyDir: {}
-    
+
     server:
       serviceAccountName: authentik
       replicas: 1
@@ -137,7 +140,7 @@ spec:
         - name: postgres-creds
           mountPath: /postgres-creds
           readOnly: true
-    
+
     worker:
       serviceAccountName: authentik
       replicas: 1
@@ -161,43 +164,43 @@ spec:
           readOnly: true
 
       extraContainers:
-      - name: sidecar-blueprints
-        image: "ghcr.io/kiwigrid/k8s-sidecar:2.5.0"
-        env:
-          - name: "FOLDER"
-            value: "/blueprints/sidecar"
-          - name: "LABEL"
-            value: "goauthentik_blueprint"
-          - name: "LABEL_VALUE"
-            value: "1"
-          - name: "NAMESPACE"
-            value: "ALL"
-          - name: "RESOURCE"
-            value: "both"
-          - name: "UNIQUE_FILENAMES"
-            value: "true"
-        volumeMounts:
-          - name: sidecar-blueprints
-            mountPath: /blueprints/sidecar
-      - name: sidecar-certs
-        image: "ghcr.io/kiwigrid/k8s-sidecar:2.5.0"
-        env:
-          - name: "FOLDER"
-            value: "/certs/sidecar"
-          - name: "LABEL"
-            value: "goauthentik_cert"
-          - name: "LABEL_VALUE"
-            value: "1"
-          - name: "RESOURCE"
-            value: "both"
-          - name: "UNIQUE_FILENAMES"
-            value: "true"
-        volumeMounts:
-          - name: sidecar-certs
-            mountPath: /certs/sidecar
-    
+        - name: sidecar-blueprints
+          image: "ghcr.io/kiwigrid/k8s-sidecar:2.5.0"
+          env:
+            - name: "FOLDER"
+              value: "/blueprints/sidecar"
+            - name: "LABEL"
+              value: "goauthentik_blueprint"
+            - name: "LABEL_VALUE"
+              value: "1"
+            - name: "NAMESPACE"
+              value: "ALL"
+            - name: "RESOURCE"
+              value: "both"
+            - name: "UNIQUE_FILENAMES"
+              value: "true"
+          volumeMounts:
+            - name: sidecar-blueprints
+              mountPath: /blueprints/sidecar
+        - name: sidecar-certs
+          image: "ghcr.io/kiwigrid/k8s-sidecar:2.5.0"
+          env:
+            - name: "FOLDER"
+              value: "/certs/sidecar"
+            - name: "LABEL"
+              value: "goauthentik_cert"
+            - name: "LABEL_VALUE"
+              value: "1"
+            - name: "RESOURCE"
+              value: "both"
+            - name: "UNIQUE_FILENAMES"
+              value: "true"
+          volumeMounts:
+            - name: sidecar-certs
+              mountPath: /certs/sidecar
+
     serviceAccount:
-      create: true      
+      create: true
 
     # Disable included postgres and redis
     postgres:

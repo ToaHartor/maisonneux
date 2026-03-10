@@ -54,6 +54,19 @@ resource "kubernetes_secret_v1" "external_github_credentials" {
   }
 }
 
+resource "kubernetes_secret_v1" "external_garage_secrets" {
+  metadata {
+    name      = "external-garage-secrets"
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    garage_rpc_secret  = var.garage_rpc_secret
+    garage_admin_token = var.garage_admin_token
+  }
+}
+
 resource "kubernetes_secret_v1" "external_minio_secrets" {
   metadata {
     name      = "external-minio-secrets"

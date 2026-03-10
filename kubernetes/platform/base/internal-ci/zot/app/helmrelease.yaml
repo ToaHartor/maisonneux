@@ -19,6 +19,7 @@ spec:
     remediation:
       retries: 3
   values:
+    # https://github.com/project-zot/helm-charts/blob/main/charts/zot/values.yaml
     deploymentAnnotations:
       # Reload pod on secret/cm change
       reloader.stakater.com/auto: "true"
@@ -26,7 +27,7 @@ spec:
       - name: "AWS_ACCESS_KEY_ID"
         valueFrom:
           secretKeyRef:
-            name: &s3user ${S3_USER}-s3user
+            name: &s3user ${S3_USER}-garage
             key: accessKey
       - name: "AWS_SECRET_ACCESS_KEY"
         valueFrom:
@@ -47,6 +48,11 @@ spec:
       rollingUpdate:
         maxUnavailable: 0
         maxSurge: 1
+    # Adjust startup probe to take into account the repository scan
+    startupProbe:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      failureThreshold: 15
     service:
       type: NodePort
       nodePort: 32000
@@ -67,9 +73,9 @@ spec:
             "gcInterval": "24h",
             "storageDriver": {
               "name": "s3",
-              "region": "auto",
-              "regionendpoint": "http://${minio_url}",
-              "bucket": "zot",
+              "region": "${GARAGE_REGION}",
+              "regionendpoint": "http://${GARAGE_URL}",
+              "bucket": "${BUCKET_NAME}",
               "forcepathstyle": true,
               "secure": false,
               "skipverify": false

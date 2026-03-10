@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rajsinghtech/garage-operator/refs/heads/main/schemas/garagebucket_v1alpha1.json
+apiVersion: garage.rajsingh.info/v1alpha1
+kind: GarageBucket
+metadata:
+  name: ${BUCKET_NAME}
+spec:
+  clusterRef:
+    name: garage-gateway
+    namespace: operators
+  quotas:
+    maxSize: ${BUCKET_QUOTA:=1Gi} # Quota defaults to 1GB

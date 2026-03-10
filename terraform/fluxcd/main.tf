@@ -27,8 +27,11 @@ locals {
   general_config = merge({
     "environment" = terraform.workspace
     # s3 stuff
-    "minio_url"           = var.minio_access_url
-    "minio_backup_bucket" = var.minio_backup_bucket
+    "minio_url"             = var.minio_access_url
+    "minio_backup_bucket"   = var.minio_backup_bucket
+    "garage_admin_endpoint" = var.garage_storage_cluster_api_address
+    "garage_gateway_lb_ip"  = var.k8s_lb_garage_gateway_ip
+    "garage_bootstrap_node" = var.garage_bootstrap_node
     # certificate stuff
     "acme_server_url" = var.use_letsencrypt_production_server ? "https://acme-v02.api.letsencrypt.org/directory" : "https://acme-staging-v02.api.letsencrypt.org/directory"
     "main_domain"     = var.main_domain
@@ -46,6 +49,7 @@ locals {
     "nfs_server"                = var.truenas_vm_host
     "patch_dns"                 = !var.is_internet_ingress # Patch only when it's not an ingress
     "local_dns_server"          = var.is_internet_ingress ? "" : var.local_dns_server
+    "opnsense_exposed_ip"       = var.opnsense_exposed_ip
     "traefik_lb_ip"             = var.k8s_lb_traefik_ip
     "traefik_web_lb_port"       = local.ingress_ports.web
     "traefik_websecure_lb_port" = local.ingress_ports.websecure

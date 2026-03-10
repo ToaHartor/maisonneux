@@ -47,7 +47,7 @@ spec:
         volumeMounts:
           - mountPath: /target
             name: plugins
-    
+
     # CRDs
     upgradeCRDs: true
     cleanUpCRDs: false
@@ -72,16 +72,16 @@ spec:
       backupStorageLocation:
         - name: default
           provider: aws # For s3 storage
-          bucket: "${minio_backup_bucket}"
+          bucket: "${BUCKET_NAME}"
 
           default: true
 
           accessMode: ReadWrite
-          
+
           config:
-            region: "minio"
+            region: "${GARAGE_REGION}"
             s3ForcePathStyle: true
-            s3Url: "http://${minio_url}"
+            s3Url: "http://${GARAGE_URL}"
       # https://velero.io/docs/v1.6/api-types/volumesnapshotlocation/
       volumeSnapshotLocation:
         - name: default
@@ -89,14 +89,13 @@ spec:
           # config:
           #   region: ""
           provider: aws # For s3 storage
-         
+
           config:
-            region: "minio"
+            region: "${GARAGE_REGION}"
             profile: "default"
             s3ForcePathStyle: true
-            s3Url: "http://${minio_url}"
+            s3Url: "http://${GARAGE_URL}"
 
-      
       uploaderType: kopia
 
       features: EnableCSI
@@ -110,7 +109,7 @@ spec:
       # defaultVolumesToFsBackup:
 
       # defaultRepoMaintainFrequency:
-    
+
     # https://velero.io/docs/v1.16/api-types/schedule/
     schedules:
       global:
@@ -153,8 +152,8 @@ spec:
           #   - '*'
           # - persistentVolumeClaims # We backup PVC elsewhere
           # includedNamespaceScopedResources: *rsc
-            # - backupStorageLocations
-            # - schedules
+          # - backupStorageLocations
+          # - schedules
 
           # excludedClusterScopedResources:
           # # - persistentVolumes # Alongside PVC
@@ -191,7 +190,7 @@ spec:
       #     # Resource selection
       #     # labelSelector:
       #     #   matchLabels:
-      #     #     homelab/backup-mariadb: "true" # Mark PVCs 
+      #     #     homelab/backup-mariadb: "true" # Mark PVCs
 
       #     includedNamespaces:
       #       - mariadb
@@ -232,7 +231,6 @@ spec:
       #                 onError: Fail
       #                 timeout: 10s
 
-
     extraObjects:
       # S3 bucket
       - apiVersion: s3.onyxia.sh/v1alpha1
@@ -245,36 +243,3 @@ spec:
           quota:
             default: 100000000000 # 100GB
           s3InstanceRef: operators/default
-
-      # S3 secret mirror
-      - apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
-        metadata:
-          name: s3-backup-aws-creds-file
-        spec:
-          data:
-            - secretKey: access_key
-              remoteRef:
-                key: external-minio-secrets
-                property: access_key
-            - secretKey: secret_key
-              remoteRef:
-                key: external-minio-secrets
-                property: secret_key
-          refreshInterval: 5m
-          secretStoreRef:
-            kind: ClusterSecretStore
-            name: external-secrets
-          target:
-            creationPolicy: Owner
-            deletionPolicy: Retain
-            template:
-              data:
-                # https://github.com/vmware-tanzu/velero-plugin-for-aws/blob/main/README.md
-                # https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html
-                cloud: | # default
-                  [default]
-                  aws_access_key_id = {{ `{{ .access_key }}` }}
-                  aws_secret_access_key = {{ `{{ .secret_key }}` }}
-                  region = minio
-              engineVersion: v2

@@ -12,6 +12,8 @@ spec:
     - name: snapshot-controller
     - name: s3-instance
       namespace: operators
+    - name: garage-instance
+      namespace: operators
   commonMetadata:
     labels:
       app.kubernetes.io/name: velero
@@ -21,9 +23,17 @@ spec:
       name: velero
       namespace: system-backup
   interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/garage-bucket
   path: "./kubernetes/platform/base/system-backup/velero/app"
   postBuild:
     substitute:
+      S3_USER: ${minio_backup_bucket}
+      BUCKET_NAME: ${minio_backup_bucket}
+      BUCKET_QUOTA: 100Gi
+      GARAGE_URL: garage-gateway.operators.svc.cluster.local:3900 # Same as the secret
+      GARAGE_REGION: garage # Same as the secret
       # inherited variables
       minio_url: ${minio_url}
       minio_backup_bucket: ${minio_backup_bucket}

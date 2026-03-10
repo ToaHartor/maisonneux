@@ -21,7 +21,7 @@ spec:
   components:
     # relative to spec.path
     - ../../../../../common/components/oidc-application
-    - ../../../../../common/components/s3bucket
+    - ../../../../../common/components/garage-bucket
     - ../../../../../common/components/cnpg/db
     - ../../../../../common/components/httproute/common
   path: "./kubernetes/apps/base/services/outline/app"

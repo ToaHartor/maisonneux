@@ -2,7 +2,6 @@ s3:
   secretName: # bucket-${environment}-s3user
   bucketName: # bucket-${environment}
   endpoint: # http://${minio_url}
-  customDomain: # ${minio_url}/bucket-${environment}
   size: 20 # in GB
 
 storage:

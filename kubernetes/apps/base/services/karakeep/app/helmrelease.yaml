@@ -72,18 +72,26 @@ spec:
               DISABLE_NEW_RELEASE_CHECK: true
               COREPACK_INTEGRITY_KEYS: 0
               # S3 storage
-              ASSET_STORE_S3_ENDPOINT: http://${minio_url}
-              ASSET_STORE_S3_REGION: default # Must be defined
+              ASSET_STORE_S3_ENDPOINT:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${S3_USER}-garage
+                    key: endpoint
+              ASSET_STORE_S3_REGION: # Must be defined
+                valueFrom:
+                  secretKeyRef:
+                    name: ${S3_USER}-garage
+                    key: region
               ASSET_STORE_S3_BUCKET: ${BUCKET_NAME}
               ASSET_STORE_S3_ACCESS_KEY_ID:
                 valueFrom:
                   secretKeyRef:
-                    name: ${S3_USER}-s3user
+                    name: ${S3_USER}-garage
                     key: accessKey
               ASSET_STORE_S3_SECRET_ACCESS_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: ${S3_USER}-s3user
+                    name: ${S3_USER}-garage
                     key: secretKey
               ASSET_STORE_S3_FORCE_PATH_STYLE: true
               # OIDC auth
