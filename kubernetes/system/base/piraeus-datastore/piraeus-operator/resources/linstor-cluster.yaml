@@ -10,15 +10,27 @@ spec:
     homelab/linstor-enabled: "true"
   controller:
     enabled: true
+    podTemplate:
+      spec:
+        containers:
+          - name: linstor-controller
+            # Add debug logs
+            # env:
+            #   # both settings are used by linstor-controller
+            #   - name: LS_LOG_LEVEL
+            #     value: TRACE
+            #   - name: LS_LOG_LEVEL_LINSTOR
+            #     value: TRACE
 
   csiController:
     enabled: true
 
   csiNode:
     enabled: true
-  
+
   highAvailabilityController:
     enabled: true
+
 
 # Disable node connection on nodes that do not have linstor enabled
 # https://piraeus.io/docs/v2.9.0/reference/linstornodeconnection/
