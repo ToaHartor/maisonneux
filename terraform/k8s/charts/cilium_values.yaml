@@ -1,4 +1,4 @@
-# https://artifacthub.io/packages/helm/cilium/cilium  
+# https://artifacthub.io/packages/helm/cilium/cilium
 ipam:
   mode: kubernetes
 
@@ -29,13 +29,13 @@ operator:
     requests:
       cpu: 50m
       memory: 128Mi
-  
+
   podDisruptionBudget:
     enabled: true
 
   prometheus:
     enabled: true
-  
+
   dashboards:
     enabled: true
     label: grafana_dashboard
@@ -44,7 +44,7 @@ operator:
 bpf:
   datapathMode: netkit
   masquerade: true
-  # tproxy: true
+  tproxy: false # incompatible with netkit
   # vlanBypass: [0]
   hostLegacyRouting: false
   distributedLRU:
@@ -92,7 +92,20 @@ ipv6:
 
 securityContext:
   capabilities:
-    ciliumAgent: ["CHOWN", "KILL", "NET_ADMIN", "NET_RAW", "IPC_LOCK", "SYS_ADMIN", "SYS_RESOURCE", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
+    ciliumAgent:
+      [
+        "CHOWN",
+        "KILL",
+        "NET_ADMIN",
+        "NET_RAW",
+        "IPC_LOCK",
+        "SYS_ADMIN",
+        "SYS_RESOURCE",
+        "DAC_OVERRIDE",
+        "FOWNER",
+        "SETGID",
+        "SETUID",
+      ]
     cleanCiliumState: ["NET_ADMIN", "SYS_ADMIN", "SYS_RESOURCE"]
 
 cgroup:
@@ -155,7 +168,7 @@ ingressController:
   enabled: false
   default: false
   loadbalancerMode: "shared"
-  enforceHttps:  false
+  enforceHttps: false
   # service:
   #   annotations:
   #     #     "io.cilium/lb-ipam-ips": ${var.cluster_vip}
@@ -176,7 +189,7 @@ envoy:
   debug:
     admin:
       enabled: false # Only if debugging
-  
+
   prometheus:
     enabled: true
 
@@ -209,7 +222,6 @@ dashboards:
   enabled: true
   label: grafana_dashboard
   labelValue: "1"
-
 # Hardening
 # policyEnforcementMode: "always" # Enforce network policies
 # hostFirewall:

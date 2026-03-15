@@ -74,23 +74,58 @@ resource "proxmox_virtual_environment_vm" "nas" {
   }
 
   // Additional attached disks
-  dynamic "disk" {
-    for_each = {
-      for idx, val in var.data_disks : idx => val
-    }
-    iterator = data_disk
-    content {
-      # file_format       = "qcow2"
-      backup            = false
-      datastore_id      = ""
-      discard           = "ignore"
-      interface         = "scsi${data_disk.key + 2}" # +2 for previous setup
-      iothread          = false
-      path_in_datastore = data_disk.value.path_in_datastore
-      replicate         = false
-      size              = data_disk.value.size
-      ssd               = false
-    }
+  # dynamic "disk" {
+  #   for_each = {
+  #     for idx, val in var.data_disks : idx => val
+  #   }
+  #   iterator = data_disk
+  #   content {
+  #     # file_format       = "qcow2"
+  #     backup            = false
+  #     datastore_id      = ""
+  #     discard           = "ignore"
+  #     interface         = "scsi${data_disk.key + 2}" # +2 for previous setup
+  #     iothread          = false
+  #     path_in_datastore = data_disk.value.path_in_datastore
+  #     replicate         = false
+  #     size              = data_disk.value.size
+  #     ssd               = false
+  #   }
+  # }
+
+  disk {
+    backup            = false
+    datastore_id      = ""
+    discard           = "ignore"
+    interface         = "scsi2"
+    iothread          = false
+    path_in_datastore = "/dev/disk/by-id/ata-SanDisk_SSD_G5_BICS4_2022HL468712"
+    replicate         = false
+    size              = 465
+    ssd               = false
+  }
+
+  # disk {
+  #   backup            = false
+  #   datastore_id      = ""
+  #   discard           = "ignore"
+  #   interface         = "scsi5"
+  #   iothread          = false
+  #   path_in_datastore = "/dev/disk/by-id/ata-WDC_WD80EZAZ-11TDBA0_1EG56PVZ"
+  #   replicate         = false
+  #   size              = 7452
+  #   ssd               = false
+  # }
+  disk {
+    backup            = false
+    datastore_id      = ""
+    discard           = "ignore"
+    interface         = "scsi6"
+    iothread          = false
+    path_in_datastore = "/dev/disk/by-id/ata-WDC_WD40NMZW-59GX6S1_WD-WX61D180A2AJ"
+    replicate         = false
+    size              = 3725
+    ssd               = false
   }
 
   # hostpci {
@@ -104,7 +139,7 @@ resource "proxmox_virtual_environment_vm" "nas" {
   #   xvga     = true
   # }
   memory {
-    dedicated = 22 * 1024
+    dedicated = 12 * 1024
     floating  = 0
     hugepages = null
     shared    = 0
@@ -257,6 +292,22 @@ resource "proxmox_virtual_environment_firewall_rules" "nas_inbound" {
     log     = "nolog"
   }
 
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Jellyfin"
+    dport   = "8096"
+    proto   = "tcp"
+    log     = "nolog"
+  }
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "arr"
+    dport   = "8989,7878,7879,9696,8686"
+    proto   = "tcp"
+    log     = "nolog"
+  }
   rule {
     type    = "in"
     action  = "DROP"

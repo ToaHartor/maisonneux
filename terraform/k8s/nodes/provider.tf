@@ -10,7 +10,7 @@ terraform {
     # see https://github.com/siderolabs/terraform-provider-talos
     talos = {
       source  = "siderolabs/talos"
-      version = "0.9.0"
+      version = "0.10.1"
     }
     # see https://registry.terraform.io/providers/hashicorp/random
     random = {

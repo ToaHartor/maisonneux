@@ -93,3 +93,30 @@ variable "opnsense_base_port_number" {
   type        = number
   description = "Starting port number on the router to expose services (e.g. value of 10000 will make the service with a base port of 80 be exposed on port 10080 on the router)"
 }
+
+variable "k8s_lb_traefik_ip" {
+  type        = string
+  description = "IP address of Traefik LB (must be in LB subnet)"
+  validation {
+    condition     = can(cidrnetmask("${var.k8s_lb_traefik_ip}/32"))
+    error_message = "Must be a valid IPv4 CIDR block address."
+  }
+}
+
+variable "k8s_lb_influxdb_ip" {
+  type        = string
+  description = "IP address of InfluxDB collector in VictoriaMetrics (must be in LB subnet)"
+  validation {
+    condition     = can(cidrnetmask("${var.k8s_lb_influxdb_ip}/32"))
+    error_message = "Must be a valid IPv4 CIDR block address."
+  }
+}
+
+variable "k8s_lb_garage_gateway_ip" {
+  type        = string
+  description = "IP address of Garage gateway node (must be in LB subnet)"
+  validation {
+    condition     = can(cidrnetmask("${var.k8s_lb_garage_gateway_ip}/32"))
+    error_message = "Must be a valid IPv4 CIDR block address."
+  }
+}

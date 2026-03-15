@@ -1,0 +1,11 @@
+apiVersion: v1alpha1
+kind: RegistryMirrorConfig
+name: ${registry}
+endpoints:
+  - url: "http://localhost:32000/v2/${registry}"
+    overridePath: true
+  - url: "${mirror_url}/${registry}"
+    overridePath: true
+  - url: "https://${registry}/v2"
+    overridePath: true
+skipFallback: false

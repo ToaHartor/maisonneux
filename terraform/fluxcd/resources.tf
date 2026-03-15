@@ -38,9 +38,9 @@ resource "kubernetes_secret_v1" "flux_git_credentials" {
 #   }
 # }
 
-resource "kubernetes_secret_v1" "external_github_credentials" {
+resource "kubernetes_secret_v1" "external_github_sa" {
   metadata {
-    name      = "external-github-credentials"
+    name      = "external-github-sa"
     namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
   }
   type = "Opaque"

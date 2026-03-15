@@ -114,9 +114,10 @@ data "talos_machine_configuration" "worker" {
   kubernetes_version = var.kubernetes_version
   examples           = false
   docs               = false
-  config_patches = [
-    yamlencode(local.common_machine_config),
-  ]
+  config_patches = concat(
+    [for c in local.common_machine_configs_tpls : c],
+    [for c in local.common_machine_configs : yamlencode(c)]
+  )
 }
 
 // see https://registry.terraform.io/providers/siderolabs/talos/0.5.0/docs/resources/machine_configuration_apply
@@ -126,7 +127,10 @@ resource "talos_machine_configuration_apply" "worker" {
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
   endpoint                    = local.worker_nodes[count.index].address
   node                        = local.worker_nodes[count.index].address
-  config_patches = [
+  config_patches = concat([
+    templatefile("${path.module}/templates/hostname-config.yaml.tftpl", { hostname = local.worker_nodes[count.index].name }),
+    templatefile("${path.module}/templates/resolver-config.yaml.tftpl", { node_gateway = var.cluster_node_network_gateway }),
+    templatefile("${path.module}/templates/link-config.yaml.tftpl", { ip_address = "${local.worker_nodes[count.index].address}/${var.cluster_subnet}", node_gateway = var.cluster_node_network_gateway }),
     yamlencode({
       machine = {
         // Specify installer to ease automatic upgrades with tuppr
@@ -140,39 +144,40 @@ resource "talos_machine_configuration_apply" "worker" {
             ]
           }
         }
-        network = {
-          hostname = local.worker_nodes[count.index].name
-          interfaces = [
-            {
-              interface = "eth0"
-              addresses = ["${local.worker_nodes[count.index].address}/${var.cluster_subnet}"]
-              dhcp      = false
-              routes = [
-                {
-                  network = "0.0.0.0/0"
-                  gateway = var.cluster_node_network_gateway
-                }
-              ]
-            }
-          ]
-          nameservers = [
-            var.cluster_node_network_gateway,
-            "1.1.1.1",
-            "8.8.8.8"
-          ]
-        }
+        # network = {
+        #   # hostname = local.worker_nodes[count.index].name
+        #   interfaces = [
+        #     {
+        #       interface = "eth0"
+        #       addresses = ["${local.worker_nodes[count.index].address}/${var.cluster_subnet}"]
+        #       dhcp      = false
+        #       routes = [
+        #         {
+        #           network = "0.0.0.0/0"
+        #           gateway = var.cluster_node_network_gateway
+        #         }
+        #       ]
+        #     }
+        #   ]
+        #   # nameservers = [
+        #   #   var.cluster_node_network_gateway,
+        #   #   "1.1.1.1",
+        #   #   "8.8.8.8"
+        #   # ]
+        # }
         # Labels to identify proxmox nodes
         nodeLabels = {
           "topology.kubernetes.io/region" = var.proxmox_cluster_name
           "topology.kubernetes.io/zone"   = local.worker_nodes[count.index].config.node
         }
       }
-    }),
+    })
+    ],
     # Add mount for linstor
-    local.worker_nodes[count.index].config.storage.datastore != null ? yamlencode(local.linstor_mount_config) : "",
+    local.worker_nodes[count.index].config.storage.datastore != null ? [yamlencode(local.linstor_mount_config)] : [],
     # Add nvidia config on target GPU node
-    local.worker_nodes[count.index].config.gpu != null ? yamlencode(local.nvidia_gpu_config) : ""
-  ]
+    local.worker_nodes[count.index].config.gpu != null ? [yamlencode(local.nvidia_gpu_config)] : []
+  )
   depends_on = [
     proxmox_virtual_environment_vm.k8s-worker,
   ]

@@ -17,7 +17,7 @@ output "workers" {
 }
 
 output "kubeprism_port" {
-  value = local.common_machine_config.machine.features.kubePrism.port
+  value = local.kubeprism_port
 }
 
 # output "proxmox_csi_account" {

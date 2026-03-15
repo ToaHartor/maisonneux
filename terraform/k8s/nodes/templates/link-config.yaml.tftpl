@@ -1,0 +1,8 @@
+apiVersion: v1alpha1
+kind: LinkConfig
+name: eth0
+up: true
+addresses:
+  - address: ${ip_address}
+routes:
+  - gateway: ${node_gateway}

@@ -76,8 +76,8 @@ variable "github_password" {
 
 variable "github_app_config" {
   type = object({
-    app_id          = number
-    installation_id = number
+    app_id          = string
+    installation_id = string
     private_key     = string
   })
   default = null

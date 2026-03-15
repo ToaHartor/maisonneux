@@ -170,86 +170,96 @@ data "talos_machine_configuration" "controller" {
   kubernetes_version = var.kubernetes_version
   examples           = false
   docs               = false
-  config_patches = [
-    yamlencode(local.common_machine_config),
-    yamlencode({
-      machine = {
-        network = {
-          interfaces = [
-            # see https://www.talos.dev/v1.7/talos-guides/network/vip/
-            {
-              interface = "eth0"
-              vip = {
-                ip = var.cluster_vip
-              }
+  config_patches = concat(
+    [for c in local.common_machine_configs_tpls : c],
+    [for c in local.common_machine_configs : yamlencode(c)],
+    [
+      // see https://docs.siderolabs.com/talos/v1.12/networking/advanced/vip
+      // see https://docs.siderolabs.com/talos/v1.12/reference/configuration/network/layer2vipconfig
+      yamlencode({
+        apiVersion = "v1alpha1"
+        kind       = "Layer2VIPConfig"
+        link       = "eth0"
+        name       = var.cluster_vip
+      }),
+      yamlencode({
+        machine = {
+          # network = {
+          #   interfaces = [
+          #     # see https://www.talos.dev/v1.7/talos-guides/network/vip/
+          #     {
+          #       interface = "eth0"
+          #       vip = {
+          #         ip = var.cluster_vip
+          #       }
+          #     }
+          #   ]
+          # }
+          features = {
+            # Enable Talos CCM (reader)
+            # Allow API access for tuppr for automated system upgrades https://github.com/home-operations/tuppr/tree/main?tab=readme-ov-file#installation
+            kubernetesTalosAPIAccess = {
+              enabled                     = true
+              allowedRoles                = ["os:reader", "os:admin"]
+              allowedKubernetesNamespaces = ["kube-system", "system-upgrade"]
             }
-          ]
-        }
-        features = {
-          # Enable Talos CCM (reader)
-          # Allow API access for tuppr for automated system upgrades https://github.com/home-operations/tuppr/tree/main?tab=readme-ov-file#installation
-          kubernetesTalosAPIAccess = {
-            enabled                     = true
-            allowedRoles                = ["os:reader", "os:admin"]
-            allowedKubernetesNamespaces = ["kube-system", "system-upgrade"]
           }
         }
-      }
-    }),
-    yamlencode({
-      cluster = {
-        clusterName                    = var.cluster_name
-        allowSchedulingOnControlPlanes = var.schedule_pods_on_control_plane_nodes
-        // solves https://github.com/siderolabs/talos/issues/9980 for k8s 1.32+
-        # apiServer = {
-        #   extraArgs = {
-        #     feature-gates = "AuthorizeNodeWithSelectors=false"
-        #   }
-        # }
-        # Proxmox csi driver for storage
-        externalCloudProvider = {
-          enabled = true
-          manifests = [
-            # Talos CCM, install with daemonset
-            "https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/main/docs/deploy/cloud-controller-manager-daemonset.yml"
-          ]
-        }
-        inlineManifests = [
-          # {
-          #   name = "democratic-csi-truenas-iscsi"
-          #   contents = join("---\n", [
-          #     data.helm_template.democratic_csi_truenas_iscsi.manifest,
-          #   ])
-          # },
-          # {
-          #   name = "democratic-csi-truenas-nfs"
-          #   contents = join("---\n", [
-          #     data.helm_template.democratic_csi_truenas_nfs.manifest,
-          #   ])
-          # },
-          # {
-          #   name = "csi-s3"
-          #   contents = join("---\n", [
-          #     data.helm_template.csi_s3.manifest,
-          #   ])
-          # },
-          # {
-          #   name = "cilium"
-          #   contents = join("---\n", [
-          #     data.helm_template.cilium.manifest,
-          #     "# Source cilium.tf\n${local.cilium_external_lb_manifest}",
-          #   ])
-          # },
-          # {
-          #   name = "nvidia-device-plugin"
-          #   contents = join("---\n", [yamlencode(local.nvidia_runtime_resource),
-          #     data.helm_template.nvidia_device_plugin.manifest,
-          #   ])
-          # },
-        ],
-      },
-    }),
-  ]
+      }),
+      yamlencode({
+        cluster = {
+          clusterName                    = var.cluster_name
+          allowSchedulingOnControlPlanes = var.schedule_pods_on_control_plane_nodes
+          // solves https://github.com/siderolabs/talos/issues/9980 for k8s 1.32+
+          # apiServer = {
+          #   extraArgs = {
+          #     feature-gates = "AuthorizeNodeWithSelectors=false"
+          #   }
+          # }
+          # Proxmox csi driver for storage
+          externalCloudProvider = {
+            enabled = true
+            manifests = [
+              # Talos CCM, install with daemonset
+              "https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/main/docs/deploy/cloud-controller-manager-daemonset.yml"
+            ]
+          }
+          inlineManifests = [
+            # {
+            #   name = "democratic-csi-truenas-iscsi"
+            #   contents = join("---\n", [
+            #     data.helm_template.democratic_csi_truenas_iscsi.manifest,
+            #   ])
+            # },
+            # {
+            #   name = "democratic-csi-truenas-nfs"
+            #   contents = join("---\n", [
+            #     data.helm_template.democratic_csi_truenas_nfs.manifest,
+            #   ])
+            # },
+            # {
+            #   name = "csi-s3"
+            #   contents = join("---\n", [
+            #     data.helm_template.csi_s3.manifest,
+            #   ])
+            # },
+            # {
+            #   name = "cilium"
+            #   contents = join("---\n", [
+            #     data.helm_template.cilium.manifest,
+            #     "# Source cilium.tf\n${local.cilium_external_lb_manifest}",
+            #   ])
+            # },
+            # {
+            #   name = "nvidia-device-plugin"
+            #   contents = join("---\n", [yamlencode(local.nvidia_runtime_resource),
+            #     data.helm_template.nvidia_device_plugin.manifest,
+            #   ])
+            # },
+          ],
+        },
+      }),
+  ])
 }
 
 // see https://registry.terraform.io/providers/siderolabs/talos/0.5.0/docs/resources/machine_bootstrap
@@ -269,7 +279,10 @@ resource "talos_machine_configuration_apply" "controller" {
   machine_configuration_input = data.talos_machine_configuration.controller.machine_configuration
   endpoint                    = local.controller_nodes[count.index].address
   node                        = local.controller_nodes[count.index].address
-  config_patches = [
+  config_patches = concat([
+    templatefile("${path.module}/templates/hostname-config.yaml.tftpl", { hostname = local.controller_nodes[count.index].name }),
+    templatefile("${path.module}/templates/resolver-config.yaml.tftpl", { node_gateway = var.cluster_node_network_gateway }),
+    templatefile("${path.module}/templates/link-config.yaml.tftpl", { ip_address = "${local.controller_nodes[count.index].address}/${var.cluster_subnet}", node_gateway = var.cluster_node_network_gateway }),
     yamlencode({
       machine = {
         // Specify installer to ease automatic upgrades with tuppr
@@ -283,37 +296,38 @@ resource "talos_machine_configuration_apply" "controller" {
             ]
           }
         }
-        network = {
-          hostname = local.controller_nodes[count.index].name
-          interfaces = [
-            {
-              interface = "eth0"
-              addresses = ["${local.controller_nodes[count.index].address}/${var.cluster_subnet}"]
-              dhcp      = false
-              routes = [
-                {
-                  network = "0.0.0.0/0"
-                  gateway = var.cluster_node_network_gateway
-                }
-              ]
-            }
-          ]
-          nameservers = [
-            var.cluster_node_network_gateway,
-            "1.1.1.1",
-            "8.8.8.8"
-          ]
-        }
+        # network = {
+        #   # hostname = local.controller_nodes[count.index].name
+        #   interfaces = [
+        #     {
+        #       interface = "eth0"
+        #       addresses = ["${local.controller_nodes[count.index].address}/${var.cluster_subnet}"]
+        #       dhcp      = false
+        #       routes = [
+        #         {
+        #           network = "0.0.0.0/0"
+        #           gateway = var.cluster_node_network_gateway
+        #         }
+        #       ]
+        #     }
+        #   ]
+        #   # nameservers = [
+        #   #   var.cluster_node_network_gateway,
+        #   #   "1.1.1.1",
+        #   #   "8.8.8.8"
+        #   # ]
+        # }
         # Labels for csi-proxmox-driver
         nodeLabels = {
           "topology.kubernetes.io/region" = var.proxmox_cluster_name
           "topology.kubernetes.io/zone"   = local.controller_nodes[count.index].config.node
         }
       }
-    }),
+    })
+    ],
     # Add mount for linstor
-    local.controller_nodes[count.index].config.storage.datastore != null ? yamlencode(local.linstor_mount_config) : ""
-  ]
+    local.controller_nodes[count.index].config.storage.datastore != null ? [yamlencode(local.linstor_mount_config)] : []
+  )
   depends_on = [
     proxmox_virtual_environment_vm.k8s-controller,
   ]
