@@ -14,8 +14,8 @@ spec:
     - name: cnpg-barman-cloud
       namespace: operators
     # Also needs the s3 operator for distant storage
-    - name: s3-instance
-      namespace: operators
+    # - name: s3-instance
+    #   namespace: operators
     - name: garage-instance
       namespace: operators
   healthChecks:

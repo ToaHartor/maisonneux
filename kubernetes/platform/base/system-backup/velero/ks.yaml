@@ -10,8 +10,8 @@ spec:
     - name: prometheus-crds
       namespace: opentelemetry
     - name: snapshot-controller
-    - name: s3-instance
-      namespace: operators
+    # - name: s3-instance
+    #   namespace: operators
     - name: garage-instance
       namespace: operators
   commonMetadata:

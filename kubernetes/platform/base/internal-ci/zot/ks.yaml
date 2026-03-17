@@ -9,8 +9,8 @@ spec:
     labels:
       app.kubernetes.io/name: zot
   dependsOn:
-    - name: s3-instance # Required for persistency
-      namespace: operators
+    # - name: s3-instance # Required for persistency
+    #   namespace: operators
     - name: garage-instance # Required for persistency
       namespace: operators
   healthChecks:

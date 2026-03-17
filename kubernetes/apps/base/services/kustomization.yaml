@@ -11,7 +11,7 @@ resources:
   - ./immich/ks.yaml
   - ./karakeep/ks.yaml
   - ./legacyapps/ks.yaml
-  - ./minio/ks.yaml
+  # - ./minio/ks.yaml
   - ./opencloud/ks.yaml
   - ./outline/ks.yaml
   # - ./paperless-ngx/ks.yaml
