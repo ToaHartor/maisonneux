@@ -52,11 +52,10 @@ spec:
     upgradeCRDs: true
     cleanUpCRDs: false
 
-    # TODO : remove when https://github.com/vmware-tanzu/helm-charts/issues/698 is solved
-    kubectl:
-      image:
-        repository: bitnamilegacy/kubectl
-        tag: 1.33.4
+    # kubectl:
+    #   image:
+    #     repository: bitnamilegacy/kubectl
+    #     tag: 1.33.4
 
     credentials:
       useSecret: true
