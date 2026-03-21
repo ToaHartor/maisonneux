@@ -11,4 +11,4 @@ spec:
     operation: copy
   url: oci://ghcr.io/rajsinghtech/charts/garage-operator
   ref:
-    tag: 0.2.0
+    tag: 0.2.1
