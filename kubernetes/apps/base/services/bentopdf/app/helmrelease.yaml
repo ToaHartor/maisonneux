@@ -27,7 +27,7 @@ spec:
                   - ALL
             image:
               repository: ghcr.io/alam00000/bentopdf
-              tag: 2.6.0@sha256:96709a7ecd64a3fb4adf4dcf320808248a565993ea0c67febd25da12a34dcab7
+              tag: 2.8.2@sha256:ceee3325f10c3c7e2eef582cc14492e809c1646b5bee4ef00094f2ef3bacebf9
               pullPolicy: IfNotPresent
             probes:
               liveness:
