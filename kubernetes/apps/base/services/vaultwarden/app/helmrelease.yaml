@@ -113,9 +113,14 @@ spec:
       push:
         enabled: false
     persistence:
+      # We keep data as it contains cache and rsa key for signing jwt for sessions
+      # No need to backup it though
       data:
         enabled: true
-        type: emptyDir
+        type: pvc
+        size: 1Gi
+        storageClass: ${fastdata_storage}-ha
+
     cnpg:
       main:
         enabled: false # Disable postgres as we use our own db

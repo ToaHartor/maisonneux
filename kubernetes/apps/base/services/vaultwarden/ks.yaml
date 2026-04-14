@@ -36,6 +36,7 @@ spec:
       SECRET_KEY_NAME: vaultwarden-admin-key
       SECRET_KEY_TYPE: secret-key
       # inherited variables
+      fastdata_storage: ${fastdata_storage}
       psql_cluster_name: ${psql_cluster_name}
       psql_database_namespace: ${psql_database_namespace}
       main_domain: ${main_domain}
