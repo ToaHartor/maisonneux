@@ -37,7 +37,22 @@ spec:
             SERVER_COUNTRIES: "Netherlands,Swiss"
             PORT_FORWARD_ONLY: "on"
             VPN_PORT_FORWARDING: "on"
-
+            # HTTP Proxy (for indexer)
+            HTTPPROXY: "on"
+            FIREWALL_INPUT_PORTS: 10095,8888
+            #optional
+            HTTPPROXY_LOG: "off" # "on" for debug
+            HTTPPROXY_LISTENING_ADDRESS: :8888
+    service:
+      proxy:
+        enabled: true
+        ports:
+          gluetun:
+            enabled: true
+            port: 8888
+            protocol: "http"
+            targetPort: 8888
+        type: "ClusterIP"
     # workload:
     #   main:
     #     podSpec:
