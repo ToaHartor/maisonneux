@@ -41,7 +41,13 @@ variable "use_nvidia_gpu" {
   default     = false
 }
 
-# SMTP settings 
+# Gluetun
+variable "gluetun_wireguard_privatekey" {
+  description = "Wireguard private key for gluetun"
+  type        = string
+}
+
+# SMTP settings
 
 variable "smtp_username" {
   type        = string

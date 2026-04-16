@@ -18,6 +18,26 @@ spec:
       retries: 3
   # see https://github.com/truecharts/public/blob/master/charts/stable/qbittorrent/values.yaml
   values:
+    # Gluetun setup
+    # https://trueforge.org/truetech/truecharts/guides/addons/vpn-setup/
+    addons:
+      gluetun:
+        enabled: true
+        container:
+          env:
+            FIREWALL: "on"
+            FIREWALL_OUTBOUND_SUBNETS: "192.168.1.0/24,192.168.128.0/24,10.24.0.0/16" # Local network, ingress network, kubernetes network
+            VPN_TYPE: "wireguard"
+            VPN_SERVICE_PROVIDER: "protonvpn"
+            WIREGUARD_PRIVATE_KEY:
+              secretKeyRef:
+                name: gluetun-config
+                key: private_key
+                expandObjectName: false
+            SERVER_COUNTRIES: "Netherlands,Swiss"
+            PORT_FORWARD_ONLY: "on"
+            VPN_PORT_FORWARDING: "on"
+
     # workload:
     #   main:
     #     podSpec:

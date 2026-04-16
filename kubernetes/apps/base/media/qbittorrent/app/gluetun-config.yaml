@@ -1,0 +1,16 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: gluetun-config
+spec:
+  dataFrom:
+    - extract:
+        key: external-gluetun-config
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: external-secrets
+  target:
+    name: gluetun-config
+    creationPolicy: Owner
+    deletionPolicy: Retain

@@ -118,3 +118,15 @@ resource "kubernetes_secret_v1" "external_smtp_config" {
     smtp_port     = var.smtp_port
   }
 }
+
+resource "kubernetes_secret_v1" "external_gluetun_config" {
+  metadata {
+    name      = "external-gluetun-config"
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    private_key = var.gluetun_wireguard_privatekey
+  }
+}
