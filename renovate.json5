@@ -128,6 +128,9 @@
     {
       matchPackageNames: ["*/siderolabs/installer"],
       groupName: "Talos Linux",
+      // Override datasource to take main repository into account to be able to apply minimumReleaseAge
+      overrideDatasource: "github-releases",
+      overridePackageName: "siderolabs/talos",
       sourceUrl: "https://github.com/siderolabs/talos",
       minimumReleaseAge: "7 days",
     },
