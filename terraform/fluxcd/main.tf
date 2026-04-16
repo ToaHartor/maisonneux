@@ -118,7 +118,7 @@ locals {
 resource "helm_release" "fluxcd" {
   repository      = "https://fluxcd-community.github.io/helm-charts"
   chart           = "flux2"
-  version         = "2.18.2"
+  version         = "2.18.3"
   name            = "flux2"
   namespace       = "flux-system"
   upgrade_install = true
