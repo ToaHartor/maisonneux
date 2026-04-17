@@ -6,6 +6,8 @@ metadata:
   name: wakapi
 spec:
   releaseName: wakapi
+  dependsOn:
+    - name: ${APP}-oidc
   chartRef:
     kind: OCIRepository
     name: app-template
@@ -19,7 +21,7 @@ spec:
       wakapi:
         annotations:
           # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
+          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds,${APP}-oidc-authentik-application"
         type: deployment
         strategy: RollingUpdate
         rollingUpdate:
@@ -87,6 +89,30 @@ spec:
               # Set wakapi mail settings
               - name: WAKAPI_MAIL_ENABLED
                 value: "false"
+              # OIDC settings
+              - name: WAKAPI_OIDC_ALLOW_SIGNUP
+                value: "true"
+              - name: WAKAPI_DISABLE_LOCAL_AUTH
+                value: "true"
+              - name: WAKAPI_OIDC_PROVIDERS_0_NAME
+                value: "authentik"
+              - name: WAKAPI_OIDC_PROVIDERS_0_DISPLAY_NAME
+                value: "Authentik"
+              - name: WAKAPI_OIDC_PROVIDERS_0_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: ${APP}-oidc-authentik-application
+                    key: clientID
+              - name: WAKAPI_OIDC_PROVIDERS_0_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: ${APP}-oidc-authentik-application
+                    key: clientSecret
+              - name: WAKAPI_OIDC_PROVIDERS_0_ENDPOINT
+                valueFrom:
+                  secretKeyRef:
+                    name: ${APP}-oidc-authentik-application
+                    key: issuerURL
             resources:
               requests:
                 cpu: 100m

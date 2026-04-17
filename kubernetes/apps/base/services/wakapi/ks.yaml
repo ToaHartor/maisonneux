@@ -16,6 +16,7 @@ spec:
   interval: 1h
   components:
     # relative to spec.path
+    - ../../../../../common/components/oidc-application
     - ../../../../../common/components/cnpg/db
     - ../../../../../common/components/secret/key
     - ../../../../../common/components/httproute/common
@@ -27,6 +28,9 @@ spec:
       SUBDOMAIN: wakapi
       DOMAIN: ${main_domain}
       DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: Code time tracker
+      REDIRECT_URL: "https://wakapi.${main_domain_websecure}/oidc/authentik/callback"
       # Database
       PSQL_DB_USER: wakapi
       PSQL_DB_NAME: wakapi
@@ -37,8 +41,22 @@ spec:
       GATEWAY_SVC_NAME: wakapi
       GATEWAY_SVC_PORT: "3000"
       # inherited variables
+      auth_subdomain: ${auth_subdomain}
+      main_domain_websecure: ${main_domain_websecure}
       psql_cluster_name: ${psql_cluster_name}
       psql_database_namespace: ${psql_database_namespace}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: wakapi"
+            bindID: "4e172e2b-8120-4aab-80de-7e39ce4bf507" # arbitrary uuid
+
   sourceRef:
     kind: GitRepository
     name: flux-system
