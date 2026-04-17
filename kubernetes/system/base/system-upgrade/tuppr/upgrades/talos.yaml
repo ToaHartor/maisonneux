@@ -16,26 +16,50 @@ spec:
       kind: Node
       expr: |-
         status.conditions.filter(c, c.type == "Ready").all(c, c.status == "True")
+      timeout: 10m
     # Check storage cluster status
     ## Controller
     - apiVersion: piraeus.io/v1
       kind: LinstorCluster
       expr: |-
         status.conditions.exists(c, c.type == "Available" && c.status == "True")
+      timeout: 15m
     ## Satellites status
     - apiVersion: piraeus.io/v1
       kind: LinstorSatellite
       expr: |-
         status.conditions.filter(c, c.type == "Available").all(c, c.status == "True")
+      timeout: 15m
     # Check cilium status
     - apiVersion: apps/v1
       kind: DaemonSet
       name: cilium
       namespace: kube-system
       expr: status.currentNumberScheduled == status.desiredNumberScheduled && status.currentNumberScheduled == status.numberReady && status.currentNumberScheduled == status.updatedNumberScheduled
+      timeout: 15m
     # Database status
     - apiVersion: postgresql.cnpg.io/v1
       kind: Cluster
       name: ${psql_cluster_name}${psql_suffix:=}
       namespace: ${psql_database_namespace}
       expr: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
+      timeout: 15m
+    - apiVersion: dragonflydb.io/v1alpha1
+      kind: Dragonfly
+      name: dragonfly-cluster
+      namespace: dragonfly
+      description: Dragonfly must be ready and not in a rolling update
+      expr: |
+        status.phase == 'ready' &&
+          !status.isRollingUpdate
+      timeout: 10m
+    # S3 status
+    - apiVersion: garage.rajsingh.info/v1alpha1
+      kind: GarageCluster
+      name: garage-gateway
+      namespace: operators
+      description: Garage cluster must be running with all replicas ready
+      expr: |
+        status.phase == 'Running' &&
+          status.readyReplicas == object.spec.replicas
+      timeout: 10m
