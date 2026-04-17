@@ -1,0 +1,73 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: papra
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: papra
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: papra
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    # - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/garage-bucket
+    - ../../../../../common/components/httproute/local
+    - ../../../../../common/components/secret/key # AUTH_SECRET
+  path: "./kubernetes/apps/base/services/papra/app"
+  postBuild:
+    substitute:
+      APP: papra
+      SUBDOMAIN: papra
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: Documents stuff
+      REDIRECT_URL: "https://papra.${main_domain_websecure}/api/auth/oauth2/callback/authentik"
+      ## S3 storage
+      S3_USER: papra-${environment}
+      BUCKET_NAME: papra-${environment}
+      BUCKET_QUOTA: "10Gi"
+      GARAGE_URL: garage-gateway.operators.svc.cluster.local:3900 # Same as the secret
+      ## Gateway
+      GATEWAY_SVC_NAME: papra
+      GATEWAY_SVC_PORT: "1221"
+      ## Generated secrets
+      SECRET_KEY_NAME: papra-auth-secret
+      SECRET_KEY_TYPE: secret-key
+      # inherited variables
+      quote: '"'
+      patch_dns: ${quote}${patch_dns:=false}${quote}
+      traefik_lb_ip: ${traefik_lb_ip}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+      auth_subdomain: ${auth_subdomain}
+      environment: ${environment}
+      fastdata_storage: ${fastdata_storage}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: papra"
+            bindID: "537e4f8b-bff5-41d8-91b9-299421f6ec15" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 10m

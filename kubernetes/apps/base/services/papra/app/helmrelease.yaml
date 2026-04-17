@@ -1,0 +1,195 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: papra
+spec:
+  releaseName: papra
+  dependsOn:
+    - name: ${APP}-oidc
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # Patch only when local dns is used
+  # Using postRenderers instead of patches in kustomizations, as variable substitution is not performed already
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "${traefik_lb_ip}"
+                    hostnames:
+                    - "${auth_subdomain}.${main_domain}"
+                    - "${second_domain}"
+            target:
+              kind: Deployment
+              name: papra
+              namespace: services
+              annotationSelector: homelab/use-local-dns=true
+
+  values:
+    fullnameOverride: &name papra
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      papra:
+        annotations:
+          # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+          secret.reloader.stakater.com/reload: "${S3_USER}-garage,${SECRET_KEY_NAME},${APP}-oidc-authentik-application,papra-oidc-spec"
+          # configmap.reloader.stakater.com/reload: "opencloud-config"
+          homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+
+        containers:
+          papra:
+            image:
+              repository: ghcr.io/papra-hq/papra
+              tag: 25.12.0-rootless@sha256:9b3ddb66c63caf9d2616a2cb47689d39af4efd4ed19bffdf1943a8a262719c35
+            env:
+              APP_BASE_URL: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
+              # TZ: "${TIMEZONE}"
+
+              PORT: "${GATEWAY_SVC_PORT}"
+              AUTH_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${SECRET_KEY_NAME}
+                    key: secretKey
+              DOCUMENT_STORAGE_DRIVER: s3
+              DOCUMENT_STORAGE_S3_ACCESS_KEY_ID:
+                secretKeyRef:
+                  name: ${S3_USER}-garage
+                  key: accessKey
+              DOCUMENT_STORAGE_S3_SECRET_ACCESS_KEY:
+                secretKeyRef:
+                  name: ${S3_USER}-garage
+                  key: secretKey
+              DOCUMENT_STORAGE_S3_BUCKET_NAME: ${BUCKET_NAME}
+              DOCUMENT_STORAGE_S3_REGION:
+                secretKeyRef:
+                  name: ${S3_USER}-garage
+                  key: region
+              DOCUMENT_STORAGE_S3_ENDPOINT: http://${GARAGE_URL}
+              DOCUMENT_STORAGE_S3_FORCE_PATH_STYLE: "true"
+
+              AUTH_PROVIDERS_CUSTOMS:
+                secretKeyRef:
+                  name: papra-oidc-spec # Defined below
+                  key: oidc-spec
+            ports:
+              - containerPort: 1221
+                name: http
+                protocol: TCP
+            probes:
+              liveness: &probes
+                enabled: true
+              readiness: *probes
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 25m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
+
+    service:
+      papra:
+        controller: *name
+        ports:
+          http:
+            port: ${GATEWAY_SVC_PORT}
+            targetPort: 1221
+
+    persistence:
+      # Database storage
+      data:
+        labels:
+          homelab/backup-resource: "true"
+        storageClass: ${fastdata_storage}-ha
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        globalMounts:
+          - path: /app/app-data
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+
+    rawResources:
+      papra:
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        # metadata:
+        forceRename: papra-oidc-spec
+        spec:
+          # Duplicate spec section, see https://github.com/bjw-s-labs/helm-charts/issues/510#issuecomment-3393096619
+          spec:
+            data:
+              - secretKey: clientID
+                remoteRef:
+                  key: &oidc-secret ${APP}-oidc-authentik-application
+                  property: clientID
+              - secretKey: clientSecret
+                remoteRef:
+                  key: *oidc-secret
+                  property: clientSecret
+              - secretKey: issuerURL
+                remoteRef:
+                  key: *oidc-secret
+                  property: issuerURL
+            refreshInterval: 5m
+            secretStoreRef:
+              kind: SecretStore
+              name: papra-store
+            target:
+              creationPolicy: Owner
+              deletionPolicy: Retain
+              template:
+                data:
+                  oidc-spec: |
+                    [
+                      {
+                        "providerId": "authentik",
+                        "providerName": "Authentik",
+                        "clientId": "{{ `{{ .clientID }}` }}",
+                        "clientSecret": "{{ `{{ .clientSecret }}` }}",
+                        "type": "oidc",
+                        "discoveryUrl": "{{ `{{ .issuerURL }}` }}.well-known/openid-configuration",
+                        "scopes": ["openid", "profile", "email"]
+                      }
+                    ]
+                engineVersion: v2
