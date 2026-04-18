@@ -16,7 +16,10 @@ spec:
   values:
     # https://github.com/kubernetes-sigs/metrics-server/blob/master/charts/metrics-server/values.yaml
     replicas: 2
-    
+
+    # kubelet uses self-signed certificates by default
+    args: ["--kubelet-insecure-tls"]
+
     updateStrategy:
       type: RollingUpdate
       rollingUpdate:

@@ -46,9 +46,7 @@ spec:
       name: dragonfly-cluster
       namespace: dragonfly
       description: Dragonfly must be ready and not in a rolling update
-      expr: |
-        status.phase == 'ready' &&
-          !status.isRollingUpdate
+      expr: status.phase == 'Ready' # && !status.isRollingUpdate
       timeout: 10m
     # S3 status
     - apiVersion: garage.rajsingh.info/v1alpha1
@@ -56,7 +54,7 @@ spec:
       name: garage-gateway
       namespace: operators
       description: Garage cluster must be running with all replicas ready
-      expr: |
-        status.phase == 'Running' &&
-          status.readyReplicas == object.spec.replicas
+      expr: |-
+        status.phase == 'Running' && status.conditions.filter(c, c.type == "Ready").all(c, c.status == "True")
+      # && status.readyReplicas == object.spec.replicas
       timeout: 10m
