@@ -43,7 +43,7 @@ spec:
           containers:
             main:
               env:
-                ATUIN_OPEN_REGISTRATION: "true"
+                ATUIN_OPEN_REGISTRATION: "false" # When already registered
                 ATUIN_DB_URI:
                   secretKeyRef:
                     name: ${APP}-db-creds

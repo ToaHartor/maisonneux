@@ -17,7 +17,7 @@ spec:
   components:
     # relative to spec.path
     - ../../../../../common/components/cnpg/db
-    # - ../../../../../common/components/httproute/common
+    - ../../../../../common/components/httproute/common
   path: "./kubernetes/apps/base/services/atuin/app"
   postBuild:
     substitute:
