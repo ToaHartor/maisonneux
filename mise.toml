@@ -1,6 +1,7 @@
 [env]
 # Automatic use of venv
 _.python.venv = { path = ".venv", create = true, uv_create_args = ['--seed'] }
+KRR_VERSION = "1.28.0"
 
 [settings]
 python.uv_venv_auto = true
@@ -93,6 +94,42 @@ fi
 
 bash ./scripts/run_renovate.sh "${ARG}"
 '''
+
+[tasks.krr]
+description = "Run Kubernetes Resource Recommendations"
+usage = '''
+arg "<environment>" help="Target environment" {
+  choices "staging" "production"
+}
+'''
+run = """
+#!/usr/bin/env bash
+
+ENVIRONMENT="${usage_environment?}"
+
+mise run context $ENVIRONMENT
+
+localport=8481
+kubectl port-forward -n monitoring --address 0.0.0.0 sts/vmselect-metrics-datastore $localport > /dev/null 2>&1 &
+pfpid=$!
+
+trap '{
+    kill $pfpid
+}' EXIT
+
+# wait for $localport to become available
+while ! nc -vz localhost $localport > /dev/null 2>&1 ; do
+    # echo sleeping
+    sleep 0.1
+done
+
+docker run -it --network host --mount "type=bind,src=${HOME}/.kube/config,dst=/root/.kube/config,z" \
+  -e KUBECONFIG=/root/.kube/config \
+  -e "TERM=xterm-256color" \
+  --rm robustadev/krr:v$KRR_VERSION \
+  bash -c "sed -i -E 's/__version__ = \\"dev\\"/__version__ = \\"$KRR_VERSION\\"/' /app/robusta_krr/__init__.py && python krr.py simple --kubeconfig \\$KUBECONFIG --allow-hpa --verbose --prometheus-url http://localhost:$localport/select/0/prometheus/"
+
+"""
 
 [tasks.generate-uuid]
 description = "Use python to generate a UUIDv4 for groups"
