@@ -34,12 +34,17 @@ spec:
                 name: gluetun-config
                 key: private_key
                 expandObjectName: false
-            SERVER_COUNTRIES: "Netherlands,Swiss"
+            SERVER_COUNTRIES: "Netherlands,Switzerland"
+            DNS_UPSTREAM_RESOLVER_TYPE: "dot"
+            DNS_UPSTREAM_RESOLVERS: "cloudflare,google"
+            DOT: "on"
             BLOCK_MALICIOUS: "off"
             PORT_FORWARD_ONLY: "on"
             VPN_PORT_FORWARDING: "on"
             # https://www.reddit.com/r/gluetun/comments/1kpbfs2/the_definitive_howto_for_setting_up_protonvpn/?show=original
-            VPN_PORT_FORWARDING_UP_COMMAND: /bin/sh -c 'wget -O- --retry-connrefused --post-data "json={\"listen_port\":{{ `{{PORTS}}` }}}" http://127.0.0.1:10095/api/v2/app/setPreferences 2>&1'
+            VPN_PORT_FORWARDING_UP_COMMAND: /bin/sh -c 'wget -O- --retry-connrefused
+              --post-data "json={\"listen_port\":{{ `{{PORTS}}` }}}"
+              http://127.0.0.1:10095/api/v2/app/setPreferences 2>&1'
             # HTTP Proxy (for indexer)
             HTTPPROXY: "on"
             FIREWALL_INPUT_PORTS: 10095,8888
