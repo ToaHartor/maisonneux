@@ -19,22 +19,29 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+
   postRenderers:
-  - kustomize:
-      patches:
-        # Modify default observability configmap following these settings
-        # https://tekton.dev/docs/pipelines/metrics/#configuring-metrics-using-config-observability-configmap
-        - target:
-            version: v1
-            kind: ConfigMap
-            name: tekton-operator-observability
-          patch: |
-            - op: add
-              path: /data/metrics.backend-destination
-              value: prometheus
-            - op: add
-              path: /data/metrics.request-metrics-backend-destination
-              value: prometheus
+    - kustomize:
+        patches:
+          # Modify default observability configmap following these settings
+          # https://tekton.dev/docs/pipelines/metrics/#configuring-metrics-using-config-observability-configmap
+          - target:
+              version: v1
+              kind: ConfigMap
+              name: tekton-operator-observability
+            patch: |
+              - op: add
+                path: /data/metrics.backend-destination
+                value: prometheus
+              - op: add
+                path: /data/metrics.request-metrics-backend-destination
+                value: prometheus
 
   values:
     # see https://github.com/tektoncd/operator/blob/main/charts/tekton-operator/values.yaml
@@ -50,10 +57,10 @@ spec:
     securityContext:
       capabilities:
         drop:
-        - ALL
+          - ALL
       readOnlyRootFilesystem: true
       runAsNonRoot: true
       runAsUser: 1000
-    
+
     service:
       createServiceMonitor: true
