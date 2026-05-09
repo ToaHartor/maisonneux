@@ -30,12 +30,12 @@ spec:
         cpu: 80m
         memory: 80Mi
 
-    watchNamespaces: ["monitoring"] # All resources will be in the same namespace 
+    watchNamespaces: [ "monitoring" ] # All resources will be in the same namespace
 
     podDisruptionBudget:
       enabled: true
       minAvailable: 1
-    
+
     topologySpreadConstraints:
       # Maximum 1 pod per Proxmox hypervisor
       - maxSkew: 1
@@ -51,7 +51,7 @@ spec:
         labelSelector:
           matchLabels:
             app.kubernetes.io/name: victoria-metrics-operator
-    
+
     extraObjects:
       # Metrics cluster storage
       - apiVersion: operator.victoriametrics.com/v1beta1
@@ -80,11 +80,14 @@ spec:
 
             storage:
               volumeClaimTemplate:
+                metadata:
+                  annotations:
+                    operator.victoriametrics.com/pvc-allow-volume-expansion: "true"
                 spec:
                   storageClassName: ${fastdata_storage}
                   resources:
                     requests:
-                      storage: 10Gi
+                      storage: 20Gi
           vmselect:
             replicaCount: 2
             topologySpreadConstraints:
@@ -147,7 +150,6 @@ spec:
                   matchLabels:
                     app.kubernetes.io/name: vlinsert
 
-
           vlselect:
             replicaCount: 2
             topologySpreadConstraints:
@@ -185,11 +187,14 @@ spec:
                     app.kubernetes.io/name: vlstorage
             storage:
               volumeClaimTemplate:
+                metadata:
+                  annotations:
+                    operator.victoriametrics.com/pvc-allow-volume-expansion: "true"
                 spec:
                   storageClassName: ${fastdata_storage}
                   resources:
                     requests:
-                      storage: 10Gi
+                      storage: 20Gi
 
       # InfluxDB endpoint for proxmox to upload cluster metrics.
       # API prefix must be set to /insert/0/influx in the proxmox config
@@ -212,7 +217,7 @@ spec:
           externalTrafficPolicy: Local
           internalTrafficPolicy: Cluster
           ports:
-          - name: influxdb
-            protocol: TCP
-            port: 8086
-            targetPort: 8480
+            - name: influxdb
+              protocol: TCP
+              port: 8086
+              targetPort: 8480
