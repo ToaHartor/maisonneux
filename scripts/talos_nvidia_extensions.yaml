@@ -1,5 +1,5 @@
 customization:
   systemExtensions:
     officialExtensions:
-      - siderolabs/nonfree-kmod-nvidia-lts
-      - siderolabs/nvidia-container-toolkit-lts
+      - siderolabs/nvidia-open-gpu-kernel-modules-production
+      - siderolabs/nvidia-container-toolkit-production
