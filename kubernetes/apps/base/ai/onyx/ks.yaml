@@ -1,0 +1,88 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: onyx
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: onyx
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: onyx
+      namespace: ai
+  dependsOn:
+    - name: llmkube
+    - name: llmkube-resources
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/garage-bucket
+    - ../../../../../common/components/cnpg/db # TODO : with extensions like immich ?
+    - ../../../../../common/components/secret/creds
+    # - ../../../../../common/components/httproute/local
+  path: "./kubernetes/apps/base/ai/onyx/app"
+  postBuild:
+    substitute:
+      APP: onyx
+      SUBDOMAIN: onyx
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: AI platform
+      REDIRECT_URL: https://onyx.${main_domain_websecure}/auth/oidc/callback
+      # Gateway HTTPRoute
+      # GATEWAY_SVC_NAME: onyx-nginx
+      # GATEWAY_SVC_PORT: "80"
+      # Database
+      PSQL_DB_USER: onyx
+      PSQL_DB_NAME: onyx
+      # DATABASE_EXTENSIONS: |
+      #   [
+      #     { name: vector, ensure: present },
+      #     { name: vchord, ensure: present }
+      #   ]
+      # S3
+      S3_USER: onyx-${environment}
+      BUCKET_NAME: onyx-${environment}
+      # BUCKET_QUOTA: 100Gi
+      GARAGE_URL: garage-gateway.operators.svc.cluster.local:3900 # Same as the secret
+      GARAGE_REGION: garage # Same as the secret
+      # Admin creds
+      SECRET_CREDS_NAME: opensearch-admin-creds
+      SECRET_CREDS_USER: admin
+      # inherited variables
+      gpu_runtime_class: ${gpu_runtime_class}
+      fastdata_storage: ${fastdata_storage}
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      quote: "\""
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: onyx"
+            parent: "authentik Admins"
+            bindID: "d21b4415-6348-49b9-b0a8-f43206a0c780" # arbitrary uuid
+        - op: add
+          path: '/spec/values/blueprint/provider/oidc/scopes/-'
+          value:
+            name: "authentik default OAuth Mapping: OpenID 'offline_access'"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ai
+  timeout: 10m

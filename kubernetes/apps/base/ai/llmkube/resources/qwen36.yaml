@@ -1,0 +1,93 @@
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen36-35b-a3b-iq2-m
+spec:
+  # source: https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-IQ3_S.gguf
+  source: https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-IQ2_M.gguf
+  format: gguf
+  quantization: IQ2_M
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 1
+      # layers: 20
+    #   memory: 14Gi
+    # memoryBudget: 14Gi
+  resources:
+    cpu: "6"
+    memory: 16Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen36-35b-a3b
+spec:
+  modelRef: qwen36-35b-a3b-iq2-m
+  runtime: llamacpp
+  # https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp/versions?filters[version_type]=tagged
+  image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b9191
+  # Wait more official fork btw https://github.com/turbo-tan/llama.cpp-tq3
+  # image: dexogen/atomic-llama-cpp-turboquant:cuda13 # required for TQ3_4S
+  replicas: 1
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  priority: high
+  evictionProtection: false
+  contextSize: 262144 # 8192 # -c
+  flashAttention: true # -fa
+  parallelSlots: 1 # -np
+  runtimeClassName: ${gpu_runtime_class}
+  cacheTypeCustomK: q8_0
+  cacheTypeCustomV: q8_0
+  moeCPULayers: 20
+  # moeCPUOffload: true # Offload all expert layers to CPU
+
+  # noKvOffload:  # KV in RAM instead of VRAM
+  reasoningBudget: 500  # Necessary for models like Qwen
+  # skipModelInit:
+  # tensorOverrides:
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  env:
+    - name: HF_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: hf-token
+          key: HF_TOKEN
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 101 # curl_user
+    seccompProfile:
+      type: RuntimeDefault
+  # priorityClassName:
+  extraArgs:
+    # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+    - --spec-type
+    - draft-mtp
+    - --spec-draft-n-max
+    - "2"
+    - --temp
+    - "1.0"
+    - --top-p
+    - "0.95"
+    - --min-p
+    - "0.00"
+    - --presence-penalty
+    - "1.5"
+    - --top-k
+    - "20"
+  # podLabels:
+  #   app.kubernetes.io/name: llmkube
+  # podAnnotations:
+  #   sidecar.istio.io/inject: "true"
+  resources:
+    gpu: 1
+    cpu: "2"
+    gpuMemory: 14Gi
+    hostMemory: 12Gi
+    memory: 16Gi

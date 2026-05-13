@@ -1,0 +1,411 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: onyx
+spec:
+  releaseName: onyx
+  dependsOn:
+    - name: ${APP}-oidc
+  chart:
+    spec:
+      chart: onyx
+      version: "0.5.7"
+      sourceRef:
+        kind: HelmRepository
+        name: onyx
+  interval: 50m
+  timeout: 15m # Pulling images takes a lot of time
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    # We absolutely do not want CNPG CRDs to be installed, as they will override the ones provided by the operator deployment
+    crds: Skip
+  upgrade:
+    crds: Skip
+
+  values:
+    # https://github.com/onyx-dot-app/onyx/blob/main/deployment/helm/charts/onyx/values.yaml
+    global:
+      version: "v4.0.0-beta.0"
+        # "v3.3.7" # "latest"
+        # Looks like there is no fixed version => https://hub.docker.com/u/onyxdotapp
+        # onyx-backend is synced with the repository
+
+    postgresql:
+      enabled: false # We already use our own database provisioning
+      crds:
+        create: false
+
+    vectorDB:
+      enabled: true
+
+    # vespa:
+    #   enabled: false
+
+    opensearch:
+      enabled: true
+      singleNode: true
+
+      extraEnvs:
+        - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "${SECRET_CREDS_NAME}" # Must match auth.opensearch.secretName or auth.opensearch.existingSecret if defined.
+              key: password # Must match auth.opensearch.secretKeys value.
+
+      resources:
+        requests:
+          cpu: 2000m
+          # memory: 4Gi
+          memory: 2Gi
+        limits:
+          # cpu: 4000m
+          # memory: 8Gi
+          memory: 4Gi
+
+      persistence:
+        enabled: false
+        size: 30Gi
+        storageClass: ${fastdata_storage}
+
+      # Java heap should be ~50% of memory limit.
+      # See https://opster.com/guides/opensearch/opensearch-basics/opensearch-heap-size-usage-and-jvm-garbage-collection/
+      # Xms is the starting size, Xmx is the maximum size. These should be the same.
+      opensearchJavaOpts: "-Xmx2g -Xms2g"
+
+    # persistent:
+    #   storageClassName: "${fastdata_storage}"
+    celery_beat:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 256Mi
+          # memory: 512Mi
+        limits:
+          # cpu: 1000m
+          # memory: 1Gi
+          memory: 512Mi
+
+    celery_worker_heavy:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 256Mi
+          # memory: 512Mi
+        limits:
+          # cpu: 1000m
+          # memory: 2Gi
+          memory: 512Mi
+
+    celery_worker_docprocessing:
+      resources:
+        requests:
+          cpu: 250m
+          # cpu: 500m
+          memory: 256Mi
+          # memory: 2Gi
+        limits:
+          # cpu: 1000m
+          # memory: 12Gi
+          memory: 512Mi
+
+    celery_worker_light:
+      resources:
+        requests:
+          cpu: 250m
+          # cpu: 500m
+          memory: 256Mi
+          # memory: 512Mi
+        limits:
+          # cpu: 1000m
+          # memory: 4Gi
+          memory: 1Gi
+
+    celery_worker_monitoring:
+      resources:
+        requests:
+          cpu: 250m
+          # cpu: 500m
+          memory: 256Mi
+          # memory: 512Mi
+        limits:
+          # cpu: 1000m
+          # memory: 4Gi
+          memory: 1Gi
+
+    celery_worker_primary:
+      resources:
+        requests:
+          cpu: 250m
+          # cpu: 500m
+          memory: 256Mi
+          # memory: 2Gi
+        limits:
+          # cpu: 1000m
+          # memory: 4Gi
+          memory: 512Mi
+
+    celery_worker_user_file_processing:
+      resources:
+        requests:
+          cpu: 250m
+          # cpu: 500m
+          memory: 256Mi
+          # memory: 512Mi
+        limits:
+          # cpu: 2000m
+          # memory: 2Gi
+          memory: 512Mi
+
+    celery_worker_scheduled_tasks:
+      resources:
+        requests:
+          cpu: 250m
+          # cpu: 500m
+          memory: 256Mi
+          # memory: 512Mi
+        limits:
+          # cpu: 2000m
+          # memory: 2Gi
+          memory: 512Mi
+
+    celery_worker_docfetching:
+      resources:
+        requests:
+          cpu: 250m
+          # cpu: 500m
+          memory: 512Mi
+          # memory: 2Gi
+        limits:
+          # cpu: 1000m
+          # memory: 16Gi
+          memory: 1Gi
+
+    monitoring:
+      grafana:
+        dashboards:
+          enabled: true
+      serviceMonitors:
+        enabled: true
+
+    serviceAccount:
+      create: true
+
+    # We use the nginx deployment to forward the HTTPRoute to the service
+    nginx:
+      enabled: false
+      # controller:
+      #   extraEnvs:
+      #     - name: DOMAIN
+      #       value: ${SUBDOMAIN}.${DOMAIN}
+      # service:
+      #   type: ClusterIP # LoadBalancer
+      #   ports:
+      #     http: ${GATEWAY_SVC_PORT}
+
+    webserver:
+      replicaCount: 1
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      resources:
+        requests:
+          cpu: 200m
+          # memory: 512Mi
+          memory: 256Mi
+        limits:
+          # cpu: 1000m
+          # memory: 1Gi
+          memory: 512Mi
+      # We'll need to use an embedding model for the index capability
+      # I guess we however can use our own model for inference (since it only generates the answer
+    indexCapability:
+      replicaCount: 1
+      securityContext:
+        privileged: false
+        runAsNonRoot: true
+        runAsUser: 1001
+      # service is still used, so maybe redirect to our custom pod
+      service:
+        portName: modelserver
+        type: ClusterIP
+        servicePort: 9000
+        targetPort: 9000
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      resources:
+        requests:
+          cpu: 1
+          memory: 2Gi
+          nvidia.com/gpu: "1"
+        #     cpu: 4000m
+        #     memory: 3Gi
+        limits:
+          cpu: 2
+          memory: 4Gi
+          nvidia.com/gpu: "1"
+      #     cpu: 6000m
+      #     memory: 6Gi
+      strategy:
+        # rollingUpdate: null
+        type: Recreate
+
+    inferenceCapability:
+      replicaCount: 0
+      securityContext:
+        privileged: false
+        runAsNonRoot: true
+        runAsUser: 1001
+      # service is still used, so maybe redirect to our custom pod
+      service:
+        portName: modelserver
+        type: ClusterIP
+        servicePort: 9000
+        targetPort: 9000
+      # resources:
+      #   requests:
+      #     cpu: 2000m
+      #     memory: 3Gi
+      #   limits:
+      #     cpu: 4000m
+      #     memory: 10Gi
+
+    api:
+      # TODO : add HF_TOKEN here
+      replicaCount: 1
+      securityContext:
+        privileged: false
+        runAsNonRoot: true
+        runAsUser: 1001
+      resources:
+        requests:
+          cpu: 500m
+          # memory: 1Gi
+          memory: 500Mi
+        limits:
+          # cpu: 1000m
+          memory: 1Gi
+
+    celery_shared:
+      securityContext:
+        privileged: false
+        runAsNonRoot: true
+        runAsUser: 1001
+
+    discordbot:
+      enabled: false
+
+    slackbot:
+      enabled: false
+
+    mcpServer:
+      enabled: false # Might set this to true afterwards
+      # resources:
+      #   requests:
+      #     cpu: "250m"
+      #     memory: "256Mi"
+      #   limits:
+      #     cpu: "500m"
+      #     memory: "512Mi"
+
+      # We use our own redis/minio
+    redis:
+      enabled: false
+
+    minio:
+      enabled: false
+
+    codeInterpreter:
+      enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          # cpu: 1000m
+          memory: 512Mi
+
+    auth:
+      postgresql:
+        enabled: true
+        existingSecret: ${APP}-db-creds
+        secretKeys:
+          POSTGRES_USER: username
+          POSTGRES_PASSWORD: password
+      dbreadonly:
+        enabled: true
+        existingSecret: "${APP}ro-db-creds"
+        secretKeys:
+          DB_READONLY_USER: username
+          DB_READONLY_PASSWORD: password
+      redis:
+        # We do not need to authenticate to redis, thus empty password
+        enabled: false
+        secretName: "onyx-redis"
+        # existingSecret: ""
+        # secretKeys:
+        #   REDIS_PASSWORD: ""
+        values:
+          redis_password: ""
+      objectstorage:
+        enabled: true
+        existingSecret: "${S3_USER}-garage"
+        secretKeys:
+          S3_AWS_ACCESS_KEY_ID: accessKey
+          S3_AWS_SECRET_ACCESS_KEY: secretKey
+      oauth:
+        enabled: true
+        existingSecret: "${APP}-oidc-authentik-application"
+        secretKeys:
+          OAUTH_CLIENT_ID: clientID
+          OAUTH_CLIENT_SECRET: clientSecret
+      opensearch:
+        enabled: true
+        existingSecret: "${SECRET_CREDS_NAME}"
+        secretKeys:
+          OPENSEARCH_ADMIN_USERNAME: username
+          OPENSEARCH_ADMIN_PASSWORD: password
+
+    configMap:
+      # https://github.com/onyx-dot-app/onyx/blob/main/backend/shared_configs/configs.py
+      DOMAIN: ${SUBDOMAIN}.${DOMAIN}
+      WEB_DOMAIN: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+      # Redis
+      REDIS_HOST: "dragonfly-cluster.dragonfly.svc.cluster.local"
+      REDIS_PORT: "6379"
+      REDIS_SSL: "false" # set to "true" if in-transit encryption is enabled
+      # External postgres config
+      POSTGRES_HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "${PSQL_DB_NAME}"
+      # MODEL_SERVER_HOST:
+      # INDEXING_MODEL_SERVER_HOST:
+      DISABLE_TELEMETRY: "true"
+      CORS_ALLOWED_ORIGIN: ""
+
+      # Auth
+      AUTH_TYPE: "oidc"
+      OPENID_CONFIG_URL: https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/.well-known/openid-configuration
+      # TRACK_EXTERNAL_IDP_EXPIRY:
+      OIDC_SCOPE_OVERRIDE: "openid,profile,email,offline_access"
+      # External AI models
+      # GEN_AI_MODEL_PROVIDER: custom
+      # GEN_AI_MODEL_VERSION: "qwen36-35b-a3b"
+      # FAST_GEN_AI_MODEL_VERSION: "" # gpt-3.5-turbo
+      # GEN_AI_API_KEY: ""
+      # GEN_AI_API_ENDPOINT: "http://qwen36-35b-a3b.ai.svc.cluster.local:8080/v1/chat/completions" # maybe only v1
+      # GEN_AI_API_VERSION: ""
+      # GEN_AI_LLM_PROVIDER_TYPE: "qwen"
+      # S3
+      S3_ENDPOINT_URL: http://${GARAGE_URL}
+      S3_FILE_STORE_BUCKET_NAME: ${BUCKET_NAME}
+      S3_VERIFY_SSL: "false"
+      AWS_REGION_NAME: "${GARAGE_REGION}"
+      # Undocumented env variables in values
+      # ENABLE_OPENSEARCH_INDEXING_FOR_ONYX: "true" # Added automatically
+      # DISABLE_MODEL_SERVER: "true"
+
+      # ENABLE_PAID_ENTERPRISE_EDITION_FEATURES

@@ -130,3 +130,15 @@ resource "kubernetes_secret_v1" "external_gluetun_config" {
     private_key = var.gluetun_wireguard_privatekey
   }
 }
+
+resource "kubernetes_secret_v1" "external_hf_config" {
+  metadata {
+    name      = "external-hf-config"
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    hf_token = var.huggingface_token
+  }
+}

@@ -1,0 +1,83 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: llmkube
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: llmkube
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: llmkube
+      namespace: ai
+  interval: 1h
+  # components:
+  # relative to spec.path
+  # - ../../../../../common/components/oidc-application
+  # - ../../../../../common/components/garage-bucket
+  # - ../../../../../common/components/cnpg/db
+  # - ../../../../../common/components/httproute/common
+  path: "./kubernetes/apps/base/ai/llmkube/app"
+  postBuild:
+    substitute:
+      APP: llmkube
+      # inherited variables
+      gpu_runtime_class: ${gpu_runtime_class}
+      fastdata_storage: ${fastdata_storage}
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ai
+  timeout: 10m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: llmkube-resources
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: llmkube
+  dependsOn:
+    - name: llmkube
+  healthChecks:
+    - apiVersion: inference.llmkube.dev/v1alpha1
+      kind: Model
+      name: qwen36-35b-a3b-iq2-m
+      namespace: ai
+    - apiVersion: inference.llmkube.dev/v1alpha1
+      kind: InferenceService
+      name: qwen36-35b-a3b
+      namespace: ai
+  healthCheckExprs:
+    - apiVersion: inference.llmkube.dev/v1alpha1
+      # current: status.conditions.filter(e, e.type == 'Available').all(e, e.status == 'True')
+      current: status.phase == 'Ready'
+      inProgress: status.phase != 'Ready'
+      kind: Model
+    - apiVersion: inference.llmkube.dev/v1alpha1
+      current: status.phase == 'Ready'
+      inProgress: status.phase != 'Ready'
+      kind: InferenceService
+  interval: 1h
+  path: "./kubernetes/apps/base/ai/llmkube/resources"
+  postBuild:
+    substitute:
+      APP: llmkube
+      # inherited variables
+      gpu_runtime_class: ${gpu_runtime_class}
+      # fastdata_storage: ${fastdata_storage}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ai
+  timeout: 10m

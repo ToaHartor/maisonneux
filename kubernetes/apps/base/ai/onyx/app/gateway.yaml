@@ -1,0 +1,96 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ${APP}-local
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: ingress
+      sectionName: ${GATEWAY_ENDPOINT:=websecure}
+      kind: Gateway
+
+  hostnames:
+    - ${GATEWAY_DOMAIN:=${SUBDOMAIN}.${DOMAIN}}
+
+  rules:
+    # Should match
+    # https://github.com/onyx-dot-app/onyx/blob/main/deployment/helm/charts/onyx/templates/nginx-conf.yaml
+
+    # Match oauth callback with the nameserver before MCP paths
+    # - matches:
+    #     - path:
+    #         type: Exact
+    #         value: /mcp/oauth/callback
+    #   backendRefs:
+    #     - name: ${APP}-webserver
+    #       port: 3000
+    #   filters: *filters
+    # # MCP server
+    # - matches:
+    #     - path:
+    #         type: RegularExpression
+    #         value: /mcp(/.*)?  # /mcp(/|$)(.*)
+    # backendRefs:
+    #   - name: ${APP}-mcp-server-service
+    #     port: 3000
+    # filters:
+    # - type: URLRewrite
+    #   urlRewrite:
+    #     path:
+    #       type: ReplacePrefixMatch
+    #       replacePrefixMatch: /
+    # - type: ExtensionRef
+    #   extensionRef:
+    #     group: traefik.io
+    #     kind: Middleware
+    #     name: chain-local
+
+    # API Server
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /scim
+      backendRefs: &apibackend
+        - name: ${APP}-api-service
+          port: 8080
+
+      filters: &urlrewrite
+        - type: URLRewrite # Only one PathPrefix is allowed
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: chain-local
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs: *apibackend
+      filters: *urlrewrite
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /openapi.json
+      backendRefs: *apibackend
+      filters: *urlrewrite
+      # Web server
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      backendRefs:
+        - name: ${APP}-webserver
+          # namespace:
+          port: 3000
+
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: chain-local

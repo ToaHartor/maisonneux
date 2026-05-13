@@ -1,0 +1,68 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: llmkube
+spec:
+  releaseName: llmkube
+  chart:
+    spec:
+      chart: llmkube
+      version: "0.7.11"
+      sourceRef:
+        kind: HelmRepository
+        name: llmkube
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+
+  values:
+    # https://github.com/defilantech/LLMKube/blob/main/charts/llmkube/values.yaml
+    namespace: ai
+
+    crds:
+      install: true
+      keep: true
+
+    controllerManager:
+      replicaCount: 1
+
+      podSecurityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+      securityContext:
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ "ALL" ]
+
+    metrics:
+      enabled: true
+      secure: true
+      service:
+        type: ClusterIP
+        port: 8443
+
+    prometheus:
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+      inferencePodMonitor:
+        enabled: true
+        interval: 30s
+    modelCache:
+      enabled: true
+      size: 50Gi
+      storageClass: ${fastdata_storage}
+      accessMode: ReadWriteMany # mounted by both controller and model pod somehow, but anyway we don't care about performance

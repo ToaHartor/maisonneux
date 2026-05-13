@@ -55,3 +55,6 @@ spec:
         - atuin
         # otoge
         - apollo
+        - onyx
+        # Read only account
+        - onyxro

@@ -47,6 +47,13 @@ variable "gluetun_wireguard_privatekey" {
   type        = string
 }
 
+# HuggingFace (AI models)
+variable "huggingface_token" {
+  description = "HuggingFace token (read only)"
+  type        = string
+}
+
+
 # SMTP settings
 
 variable "smtp_username" {

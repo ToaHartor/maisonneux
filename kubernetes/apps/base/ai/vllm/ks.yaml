@@ -1,0 +1,75 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vllm
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: vllm
+  healthChecks:
+    # - apiVersion: helm.toolkit.fluxcd.io/v2
+    #   kind: HelmRelease
+    #   name: outline-oidc
+    #   namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: vllm-stack
+      namespace: ai
+  interval: 1h
+  # components:
+  # relative to spec.path
+  # - ../../../../../common/components/oidc-application
+  # - ../../../../../common/components/garage-bucket
+  # - ../../../../../common/components/cnpg/db
+  # - ../../../../../common/components/httproute/common
+  path: "./kubernetes/apps/base/ai/vllm/app"
+  postBuild:
+    substitute:
+      APP: vllm
+      #     SUBDOMAIN: wiki
+      #     DOMAIN: ${main_domain}
+      #     DOMAIN_WEBSECURE: ${main_domain_websecure}
+      #     GROUP: Services
+      #     DESCRIPTION: Wiki
+      #     REDIRECT_URL: "https://wiki.${main_domain_websecure}/auth/oidc.callback"
+      # S3_USER: vllm-${environment}
+      # BUCKET_NAME: vllm-${environment}
+      #     PSQL_DB_USER: outline
+      #     PSQL_DB_NAME: outline
+      #     GATEWAY_SVC_NAME: outline
+      #     GATEWAY_SVC_PORT: "10196"
+      # inherited variables
+      gpu_runtime_class: ${gpu_runtime_class}
+      fastdata_storage: ${fastdata_storage}
+  #     psql_cluster_name: ${psql_cluster_name}
+  #     psql_database_namespace: ${psql_database_namespace}
+  #     quote: "\""
+  #     patch_dns: ${quote}${patch_dns:=false}${quote}
+  #     traefik_lb_ip: ${traefik_lb_ip}
+  #     main_domain: ${main_domain}
+  #     main_domain_websecure: ${main_domain_websecure}
+  #     second_domain: ${second_domain}
+  #     auth_subdomain: ${auth_subdomain}
+  #     environment: ${environment}
+  #     minio_url: ${minio_url}
+  # patches:
+  #   - target:
+  #       kind: HelmRelease
+  #       # match with label since name has variable in it
+  #       labelSelector: homelab/auth-component=true
+  #     patch: |
+  #       - op: add
+  #         path: '/spec/values/blueprint/groups/-'
+  #         value:
+  #           slug: "app: outline"
+  #           bindID: "cfb4c497-77d4-4000-8988-93cca51af4a6" # arbitrary uuid
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ai
+  timeout: 10m

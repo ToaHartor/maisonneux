@@ -1,0 +1,221 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vllm-stack
+spec:
+  releaseName: vllm-stack
+  chart:
+    spec:
+      chart: vllm-stack
+      version: "0.1.11"
+      sourceRef:
+        kind: HelmRepository
+        name: vllm
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  values:
+    # https://github.com/vllm-project/production-stack/blob/main/helm/values.yaml
+
+    servingEngineSpec:
+      strategy:
+        type: Recreate
+      enableEngine: true
+      modelSpec:
+        - name: qwen36
+          # repository: "vllm/vllm-openai"
+          # tag: "v0.20.0-cu130"
+          repository: lmcache/vllm-openai
+          tag: nightly-2026-05-16
+          # modelURL: sakamakismile/Qwen3.6-27B-Text-NVFP4-MTP # https://huggingface.co/sakamakismile/Qwen3.6-27B-Text-NVFP4-MTP
+          modelURL: /data/Qwen3.6-27B-Claude-Opus-Reasoning-Distilled-GGUF.gguf
+          priorityClassName: ${gpu_runtime_class}
+          runtineClassName: ${gpu_runtime_class}
+          replicaCount: 1
+          requestCPU: 6
+          requestMemory: 16Gi
+          requestGPU: 1
+          requestGPUType: nvidia.com/gpu
+          # requestGPUMem: "15000" # 14Gi as we have 16Gi vram
+          # requestGPUCores: "80" # 80% of GPU calc power
+          # limitCPU: 3
+          limitMemory: 16Gi
+          storageClass: ${fastdata_storage}
+          pvcStorage: 50Gi
+          # enableLoRA: true
+          # shmSize: "10Gi"
+          nodeSelector:
+            nvidia.com/gpu.present: "true"
+          initContainer:
+            name: "wait-for-cache-server"
+            image: lmcache/vllm-openai:nightly-2026-05-16
+            command: [ "/bin/sh", "-c" ]
+            # Install from https://github.com/vllm-project/vllm-gguf-plugin to handle gguf models
+            # source /opt/venv/bin/activate && uv pip install "git+https://github.com/vllm-project/vllm-gguf-plugin@main" --torch-backend=auto
+            mountPvcStorage:
+              pvcStorage: true
+            args:
+              # Download model into the shared pvc
+              - |
+                export MODEL_FILE=Qwen3.6-27B-Claude-Opus-Reasoning-Distilled-Q3_K_M.gguf
+                if [ ! -f "/data/$MODEL_FILE" ]; then
+                  wget https://huggingface.co/rico03/Qwen3.6-27B-Claude-Opus-Reasoning-Distilled-GGUF/resolve/main/$MODEL_FILE -P /data/
+                else
+                  echo "Model $MODEL_FILE already exists, skipping download"
+                fi
+                timeout 60 bash -c '
+                while true; do
+                  /opt/venv/bin/python3 /workspace/LMCache/examples/kubernetes/health_probe.py $(RELEASE_NAME)-cache-server-service $(LMCACHE_SERVER_SERVICE_PORT) && exit 0
+                  echo "Waiting for LMCache server..."
+                  sleep 2
+                done'
+          vllmConfig:
+            v1: 1
+            enablePrefixCaching: true
+            enableChunkedPrefill: true
+            maxModelLen: 8192
+            dtype: bfloat16
+            tensorParallelSize: 1 # As we only have one gpu
+            maxNumSeqs: 2
+            maxNumBatchedTokens: 2048
+            # maxLoras: 4
+            enableTool: true
+            toolCallParser: qwen3_coder
+            # gpuMemoryUtilization: 0.70
+            # runner: pooling
+            # convert: embed
+            env:
+              - name: VLLM_NO_USAGE_STATS
+                value: "1"
+              # LMCache
+              - name: LMCACHE_USE_EXPERIMENTAL
+                value: "True"
+              - name: VLLM_RPC_TIMEOUT
+                value: "1000000"
+              - name: LMCACHE_LOG_LEVEL
+                value: "DEBUG"
+              - name: LMCACHE_LOCAL_CPU
+                value: "True"
+              - name: LMCACHE_MAX_LOCAL_CPU_SIZE
+                value: "12"
+              - name: LMCACHE_REMOTE_URL
+                value: "lm://vllm-stack-cache-server-service:80"
+              - name: LMCACHE_REMOTE_SERDE
+                value: "naive"
+            extraArgs:
+              - --tokenizer
+              - Qwen/Qwen3.6-27B
+              - --hf-config-path
+              - Qwen/Qwen3.6-27B
+              # - --max-model-len
+              # - "8192"
+              # - --max-num-batched-tokens
+              # - "8192"
+              - --max-loras
+              - "4"
+              - --enforce-eager # Disable CUDA graphs (consumes vram)
+              - --gpu-memory-utilization
+              - "0.85"
+              # - --cpu-offload-gb
+              # - "5"
+              - --trust-remote-code
+              - --language-model-only
+              - --speculative-config
+              - "{\"method\":\"qwen3_next_mtp\",\"num_speculative_tokens\":3}"
+              - --quantization
+              - Q3_K_M
+              - --kv-cache-dtype
+              - nvfp4 # fp8
+              # - --kv-offloading-size
+              # - "8"
+              # - --kv-offloading-backend
+              # - lmcache
+              - --served-model-name
+              - Qwen3.6-27B
+              - --reasoning-parser
+              - qwen3
+              # - --enable-auto-tool-choice
+              # - --tool-call-parser
+              # - qwen3_coder
+              - --default-chat-template-kwargs
+              - "{\"preserve_thinking\":true}"
+              # - --no-scheduler-reserve-full-isl
+              # logging
+              ## apiserverchoice
+              # - --tool-call-parser
+              # - --uvicorn-log-level
+              # - debug
+              # - --enable-log-requests
+
+              # Testing MP mode (requires to disable lmcacheConfig entirely with the way the chart is made)
+              - --kv-transfer-config
+              - "{\"kv_connector\":\"LMCacheMPConnector\",
+                \"kv_connector_module_path\":\"lmcache.integration.vllm.lmcache\
+                _mp_connector\", \"kv_role\":\"kv_both\"}"
+            lmcacheConfig:
+              enabled: false
+            #   enableController: true # KV aware routing
+
+            # enablePD: true
+            # kvRole: kv_both
+
+            # enableNixl: true
+            # nixlRole:
+            # nixlPeerHost:
+            # nixlPeerPort:
+            # nixlBufferSize: 1073741824 # 1GB
+            # nixlBufferDevice: cpu
+            # # offload to lmcache
+            # cpuOffloadingBufferSize: "12"
+            # logLevel: "DEBUG"
+            # References secret token retrieved in externalsecret
+          hf_token:
+            secretName: hf-token
+            secretKey: HF_TOKEN
+          keda:
+            enabled: false
+      serviceMonitor:
+        enabled: true
+
+    routerSpec:
+      enableRouter: false
+      replicaCount: 1
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+          # cpu: 400m
+          # memory: 1000Mi
+        limits:
+          memory: 1000Mi
+      serviceMonitor:
+        enabled: true
+
+    cacheserverSpec:
+      enabled: true
+      image:
+        repository: lmcache/vllm-openai
+        tag: nightly-2026-05-16
+      replicaCount: 3
+      serde: naive
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          # cpu: 200m
+          memory: 4Gi
+
+    grafanaDashboards:
+      enabled: true
+      labels:
+        grafana_dashboard: "1"
