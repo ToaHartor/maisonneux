@@ -13,6 +13,9 @@ spec:
   install:
     remediation:
       retries: 3
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
 
   values:
     # https://artifacthub.io/packages/helm/cloudnative-pg/cloudnative-pg
@@ -23,7 +26,7 @@ spec:
         cpu: 100m
         memory: 200Mi
       requests:
-        cpu: 100m
+        # cpu: 100m
         memory: 100Mi
 
     # Ensure there is at least one pod available
@@ -32,7 +35,7 @@ spec:
       rollingUpdate:
         maxSurge: 50%
         maxUnavailable: 50%
-    
+
     topologySpreadConstraints:
       # Maximum 1 pod per Proxmox hypervisor
       - maxSkew: 1
