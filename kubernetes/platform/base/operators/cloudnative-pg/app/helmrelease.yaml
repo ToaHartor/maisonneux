@@ -13,9 +13,14 @@ spec:
   install:
     remediation:
       retries: 3
-    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
   upgrade:
     crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
 
   values:
     # https://artifacthub.io/packages/helm/cloudnative-pg/cloudnative-pg
