@@ -1,8 +1,0 @@
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: _
-  labels:
-    # Needs NET_ADMIN capability pour gluetun
-    pod-security.kubernetes.io/enforce: privileged
