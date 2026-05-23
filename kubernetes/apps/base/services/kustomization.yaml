@@ -18,6 +18,7 @@ resources:
   - ./bentopdf/ks.yaml
   - ./papra/ks.yaml
   # - ./stirlingpdf/ks.yaml
+  - ./searxng/ks.yaml
   - ./vaultwarden/ks.yaml
   - ./wakapi/ks.yaml
 transformers:

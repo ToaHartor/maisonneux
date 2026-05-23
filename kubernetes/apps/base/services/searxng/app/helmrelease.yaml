@@ -1,0 +1,185 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: searxng
+spec:
+  releaseName: searxng
+  chartRef:
+    kind: OCIRepository
+    name: searxng
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  # see https://github.com/truecharts/public/blob/master/charts/stable/searxng/values.yaml
+  values:
+    # service:
+    #   main:
+    #     ports:
+    #       main:
+    #         port: ${GATEWAY_SVC_PORT}
+
+    resources:
+      limits:
+        # cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+
+    image:
+      repository: ghcr.io/searxng/searxng
+      tag: 2026.5.23-323ce7600@sha256:d137e9b7877b7982c5e8ccf878fda0a05d3c8564ebace7f66424a5a19a3c29d9
+
+    workload:
+      main:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+        podSpec:
+          hostUsers: true
+          containers:
+            main:
+              env:
+                SEARXNG_VALKEY_URL: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379/12
+                SEARXNG_SECRET:
+                  secretKeyRef:
+                    name: ${SECRET_KEY_NAME}
+                    key: secretKey
+                    expandObjectName: false
+    securityContext:
+      pod:
+        fsGroup: 977
+        fsGroupChangePolicy: OnRootMismatch
+      container:
+        runAsNonRoot: true
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: false
+        runAsUser: 0 # 977
+        runAsGroup: 977
+        fsGroup: 977
+        fsGroupChangePolicy: OnRootMismatch
+    configmap:
+      searxng-config:
+        enabled: true
+        data:
+          settings.yml: |
+            use_default_settings: true
+            server:
+              limiter: true
+              image_proxy: true
+              method: GET # https://github.com/searxng/searxng/pull/3619
+              public_instance: false
+            general:
+              instance_name: SearxNG
+              privacypolicy_url: false
+              donation_url: false
+              contact_url: false
+              enable_metrics: false
+            search:
+              safe_search: 0
+              autocomplete: duckduckgo
+              favicon_resolver: duckduckgo
+              autocomplete_min: 2
+              languages:
+                - all
+                - en
+                - en-US
+                - fr
+              formats:
+                - html
+                - json
+              max_page: 0
+            ui:
+              default_theme: simple
+              static_use_hash: true
+              infinite_scroll: true
+              query_in_title: true
+              theme_args:
+                simple_style: auto
+            enabled_plugins:
+              - Basic Calculator
+              - Hash plugin
+              - Open Access DOI rewrite
+              - Search on category select
+              - Self Informations
+              - Tracker URL remover
+              - Unit converter plugin
+            hostnames:
+              high_priority:
+                - (.*)\/blog\/(.*)
+                - (.*\.)?wikipedia.org$
+                - (.*\.)?github.com$
+                - (.*\.)?reddit.com$
+                - (.*\.)?docker.com$
+                - (.*\.)?archlinux.org$
+                - (.*\.)?stackoverflow.com$
+                - (.*\.)?askubuntu.com$
+                - (.*\.)?superuser.com$
+          limiter.toml: |
+            [botdetection]
+
+            # The prefix defines the number of leading bits in an address that are compared
+            # to determine whether or not an address is part of a (client) network.
+
+            ipv4_prefix = 32
+            ipv6_prefix = 48
+
+            trusted_proxies = [
+              '127.0.0.0/8',
+              '::1',
+              '192.168.0.0/16',
+              # '172.16.0.0/12',
+              '10.0.0.0/8',
+              # 'fd00::/8',
+            ]
+
+
+            [botdetection.ip_limit]
+
+            # To get unlimited access in a local network, by default link-lokal addresses
+            # (networks) are not monitored by the ip_limit
+            filter_link_local = true
+
+            # activate link_token method in the ip_limit method
+            link_token = false
+
+            [botdetection.ip_lists]
+
+            # In the limiter, the ip_lists method has priority over all other methods -> if
+            # an IP is in the pass_ip list, it has unrestricted access and it is also not
+            # checked if e.g. the "user agent" suggests a bot (e.g. curl).
+
+            block_ip = [
+            ]
+
+            pass_ip = [
+              '192.168.0.0/16',      # IPv4 private network
+              '10.0.0.0/8',          # IPv4 private network
+            ]
+
+            # Activate passlist of (hardcoded) IPs from the SearXNG organization,
+            # e.g. `check.searx.space`.
+            pass_searxng_org = false
+
+    persistence:
+      config:
+        enabled: true
+        type: configmap
+        objectName: searxng-config
+        readOnly: false
+        expandObjectName: true
+        optional: false
+        defaultMode: "0755"
+        mountPath: /etc/searxng
+        items:
+          - key: settings.yml
+            path: settings.yml
+          - key: limiter.toml
+            path: limiter.toml
