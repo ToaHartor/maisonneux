@@ -27,9 +27,12 @@ metadata:
   name: qwen36-35b-a3b
 spec:
   modelRef: qwen36-35b-a3b-iq2-m
+  runtimeClassName: ${gpu_runtime_class}
   runtime: llamacpp
   # https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp/versions?filters[version_type]=tagged
   image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b9191
+  # https://github.com/ikawrakow/ik_llama.cpp/pkgs/container/ik-llama-cpp/versions?filters[version_type]=tagged
+  # image: ghcr.io/ikawrakow/ik-llama-cpp:cu13-server-4535
   # Wait more official fork btw https://github.com/turbo-tan/llama.cpp-tq3
   # image: dexogen/atomic-llama-cpp-turboquant:cuda13 # required for TQ3_4S
   replicas: 1
@@ -38,17 +41,18 @@ spec:
     type: ClusterIP
   priority: high
   evictionProtection: false
-  contextSize: 262144 # 8192 # -c
+  contextSize: 32768 # -c
   flashAttention: true # -fa
   parallelSlots: 1 # -np
-  runtimeClassName: ${gpu_runtime_class}
   cacheTypeCustomK: q8_0
   cacheTypeCustomV: q8_0
-  moeCPULayers: 20
+  batchSize: 2048 # -b
+  uBatchSize: 512 # -ub
+  # moeCPULayers: 20
   # moeCPUOffload: true # Offload all expert layers to CPU
 
-  # noKvOffload:  # KV in RAM instead of VRAM
-  reasoningBudget: 500  # Necessary for models like Qwen
+  noKvOffload: false # KV in RAM instead of VRAM
+  reasoningBudget: 512  # Necessary for models like Qwen
   # skipModelInit:
   # tensorOverrides:
   nodeSelector:
@@ -67,10 +71,14 @@ spec:
   # priorityClassName:
   extraArgs:
     # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+    # https://github.com/ikawrakow/ik_llama.cpp/blob/main/docs/parameters.md
     - --spec-type
-    - draft-mtp
+    - "draft-mtp"
     - --spec-draft-n-max
     - "2"
+    - --jinja
+    - --ctx-checkpoints
+    - "128"
     - --temp
     - "1.0"
     - --top-p
@@ -79,8 +87,22 @@ spec:
     - "0.00"
     - --presence-penalty
     - "1.5"
+    - --repeat-penalty
+    - "1.0"
     - --top-k
     - "20"
+    - --fit
+    - "on"
+    - --chat-template-kwargs
+    - '{"preserve_thinking": true}'
+    # ik_llama specific settings
+    # - --defer-experts
+    # - --spec-type
+    # - mtp
+    # - -mtp
+    # - --draft-max
+    # - "2"
+
   # podLabels:
   #   app.kubernetes.io/name: llmkube
   # podAnnotations:

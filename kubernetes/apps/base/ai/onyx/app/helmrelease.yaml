@@ -252,6 +252,12 @@ spec:
       strategy:
         # rollingUpdate: null
         type: Recreate
+      extraEnvs:
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hf-token
+              key: HF_TOKEN
 
     inferenceCapability:
       replicaCount: 0
