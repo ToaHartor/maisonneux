@@ -110,7 +110,10 @@ spec:
               OAUTH_PROVIDER_NAME: Authentik
               OAUTH_ALLOW_DANGEROUS_EMAIL_ACCOUNT_LINKING: true # We also own the oauth client anyway
               # AI settings
-              # OLLAMA_BASE_URL:
+              # TODO : if model changes, change the following
+              OPENAI_API_KEY: "ollama"
+              OPENAI_BASE_URL: http://qwen36-35b-a3b.ai.svc.cluster.local:8080/v1
+              INFERENCE_TEXT_MODEL: qwen36-35b-a3b-iq2-m.gguf
 
             probes:
               liveness:
