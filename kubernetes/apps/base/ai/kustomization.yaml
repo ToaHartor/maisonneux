@@ -6,6 +6,7 @@ namespace: ai
 resources:
   - ./namespace.yaml
   - ./onyx/ks.yaml
+  - ./toolhive/ks.yaml
   - ./llmkube/ks.yaml
   # - ./vllm/ks.yaml
 transformers:

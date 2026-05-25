@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: toolhive-operator
+spec:
+  releaseName: toolhive-operator
+  chartRef:
+    kind: OCIRepository
+    name: toolhive-operator
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+
+  values:
+    operator:
+      replicaCount: 1
