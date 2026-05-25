@@ -105,19 +105,19 @@ spec:
         requests:
           cpu: 250m
           # cpu: 500m
-          memory: 256Mi
+          memory: 400Mi
           # memory: 2Gi
         limits:
           # cpu: 1000m
           # memory: 12Gi
-          memory: 512Mi
+          memory: 800Mi
 
     celery_worker_light:
       resources:
         requests:
           cpu: 250m
           # cpu: 500m
-          memory: 256Mi
+          memory: 512Mi
           # memory: 512Mi
         limits:
           # cpu: 1000m
@@ -141,12 +141,12 @@ spec:
         requests:
           cpu: 250m
           # cpu: 500m
-          memory: 256Mi
+          memory: 400Mi
           # memory: 2Gi
         limits:
           # cpu: 1000m
           # memory: 4Gi
-          memory: 512Mi
+          memory: 800Mi
 
     celery_worker_user_file_processing:
       resources:
@@ -280,7 +280,6 @@ spec:
       #     memory: 10Gi
 
     api:
-      # TODO : add HF_TOKEN here
       replicaCount: 1
       securityContext:
         privileged: false
@@ -290,10 +289,10 @@ spec:
         requests:
           cpu: 500m
           # memory: 1Gi
-          memory: 500Mi
+          memory: 1Gi
         limits:
           # cpu: 1000m
-          memory: 1Gi
+          memory: 1500Mi
 
     celery_shared:
       securityContext:
