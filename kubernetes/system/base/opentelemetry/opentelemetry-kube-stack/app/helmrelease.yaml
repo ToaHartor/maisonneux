@@ -69,6 +69,10 @@ spec:
           enableMetrics: true
 
       config:
+        processors:
+          memory_limiter:
+            check_interval: 5s
+            limit_mib: 200
         service:
           # Otel debug logs
           telemetry:
@@ -105,6 +109,14 @@ spec:
         enabled: true
         replicas: 1
         mode: statefulset
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+
         # Collecting ServiceMonitor and PodMonitor resources
         # We dedicate a pod to collect targetAllocator metrics, and the other for scrape annotations
         targetAllocator:
@@ -153,7 +165,7 @@ spec:
             pipelines:
               metrics:
                 receivers: [ prometheus ]
-                processors: [ k8sattributes, batch ]
+                processors: [ k8sattributes, memory_limiter, batch ]
                 exporters: *victoriametrics-exporter
 
       daemon:
@@ -468,15 +480,15 @@ spec:
             pipelines:
               logs/talos:
                 receivers: [ udplog ]
-                processors: [ batch ]
+                processors: [ memory_limiter, batch ]
                 exporters: *victoriametrics-exporter
               logs:
                 receivers: [ otlp, filelog, k8sobjects ]
-                processors: [ k8sattributes, resourcedetection/env, batch ]
+                processors: [ k8sattributes, resourcedetection/env, memory_limiter, batch ]
                 exporters: *victoriametrics-exporter
               metrics:
                 receivers: [ otlp, prometheus, hostmetrics, k8s_cluster ]
-                processors: [ k8sattributes, resourcedetection/env, batch ]
+                processors: [ k8sattributes, resourcedetection/env, memory_limiter, batch ]
                 exporters: *victoriametrics-exporter
 
     extraObjects:
