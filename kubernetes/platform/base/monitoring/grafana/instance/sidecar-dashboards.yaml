@@ -1,0 +1,46 @@
+---
+# We need to extend the permissions of the Grafana serviceaccount to watch for configmaps
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: grafana-sidecar-role
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "watch", "list"]
+---
+# We bind the new permissions to the grafana-sa
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: grafana-sidecar-rolebinding
+roleRef:
+  kind: ClusterRole
+  name: grafana-sidecar-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: grafana-sa
+    namespace: monitoring
+---
+# Provisioning config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning-config
+  namespace: grafana
+data:
+  provisioning.yaml: |-
+    apiVersion: 1
+    providers:
+      - name: 'configmap-dashboard-provider'
+        orgId: 1
+        folder: ''
+        folderUid: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 30
+        allowUiUpdates: false
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: false

@@ -1,0 +1,56 @@
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: metrics
+spec:
+  instanceSelector:
+    matchLabels:
+      datasources: grafana
+  datasource:
+    name: Metrics
+    type: victoriametrics-metrics-datasource
+    url: http://vmselect-metrics-datastore.monitoring.svc.cluster.local:8481/select/0/prometheus
+    access: proxy
+    isDefault: true
+    editable: false
+  plugins:
+    # https://grafana.com/grafana/plugins/victoriametrics-metrics-datasource/
+    - name: victoriametrics-metrics-datasource
+      version: 0.24.0
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: metrics-as-prometheus
+spec:
+  instanceSelector:
+    matchLabels:
+      datasources: grafana
+  datasource:
+    name: Metrics as prometheus
+    type: prometheus
+    url: http://vmselect-metrics-datastore.monitoring.svc.cluster.local:8481/select/0/prometheus
+    access: proxy
+    isDefault: false
+    editable: false
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: logs
+spec:
+  instanceSelector:
+    matchLabels:
+      datasources: grafana
+  datasource:
+    name: Logs
+    type: victoriametrics-logs-datasource
+    url: http://vlselect-logs-datastore.monitoring.svc.cluster.local:9471
+    access: proxy
+    isDefault: false
+    editable: false
+  plugins:
+    # https://grafana.com/grafana/plugins/victoriametrics-logs-datasource/
+    - name: victoriametrics-logs-datasource
+      version: 0.27.1

@@ -1,0 +1,198 @@
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: grafana
+  labels:
+    dashboards: grafana
+    datasources: grafana
+spec:
+  client:
+    useKubeAuth: true
+  disableDefaultAdminSecret: true # Prevents the creation of the secret containing admin credentials
+  config:
+    analytics:
+      check_for_updates: "false"
+      check_for_plugin_updates: "false"
+      feedback_links_enabled: "false"
+      reporting_enabled: "false"
+    # instance_name: homelab
+    database:
+      # Connection url is built in pqsl-extsecret.yaml
+      type: postgres
+      # url: $__file{/etc/secrets/postgres_db_creds/uri}
+      ssl_mode: disable
+
+    auth:
+      disable_login_form: "true"
+      oauth_auto_login: "false"
+      signout_redirect_url: "https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/end-session/"
+
+    auth.generic_oauth:
+      enabled: "true"
+      name: Authentik
+      use_pkce: "true"
+      allow_sign_up: "true"
+      use_refresh_token: "true"
+      # client_id: $__file{/etc/secrets/auth_generic_oauth/clientID}
+      # client_secret: $__file{/etc/secrets/auth_generic_oauth/clientSecret}
+      scopes: openid profile email
+      auth_url: "https://${auth_subdomain}.${main_domain_websecure}/application/o/authorize/"
+      token_url: "https://${auth_subdomain}.${main_domain_websecure}/application/o/token/"
+      api_url: "https://${auth_subdomain}.${main_domain_websecure}/application/o/userinfo/"
+      tls_skip_verify_insecure: "true"
+      # Depends on groups assigned to users in Authentik
+      role_attribute_path: "contains(groups[*], 'authentik Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'"
+
+    auth.basic:
+      enabled: "false"
+
+    # enable auth.jwt to allow operator to communicate with grafana
+    # see https://github.com/grafana/grafana-operator/issues/2099
+    auth.jwt:
+      enabled: "true"
+      header_name: Authorization
+      expect_claims: "{\"aud\": [\"operator.grafana.com\"]}" # Optional security: Rejects default ServiceAccount tokens
+      username_claim: sub
+      email_claim: sub
+      auto_sign_up: "true"
+      role_attribute_strict: "true" # Disables auto_assign_org_role
+      # Assigns the Admin role to the operator service account, replace 'default' with the namespace of the operator
+      role_attribute_path: "contains(sub, 'system:serviceaccount:monitoring:grafana-operator') && 'GrafanaAdmin' || 'None'"
+      jwk_set_url: https://$${KUBERNETES_SERVICE_HOST}:$${KUBERNETES_SERVICE_PORT_HTTPS}/openid/v1/jwks
+      jwk_set_bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tls_client_ca: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    users:
+      allow_sign_up: "false"
+      auto_assign_org: "true"
+      auto_assign_org_id: "1"
+    #   auto_assign_org_role: Viewer
+    log:
+      mode: console
+    metrics:
+      enabled: "true"
+    news:
+      news_feed_enabled: "false"
+    plugins:
+      plugin_admin_enabled: "false"
+    security:
+      angular_support_enabled: "true"
+      disable_initial_admin_creation: "true" # Disables the creation of the default admin user in Grafana
+      # admin_user: admin
+      # admin_password: admin
+    server:
+      enable_gzip: "true"
+      domain: ${SUBDOMAIN}.${DOMAIN}
+      root_url: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+
+  disableDefaultSecurityContext: All
+
+  deployment:
+    metadata:
+      annotations:
+        secret.reloader.stakater.com/reload: "${APP}-oidc-authentik-application,${APP}-db-creds" # ${SECRET_CREDS_NAME},
+    spec:
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+      template:
+        spec:
+          containers:
+            - name: grafana
+              env:
+                # - name: GF_SECURITY_ADMIN_USER
+                #   valueFrom:
+                #     secretKeyRef:
+                #       name: ${SECRET_CREDS_NAME}
+                #       key: username
+                # - name: GF_SECURITY_ADMIN_PASSWORD
+                #   valueFrom:
+                #     secretKeyRef:
+                #       name: ${SECRET_CREDS_NAME}
+                #       key: password
+                - name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${APP}-oidc-authentik-application
+                      key: clientID
+                - name: GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${APP}-oidc-authentik-application
+                      key: clientSecret
+                - name: GF_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${APP}-db-creds
+                      key: uri
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: [ "ALL" ] }
+                seccompProfile:
+                  type: RuntimeDefault
+              resources:
+                limits:
+                  cpu: 1
+                  memory: 512Mi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+              volumeMounts:
+                - mountPath: /etc/grafana/provisioning/dashboards
+                  name: provisioning-config
+                - mountPath: /var/lib/grafana/dashboards
+                  name: dashboards
+                #   - name: postgres-db-creds
+                #     mountPath: /etc/secrets/postgres_db_creds
+                #     readOnly: true
+                # - name: auth-generic-oauth
+                #   mountPath: /etc/secrets/auth_generic_oauth
+                #   readOnly: true
+
+                # This container watches the namespace for configmaps with the `dashboards` label
+                # and creates files for all their keys under `FOLDER`
+            - name: dashboard-sidecar
+              image: "ghcr.io/kiwigrid/k8s-sidecar:1.24.5"
+              env:
+                - name: LABEL
+                  value: "grafana_dashboard"
+                - name: LABEL_VALUE
+                  value: "1"
+                - name: FOLDER
+                  value: /var/lib/grafana/dashboards
+                - name: NAMESPACE
+                  value: ALL
+                - name: RESOURCE
+                  value: configmap
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: [ "ALL" ] }
+                seccompProfile:
+                  type: RuntimeDefault
+              volumeMounts:
+                - mountPath: /var/lib/grafana/dashboards
+                  name: dashboards
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          volumes:
+            - name: dashboards
+              emptyDir: {}
+            - name: provisioning-config
+              configMap:
+                name: grafana-provisioning-config
+            #   - name: postgres-db-creds
+            #     secret:
+            #       defaultMode: 420
+            #       secretName: grafana-db-creds
+            # - name: auth-generic-oauth
+            #   secret:
+            #     defaultMode: 420
+            #     secretName: grafana-oidc-authentik-application
