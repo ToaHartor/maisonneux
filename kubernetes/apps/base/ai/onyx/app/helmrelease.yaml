@@ -220,64 +220,80 @@ spec:
           # cpu: 1000m
           # memory: 1Gi
           memory: 512Mi
-      # We'll need to use an embedding model for the index capability
-      # I guess we however can use our own model for inference (since it only generates the answer
+
+    # Currently it is unable to use the GPU (unable to customize runtimeClasses, capabilities etc)
     indexCapability:
       replicaCount: 1
+      podSecurityContext:
+        fsGroup: 1001
+        fsGroupChangePolicy: "OnRootMismatch"
       securityContext:
         privileged: false
-        runAsNonRoot: true
-        runAsUser: 1001
+        # runAsNonRoot: true
+        runAsUser: 0 # Required to move files from temp_huggingface/ to hugginface/
+        runAsGroup: 1001
       # service is still used, so maybe redirect to our custom pod
       service:
         portName: modelserver
         type: ClusterIP
         servicePort: 9000
         targetPort: 9000
-      nodeSelector:
-        nvidia.com/gpu.present: "true"
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
       resources:
         requests:
           cpu: 1
           memory: 2Gi
-          nvidia.com/gpu: "1"
-        #     cpu: 4000m
-        #     memory: 3Gi
+          # nvidia.com/gpu: "1"
+          #     cpu: 4000m
+          #     memory: 3Gi
         limits:
           cpu: 2
           memory: 4Gi
-          nvidia.com/gpu: "1"
-      #     cpu: 6000m
-      #     memory: 6Gi
+          # nvidia.com/gpu: "1"
+          #     cpu: 6000m
+          #     memory: 6Gi
       strategy:
         # rollingUpdate: null
         type: Recreate
-      extraEnvs:
+
+      extraEnv:
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef:
               name: hf-token
               key: HF_TOKEN
-
+    # Inference model is required to retrieve from knowledge base somehow
     inferenceCapability:
-      replicaCount: 0
+      replicaCount: 1
       securityContext:
         privileged: false
-        runAsNonRoot: true
-        runAsUser: 1001
-      # service is still used, so maybe redirect to our custom pod
+        # runAsNonRoot: true
+        runAsUser: 0 # Required to move files from temp_huggingface/ to hugginface/
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
       service:
         portName: modelserver
         type: ClusterIP
         servicePort: 9000
         targetPort: 9000
-      # resources:
-      #   requests:
-      #     cpu: 2000m
-      #     memory: 3Gi
-      #   limits:
-      #     cpu: 4000m
-      #     memory: 10Gi
+      resources:
+        requests:
+          cpu: 1
+          memory: 2Gi
+          # nvidia.com/gpu: "1"
+        limits:
+          cpu: 2
+          # memory: 10Gi
+          memory: 4Gi
+          # nvidia.com/gpu: "1"
+
+      extraEnv:
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hf-token
+              key: HF_TOKEN
 
     api:
       replicaCount: 1
@@ -412,5 +428,4 @@ spec:
       # Undocumented env variables in values
       # ENABLE_OPENSEARCH_INDEXING_FOR_ONYX: "true" # Added automatically
       # DISABLE_MODEL_SERVER: "true"
-
       # ENABLE_PAID_ENTERPRISE_EDITION_FEATURES
