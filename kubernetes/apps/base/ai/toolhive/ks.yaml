@@ -54,33 +54,38 @@ spec:
     namespace: flux-system
   targetNamespace: ai
   timeout: 10m
-# ---
-# # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
-# apiVersion: kustomize.toolkit.fluxcd.io/v1
-# kind: Kustomization
-# metadata:
-#   name: toolhive-operator-resources
-# spec:
-#   dependsOn:
-#     - name: toolhive-operator-crds
-#     - name: toolhive-operator
-#   commonMetadata:
-#     labels:
-#       app.kubernetes.io/name: toolhive
-#   # healthChecks:
-#   #   - apiVersion: helm.toolkit.fluxcd.io/v2
-#   #     kind: HelmRelease
-#   #     name: toolhive-operator
-#       namespace: ai
-#   interval: 1h
-#   path: "./kubernetes/apps/base/ai/toolhive/resources"
-#   postBuild:
-#     substitute:
-#       APP: toolhive
-#   prune: true
-#   sourceRef:
-#     kind: GitRepository
-#     name: flux-system
-#     namespace: flux-system
-#   targetNamespace: ai
-#   timeout: 10m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: toolhive-operator-resources
+spec:
+  dependsOn:
+    - name: toolhive-operator-crds
+    - name: toolhive-operator
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: toolhive
+  healthChecks:
+    - apiVersion: toolhive.stacklok.dev/v1alpha1
+      kind: MCPServer
+      name: grafana
+      namespace: monitoring
+  healthCheckExprs:
+    - apiVersion: toolhive.stacklok.dev/v1alpha1
+      current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
+      inProgress: status.conditions.filter(e, e.type == 'Ready').all(e, e.reason == 'NotReady')
+      kind: MCPServer
+  interval: 1h
+  path: "./kubernetes/apps/base/ai/toolhive/resources"
+  postBuild:
+    substitute:
+      APP: toolhive
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  # targetNamespace: ai # All resources are deployed in existing namespaces
+  timeout: 10m
