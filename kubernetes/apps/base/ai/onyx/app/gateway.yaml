@@ -1,7 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: ${APP}-local
+  name: ${APP}
 spec:
   parentRefs:
     - name: traefik-gateway
@@ -39,11 +39,6 @@ spec:
     #     path:
     #       type: ReplacePrefixMatch
     #       replacePrefixMatch: /
-    # - type: ExtensionRef
-    #   extensionRef:
-    #     group: traefik.io
-    #     kind: Middleware
-    #     name: chain-local
 
     # API Server
     - matches:
@@ -60,11 +55,6 @@ spec:
             path:
               type: ReplacePrefixMatch
               replacePrefixMatch: /
-        - type: ExtensionRef
-          extensionRef:
-            group: traefik.io
-            kind: Middleware
-            name: chain-local
     - matches:
         - path:
             type: PathPrefix
@@ -87,10 +77,3 @@ spec:
         - name: ${APP}-webserver
           # namespace:
           port: 3000
-
-      filters:
-        - type: ExtensionRef
-          extensionRef:
-            group: traefik.io
-            kind: Middleware
-            name: chain-local

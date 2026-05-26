@@ -14,11 +14,11 @@ spec:
 
   rules:
     - matches:
-      - path:
-          type: PathPrefix
-          value: /
+        - path:
+            type: PathPrefix
+            value: /
 
       backendRefs:
-      - name: ${GATEWAY_SVC_NAME}
-        # namespace: 
-        port: ${GATEWAY_SVC_PORT}
+        - name: ${GATEWAY_SVC_NAME}
+          # namespace:
+          port: ${GATEWAY_SVC_PORT}

@@ -14,4 +14,3 @@ transformers:
 components:
   - ../../../common/components/repos/app-template
   - ../../../common/components/repos/authentik-application
-  - ../../../common/components/traefik-middlewares
