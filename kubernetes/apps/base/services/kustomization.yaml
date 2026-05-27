@@ -27,3 +27,4 @@ components:
   - ../../../common/components/repos/authentik-application
   - ../../../common/components/repos/app-template
   - ../../../common/components/traefik-middlewares
+  - ../../../common/components/clustersecretstore

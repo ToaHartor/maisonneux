@@ -1,0 +1,5 @@
+apiVersion: v2
+name: clustersecretstore
+description: Simple helm chart creating a ClusterSecretStore for a specific namespace
+# Implicit dependencies : external secret operator
+version: 1.0.0

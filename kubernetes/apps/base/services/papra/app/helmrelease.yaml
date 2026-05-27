@@ -173,8 +173,8 @@ spec:
                   property: issuerURL
             refreshInterval: 5m
             secretStoreRef:
-              kind: SecretStore
-              name: papra-store
+              kind: ClusterSecretStore
+              name: services-secretstore # Created at namespace level as component
             target:
               creationPolicy: Owner
               deletionPolicy: Retain
