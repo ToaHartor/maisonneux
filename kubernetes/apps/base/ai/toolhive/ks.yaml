@@ -87,5 +87,5 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  # targetNamespace: ai # All resources are deployed in existing namespaces
+  targetNamespace: ai
   timeout: 10m

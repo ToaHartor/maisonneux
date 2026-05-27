@@ -1,9 +1,25 @@
 ---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: &name grafana-mcp
+spec:
+  dataFrom:
+    - extract:
+        key: *name
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: monitoring-secretstore
+  target:
+    name: *name
+    creationPolicy: Owner
+    deletionPolicy: Retain
+---
 apiVersion: toolhive.stacklok.dev/v1alpha1
 kind: MCPServer
 metadata:
   name: grafana-mcp
-  namespace: monitoring # Create the resource directly in the namespace
 spec:
   image: docker.io/grafana/mcp-grafana:0.14.0-alpine@sha256:59d48eab68e915e01660fb2666d46a9664b37cd9e93fdcc4babeb2779fa3f35b
   args: [ "-t", "stdio" ]
