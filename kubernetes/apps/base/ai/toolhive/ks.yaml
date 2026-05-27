@@ -70,7 +70,7 @@ spec:
   healthChecks:
     - apiVersion: toolhive.stacklok.dev/v1alpha1
       kind: MCPServer
-      name: grafana
+      name: grafana-mcp
       namespace: monitoring
   healthCheckExprs:
     - apiVersion: toolhive.stacklok.dev/v1alpha1

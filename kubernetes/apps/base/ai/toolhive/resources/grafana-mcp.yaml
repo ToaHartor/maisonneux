@@ -24,8 +24,8 @@ spec:
   image: docker.io/grafana/mcp-grafana:0.14.0-alpine@sha256:59d48eab68e915e01660fb2666d46a9664b37cd9e93fdcc4babeb2779fa3f35b
   args: [ "-t", "stdio" ]
   transport: stdio
-  # groupRef:
-  #   name: mcp-tools
+  groupRef:
+    name: mcp-tools
   env:
     - name: GRAFANA_URL
       value: http://grafana-service.monitoring.svc.cluster.local:3000
