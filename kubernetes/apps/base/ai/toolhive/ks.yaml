@@ -71,7 +71,7 @@ spec:
     - apiVersion: toolhive.stacklok.dev/v1alpha1
       kind: MCPServer
       name: grafana-mcp
-      namespace: monitoring
+      namespace: ai
   healthCheckExprs:
     - apiVersion: toolhive.stacklok.dev/v1alpha1
       current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')

@@ -1,4 +1,5 @@
 ---
+# Current working and fast setup
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: Model
 metadata:
@@ -14,7 +15,49 @@ spec:
       enabled: true
       vendor: nvidia
       count: 1
-      # layers: 20
+      layers: 99
+      # memory: 14Gi
+    # memoryBudget: 14Gi
+  resources:
+    cpu: "6"
+    memory: 16Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen36-35b-a3b-q4-k-xl
+spec:
+  source: https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
+  format: gguf
+  quantization: Q4_K_XL
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 1
+      layers: 99
+      # memory: 14Gi
+    # memoryBudget: 14Gi
+  resources:
+    cpu: "6"
+    memory: 16Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen36-27b-iq4-xs
+spec:
+  source: https://huggingface.co/Ununnilium/Qwen3.6-27B-IQ4_XS-pure-GGUF/resolve/main/qwen3.6-27b-IQ4_XS-pure.gguf
+  format: gguf
+  quantization: IQ4_XS
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 1
+      layers: 99
     #   memory: 14Gi
     # memoryBudget: 14Gi
   resources:
@@ -22,37 +65,62 @@ spec:
     memory: 16Gi
 ---
 apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen36-27b-iq4-xs-dflash
+spec:
+  source: https://huggingface.co/Anbeeld/Qwen3.6-27B-DFlash-GGUF/resolve/main/Qwen3.6-27B-DFlash-IQ4_XS.gguf
+  format: gguf
+  quantization: IQ4_XS
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 1
+      layers: 99
+    #   memory: 14Gi
+    # memoryBudget: 14Gi
+  resources:
+    cpu: "6"
+    memory: 16Gi
+
+---
+apiVersion: inference.llmkube.dev/v1alpha1
 kind: InferenceService
 metadata:
-  name: qwen36-35b-a3b
+  name: qwen36
 spec:
-  modelRef: qwen36-35b-a3b-iq2-m
+  # Parameters from https://github.com/5p00kyy/club-5060ti/blob/main/docs/single-5060ti.md
+  ## ! Select first the dflash then the real model
+  modelRef: qwen36-27b-iq4-xs # qwen36-27b-iq4-xs
   runtimeClassName: ${gpu_runtime_class}
   runtime: llamacpp
   # https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp/versions?filters[version_type]=tagged
-  image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b9191
+  # image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b9191
   # https://github.com/ikawrakow/ik_llama.cpp/pkgs/container/ik-llama-cpp/versions?filters[version_type]=tagged
   # image: ghcr.io/ikawrakow/ik-llama-cpp:cu13-server-4535
-  # Wait more official fork btw https://github.com/turbo-tan/llama.cpp-tq3
-  # image: dexogen/atomic-llama-cpp-turboquant:cuda13 # required for TQ3_4S
+  # BeeLlama image https://github.com/Anbeeld/beellama.cpp
+  # https://hub.docker.com/r/aamsellem/beellama-cpp/tags
+  image: aamsellem/beellama-cpp:0.2.0
   replicas: 1
   endpoint:
     port: 8080
     type: ClusterIP
   priority: high
   evictionProtection: false
-  contextSize: 32768 # -c
+  contextSize: 32768 # 16384 # -c
   flashAttention: true # -fa
   parallelSlots: 1 # -np
   cacheTypeCustomK: turbo4
-  cacheTypeCustomV: turbo3
-  batchSize: 2048 # -b
-  uBatchSize: 512 # -ub
-  # moeCPULayers: 20
+  cacheTypeCustomV: turbo3_tcq
+  batchSize: 1024 # 2048 # -b
+  uBatchSize: 256 # 512 # -ub
+  # moeCPULayers: 17  # Too slow
   # moeCPUOffload: true # Offload all expert layers to CPU
 
-  noKvOffload: false # KV in RAM instead of VRAM
-  reasoningBudget: 512  # Necessary for models like Qwen
+  # noKvOffload: true # KV in RAM instead of VRAM if offload
+  reasoningBudget: 1024 # 512 # Necessary for models like Qwen
   # skipModelInit:
   # tensorOverrides:
   nodeSelector:
@@ -72,15 +140,26 @@ spec:
   extraArgs:
     # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
     # https://github.com/ikawrakow/ik_llama.cpp/blob/main/docs/parameters.md
+    - --no-mmap # No keep model in ram
+    - --spec-draft-model
+    - /models/5b4369128cc20c4a/qwen36-27b-iq4-xs-dflash.gguf
+    # - --spec-draft-hf
+    # - "Anbeeld/Qwen3.6-27B-DFlash-GGUF:IQ4_XS"
     - --spec-type
-    - "draft-mtp"
+    - dflash
+    - --spec-dflash-cross-ctx
+    - "512"
+    - -ngl
+    - all
+    - --spec-draft-ngl
+    - all
     - --spec-draft-n-max
     - "2"
     - --jinja
-    - --ctx-checkpoints
-    - "128"
+    # - --ctx-checkpoints
+    # - "128"
     - --temp
-    - "1.0"
+    - "0.6"
     - --top-p
     - "0.95"
     - --min-p
@@ -93,6 +172,9 @@ spec:
     - "20"
     - --fit
     - "on"
+    - --kv-unified
+    - --cache-ram
+    - "0"
     - --chat-template-kwargs
     - '{"preserve_thinking": true}'
     # ik_llama specific settings
@@ -113,3 +195,99 @@ spec:
     gpuMemory: 14Gi
     hostMemory: 10Gi
     memory: 12Gi
+
+# ---
+# apiVersion: inference.llmkube.dev/v1alpha1
+# kind: InferenceService
+# metadata:
+#   name: qwen36
+# spec:
+#   # Parameters from https://github.com/5p00kyy/club-5060ti/blob/main/docs/single-5060ti.md
+#   modelRef: qwen36-35b-a3b-iq2-m
+#   runtimeClassName: ${gpu_runtime_class}
+#   runtime: llamacpp
+#   # https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp/versions?filters[version_type]=tagged
+#   image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b9191
+#   # https://github.com/ikawrakow/ik_llama.cpp/pkgs/container/ik-llama-cpp/versions?filters[version_type]=tagged
+#   # image: ghcr.io/ikawrakow/ik-llama-cpp:cu13-server-4535
+#   # Wait more official fork btw https://github.com/turbo-tan/llama.cpp-tq3
+#   # image: dexogen/atomic-llama-cpp-turboquant:cuda13 # required for TQ3_4S
+#   replicas: 1
+#   endpoint:
+#     port: 8080
+#     type: ClusterIP
+#   priority: high
+#   evictionProtection: false
+#   contextSize: 32768 # -c
+#   flashAttention: true # -fa
+#   parallelSlots: 1 # -np
+#   cacheTypeCustomK: q8_0
+#   cacheTypeCustomV: q8_0
+#   batchSize: 2048 # -b
+#   uBatchSize: 512 # -ub
+#   moeCPULayers: 17  # Too slow
+#   # moeCPUOffload: true # Offload all expert layers to CPU
+
+#   # noKvOffload: true # KV in RAM instead of VRAM if offload
+#   reasoningBudget: 512  # Necessary for models like Qwen
+#   # skipModelInit:
+#   # tensorOverrides:
+#   nodeSelector:
+#     nvidia.com/gpu.present: "true"
+#   env:
+#     - name: HF_TOKEN
+#       valueFrom:
+#         secretKeyRef:
+#           name: hf-token
+#           key: HF_TOKEN
+#   podSecurityContext:
+#     runAsNonRoot: true
+#     runAsUser: 101 # curl_user
+#     seccompProfile:
+#       type: RuntimeDefault
+#   # priorityClassName:
+#   extraArgs:
+#     # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+#     # https://github.com/ikawrakow/ik_llama.cpp/blob/main/docs/parameters.md
+#     - --no-mmap  # No keep model in ram
+#     - --spec-type
+#     - "draft-mtp"
+#     - --spec-draft-n-max
+#     - "2"
+#     - --jinja
+#     - --ctx-checkpoints
+#     - "128"
+#     - --temp
+#     - "1.0"
+#     - --top-p
+#     - "0.95"
+#     - --min-p
+#     - "0.00"
+#     - --presence-penalty
+#     - "1.5"
+#     - --repeat-penalty
+#     - "1.0"
+#     - --top-k
+#     - "20"
+#     - --fit
+#     - "on"
+#     - --chat-template-kwargs
+#     - '{"preserve_thinking": true}'
+#     # ik_llama specific settings
+#     # - --defer-experts
+#     # - --spec-type
+#     # - mtp
+#     # - -mtp
+#     # - --draft-max
+#     # - "2"
+
+#   # podLabels:
+#   #   app.kubernetes.io/name: llmkube
+#   # podAnnotations:
+#   #   sidecar.istio.io/inject: "true"
+#   resources:
+#     gpu: 1
+#     cpu: "2"
+#     gpuMemory: 14Gi
+#     hostMemory: 10Gi
+#     memory: 12Gi

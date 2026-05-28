@@ -112,8 +112,8 @@ spec:
               # AI settings
               # TODO : if model changes, change the following
               OPENAI_API_KEY: "ollama"
-              OPENAI_BASE_URL: http://qwen36-35b-a3b.ai.svc.cluster.local:8080/v1
-              INFERENCE_TEXT_MODEL: qwen36-35b-a3b-iq2-m.gguf
+              OPENAI_BASE_URL: http://qwen36.ai.svc.cluster.local:8080/v1
+              INFERENCE_TEXT_MODEL: qwen36-27b-iq4-xs.gguf
 
             probes:
               liveness:
