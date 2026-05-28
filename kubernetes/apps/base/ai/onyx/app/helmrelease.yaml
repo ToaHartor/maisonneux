@@ -11,7 +11,7 @@ spec:
   chart:
     spec:
       chart: onyx
-      version: "0.5.7"
+      version: "0.5.11"
       sourceRef:
         kind: HelmRepository
         name: onyx
@@ -29,7 +29,7 @@ spec:
   values:
     # https://github.com/onyx-dot-app/onyx/blob/main/deployment/helm/charts/onyx/values.yaml
     global:
-      version: "v4.0.0-beta.0"
+      version: "v4.0.1"
         # "v3.3.7" # "latest"
         # Looks like there is no fixed version => https://hub.docker.com/u/onyxdotapp
         # onyx-backend is synced with the repository
