@@ -4,5 +4,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - grafana-mcp.yaml
+  - arr-mcp.yaml
   - mcpgroup.yaml
   - virtualmcpserver.yaml

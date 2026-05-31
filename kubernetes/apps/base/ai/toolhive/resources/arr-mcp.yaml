@@ -1,0 +1,137 @@
+# ---
+# apiVersion: external-secrets.io/v1
+# kind: ExternalSecret
+# metadata:
+#   name: arr-mcp
+# spec:
+#   data:
+#     - secretKey: sonarrKey
+#       remoteRef:
+#         key: sonarr-api-key
+#         property: secretKey
+#     - secretKey: radarrKey
+#       remoteRef:
+#         key: radarr-api-key
+#         property: secretKey
+#     - secretKey: prowlarrKey
+#       remoteRef:
+#         key: prowlarr-api-key
+#         property: secretKey
+#   refreshInterval: 1h
+#   secretStoreRef:
+#     kind: ClusterSecretStore
+#     name: media-secretstore
+#   target:
+#     creationPolicy: Owner
+#     deletionPolicy: Retain
+#     template:
+#       data:
+#         sonarr_key: "{{ .sonarrKey }}"
+#         radarr_key: "{{ .radarrKey }}"
+#         prowlarr_key: "{{ .prowlarrKey }}"
+#       engineVersion: v2
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: &name sonarr-api-key
+spec:
+  dataFrom:
+    - extract:
+        key: *name
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: media-secretstore
+  target:
+    name: *name
+    creationPolicy: Owner
+    deletionPolicy: Retain
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: &name radarr-api-key
+spec:
+  dataFrom:
+    - extract:
+        key: *name
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: media-secretstore
+  target:
+    name: *name
+    creationPolicy: Owner
+    deletionPolicy: Retain
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: &name prowlarr-api-key
+spec:
+  dataFrom:
+    - extract:
+        key: *name
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: media-secretstore
+  target:
+    name: *name
+    creationPolicy: Owner
+    deletionPolicy: Retain
+
+---
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: arr-mcp
+spec:
+  # TODO : change the image to the main repository when https://github.com/aplaceforallmystuff/mcp-arr/pull/11 is merged
+  image: ghcr.io/alejandrosnz/mcp-arr:1.7.1@sha256:b51245f3ba4f34af5deed31e32803fc00a04e38f857ba1daaf3f0764f06e5a5f
+  args: ["-t", "stdio"]
+  transport: stdio
+  groupRef:
+    name: mcp-tools
+  env:
+    - name: SONARR_URL
+      value: http://sonarr.media.svc.cluster.local:8989
+    - name: RADARR_URL
+      value: http://radarr.media.svc.cluster.local:7878
+    - name: PROWLARR_URL
+      value: http://prowlarr.media.svc.cluster.local:9696
+  secrets:
+    # Somehow it does not support using the same secret for multiple env variables
+    - name: sonarr-api-key
+      key: secretKey
+      targetEnvName: SONARR_API_KEY
+    - name: radarr-api-key
+      key: secretKey
+      targetEnvName: RADARR_API_KEY
+    - name: prowlarr-api-key
+      key: secretKey
+      targetEnvName: PROWLARR_API_KEY
+  podTemplateSpec:
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mcp
+          resources:
+            limits:
+              cpu: "500m"
+            requests:
+              cpu: "10m"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+  resources:
+    limits:
+      cpu: 200m
+      memory: 100Mi
+    requests:
+      cpu: 10m
+      memory: 100Mi

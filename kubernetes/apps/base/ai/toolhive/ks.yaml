@@ -64,6 +64,15 @@ spec:
   dependsOn:
     - name: toolhive-operator-crds
     - name: toolhive-operator
+    # Wait for apps to be created
+    - name: grafana
+      namespace: monitoring
+    - name: sonarr
+      namespace: media
+    - name: radarr
+      namespace: media
+    - name: prowlarr
+      namespace: media
   commonMetadata:
     labels:
       app.kubernetes.io/name: toolhive
