@@ -81,16 +81,55 @@ spec:
       kind: MCPServer
       name: grafana-mcp
       namespace: ai
+    # - apiVersion: helm.toolkit.fluxcd.io/v2
+    #   kind: HelmRelease
+    #   name: toolhive-oidc
+    #   namespace: ai
   healthCheckExprs:
     - apiVersion: toolhive.stacklok.dev/v1alpha1
       current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
       inProgress: status.conditions.filter(e, e.type == 'Ready').all(e, e.reason == 'NotReady')
       kind: MCPServer
   interval: 1h
+  # components:
+  # # relative to spec.path
+  # - ../../../../../common/components/oidc-application
   path: "./kubernetes/apps/base/ai/toolhive/resources"
   postBuild:
     substitute:
       APP: toolhive
+      # GROUP: Services
+      # SUBDOMAIN: toolhive
+      # DOMAIN: ${main_domain}
+      # DOMAIN_WEBSECURE: ${main_domain_websecure}
+      # DESCRIPTION: MCP server tools
+      # OIDC_CLIENT_ID: "toolhivemcpoidc" # Client ID is known
+      # REDIRECT_URL: https://toolhive.${main_domain_websecure}/oauth/callback
+      # # inherited variables
+      # auth_subdomain: ${auth_subdomain}
+      # main_domain: ${main_domain}
+      # main_domain_websecure: ${main_domain_websecure}
+  # patches:
+  #   - target:
+  #       kind: HelmRelease
+  #       # match with label since name has variable in it
+  #       labelSelector: homelab/auth-component=true
+  #     patch: |
+  #       - op: add
+  #         path: '/spec/values/blueprint/groups/-'
+  #         value:
+  #           slug: "app: toolhive"
+  #           bindID: "c5d96ed1-cb7a-437e-8e5b-0ef11845724d" # arbitrary uuid
+  #       - op: add
+  #         path: '/spec/values/blueprint/provider/oidc/clientID'
+  #         value: 'toolhivemcpoidc'
+  #       - op: add
+  #         path: '/spec/values/blueprint/provider/oidc/scopes/-'
+  #         value:
+  #           name: "authentik default OAuth Mapping: OpenID 'offline_access'"
+  #       - op: remove
+  #         path: '/spec/values/blueprint/application/launchURL'
+
   prune: true
   sourceRef:
     kind: GitRepository

@@ -11,7 +11,56 @@ spec:
       conflictResolution: prefix
       conflictResolutionConfig:
         prefixFormat: "{workload}_"
+  # authServerConfig:
+  #   issuer: https://${HOSTNAME}
+  #   # signingKeySecretRefs:
+  #   #   - name: toolhive-secret
+  #   #     key: EC_SIGNING_KEY
+  #   # hmacSecretRefs:
+  #   #   - name: toolhive-secret
+  #   #     key: HMAC_KEY
+  #   tokenLifespans:
+  #     accessTokenLifespan: 1h
+  #     refreshTokenLifespan: 168h
+  #     authCodeLifespan: 10m
+  #   upstreamProviders:
+  #     - name: authentik
+  #       type: oidc
+  #       oidcConfig:
+  #         issuerUrl: https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/
+  #         clientId: ${OIDC_CLIENT_ID}
+  #         clientSecretRef:
+  #           name: ${APP}-oidc-authentik-application
+  #           key: clientSecret
+  #         redirectUri: ${REDIRECT_URL}
+  #         scopes:
+  #           - openid
+  #           - profile
+  #           - email
+  #           - offline_access
   incomingAuth:
     type: anonymous
+    # type: oidc
+    # oidcConfigRef:
+    #   name: authentik
+    #   audience: https://${SUBDOMAIN}.{DOMAIN_WEBSECURE}/mcp
+    #   resourceUrl: https://${SUBDOMAIN}.{DOMAIN_WEBSECURE}/mcp
+    #   scopes:
+    #     - openid
+    #     - profile
+    #     - email
+    #     - offline_access
   outgoingAuth:
     source: discovered
+  # sessionStorage:
+  #   address: dragonfly-cluster.database.svc.cluster.local:6379
+  #   db: 11
+  #   provider: redis
+  #   keyPrefix: "toolhive-sessions:"
+  # podTemplateSpec:
+  #   spec:
+  #     containers:
+  #       - name: vmcp
+  #         env:
+  #           - name: INSECURE_DISABLE_URL_VALIDATION
+  #             value: "true"
