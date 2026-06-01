@@ -9,6 +9,16 @@ spec:
     kind: OCIRepository
     name: tuppr
   interval: 1h
+  install:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+
   values:
     replicaCount: 2
     monitoring:
