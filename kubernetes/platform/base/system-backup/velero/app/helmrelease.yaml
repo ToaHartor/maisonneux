@@ -13,6 +13,12 @@ spec:
   install:
     remediation:
       retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
   values:
     # https://artifacthub.io/packages/helm/vmware-tanzu/velero?modal=values
 
@@ -42,7 +48,7 @@ spec:
 
     initContainers:
       - name: velero-plugin-for-aws
-        image: velero/velero-plugin-for-aws:v1.14.0
+        image: velero/velero-plugin-for-aws:v1.14.1
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /target
