@@ -42,7 +42,7 @@ spec:
                   - ALL
             image:
               repository: ghcr.io/muety/wakapi
-              tag: 2.17.3@sha256:156e3e60656f6143f58cc849444a0a7992bbaa573dc870d92a9789be5671099d
+              tag: 2.17.4@sha256:6fce764acf8775e1166e8b03e59fb6b34744e4a9fba5e98d9ea15d341db31bf8
               pullPolicy: IfNotPresent
             env:
               - name: ENVIRONMENT
