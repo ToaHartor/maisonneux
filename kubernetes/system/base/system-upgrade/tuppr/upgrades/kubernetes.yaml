@@ -49,7 +49,7 @@ spec:
       expr: status.phase == 'Ready' # && !status.isRollingUpdate
       timeout: 10m
     # S3 status
-    - apiVersion: garage.rajsingh.info/v1alpha1
+    - apiVersion: garage.rajsingh.info/v1beta1
       kind: GarageCluster
       name: garage-gateway
       namespace: operators
