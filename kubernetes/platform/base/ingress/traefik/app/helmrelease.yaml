@@ -15,6 +15,11 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
 
   values:
     # https://github.com/traefik/traefik-helm-chart/blob/master/traefik/values.yaml
