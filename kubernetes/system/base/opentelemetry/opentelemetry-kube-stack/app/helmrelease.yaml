@@ -13,6 +13,12 @@ spec:
   install:
     remediation:
       retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
   values:
     # https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-kube-stack/values.yaml
     crds:
@@ -82,7 +88,7 @@ spec:
               level: INFO
           pipelines:
             metrics:
-              exporters: &victoriametrics-exporter [ otlphttp/victoriametrics, debug ]
+              exporters: &victoriametrics-exporter [otlphttp/victoriametrics, debug]
 
         exporters:
           # debug:
@@ -145,7 +151,7 @@ spec:
                   - job_name: "otel-collector"
                     scrape_interval: 10s
                     static_configs:
-                      - targets: [ "0.0.0.0:8888" ]
+                      - targets: ["0.0.0.0:8888"]
                     metric_relabel_configs:
                       - action: labeldrop
                         regex: (id|name)
@@ -164,8 +170,8 @@ spec:
           service:
             pipelines:
               metrics:
-                receivers: [ prometheus ]
-                processors: [ k8sattributes, memory_limiter, batch ]
+                receivers: [prometheus]
+                processors: [k8sattributes, memory_limiter, batch]
                 exporters: *victoriametrics-exporter
 
       daemon:
@@ -233,21 +239,21 @@ spec:
                             # only scrape data from pods running on the same node as collector
                             field: "spec.nodeName=${env:OTEL_K8S_NODE_NAME}"
                     relabel_configs:
-                      - source_labels: [ __meta_kubernetes_pod_annotation_prometheus_io_scrape ]
+                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
                         action: keep
                         regex: true
-                      - source_labels: [ __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow ]
+                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
                         action: drop
                         regex: true
-                      - source_labels: [ __meta_kubernetes_pod_annotation_prometheus_io_scheme ]
+                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
                         action: replace
                         regex: (https?)
                         target_label: __scheme__
-                      - source_labels: [ __meta_kubernetes_pod_annotation_prometheus_io_path ]
+                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
                         action: replace
                         target_label: __metrics_path__
                         regex: (.+)
-                      - source_labels: [ __address__, __meta_kubernetes_pod_annotation_prometheus_io_port ]
+                      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
                         action: replace
                         regex: ([^:]+)(?::\d+)?;(\d+)
                         # NOTE: otel collector uses env var replacement. $$ is used as a literal $.
@@ -261,17 +267,17 @@ spec:
                         replacement: __param_$$1
                       - action: labelmap
                         regex: __meta_kubernetes_pod_label_(.+)
-                      - source_labels: [ __meta_kubernetes_namespace ]
+                      - source_labels: [__meta_kubernetes_namespace]
                         action: replace
                         target_label: namespace
-                      - source_labels: [ __meta_kubernetes_pod_name ]
+                      - source_labels: [__meta_kubernetes_pod_name]
                         action: replace
                         target_label: pod
-                      - source_labels: [ __meta_kubernetes_pod_phase ]
+                      - source_labels: [__meta_kubernetes_pod_phase]
                         regex: Pending|Succeeded|Failed|Completed
                         action: drop
                       - action: replace
-                        source_labels: [ __meta_kubernetes_pod_label_app_kubernetes_io_name ]
+                        source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
                         target_label: job
                   # This job is setup to scrape the node metrics on the same host as the daemonset
                   # https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29053
@@ -476,19 +482,19 @@ spec:
                   mode: watch
 
           service:
-            extensions: [ k8s_leader_elector/k8s_cluster, k8s_leader_elector/k8s_objects ]
+            extensions: [k8s_leader_elector/k8s_cluster, k8s_leader_elector/k8s_objects]
             pipelines:
               logs/talos:
-                receivers: [ udplog ]
-                processors: [ memory_limiter, batch ]
+                receivers: [udplog]
+                processors: [memory_limiter, batch]
                 exporters: *victoriametrics-exporter
               logs:
-                receivers: [ otlp, filelog, k8sobjects ]
-                processors: [ k8sattributes, resourcedetection/env, memory_limiter, batch ]
+                receivers: [otlp, filelog, k8sobjects]
+                processors: [k8sattributes, resourcedetection/env, memory_limiter, batch]
                 exporters: *victoriametrics-exporter
               metrics:
-                receivers: [ otlp, prometheus, hostmetrics, k8s_cluster ]
-                processors: [ k8sattributes, resourcedetection/env, memory_limiter, batch ]
+                receivers: [otlp, prometheus, hostmetrics, k8s_cluster]
+                processors: [k8sattributes, resourcedetection/env, memory_limiter, batch]
                 exporters: *victoriametrics-exporter
 
     extraObjects:
