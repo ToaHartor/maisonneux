@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/rajsinghtech/garage-operator/refs/heads/main/schemas/garagebucket_v1alpha1.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rajsinghtech/garage-operator/refs/heads/main/schemas/garagebucket_v1beta1.json
 apiVersion: garage.rajsingh.info/v1beta1
 kind: GarageBucket
 metadata:

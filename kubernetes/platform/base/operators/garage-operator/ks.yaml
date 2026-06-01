@@ -37,12 +37,12 @@ spec:
     - name: traefik
       namespace: ingress
   healthChecks:
-    - apiVersion: garage.rajsingh.info/v1beta1
+    - apiVersion: garage.rajsingh.info/v1beta2
       kind: GarageCluster
       name: garage-gateway
       namespace: operators
   healthCheckExprs:
-    - apiVersion: garage.rajsingh.info/v1beta1
+    - apiVersion: garage.rajsingh.info/v1beta2
       current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
       inProgress: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'False')
       kind: GarageCluster

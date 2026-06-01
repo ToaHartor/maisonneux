@@ -1,6 +1,6 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/rajsinghtech/garage-operator/refs/heads/main/schemas/garagecluster_v1alpha1.json
-apiVersion: garage.rajsingh.info/v1beta1
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rajsinghtech/garage-operator/refs/heads/main/schemas/garagecluster_v1beta2.json
+apiVersion: garage.rajsingh.info/v1beta2
 kind: GarageCluster
 metadata:
   name: garage-gateway
@@ -8,7 +8,32 @@ spec:
   logging:
     level: "info"
 
-  gateway: true
+  gateway:
+    replicas: 1
+    rpcPublicAddr: ${opnsense_exposed_ip}:39001
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    metadata:
+      # We need to add pvc backup label (feature request submitted)
+      labels:
+        homelab/backup-resource: "true"
+      type: PersistentVolumeClaim
+      size: 1Gi
+      storageClassName: ${fastdata_storage}-ha
+    securityContext:
+      # runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    containerSecurityContext:
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
 
   admin:
     adminTokenSecretRef:
@@ -27,11 +52,18 @@ spec:
       name: garage-external-secret
 
   network:
-    rpcPublicAddr: ${opnsense_exposed_ip}:39001
+    # rpcPublicAddr: ${opnsense_exposed_ip}:39001
     rpcBindPort: 39001
     rpcSecretRef:
       key: GARAGE_RPC_SECRET
       name: garage-external-secret
+
+  publicEndpoint:
+    type: NodePort
+    nodePort:
+      basePort: 30901
+      externalAddresses:
+        - ${opnsense_exposed_ip}
 
   zone: nas
 
@@ -39,27 +71,21 @@ spec:
     region: garage
     bindPort: ${GARAGE_S3_PORT}
 
-  replicas: 1
   replication:
     factor: 1 # Must match the external cluster
 
   database:
     engine: sqlite # From recommended gateway configuration https://deepwiki.com/rajsinghtech/garage-operator/3.1.5-database-and-block-storage#low-resource-gateway-cluster
-  storage:
-    metadata:
-      # We need to add pvc backup label (feature request submitted)
-      labels:
-        homelab/backup-resource: "true"
-      type: PersistentVolumeClaim
-      size: 1Gi
-      storageClassName: ${fastdata_storage}-ha
-    data:
-      type: EmptyDir # Gateway nodes do not store any block data
 
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
+
+  # storage:
+  #   replicas: 0
+  #   metadata:
+  #     # We need to add pvc backup label (feature request submitted)
+  #     labels:
+  #       homelab/backup-resource: "true"
+  #     type: PersistentVolumeClaim
+  #     size: 1Gi
+  #     storageClassName: ${fastdata_storage}-ha
+  #   data:
+  #     type: EmptyDir # Gateway nodes do not store any block data

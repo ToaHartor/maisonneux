@@ -59,6 +59,7 @@ spec:
         ingressClass: traefik
       kubernetesGateway:
         enabled: true
+        # experimentalChannel: true # TCPRoute and TLSRoute
 
     securityContext:
       seccompProfile:
@@ -121,10 +122,10 @@ spec:
       enabled: true
       annotations:
         "io.cilium/lb-ipam-ips": "${traefik_lb_ip}" # Should be an IP defined in the L2 IP pool range of Cilium
-      # type: ClusterIP / LoadBalancer
       labels:
         "homelab/public-service": "true"
       spec:
+        type: LoadBalancer
         externalTrafficPolicy: Local
 
     ports:
