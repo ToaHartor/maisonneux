@@ -35,7 +35,7 @@ tachi:
   parameters:
     serverUrl: https://example.tachi.com
     cdnUrl: https://bucket.example.com/tachi
-    recaptchaKey: unset
+    hcaptchaSiteKey: unset
   containers:
     - name: tachi-client
       context: .

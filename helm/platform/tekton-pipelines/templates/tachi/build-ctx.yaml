@@ -21,7 +21,7 @@ data:
     ENV VITE_SERVER_URL={{ .Values.tachi.parameters.serverUrl }}
     ENV VITE_CDN_URL="{{ .Values.tachi.parameters.cdnUrl }}"
     ENV VITE_GIT_REPO=GitHub:zkldi/Tachi
-    ENV VITE_RECAPTCHA_KEY="{{ .Values.tachi.parameters.recaptchaKey }}"
+    ENV VITE_HCAPTCHA_SITEKEY="{{ .Values.tachi.parameters.hcaptchaSiteKey }}"
     ENV VITE_EAG_CLIENT_ID=""
     ENV VITE_MIN_CLIENT_ID=""
     ENV VITE_FLO_CLIENT_ID=""

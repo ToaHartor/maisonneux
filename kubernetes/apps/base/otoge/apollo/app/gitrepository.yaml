@@ -11,4 +11,4 @@ spec:
   secretRef:
     name: flux-github-http-creds
   # provider: github
-  url: http://github.com/gigacigne/apollo.git
+  url: https://github.com/gigacigne/apollo

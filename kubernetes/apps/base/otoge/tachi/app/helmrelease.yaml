@@ -45,8 +45,8 @@ spec:
             image:
               repository: ghcr.io/zkldi/tachi
               # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
-              tag: 815b0c84d3f45de1fa62d2e597e61100ceba4441
-            env:
+              tag: a815848fb623151249c6057191f6db3883621b5e
+            env: &server-env
               NODE_ENV: production
               PORT: "8080" # server
               REDIS_URL: "dragonfly-cluster.dragonfly.svc.cluster.local:6379/13"
@@ -181,7 +181,8 @@ spec:
               TACHI_TYPE: omni
               TACHI_GAME_GROUPS: iidx,museca,sdvx,bms,chunithm,usc,wacca,popn,jubeat,pms,maimai,maimaidx,arcaea,ongeki,ddr,gitadora,itg
               TACHI_IMPORT_TYPES: file/eamusement-iidx-csv,file/eamusement-sdvx-csv,file/batch-manual,file/solid-state-squad,file/pli-iidx-csv,ir/direct-manual,ir/barbatos,ir/fervidex,ir/fervidex-static,ir/beatoraja,ir/usc,ir/kshook-sv6c
-
+              TACHI_SEEDS_TYPE: LOCAL_FILES
+              TACHI_SEEDS_PATH: ./db/seeds
             ports:
               - containerPort: 8080
                 name: server
@@ -189,15 +190,15 @@ spec:
               # - containerPort: 3000
               #   name: client
               #   protocol: TCP
-              - containerPort: 3001
-                name: docs
-                protocol: TCP
-              - containerPort: 3002
-                name: homepage
-                protocol: TCP
-              - containerPort: 3100
-                name: seeds
-                protocol: TCP
+              # - containerPort: 3001
+              #   name: docs
+              #   protocol: TCP
+              # - containerPort: 3002
+              #   name: homepage
+              #   protocol: TCP
+              # - containerPort: 3100
+              #   name: seeds
+              #   protocol: TCP
               - containerPort: 9779
                 name: metrics
                 protocol: TCP
@@ -221,10 +222,112 @@ spec:
                   - ALL
             resources:
               requests:
-                cpu: 25m
+                cpu: 100m
                 memory: 256Mi
-              # limits:
-              #   memory: 1000Mi
+              limits:
+                memory: 1000Mi
+      worker:
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          worker:
+            image:
+              repository: ghcr.io/zkldi/tachi
+              # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
+              tag: a815848fb623151249c6057191f6db3883621b5e
+            command: ["bun", "run", "./typescript/server/src/job-queue-worker.ts"]
+            env:
+              <<: *server-env
+              WORKER_METRICS_PORT: "9778"
+            ports:
+              - containerPort: 9778
+                name: metrics
+                protocol: TCP
+            probes:
+              liveness: &worker-probe
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  successThreshold: 1
+                  timeoutSeconds: 1
+                  exec:
+                    command:
+                      - sh
+                      - -c
+                      - |
+                        if [ ! -f /tmp/worker-heartbeat ]; then exit 1; fi
+                        HEARTBEAT=$(cat /tmp/worker-heartbeat)
+                        NOW=$(date +%s)
+                        AGE=$((NOW - HEARTBEAT))
+                        if [ $AGE -gt 60 ]; then exit 1; fi
+                        exit 0
+              readiness: *worker-probe
+              startup:
+                enabled: false
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
+      cron:
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          cron:
+            image:
+              repository: ghcr.io/zkldi/tachi
+              # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
+              tag: a815848fb623151249c6057191f6db3883621b5e
+            command: ["bun", "run", "./typescript/server/src/cron-worker.ts"]
+            env:
+              <<: *server-env
+              WORKER_METRICS_PORT: "9778"
+            ports:
+              - containerPort: 9778
+                name: metrics
+                protocol: TCP
+            probes:
+              liveness: *worker-probe
+              readiness: *worker-probe
+              startup:
+                enabled: false
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
 
       client:
         # annotations:
@@ -244,7 +347,7 @@ spec:
               repository: localhost:32000/tachi-client # Client
               # Should be in sync with the server and the image built in pipeline
               # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
-              tag: 815b0c84d3f45de1fa62d2e597e61100ceba4441@sha256:ff38436019acafc4d7b61adb4636e820c68f36f3c0c814c5528072cdfaccc54d
+              tag: a815848fb623151249c6057191f6db3883621b5e@sha256:8a3ced7fd714c4d760ac54cb2f76e84e9d005d302c7bd8336a0dc54b21d2b6aa
               pullPolicy: Always
             # env:
             ports:
@@ -276,7 +379,7 @@ spec:
                 cpu: 25m
                 memory: 50Mi
               limits:
-                memory: 100Mi
+                memory: 200Mi
 
     service:
       server:

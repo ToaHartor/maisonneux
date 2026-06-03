@@ -24,7 +24,7 @@ spec:
     - kind: Secret
       name: tachi-external-secrets
       valuesKey: captcha_token
-      targetPath: tachi.parameters.recaptchaKey
+      targetPath: tachi.parameters.hcaptchaSiteKey
     - kind: Secret
       name: tachi-external-secrets
       valuesKey: cdn_web_location
@@ -50,7 +50,7 @@ spec:
     tachi:
       repository:
         # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
-        branch: 815b0c84d3f45de1fa62d2e597e61100ceba4441
+        branch: a815848fb623151249c6057191f6db3883621b5e
       parameters:
         serverUrl: https://xn--sck3h9451a.${second_domain}
         # https://garage.${second_domain}/tachi-${environment}
