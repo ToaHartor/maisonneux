@@ -23,8 +23,8 @@ spec:
   values:
     gateway:
       hostname:
-        web: ${APP}.${second_domain}
-        game: eagate.${second_domain}
+        web: ${SUBDOMAIN}.${DOMAIN}
+        game: eagate.${DOMAIN}
       webParentRefs:
         - name: traefik-gateway
           namespace: ingress
@@ -37,11 +37,11 @@ spec:
           kind: Gateway
 
     apollo:
-      logLevel: DEBUG # INFO
+      logLevel: DEBUG
       redis:
         url: dragonfly-cluster.dragonfly.svc.cluster.local:6379/7 # Using database 7 for redis
       tachi:
-        customInstance: https://xn--sck3h9451a.${second_domain}
+        customInstance: https://xn--sck3h9451a.${DOMAIN}
       common:
         env:
           # Database config

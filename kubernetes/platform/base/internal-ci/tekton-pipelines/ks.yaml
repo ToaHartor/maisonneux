@@ -9,7 +9,7 @@ spec:
     labels:
       app.kubernetes.io/name: tekton-pipelines
   dependsOn:
-    - name: tekton-operator # We do need the pipeline engine to create our pipelines. Other dependencies are put in 
+    - name: tekton-operator # We do need the pipeline engine to create our pipelines. Other dependencies are put in
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
@@ -23,6 +23,10 @@ spec:
       git_repo_url: ${git_repo_url}
       git_branch: ${git_branch}
       fastdata_storage: ${fastdata_storage}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+      environment: ${environment}
   prune: true
   sourceRef:
     kind: GitRepository

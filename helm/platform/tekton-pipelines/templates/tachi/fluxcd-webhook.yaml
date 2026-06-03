@@ -1,0 +1,30 @@
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: "tekton-pipeline-webhook-{{ .Values.tachi.pipelineName }}"
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: generic
+  # EventListener url is el-$eventlistener_name.$namespace.svc.cluster.local
+  address: "http://el-{{ .Values.tachi.pipelineName }}.{{ .Release.Namespace }}.svc.cluster.local:8080/"
+  # secretRef:
+    # # No secret as it may become visible on check
+    # name: tekton-webhook-token
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: "tekton-pipeline-webhook-{{ .Values.tachi.pipelineName }}"
+  namespace: {{ .Release.Namespace }}
+spec:
+  providerRef:
+    name: "tekton-pipeline-webhook-{{ .Values.tachi.pipelineName }}"
+  # eventSeverity: error
+  eventSources:
+    # Watch reconciliation for target helmrelease and build while deploying it. Timeout will also be increased for it.
+    - kind: HelmRelease
+      name: "{{ .Values.tachi.targetHelmrelease }}"
+      namespace: {{ .Values.tachi.namespace }}
+  # TODO : choose which event to monitor, either exclude or include
+  # inclusionList:
+  #   - "packaged 'testapp' chart with version .*"

@@ -24,3 +24,19 @@ apollo:
     - name: client
       context: frontend/
       target: release
+
+tachi:
+  pipelineName: tachi
+  targetHelmrelease: tachi
+  namespace: otoge
+  repository:
+    url: https://github.com/zkldi/Tachi
+    branch: main # Will be set to commit hash
+  parameters:
+    serverUrl: https://example.tachi.com
+    cdnUrl: https://bucket.example.com/tachi
+    recaptchaKey: unset
+  containers:
+    - name: tachi-client
+      context: .
+      target: release

@@ -1,0 +1,351 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &name tachi
+spec:
+  releaseName: *name
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  values:
+    fullnameOverride: *name
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      server:
+        annotations:
+          # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+          secret.reloader.stakater.com/reload: "${APP}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
+
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          server:
+            image:
+              repository: ghcr.io/zkldi/tachi
+              # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
+              tag: 815b0c84d3f45de1fa62d2e597e61100ceba4441
+            env:
+              NODE_ENV: production
+              PORT: "8080" # server
+              REDIS_URL: "dragonfly-cluster.dragonfly.svc.cluster.local:6379/13"
+              POSTGRES_URL:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: uri
+              LOG_LEVEL: info
+              TACHI_SIGNUPS_ENABLED: "true"
+              TACHI_ENABLE_METRICS: "true"
+              TACHI_OUR_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+              # MIGRATIONS_DIR: /tachi/db/migrations
+              TACHI_EMAIL_FROM:
+                secretKeyRef:
+                  name: tachi-smtp
+                  key: smtp_username
+              TACHI_EMAIL_HOST:
+                secretKeyRef:
+                  name: tachi-smtp
+                  key: smtp_server
+              TACHI_EMAIL_PORT:
+                secretKeyRef:
+                  name: tachi-smtp
+                  key: smtp_port
+              TACHI_EMAIL_SECURE: "false"
+              TACHI_EMAIL_AUTH_USER:
+                secretKeyRef:
+                  name: tachi-smtp
+                  key: smtp_username
+              TACHI_EMAIL_AUTH_PASS:
+                secretKeyRef:
+                  name: tachi-smtp
+                  key: smtp_token
+              # TACHI_CLIENT_DEV_SERVER: http://localhost:3000
+              TACHI_CAPTCHA_SECRET_KEY:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: captcha_secret_key
+              TACHI_SESSION_SECRET:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+              # TACHI_FLO_API_URL: https://flo.example.com
+              # TACHI_EAG_API_URL: https://eag.example.com
+              # TACHI_MIN_API_URL: https://min.example.com
+              # TACHI_MYT_API_HOST: myt.example.com
+              # TACHI_FLO_OAUTH2_CLIENT_ID: DUMMY_CLIENT_ID
+              # TACHI_FLO_OAUTH2_CLIENT_SECRET: DUMMY_CLIENT_SECRET
+              # TACHI_FLO_OAUTH2_REDIRECT_URI: https://example.com
+              # TACHI_EAG_OAUTH2_CLIENT_ID: DUMMY_CLIENT_ID
+              # TACHI_EAG_OAUTH2_CLIENT_SECRET: DUMMY_CLIENT_SECRET
+              # TACHI_EAG_OAUTH2_REDIRECT_URI: https://example.com
+              # TACHI_ARC_AUTH_TOKEN: unused
+              # TACHI_MYT_AUTH_TOKEN: unused
+              # TACHI_OUR_URL: http://localhost:3000
+              TACHI_INVITE_CODE_BATCH_SIZE: "2"
+              TACHI_INVITE_CODE_INVITE_CAP: "100"
+              TACHI_INVITE_CODE_BETA_USER_BONUS: "5"
+              TACHI_MAX_RIVALS: "20"
+              # TACHI_CDN_WEB_LOCATION: https://garage.${DOMAIN_WEBSECURE}/${BUCKET_NAME}
+              # TACHI_CDN_SAVE_LOCATION_ENDPOINT: http://${GARAGE_URL}
+              # TACHI_CDN_SAVE_LOCATION_ACCESS_KEY_ID:
+              #   secretKeyRef:
+              #     name: ${S3_USER}-garage
+              #     key: accessKey
+              # TACHI_CDN_SAVE_LOCATION_SECRET_ACCESS_KEY:
+              #   secretKeyRef:
+              #     name: ${S3_USER}-garage
+              #     key: secretKey
+              # TACHI_CDN_SAVE_LOCATION_BUCKET: ${BUCKET_NAME}
+              # TACHI_CDN_SAVE_LOCATION_REGION: ${GARAGE_REGION}
+              # TACHI_CDN_SAVE_LOCATION_PRIVATE_ENDPOINT: http://${GARAGE_URL}
+              # TACHI_CDN_SAVE_LOCATION_PRIVATE_ACCESS_KEY_ID:
+              #   secretKeyRef:
+              #     name: ${S3_USER}-garage
+              #     key: accessKey
+              # TACHI_CDN_SAVE_LOCATION_PRIVATE_SECRET_ACCESS_KEY:
+              #   secretKeyRef:
+              #     name: ${S3_USER}-garage
+              #     key: secretKey
+              # TACHI_CDN_SAVE_LOCATION_PRIVATE_BUCKET: ${BUCKET_NAME}
+              # TACHI_CDN_SAVE_LOCATION_PRIVATE_REGION: ${GARAGE_REGION}
+
+              TACHI_CDN_WEB_LOCATION:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_web_location
+
+              TACHI_CDN_SAVE_LOCATION_ENDPOINT:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_endpoint
+
+              TACHI_CDN_SAVE_LOCATION_ACCESS_KEY_ID:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_access_key
+              TACHI_CDN_SAVE_LOCATION_SECRET_ACCESS_KEY:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_secret_key
+              TACHI_CDN_SAVE_LOCATION_BUCKET:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_bucket
+              TACHI_CDN_SAVE_LOCATION_REGION:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_region
+              TACHI_CDN_SAVE_LOCATION_PRIVATE_ENDPOINT:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_web_location
+              TACHI_CDN_SAVE_LOCATION_PRIVATE_ACCESS_KEY_ID:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_access_key
+              TACHI_CDN_SAVE_LOCATION_PRIVATE_SECRET_ACCESS_KEY:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_secret_key
+              TACHI_CDN_SAVE_LOCATION_PRIVATE_BUCKET:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_bucket
+              TACHI_CDN_SAVE_LOCATION_PRIVATE_REGION:
+                secretKeyRef:
+                  name: tachi-external-secrets
+                  key: cdn_region
+
+              TACHI_NAME: Tachi
+              TACHI_TYPE: omni
+              TACHI_GAME_GROUPS: iidx,museca,sdvx,bms,chunithm,usc,wacca,popn,jubeat,pms,maimai,maimaidx,arcaea,ongeki,ddr,gitadora,itg
+              TACHI_IMPORT_TYPES: file/eamusement-iidx-csv,file/eamusement-sdvx-csv,file/batch-manual,file/solid-state-squad,file/pli-iidx-csv,ir/direct-manual,ir/barbatos,ir/fervidex,ir/fervidex-static,ir/beatoraja,ir/usc,ir/kshook-sv6c
+
+            ports:
+              - containerPort: 8080
+                name: server
+                protocol: TCP
+              # - containerPort: 3000
+              #   name: client
+              #   protocol: TCP
+              - containerPort: 3001
+                name: docs
+                protocol: TCP
+              - containerPort: 3002
+                name: homepage
+                protocol: TCP
+              - containerPort: 3100
+                name: seeds
+                protocol: TCP
+              - containerPort: 9779
+                name: metrics
+                protocol: TCP
+            probes:
+              liveness: &probes
+                enabled: true
+                port: 8080
+                path: /.deploy/up
+              readiness: *probes
+              startup:
+                enabled: true
+                port: 8080
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 25m
+                memory: 256Mi
+              # limits:
+              #   memory: 1000Mi
+
+      client:
+        # annotations:
+        #   # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+        #   secret.reloader.stakater.com/reload: "${APP}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
+
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          client:
+            image:
+              repository: localhost:32000/tachi-client # Client
+              # Should be in sync with the server and the image built in pipeline
+              # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
+              tag: 815b0c84d3f45de1fa62d2e597e61100ceba4441@sha256:ff38436019acafc4d7b61adb4636e820c68f36f3c0c814c5528072cdfaccc54d
+              pullPolicy: Always
+            # env:
+            ports:
+              - containerPort: 8080
+                name: client
+                protocol: TCP
+
+            probes:
+              liveness: &probes
+                enabled: true
+                port: 8080
+                path: /
+              readiness: *probes
+              startup:
+                enabled: true
+                port: 8080
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 25m
+                memory: 50Mi
+              limits:
+                memory: 100Mi
+
+    service:
+      server:
+        controller: server
+        ports:
+          server:
+            port: 8080
+            targetPort: 8080
+          # client:
+          #   port: 3000
+          #   targetPort: 3000
+          docs:
+            port: 3001
+            targetPort: 3001
+          homepage:
+            port: 3002
+            targetPort: 3002
+          seeds:
+            port: 3100
+            targetPort: 3100
+          metrics:
+            port: 9779
+            targetPort: 9779
+      client:
+        controller: client
+        ports:
+          client:
+            port: 8080
+            targetPort: 8080
+
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+
+    rawResources:
+      tachiExternal:
+        enabled: true
+        forceRename: tachi-external-secrets
+        manifest:
+          apiVersion: external-secrets.io/v1
+          kind: ExternalSecret
+          # metadata:
+          spec:
+            dataFrom:
+              - extract:
+                  key: external-tachi-config
+            refreshInterval: 5m
+            secretStoreRef:
+              kind: ClusterSecretStore
+              name: external-secrets
+            target:
+              creationPolicy: Owner
+              deletionPolicy: Retain
+      tachiSmtp:
+        enabled: true
+        forceRename: tachi-smtp
+        manifest:
+          apiVersion: external-secrets.io/v1
+          kind: ExternalSecret
+          spec:
+            dataFrom:
+              - extract:
+                  key: external-smtp-config
+            refreshInterval: 5m
+            secretStoreRef:
+              kind: ClusterSecretStore
+              name: external-secrets
+            target:
+              creationPolicy: Owner
+              deletionPolicy: Retain

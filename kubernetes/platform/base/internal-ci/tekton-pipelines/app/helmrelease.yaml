@@ -20,6 +20,15 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: tachi-external-secrets
+      valuesKey: captcha_token
+      targetPath: tachi.parameters.recaptchaKey
+    - kind: Secret
+      name: tachi-external-secrets
+      valuesKey: cdn_web_location
+      targetPath: tachi.parameters.cdnUrl
 
   values:
     # Propagate fluxcd values to the chart
@@ -37,3 +46,13 @@ spec:
         url: https://github.com/gigacigne/apollo
         branch: develop # main
         authServiceAccount: github-build-bot
+
+    tachi:
+      repository:
+        # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
+        branch: 815b0c84d3f45de1fa62d2e597e61100ceba4441
+      parameters:
+        serverUrl: https://xn--sck3h9451a.${second_domain}
+        # https://garage.${second_domain}/tachi-${environment}
+        # cdnUrl: # Set with valuesFrom
+        # recaptchaKey: # Set with valuesFrom

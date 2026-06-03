@@ -6,7 +6,9 @@ namespace: otoge
 resources:
   - ./namespace.yaml
   - ./apollo/ks.yaml
+  - ./tachi/ks.yaml
 transformers:
   - ./transformers
 components:
   - ../../../common/components/github-creds
+  - ../../../common/components/repos/app-template
