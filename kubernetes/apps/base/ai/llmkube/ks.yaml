@@ -63,8 +63,8 @@ spec:
       inProgress: status.phase != 'Ready'
       kind: Model
     - apiVersion: inference.llmkube.dev/v1alpha1
-      current: status.conditions.filter(e, e.type == 'Available').all(e, e.status == 'True')
-      inProgress: status.conditions.filter(e, e.type == 'Progressing').all(e, e.status == 'True')
+      current: status.phase == 'Ready'
+      inProgress: status.phase == 'Creating'
       # failed: status.conditions.filter(e, e.reason == 'Failed').all(e, e.status == 'True')
       kind: InferenceService
   interval: 1h

@@ -158,7 +158,6 @@ spec:
           kind: ExternalSecret
           # metadata:
           spec:
-            # Duplicate spec section, see https://github.com/bjw-s-labs/helm-charts/issues/510#issuecomment-3393096619
             data:
               - secretKey: clientID
                 remoteRef:

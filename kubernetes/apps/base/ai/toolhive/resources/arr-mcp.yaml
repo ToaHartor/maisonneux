@@ -89,6 +89,7 @@ metadata:
   name: arr-mcp
 spec:
   # TODO : change the image to the main repository when https://github.com/aplaceforallmystuff/mcp-arr/pull/11 is merged
+  # renovate container
   image: ghcr.io/alejandrosnz/mcp-arr:1.7.1@sha256:b51245f3ba4f34af5deed31e32803fc00a04e38f857ba1daaf3f0764f06e5a5f
   args: ["-t", "stdio"]
   transport: stdio

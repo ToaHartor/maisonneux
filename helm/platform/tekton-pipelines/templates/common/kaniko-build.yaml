@@ -24,7 +24,8 @@ spec:
 
   steps:
     - name: build-and-push
-      image: martizih/kaniko:v1.26.6
+      # renovate container:
+      image: docker.io/martizih/kaniko:v1.26.6
       env:
         - name: DOCKER_CONFIG
           value: /kaniko/.docker
@@ -72,7 +73,8 @@ spec:
 
   steps:
     - name: build-and-push
-      image: martizih/kaniko:v1.26.6
+      # renovate container:
+      image: docker.io/martizih/kaniko:v1.26.6
       env:
         - name: DOCKER_CONFIG
           value: /kaniko/.docker

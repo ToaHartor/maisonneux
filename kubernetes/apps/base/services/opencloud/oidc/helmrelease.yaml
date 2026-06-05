@@ -150,5 +150,3 @@ spec:
         - slug: "app: opencloud-desktop"
           parent: "Drive Users"
           bindID: "0f28cabc-0ad9-4cd6-be29-28e04c40b17d" # arbitrary uuid
-
-      

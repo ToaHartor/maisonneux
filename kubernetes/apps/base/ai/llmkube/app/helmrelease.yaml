@@ -45,7 +45,17 @@ spec:
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
         capabilities:
-          drop: [ "ALL" ]
+          drop: ["ALL"]
+
+      resources:
+        limits:
+          memory: 1Gi
+        requests:
+          cpu: 10m
+          memory: 256Mi
+
+      initContainer:
+        defaultFSGroup: 101
 
     metrics:
       enabled: true

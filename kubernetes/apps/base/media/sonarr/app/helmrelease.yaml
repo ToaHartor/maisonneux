@@ -65,6 +65,8 @@ spec:
           containers:
             main:
               env:
+                # Option format is SONARR_<CATEGORY>_<OPTION>
+                # Categories are listed here https://github.com/Sonarr/Sonarr/tree/develop/src/NzbDrone.Common/Options
                 SONARR__AUTH__APIKEY:
                   secretKeyRef:
                     name: ${SECRET_KEY_NAME}

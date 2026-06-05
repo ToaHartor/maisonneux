@@ -93,7 +93,7 @@ metadata:
 spec:
   # Parameters from https://github.com/5p00kyy/club-5060ti/blob/main/docs/single-5060ti.md
   ## ! Select first the dflash then the real model
-  modelRef: qwen36-27b-iq4-xs # qwen36-27b-iq4-xs
+  modelRef: qwen36-27b-iq4-xs
   runtimeClassName: ${gpu_runtime_class}
   runtime: llamacpp
   # https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp/versions?filters[version_type]=tagged
@@ -101,9 +101,8 @@ spec:
   # https://github.com/ikawrakow/ik_llama.cpp/pkgs/container/ik-llama-cpp/versions?filters[version_type]=tagged
   # image: ghcr.io/ikawrakow/ik-llama-cpp:cu13-server-4535
   # BeeLlama image https://github.com/Anbeeld/beellama.cpp
-  # https://hub.docker.com/r/aamsellem/beellama-cpp/tags
-  # renovate: datasource=docker depName=ghcr.io/anbeeld/beellama-cpp
-  image: ghcr.io/anbeeld/beellama-cpp:server-cuda13-v0.3.0
+  # Manual update...
+  image: ghcr.io/anbeeld/beellama.cpp:server-cuda13-preview-v0.3.2
   replicas: 1
   endpoint:
     port: 8080
@@ -141,9 +140,9 @@ spec:
   extraArgs:
     # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
     # https://github.com/ikawrakow/ik_llama.cpp/blob/main/docs/parameters.md
-    - --no-mmap # No keep model in ram
-    - --spec-draft-model
-    - /models/5b4369128cc20c4a/qwen36-27b-iq4-xs-dflash.gguf
+    # Log level
+    - -lv
+    - "4"
     # - --spec-draft-hf
     # - "Anbeeld/Qwen3.6-27B-DFlash-GGUF:IQ4_XS"
     - --spec-type
@@ -156,6 +155,9 @@ spec:
     - all
     - --spec-draft-n-max
     - "2"
+    - --no-mmap # No keep model in ram
+    - --spec-draft-model
+    - /models/5b4369128cc20c4a/qwen36-27b-iq4-xs-dflash.gguf
     - --jinja
     # - --ctx-checkpoints
     # - "128"

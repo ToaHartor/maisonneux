@@ -52,7 +52,7 @@ spec:
     auth.jwt:
       enabled: "true"
       header_name: Authorization
-      expect_claims: "{\"aud\": [\"operator.grafana.com\"]}" # Optional security: Rejects default ServiceAccount tokens
+      expect_claims: '{"aud": ["operator.grafana.com"]}' # Optional security: Rejects default ServiceAccount tokens
       username_claim: sub
       email_claim: sub
       auto_sign_up: "true"
@@ -130,7 +130,7 @@ spec:
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
-                capabilities: { drop: [ "ALL" ] }
+                capabilities: { drop: ["ALL"] }
                 seccompProfile:
                   type: RuntimeDefault
               resources:
@@ -155,6 +155,7 @@ spec:
                 # This container watches the namespace for configmaps with the `dashboards` label
                 # and creates files for all their keys under `FOLDER`
             - name: dashboard-sidecar
+              # renovate container:
               image: "ghcr.io/kiwigrid/k8s-sidecar:1.24.5"
               env:
                 - name: LABEL
@@ -170,7 +171,7 @@ spec:
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
-                capabilities: { drop: [ "ALL" ] }
+                capabilities: { drop: ["ALL"] }
                 seccompProfile:
                   type: RuntimeDefault
               volumeMounts:
