@@ -142,3 +142,22 @@ resource "kubernetes_secret_v1" "external_hf_config" {
     hf_token = var.huggingface_token
   }
 }
+
+resource "kubernetes_secret_v1" "external_tachi_config" {
+  metadata {
+    name      = "external-tachi-config"
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    captcha_token      = var.tachi_config.captcha_token
+    captcha_secret_key = var.tachi_config.captcha_secret_key
+    cdn_web_location   = var.tachi_config.cdn_web_location
+    cdn_endpoint       = var.tachi_config.cdn_endpoint
+    cdn_bucket         = var.tachi_config.cdn_bucket
+    cdn_region         = var.tachi_config.cdn_region
+    cdn_access_key     = var.tachi_config.cdn_access_key
+    cdn_secret_key     = var.tachi_config.cdn_secret_key
+  }
+}

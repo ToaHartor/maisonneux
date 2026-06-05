@@ -44,15 +44,32 @@ variable "use_nvidia_gpu" {
 # Gluetun
 variable "gluetun_wireguard_privatekey" {
   description = "Wireguard private key for gluetun"
+  sensitive   = true
   type        = string
 }
 
 # HuggingFace (AI models)
 variable "huggingface_token" {
   description = "HuggingFace token (read only)"
+  sensitive   = true
   type        = string
 }
 
+# Tachi config
+
+variable "tachi_config" {
+  type = object({
+    captcha_token      = string
+    captcha_secret_key = string
+    cdn_web_location   = string
+    cdn_endpoint       = string
+    cdn_bucket         = string
+    cdn_region         = string
+    cdn_access_key     = string
+    cdn_secret_key     = string
+  })
+  sensitive = true
+}
 
 # SMTP settings
 
