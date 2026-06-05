@@ -102,7 +102,8 @@ spec:
   # image: ghcr.io/ikawrakow/ik-llama-cpp:cu13-server-4535
   # BeeLlama image https://github.com/Anbeeld/beellama.cpp
   # https://hub.docker.com/r/aamsellem/beellama-cpp/tags
-  image: aamsellem/beellama-cpp:0.2.0
+  # renovate: datasource=docker depName=ghcr.io/anbeeld/beellama-cpp
+  image: ghcr.io/anbeeld/beellama-cpp:server-cuda13-v0.3.0
   replicas: 1
   endpoint:
     port: 8080
