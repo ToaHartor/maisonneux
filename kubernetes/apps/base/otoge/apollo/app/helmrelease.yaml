@@ -19,6 +19,7 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+  timeout: 15m # As we should wait until the images are built and pushed to the registry by the CI
 
   values:
     gateway:
