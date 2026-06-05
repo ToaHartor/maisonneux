@@ -29,10 +29,8 @@ spec:
   values:
     # https://github.com/onyx-dot-app/onyx/blob/main/deployment/helm/charts/onyx/values.yaml
     global:
+      # renovate: datasource=docker depName=onyxdotapp/onyx-backend extractVersion=^(?<version>.+)$
       version: "v4.0.1"
-        # "v3.3.7" # "latest"
-        # Looks like there is no fixed version => https://hub.docker.com/u/onyxdotapp
-        # onyx-backend is synced with the repository
 
     postgresql:
       enabled: false # We already use our own database provisioning
@@ -406,7 +404,8 @@ spec:
       # INDEXING_MODEL_SERVER_HOST:
       DISABLE_TELEMETRY: "true"
       CORS_ALLOWED_ORIGIN: ""
-
+      MAX_ALLOWED_UPLOAD_SIZE_MB: "1000" # 1GB
+      DEFAULT_USER_FILE_MAX_UPLOAD_SIZE_MB: "500" # 500MB
       # Auth
       AUTH_TYPE: "oidc"
       OPENID_CONFIG_URL: https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/.well-known/openid-configuration
