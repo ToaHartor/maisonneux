@@ -87,6 +87,10 @@
       groupName: "victoria-metrics-operator",
     },
     {
+      matchPackageNames: ["/toolhive-operator/"],
+      groupName: "toolhive-operator",
+    },
+    {
       matchPackageNames: ["/velero/"],
       groupName: "velero",
     },
