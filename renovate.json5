@@ -97,12 +97,6 @@
       sourceUrl: "",
       changelogUrl: "https://trueforge.org/truetech/truecharts/charts/premium/{{replace 'oci.trueforge.org/truecharts/' '' depName}}/changelog/",
     },
-    // Match tachi version as hashes
-    {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["ghcr.io/zkldi/tachi"],
-      "versioning": "regex:^(<hash>[a-f0-9]+)$"
-    }
     // Terraform providers
     {
       matchPackageNames: ["bpg/proxmox"],
