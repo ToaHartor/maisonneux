@@ -3,3 +3,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: _
+  labels:
+    # TODO : use kyverno only for this
+    # Needs NET_ADMIN capability for sandbox
+    pod-security.kubernetes.io/enforce: privileged
