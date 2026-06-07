@@ -12,6 +12,7 @@
     "regex",
     // "mise",
   ], // Only enable comments
+  extends: ["config:recommended", "config:best-practices"],
   // Group major-minor-patch PRs
   separateMajorMinor: false,
   separateMultipleMajor: true,
@@ -52,13 +53,13 @@
       description: "Match annotated container image. Should handle the case when the digest is not specified, therefore on update it is added",
       fileMatch: ["\\.ya?ml$"],
       matchStrings: [
-        "(?<comment># renovate container:?( versioning=(?<versioning>.+?))?( extractVersion=(?<extractVersion>.+?))?\\s)(?<prefix>.+?[:=]\\s*)(?<quote>[\"'])?(?<depName>[^:\\s]+):(?<currentValue>[^@\\s]+)(@(?<currentDigest>sha256:[a-f0-9]+))?[\"']\\s",
+        "(?<comment>#\\s*renovate\\s*container:?( versioning=(?<versioning>\\S+))?( extractVersion=(?<extractVersion>\\S+))?\\s*\\n[ \\t]*)(?<prefix>.+?[:=]\\s*)(?<quote>[\"']?)(?<depName>[^:\"\\n'\\s]+):(?<currentValue>[^@\"\\n']+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\"']?",
       ],
       datasourceTemplate: "docker",
       packageNameTemplate: "{{depName}}",
       versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}docker{{/if}}",
-      extractVersionTemplate: "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}",
-      autoReplaceStringTemplate: "{{{comment}}}{{{prefix}}}{{#if quote}}{{{quote}}}{{/if}}{{{depName}}}:{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{else}}{{#if currentDigest}}@{{{currentDigest}}}{{/if}}{{/if}}{{#if quote}}{{{quote}}}{{/if}}\n",
+      extractVersionTemplate: "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>v?.+)${{/if}}",
+      // autoReplaceStringTemplate: "{{{comment}}}{{{prefix}}}{{#if quote}}{{{quote}}}{{/if}}{{{depName}}}:{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{else}}{{#if currentDigest}}@{{{currentDigest}}}{{/if}}{{/if}}{{#if quote}}{{{quote}}}{{/if}}",
     },
   ],
   packageRules: [
