@@ -1,202 +1,239 @@
-// see https://docs.renovatebot.com/templates/
-// see https://docs.renovatebot.com/modules/manager/
-// see https://docs.renovatebot.com/modules/manager/regex/
-// see https://docs.renovatebot.com/configuration-options/
 {
-  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   enabledManagers: [
-    "terraform",
-    "helm-values",
-    "helmv3",
-    "flux",
-    "regex",
-    // "mise",
-  ], // Only enable comments
-  extends: ["config:recommended", "config:best-practices"],
-  // Group major-minor-patch PRs
+    'terraform',
+    'helm-values',
+    'helmv3',
+    'flux',
+    'custom.regex',
+  ],
+  extends: [
+    'config:recommended',
+    'config:best-practices',
+  ],
   separateMajorMinor: false,
   separateMultipleMajor: true,
   separateMinorPatch: false,
   lockFileMaintenance: {
     enabled: true,
     automerge: true,
-    automergeType: "branch",
+    automergeType: 'branch',
   },
   registryAliases: {
-    "mirror.gcr.io": "docker.io",
+    'mirror.gcr.io': 'docker.io',
   },
   flux: {
-    managerFilePatterns: ["/(^|/)kubernetes/.+\\.ya?ml$/"],
+    managerFilePatterns: [
+      '/(^|/)kubernetes/.+\\.ya?ml$/',
+    ],
   },
   terraform: {
-    managerFilePatterns: ["/(^|/)terraform/.+\\.tf$/"],
+    managerFilePatterns: [
+      '/(^|/)terraform/.+\\.tf$/',
+    ],
   },
   ignorePaths: [
-    "**/docker-compose/**", // Exclude legacy stacks
+    '**/docker-compose/**',
   ],
   customManagers: [
-    // Manually match missed items
-    // For dependencies with OCI registries, use datasource=docker
     {
-      customType: "regex",
-      description: "Match annotated dependencies with distinct version",
-      fileMatch: ["\\.ya?ml$", "\\.tf$", "\\.sh$", "\\.md$", "^mise\\.toml$"],
-      matchStrings: [
-        "# renovate: datasource=(?<datasource>[^:]+?) depName=(?<depName>.+?)( versioning=(?<versioning>.+?))?( extractVersion=(?<extractVersion>.+?))?( registryUrl=(?<ocimatch>oci:\\/\\/)?(?<registryUrl>.+?))?\\s.+?[:=]\\s*[\"']?(?<currentValue>.+?)[\"']?\\s",
+      customType: 'regex',
+      description: 'Match annotated dependencies with distinct version',
+      managerFilePatterns: [
+        '/\\.ya?ml$/',
+        '/\\.tf$/',
+        '/\\.sh$/',
+        '/\\.md$/',
+        '/^mise\\.toml$/',
       ],
-      registryUrlTemplate: "{{#if ocimatch}}https://{{/if}}{{{registryUrl}}}",
-      versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}semver-coerced{{/if}}",
-      extractVersionTemplate: "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}",
+      matchStrings: [
+        '# renovate: datasource=(?<datasource>[^:]+?) depName=(?<depName>.+?)( versioning=(?<versioning>.+?))?( extractVersion=(?<extractVersion>.+?))?( registryUrl=(?<ocimatch>oci:\\/\\/)?(?<registryUrl>.+?))?\\s.+?[:=]\\s*["\']?(?<currentValue>.+?)["\']?\\s',
+      ],
+      registryUrlTemplate: '{{#if ocimatch}}https://{{/if}}{{{registryUrl}}}',
+      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver-coerced{{/if}}',
+      extractVersionTemplate: '{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}',
     },
     {
-      customType: "regex",
-      description: "Match annotated container image. Should handle the case when the digest is not specified, therefore on update it is added",
-      fileMatch: ["\\.ya?ml$"],
-      matchStrings: [
-        "(?<comment>#\\s*renovate\\s*container:?( versioning=(?<versioning>\\S+))?( extractVersion=(?<extractVersion>\\S+))?\\s*\\n[ \\t]*)(?<prefix>.+?[:=]\\s*)(?<quote>[\"']?)(?<depName>[^:\"\\n'\\s]+):(?<currentValue>[^@\"\\n']+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\"']?",
+      customType: 'regex',
+      description: 'Match annotated container image. Should handle the case when the digest is not specified, therefore on update it is added',
+      managerFilePatterns: [
+        '/\\.ya?ml$/',
       ],
-      datasourceTemplate: "docker",
-      packageNameTemplate: "{{depName}}",
-      versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}docker{{/if}}",
-      extractVersionTemplate: "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>v?.+)${{/if}}",
-      // autoReplaceStringTemplate: "{{{comment}}}{{{prefix}}}{{#if quote}}{{{quote}}}{{/if}}{{{depName}}}:{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{else}}{{#if currentDigest}}@{{{currentDigest}}}{{/if}}{{/if}}{{#if quote}}{{{quote}}}{{/if}}",
+      matchStrings: [
+        '(?<comment>#\\s*renovate\\s*container:?( versioning=(?<versioning>\\S+))?( extractVersion=(?<extractVersion>\\S+))?\\s*\\n[ \\t]*)(?<prefix>.+?[:=]\\s*)(?<quote>["\']?)(?<depName>[^:"\\n\'\\s]+):(?<currentValue>[^@"\\n\']+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?["\']?',
+      ],
+      datasourceTemplate: 'docker',
+      packageNameTemplate: '{{depName}}',
+      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}docker{{/if}}',
+      extractVersionTemplate: '{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>v?.+)${{/if}}',
     },
   ],
   packageRules: [
-    // In package rules, we also add non matched packages source url
-    // Use opentofu registry as we use it instead of terraform
     {
-      matchDatasources: ["terraform-provider"],
-      registryUrls: ["https://registry.opentofu.org"],
-    },
-    // Grouping packages for common PRs
-    // * Helm charts and their CRDs
-    {
-      matchPackageNames: ["/external-secrets/"],
-      groupName: "external-secrets",
-    },
-    {
-      matchPackageNames: ["/mariadb-operator/"],
-      groupName: "mariadb-operator",
-      prBodyNotes: [
-        ":warning: Check upgrade notes in https://github.com/mariadb-operator/mariadb-operator/blob/main/docs/releases/UPGRADE_{{newVersion}}.md :warning:",
+      matchDatasources: [
+        'terraform-provider',
+      ],
+      registryUrls: [
+        'https://registry.opentofu.org',
       ],
     },
     {
-      matchPackageNames: ["/traefik/"],
-      groupName: "traefik",
+      matchPackageNames: [
+        '/external-secrets/',
+      ],
+      groupName: 'external-secrets',
     },
     {
-      matchPackageNames: ["/victoria-metrics-operator/"],
-      groupName: "victoria-metrics-operator",
+      matchPackageNames: [
+        '/mariadb-operator/',
+      ],
+      groupName: 'mariadb-operator',
+      prBodyNotes: [
+        ':warning: Check upgrade notes in https://github.com/mariadb-operator/mariadb-operator/blob/main/docs/releases/UPGRADE_{{newVersion}}.md :warning:',
+      ],
     },
     {
-      matchPackageNames: ["/toolhive-operator/"],
-      groupName: "toolhive-operator",
+      matchPackageNames: [
+        '/traefik/',
+      ],
+      groupName: 'traefik',
     },
     {
-      matchPackageNames: ["/velero/"],
-      groupName: "velero",
+      matchPackageNames: [
+        '/victoria-metrics-operator/',
+      ],
+      groupName: 'victoria-metrics-operator',
     },
-    // Source URL manual match
-    // {
-    //   matchDepNames: ["kubernetes-secret-generator"],
-    //   matchDatasources: ["helm"],
-    //   sourceUrl: "https://github.com/mittwald/kubernetes-secret-generator",
-    // },
-    // {
-    //   matchDatasources: ["docker"],
-    //   matchPackageNames: ["ghcr.io/anbeeld/beellama.cpp"],
-    //   versionCompatibility: "^(?<compatibility>server-cuda13)-v?(?<version>\\d+(\\.\\d+)?).*$",
-    //   versioning: "docker",
-    // },
-
-    // TrueCharts packages
-    // All of them can't be matched with packageNames oci.trueforge.org/truecharts/*, so we're matching the registryUrl
     {
-      matchDatasources: ["docker"],
-      // matchPackageNames: ["oci.trueforge.org/truecharts/*"],
-      matchJsonata: ["registryUrl = 'https://oci.trueforge.org'"], // Using Jsonata to match specific deps fields
-      sourceUrl: "",
+      matchPackageNames: [
+        '/toolhive-operator/',
+      ],
+      groupName: 'toolhive-operator',
+    },
+    {
+      matchPackageNames: [
+        '/velero/',
+      ],
+      groupName: 'velero',
+    },
+    {
+      matchDatasources: [
+        'docker',
+      ],
+      matchJsonata: [
+        "registryUrl = 'https://oci.trueforge.org'",
+      ],
+      sourceUrl: '',
       changelogUrl: "https://trueforge.org/truetech/truecharts/charts/stable/{{replace 'oci.trueforge.org/truecharts/' '' depName}}/changelog/",
     },
-    // * Override stable charts with premium
     {
-      matchDatasources: ["docker"],
-      matchPackageNames: ["oci.trueforge.org/truecharts/vaultwarden"],
-      sourceUrl: "",
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'oci.trueforge.org/truecharts/vaultwarden',
+      ],
+      sourceUrl: '',
       changelogUrl: "https://trueforge.org/truetech/truecharts/charts/premium/{{replace 'oci.trueforge.org/truecharts/' '' depName}}/changelog/",
     },
-    // Terraform providers
     {
-      matchPackageNames: ["bpg/proxmox"],
-      matchDatasources: ["terraform-provider"],
-      groupName: "terraform-proxmox",
-      sourceUrl: "https://github.com/bpg/terraform-provider-proxmox",
-    },
-    // Match all terraform hashicorp official modules
-    {
-      matchPackageNames: ["hashicorp/*"],
-      matchDatasources: ["terraform-provider"],
-      groupName: "terraform-{{depName}}",
-      // NOTE : Templating is not yet supported for sourceUrl, waiting for https://github.com/renovatebot/renovate/issues/35974
-      changelogUrl: "https://github.com/hashicorp/terraform-provider-{{depName}}/blob/main/CHANGELOG.md",
+      matchPackageNames: [
+        'bpg/proxmox',
+      ],
+      matchDatasources: [
+        'terraform-provider',
+      ],
+      groupName: 'terraform-proxmox',
+      sourceUrl: 'https://github.com/bpg/terraform-provider-proxmox',
     },
     {
-      matchPackageNames: ["ansible/ansible"],
-      matchDatasources: ["terraform-provider"],
-      groupName: "terraform-ansible",
-      sourceUrl: "https://github.com/ansible/terraform-provider-ansible",
+      matchPackageNames: [
+        'hashicorp/*',
+      ],
+      matchDatasources: [
+        'terraform-provider',
+      ],
+      groupName: 'terraform-{{depName}}',
+      changelogUrl: 'https://github.com/hashicorp/terraform-provider-{{depName}}/blob/main/CHANGELOG.md',
     },
     {
-      matchPackageNames: ["siderolabs/talos"],
-      matchDatasources: ["terraform-provider"],
-      groupName: "terraform-talos",
-      sourceUrl: "https://github.com/siderolabs/terraform-provider-talos",
-    },
-    // Match OS and kubernetes versions
-    {
-      matchPackageNames: ["*/siderolabs/installer"],
-      groupName: "Talos Linux",
-      // Override datasource to take main repository into account to be able to apply minimumReleaseAge
-      overrideDatasource: "github-releases",
-      overridePackageName: "siderolabs/talos",
-      sourceUrl: "https://github.com/siderolabs/talos",
-      minimumReleaseAge: "7 days",
+      matchPackageNames: [
+        'ansible/ansible',
+      ],
+      matchDatasources: [
+        'terraform-provider',
+      ],
+      groupName: 'terraform-ansible',
+      sourceUrl: 'https://github.com/ansible/terraform-provider-ansible',
     },
     {
-      matchPackageNames: ["*/siderolabs/kubelet"],
-      groupName: "Kubernetes",
+      matchPackageNames: [
+        'siderolabs/talos',
+      ],
+      matchDatasources: [
+        'terraform-provider',
+      ],
+      groupName: 'terraform-talos',
+      sourceUrl: 'https://github.com/siderolabs/terraform-provider-talos',
     },
-    // * retrieve changelogs for non-patch versions of kubernetes
     {
-      matchPackageNames: ["*/siderolabs/kubelet"],
-      matchUpdateTypes: ["major", "minor"],
-      sourceUrl: "https://github.com/kubernetes/kubernetes",
-      minimumReleaseAge: "7 days",
-      // changelogUrl: "https://github.com/kubernetes/kubernetes/blob/{{newVersion}}/CHANGELOG/CHANGELOG-{{newMajor}}.{{newMinor}}.md",
+      matchPackageNames: [
+        '*/siderolabs/installer',
+      ],
+      groupName: 'Talos Linux',
+      overrideDatasource: 'github-releases',
+      overridePackageName: 'siderolabs/talos',
+      sourceUrl: 'https://github.com/siderolabs/talos',
+      minimumReleaseAge: '7 days',
     },
-    // Automerge settings
-    // Setting from https://docs.renovatebot.com/key-concepts/automerge/#automerge-non-major-updates
-    // * Non major updates for development tools
     {
-      matchDatasources: ["docker"],
-      matchPackageNames: ["renovate/renovate"],
-      matchUpdateTypes: ["minor", "patch"],
-      matchCurrentVersion: "!/^0/",
+      matchPackageNames: [
+        '*/siderolabs/kubelet',
+      ],
+      groupName: 'Kubernetes',
+    },
+    {
+      matchPackageNames: [
+        '*/siderolabs/kubelet',
+      ],
+      matchUpdateTypes: [
+        'major',
+        'minor',
+      ],
+      sourceUrl: 'https://github.com/kubernetes/kubernetes',
+      minimumReleaseAge: '7 days',
+    },
+    {
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'renovate/renovate',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+      matchCurrentVersion: '!/^0/',
       ignoreTests: true,
       automerge: true,
-      automergeType: "pr",
+      automergeType: 'pr',
     },
-    // * Non major updates for truecharts
     {
-      matchDatasources: ["docker"],
-      matchJsonata: ["registryUrl = 'https://oci.trueforge.org'"],
-      matchUpdateTypes: ["minor", "patch"],
-      matchCurrentVersion: "!/^0/",
+      matchDatasources: [
+        'docker',
+      ],
+      matchJsonata: [
+        "registryUrl = 'https://oci.trueforge.org'",
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+      matchCurrentVersion: '!/^0/',
       ignoreTests: true,
       automerge: true,
-      automergeType: "pr",
+      automergeType: 'pr',
     },
   ],
 }
