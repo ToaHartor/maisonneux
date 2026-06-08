@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 0.4.9
+    digest: sha256:604e66bd73e3401eb06ac82288ac44ca004f72d927358135b9f4ac17d742df40
   url: oci://codeberg.org/wrenix/helm-charts/authentik-application
