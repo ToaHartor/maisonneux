@@ -10,5 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 23.3.6@sha256:fa9db95490a8d1bbca37aeba52c3bd9600021934c88588bc1689d94288aef651
+    tag: 23.3.6
+    digest: sha256:fa9db95490a8d1bbca37aeba52c3bd9600021934c88588bc1689d94288aef651
   url: oci://oci.trueforge.org/truecharts/jellyfin

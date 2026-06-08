@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 40.2.0
+    digest: sha256:582cafe24846a332e7c7fcb9a5f9ba2cb906aa17a7cf431e1cdaa6c0ac986397
   url: oci://ghcr.io/traefik/helm/traefik

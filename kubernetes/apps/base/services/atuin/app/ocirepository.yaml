@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 7.7.1
+    digest: sha256:18df675b1392815c82287450b0e63980d546829b821f89487746d6c991e9f94e
   url: oci://oci.trueforge.org/truecharts/atuin

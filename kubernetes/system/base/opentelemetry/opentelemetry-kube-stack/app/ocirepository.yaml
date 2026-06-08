@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 0.15.2
+    digest: sha256:e0b1fb5ffede9873f688d5a3dd2988d9d57ed1173a46a417b50506967bf8e809
   url: oci://ghcr.io/open-telemetry/opentelemetry-helm-charts/opentelemetry-kube-stack

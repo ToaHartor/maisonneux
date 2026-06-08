@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 10.3.7
+    digest: sha256:5a6bb876259bf51af920dc17b635c7c7f01aebad04a7c0599bd28e9ff88a7918
   url: oci://oci.trueforge.org/truecharts/tachidesk-docker

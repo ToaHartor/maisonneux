@@ -11,4 +11,10 @@ spec:
     operation: copy
   ref:
     tag: 2.2.12
+    digest: sha256:1efe694acf4ada31404232a1889126ddc92789bddca3054f74f3b2e8ded1116a
   url: oci://ghcr.io/stakater/charts/reloader
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github.com/stakater/Reloader.*$"

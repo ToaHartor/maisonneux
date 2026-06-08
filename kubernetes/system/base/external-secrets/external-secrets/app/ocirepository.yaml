@@ -11,4 +11,10 @@ spec:
     operation: copy
   ref:
     tag: 2.5.0
+    digest: sha256:6b8ef5067976d0aa6195f6f173a4841ef66a53b167f3a28b4b3b9593d2063cf1
   url: oci://ghcr.io/external-secrets/charts/external-secrets
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github.com/external-secrets/external-secrets.*$"

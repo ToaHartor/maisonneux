@@ -111,6 +111,15 @@ locals {
         additionalArgs = ["--concurrent=15"]
       }
     }
+    sourceController = {
+      extraEnv = [
+        // Mount sigstore to tmp to verify cosign signatures for OCIRepositories
+        {
+          name  = "TUF_ROOT"
+          value = "/tmp/.sigstore"
+        }
+      ]
+    }
   }
 }
 

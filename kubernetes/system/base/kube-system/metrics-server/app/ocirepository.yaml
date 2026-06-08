@@ -11,4 +11,10 @@ spec:
     operation: copy
   ref:
     tag: 3.13.0
+    digest: sha256:40f86072c24a94faa1ae0035fa4688364f97cd7d9eea0b26858d89c756c2e74f
   url: oci://ghcr.io/home-operations/charts-mirror/metrics-server
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github.com/home-operations/charts-mirror.*$"

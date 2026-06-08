@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 13.3.0
+    digest: sha256:ffcea1b33c0115551d7b922c30c9c9354f541ffea905a480a53171973f65f11d
   url: oci://oci.trueforge.org/truecharts/kavita

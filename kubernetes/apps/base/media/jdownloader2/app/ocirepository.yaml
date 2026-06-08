@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 22.3.0
+    digest: sha256:47723fdfafb741f9c4ca087d2196c6f3491333f1a1e7e4d06e2a601e9d1cabef
   url: oci://oci.trueforge.org/truecharts/jdownloader2

@@ -11,4 +11,10 @@ spec:
     operation: copy
   ref:
     tag: 0.10.1
+    digest: sha256:7b2308ad23e54537b428d8d629ab61c39618bf7c9733f8426562f8a392322e0d
   url: oci://ghcr.io/victoriametrics/helm-charts/victoria-metrics-operator-crds
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github.com/VictoriaMetrics/helm-charts.*$"

@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 13.5.0
+    digest: sha256:c1086211a5c93dc715db51a9ae04a6f527af4209205246e9cc1253c36b922996
   url: oci://oci.trueforge.org/truecharts/cyberchef

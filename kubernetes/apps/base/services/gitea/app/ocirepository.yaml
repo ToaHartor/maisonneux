@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 12.6.0
+    digest: sha256:0c1259446b61564cc73ef0d87edc6d9cc00ccc137b8f76be26d317ea44c0fcc3
   url: oci://docker.gitea.com/charts/gitea

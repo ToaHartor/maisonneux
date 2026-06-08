@@ -11,4 +11,10 @@ spec:
     operation: copy
   ref:
     tag: 0.28.3
+    digest: sha256:5130f521e6f77457266ec38c2cbd22925bd6a96965b76c75769e9d890e1d01b4
   url: oci://ghcr.io/stacklok/toolhive/toolhive-operator
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github.com/stacklok/toolhive.*$"

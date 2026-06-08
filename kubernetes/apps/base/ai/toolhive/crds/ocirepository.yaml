@@ -11,4 +11,10 @@ spec:
     operation: copy
   ref:
     tag: 0.28.3
+    digest: sha256:9935ad52125101b5740ebc9f26d66c372a10dc4d702e72fa3c8a9a4d343630d5
   url: oci://ghcr.io/stacklok/toolhive/toolhive-operator-crds
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github.com/stacklok/toolhive.*$"

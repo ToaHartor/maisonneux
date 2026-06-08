@@ -9,6 +9,7 @@ spec:
   layerSelector:
     mediaType: "application/vnd.cncf.helm.chart.content.v1.tar+gzip"
     operation: copy
-  url: oci://ghcr.io/rajsinghtech/charts/garage-operator
   ref:
     tag: 0.6.9
+    digest: sha256:820c5f25af94157586f74b8e2e744641652e7794899bbd3c4a8401c1f00c0f1b
+  url: oci://ghcr.io/rajsinghtech/charts/garage-operator

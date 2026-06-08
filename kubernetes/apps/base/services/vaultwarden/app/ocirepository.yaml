@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 30.4.0
+    digest: sha256:7450f5625fdd7bdbb03e8e6a88af000a7df9c0d8a41f7affaab311459cc74f20
   url: oci://oci.trueforge.org/truecharts/vaultwarden

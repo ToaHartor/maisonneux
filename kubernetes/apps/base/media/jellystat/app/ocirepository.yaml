@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 7.3.0
+    digest: sha256:629f317596566631b60cfde63b211477257f66472005574ff1993409bebab504
   url: oci://oci.trueforge.org/truecharts/jellystat

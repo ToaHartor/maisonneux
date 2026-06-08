@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: v1.20.2
+    digest: sha256:294a761ca972ea11ae79b9219960ca13a5337a1cbb550604c151586d266159eb
   url: oci://quay.io/jetstack/charts/cert-manager

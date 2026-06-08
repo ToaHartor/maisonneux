@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 17.4.0
+    digest: sha256:b2ede2e5c0bd5bdb004c314961475bc3ce66bf8e134a3dc254757f2e5e9ff33e
   url: oci://oci.trueforge.org/truecharts/flaresolverr

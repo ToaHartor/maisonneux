@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 0.1.40
+    digest: sha256:0e9c038daf89132fd99536e71c4c591c930705b7ec9c0c2274069efd7d28cc4a
   url: oci://ghcr.io/home-operations/charts/tuppr
