@@ -5,7 +5,6 @@
     "helm-values",
     "helmv3",
     "flux",
-    "regex",
     "custom.regex",
     // "mise",
   ], // Only enable comments
@@ -66,7 +65,7 @@
   packageRules: [
     // Pin digests
     {
-      matchDatasources: ["docker", "flux", "helmv3"],
+      matchDatasources: ["docker"],
       pinDigests: true,
     },
     // In package rules, we also add non matched packages source url
