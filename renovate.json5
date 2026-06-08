@@ -10,7 +10,7 @@
     // "mise",
   ], // Only enable comments
   // Group major-minor-patch PRs
-  extends: ["config:recommended", "docker:pinDigests"],
+  extends: ["config:recommended"],
   separateMajorMinor: false,
   separateMultipleMajor: true,
   separateMinorPatch: false,
@@ -64,6 +64,11 @@
     },
   ],
   packageRules: [
+    // Pin digests
+    {
+      matchDatasources: ["docker", "flux", "helmv3"],
+      pinDigests: true,
+    },
     // In package rules, we also add non matched packages source url
     // Use opentofu registry as we use it instead of terraform
     {
