@@ -10,5 +10,5 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 25.4.0
+    tag: 25.4.1@sha256:36385e4e6c9d93ba97159086b1ac9a2f3d5fa975728a6a24541258f182440f8f
   url: oci://oci.trueforge.org/truecharts/qbittorrent
