@@ -11,4 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 1.18.0
+    digest: sha256:efb6414499f6b94645da850bd3f55c8ee0ab780ca439d225279d7e026f4675fb
   url: oci://ghcr.io/traefik/helm/traefik-crds
