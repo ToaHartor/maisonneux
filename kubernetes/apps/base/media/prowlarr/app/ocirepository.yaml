@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 22.3.0
-    digest: sha256:cd9ed36ce0dc7e5e7fe2376a76b39d56d6107a2987ab952beab6428ded40a116
+    tag: 22.4.0
+    digest: sha256:9535901f6e007dd1442001177dfc65ad9f1017712cfd866db22a89202023e622
   url: oci://oci.trueforge.org/truecharts/prowlarr
