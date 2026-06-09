@@ -103,6 +103,11 @@
       matchPackageNames: ["/velero/"],
       groupName: "velero",
     },
+    // Map sources
+    {
+      matchPackageNames: ["/papra-hq\/papra/"],
+      sourceUrl: "https://github.com/papra-hq/papra",
+    },
     // TrueCharts packages
     // All of them can't be matched with packageNames oci.trueforge.org/truecharts/*, so we're matching the registryUrl
     {
