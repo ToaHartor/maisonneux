@@ -28,12 +28,12 @@ seerr:
   # see https://github.com/truecharts/public/blob/master/charts/stable/seerr/values.yaml
   # see documentation https://truecharts.org/charts/stable/seerr/
   waitPsqlImage:
-    repository: docker.io/library/busybox
-    tag: latest
+    repository: ghcr.io/home-operations/busybox
+    tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
     pullPolicy: IfNotPresent
   jqImage:
     repository: docker.io/badouralix/curl-jq
-    tag: latest
+    tag: latest@sha256:3670578737d1d2019b10a4f9e607284101feb9fdd6b0478e78ea87bf61d96145
     pullPolicy: IfNotPresent
 
   resources:
@@ -54,12 +54,7 @@ seerr:
             enabled: true
             type: init
             imageSelector: waitPsqlImage
-            command:
-              [
-                "sh",
-                "-c",
-                'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;',
-              ]
+            command: ["sh", "-c", 'until nc -vz ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
             env:
               POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: *psqlNs
