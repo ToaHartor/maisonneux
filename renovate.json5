@@ -113,6 +113,11 @@
       matchPackageNames: ["/grafana-operator/"],
       sourceUrl: "https://github.com/grafana/grafana-operator",
     },
+    {
+      matchPackageNames: ["/charts\/cloudnative-pg/"],
+      extractVersion: "^cloudnative-pg-v(?<version>.*)$",
+      sourceDirectory: "{{depName}}",
+    },
     // TrueCharts packages
     // All of them can't be matched with packageNames oci.trueforge.org/truecharts/*, so we're matching the registryUrl
     {
