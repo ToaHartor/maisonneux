@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 13.5.0
-    digest: sha256:c1086211a5c93dc715db51a9ae04a6f527af4209205246e9cc1253c36b922996
+    tag: 13.6.0
+    digest: sha256:1a2a5410258bb6bdf3c426fe77ddfc5e30a5e44181b81be0b08fe5923564ab61
   url: oci://oci.trueforge.org/truecharts/cyberchef
