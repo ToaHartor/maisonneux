@@ -225,6 +225,43 @@ data "talos_machine_configuration" "controller" {
             ]
           }
           inlineManifests = [
+            {
+              name     = "priorityClasses"
+              contents = <<-EOF
+                ---
+                apiVersion: scheduling.k8s.io/v1
+                kind: PriorityClass
+                metadata:
+                  name: operators
+                description: Used for operators managing system components
+                preemptionPolicy: PreemptLowerPriority
+                value: 100005000
+                ---
+                apiVersion: scheduling.k8s.io/v1
+                kind: PriorityClass
+                metadata:
+                  name: services-critical
+                description: Used for pods that are critical to other services
+                preemptionPolicy: PreemptLowerPriority
+                value: 100004000
+                ---
+                apiVersion: scheduling.k8s.io/v1
+                kind: PriorityClass
+                metadata:
+                  name: monitoring
+                description: Used for pods that are critical to other services
+                preemptionPolicy: PreemptLowerPriority
+                value: 100003000
+                ---
+                apiVersion: scheduling.k8s.io/v1
+                kind: PriorityClass
+                metadata:
+                  name: services-important
+                description: Used for pods that are critical to other services
+                preemptionPolicy: PreemptLowerPriority
+                value: 100002000
+                EOF
+            }
             # {
             #   name = "democratic-csi-truenas-iscsi"
             #   contents = join("---\n", [

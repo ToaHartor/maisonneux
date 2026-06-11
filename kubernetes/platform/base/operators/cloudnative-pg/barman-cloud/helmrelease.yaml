@@ -19,6 +19,8 @@ spec:
     # https://github.com/cloudnative-pg/charts/blob/main/charts/plugin-barman-cloud/values.yaml
     replicaCount: 1
 
+    priorityClassName: operators
+
     crds:
       create: true
 

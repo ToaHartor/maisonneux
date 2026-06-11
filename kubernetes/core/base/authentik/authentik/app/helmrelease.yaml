@@ -39,6 +39,7 @@ spec:
       targetPath: authentik.email.port
 
   values:
+    # https://github.com/goauthentik/helm/blob/main/charts/authentik/values.yaml
     authentik:
       log_level: debug
       secret_key: # Replaced by fluxcd on installed with the content of authentik-secret-key
@@ -62,7 +63,7 @@ spec:
 
     global:
       addPrometheusAnnotations: true
-
+      priorityClassName: services-important
       deploymentAnnotations:
         secret.reloader.stakater.com/reload: "${S3_USER}-garage,${APP}-db-creds,smtp-config"
         configmap.reloader.stakater.com/reload: "authentik-base-blueprints"

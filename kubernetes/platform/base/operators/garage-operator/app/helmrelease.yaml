@@ -22,6 +22,8 @@ spec:
     # see https://github.com/rajsinghtech/garage-operator/blob/main/charts/garage-operator/values.yaml
     replicaCount: 1
 
+    priorityClassName: operators
+
     resources:
       limits:
         memory: 256Mi

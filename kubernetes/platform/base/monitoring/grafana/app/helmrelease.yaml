@@ -28,6 +28,8 @@ spec:
     serviceMonitor:
       enabled: true
 
+    priorityClassName: monitoring
+
     resources:
       requests:
         cpu: 10m

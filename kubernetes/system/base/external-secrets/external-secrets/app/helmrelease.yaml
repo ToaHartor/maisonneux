@@ -15,10 +15,13 @@ spec:
       retries: 3
 
   values:
+    # https://github.com/external-secrets/external-secrets/blob/main/deploy/charts/external-secrets/values.yaml
     installCRDs: true
     leaderElect: true
 
     replicaCount: &replicas 1
+
+    priorityClassName: &priority operators
 
     resources:
       requests:
@@ -48,6 +51,8 @@ spec:
 
     webhook:
       replicaCount: *replicas
+
+      priorityClassName: *priority
 
       # Use cert-manager instead of the included cert-controller
       certManager:

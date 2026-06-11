@@ -102,16 +102,28 @@ locals {
   fluxcd_helm_values = {
     // Increase concurrent reconciliations for fluxcd controllers
     kustomizeController = {
+      priorityClassName = "system-cluster-critical"
       container = {
         additionalArgs = ["--concurrent=15", "--concurrent-ssa=15"]
       }
     }
     helmController = {
+      priorityClassName = "system-cluster-critical"
       container = {
         additionalArgs = ["--concurrent=15"]
       }
     }
+    imageAutomationController = {
+      priorityClassName = "system-cluster-critical"
+    }
+    imageReflectionController = {
+      priorityClassName = "system-cluster-critical"
+    }
+    notificationController = {
+      priorityClassName = "system-cluster-critical"
+    }
     sourceController = {
+      priorityClassName = "system-cluster-critical"
       extraEnv = [
         // Mount sigstore to tmp to verify cosign signatures for OCIRepositories
         {

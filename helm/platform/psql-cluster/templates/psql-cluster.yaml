@@ -1,5 +1,6 @@
 # See https://cloudnative-pg.io/documentation/1.19/samples/cluster-example-full.yaml
 # See https://cloudnative-pg.io/documentation/1.19/samples/
+---
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -10,6 +11,7 @@ metadata:
 spec:
   instances: 3
   primaryUpdateStrategy: unsupervised
+  priorityClassName: services-critical
 
   # renovate container:
   imageName: ghcr.io/cloudnative-pg/postgresql:18.3-system-trixie@sha256:0f29b435fb501ee534cd0c555d122a6b8e90de477de8e8381c82c5e10d9a9de4

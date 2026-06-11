@@ -99,6 +99,7 @@ spec:
           maxSurge: 1
       template:
         spec:
+          priorityClassName: monitoring
           containers:
             - name: grafana
               env:

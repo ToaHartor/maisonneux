@@ -41,11 +41,11 @@ spec:
       valuesKey: smtp_port
       targetPath: vaultwarden.smtp.port
 
-  # see https://github.com/truecharts/public/blob/master/charts/premium/vaultwarden/values.yaml
+  # see https://github.com/truecharts/public/blob/master/charts/stable/vaultwarden/values.yaml
   values:
     waitPsqlImage:
-      repository: docker.io/library/busybox
-      tag: latest
+      repository: ghcr.io/home-operations/busybox
+      tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
       pullPolicy: IfNotPresent
 
     resources:
@@ -65,17 +65,13 @@ spec:
         podSpec:
           # As UserNamespaces are not enabled on Talos
           hostUsers: true
+          priorityClassName: services-important
           initContainers:
             waitpsql:
               enabled: true
               type: init
               imageSelector: waitPsqlImage
-              command:
-                [
-                  "sh",
-                  "-c",
-                  'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;',
-                ]
+              command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
               env:
                 POD_NAME: postgres-db-rw # service name for psql rw operations
                 POD_NAMESPACE: ${psql_database_namespace}

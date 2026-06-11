@@ -26,6 +26,8 @@ spec:
     # https://artifacthub.io/packages/helm/cloudnative-pg/cloudnative-pg
     replicaCount: 2 # One on each hypervisor is better
 
+    priorityClassName: operators
+
     resources:
       limits:
         cpu: 100m

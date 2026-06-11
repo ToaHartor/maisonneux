@@ -23,6 +23,7 @@ spec:
     deploymentAnnotations:
       # Reload pod on secret/cm change
       reloader.stakater.com/auto: "true"
+    priorityClassName: services-critical
     env:
       - name: "AWS_ACCESS_KEY_ID"
         valueFrom:

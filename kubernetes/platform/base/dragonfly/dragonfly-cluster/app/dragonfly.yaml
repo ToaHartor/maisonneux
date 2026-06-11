@@ -5,6 +5,7 @@ metadata:
 spec:
   args:
     - "--default_lua_flags=allow-undeclared-keys"
+  priorityClassName: services-critical
   replicas: 3
   resources:
     requests:

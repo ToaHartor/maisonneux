@@ -34,6 +34,8 @@ spec:
         cpu: 100m
         memory: 128Mi
 
+    priorityClassName: services-important
+
     # podDisruptionBudget:
     #   enabled: true
     #   maxUnavailable: 1

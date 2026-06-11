@@ -32,18 +32,19 @@ spec:
       configmap.reloader.stakater.com/auto: "true"
 
     agent:
+      priorityClassName: services-important
       # we are not setting up traefik but the acquisition section is required.
       acquisition:
         - namespace: ingress
           podName: traefik-*
           program: traefik
       env:
-      - name: DISABLE_ONLINE_API
-        value: "true"
-      - name: PARSERS
-        value: "crowdsecurity/cri-logs"
-      - name: COLLECTIONS
-        value: "crowdsecurity/traefik"
+        - name: DISABLE_ONLINE_API
+          value: "true"
+        - name: PARSERS
+          value: "crowdsecurity/cri-logs"
+        - name: COLLECTIONS
+          value: "crowdsecurity/traefik"
       # When testing, allow bans on private networks
       # - name: DISABLE_PARSERS
       #   value: "crowdsecurity/whitelists"
@@ -53,6 +54,7 @@ spec:
 
     lapi:
       replicas: 2
+      priorityClassName: services-important
       # extraSecrets:
       #   dbPassword: "secretpassword"
       storeCAPICredentialsInSecret: false

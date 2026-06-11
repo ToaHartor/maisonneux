@@ -28,6 +28,7 @@ spec:
     opentelemetry-operator:
       # Subchart values https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-operator/values.yaml
       enabled: true
+      priorityClassName: monitoring
       manager:
         collectorImage:
           repository: otel/opentelemetry-collector-contrib
@@ -70,6 +71,7 @@ spec:
               app.kubernetes.io/component: controller-manager
 
     defaultCRConfig:
+      priorityClassName: monitoring
       observability:
         metrics:
           enableMetrics: true

@@ -10,6 +10,7 @@ spec:
 
   gateway:
     replicas: 1
+    priorityClassName: services-critical
     rpcPublicAddr: ${opnsense_exposed_ip}:39001
     resources:
       requests:

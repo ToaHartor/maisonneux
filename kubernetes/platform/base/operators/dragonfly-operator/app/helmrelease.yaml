@@ -24,6 +24,8 @@ spec:
       keep: true
 
     manager:
+      priorityClassName: operators
+
       resources:
         limits:
           cpu: 500m
