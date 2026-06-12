@@ -23,6 +23,7 @@ spec:
       main_domain_websecure: ${main_domain_websecure}
       second_domain: ${second_domain}
       legacy_vm_ip: ${legacy_vm_ip}
+      nfs_server: ${nfs_server}
 
   prune: true
   sourceRef:

@@ -15,8 +15,8 @@ ingress:
     #   web: example.com:80
     #   websecure: example.com:443
 
-
 legacyVmIp: 192.168.0.1
+nasVmIp: 192.168.0.1
 
 asphyxia:
   - subdomain: sdvx

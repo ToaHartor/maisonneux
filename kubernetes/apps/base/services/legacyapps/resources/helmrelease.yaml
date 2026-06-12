@@ -33,4 +33,4 @@ spec:
       bucket:
         domain: ${main_domain}
     legacyVmIp: ${legacy_vm_ip}
-
+    nasVmIp: ${nfs_server}

@@ -8,7 +8,7 @@ spec:
   ports:
     - name: server
       port: 9000
-      targetPort: 19000
+      targetPort: 9000
       protocol: TCP
 ---
 apiVersion: discovery.k8s.io/v1
@@ -22,12 +22,12 @@ metadata:
 addressType: IPv4
 endpoints:
   - addresses:
-      - {{ .Values.legacyVmIp }}
+      - {{ .Values.nasVmIp }}
     conditions:
       ready: true
 ports:
   - name: server
-    port: 19000
+    port: 9000
     protocol: TCP
 ---
 apiVersion: gateway.networking.k8s.io/v1
