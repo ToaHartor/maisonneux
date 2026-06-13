@@ -308,11 +308,10 @@ spec:
           # cpu: 1000m
           memory: 1500Mi
 
-    celery_shared:
-      securityContext:
-        privileged: false
-        runAsNonRoot: true
-        runAsUser: 1001
+    # celery_shared:
+    #   securityContext:
+    #     runAsNonRoot: true
+    #     runAsUser: 1001
 
     discordbot:
       enabled: false
@@ -387,6 +386,13 @@ spec:
         secretKeys:
           OPENSEARCH_ADMIN_USERNAME: username
           OPENSEARCH_ADMIN_PASSWORD: password
+      userauth:
+        enabled: true
+        existingSecret: "onyx-userauth"
+        secretKeys:
+          USER_AUTH_SECRET: secretKey
+      metricsAuth:
+        enabled: false
 
     configMap:
       # https://github.com/onyx-dot-app/onyx/blob/main/backend/shared_configs/configs.py
@@ -403,6 +409,7 @@ spec:
       # MODEL_SERVER_HOST:
       # INDEXING_MODEL_SERVER_HOST:
       DISABLE_TELEMETRY: "true"
+      DISABLE_METRICS_AUTH: "true"
       CORS_ALLOWED_ORIGIN: ""
       MAX_ALLOWED_UPLOAD_SIZE_MB: "1000" # 1GB
       DEFAULT_USER_FILE_MAX_UPLOAD_SIZE_MB: "500" # 500MB
@@ -427,4 +434,5 @@ spec:
       # Undocumented env variables in values
       # ENABLE_OPENSEARCH_INDEXING_FOR_ONYX: "true" # Added automatically
       # DISABLE_MODEL_SERVER: "true"
-      # ENABLE_PAID_ENTERPRISE_EDITION_FEATURES
+      ENABLE_PAID_ENTERPRISE_EDITION_FEATURES: "true"
+      LICENSE_ENFORCEMENT_ENABLED: "false"
