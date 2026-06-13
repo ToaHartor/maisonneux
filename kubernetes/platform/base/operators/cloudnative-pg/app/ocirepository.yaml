@@ -11,7 +11,7 @@ spec:
     operation: copy
   ref:
     tag: 0.28.2
-    digest: sha256:fb74f401206b350d690edd4f5b738346cca1ff5fa026c495c6ad70d10b192a81
+    digest: sha256:395480811b5472e8e3c3f1d98d838596019d50b109e26bb0eb537c227fba679a
   url: oci://ghcr.io/cloudnative-pg/charts/cloudnative-pg
   verify:
     provider: cosign
