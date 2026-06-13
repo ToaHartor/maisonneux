@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 27.4.2
-    digest: sha256:d864e42c2a2e3254f8740f9faaaee21068ff46e87f719cf0b9ad88b66b78ca34
+    tag: 27.5.0
+    digest: sha256:1a6f75d275b830c6b19bf0a1337bab49e7be6bd6350c987abec94b3149bb2aa7
   url: oci://oci.trueforge.org/truecharts/radarr
