@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 26.3.2
-    digest: sha256:fd07d860ee05ac29e6a4df48a4d5f30841859146e140cfc1c61d72db91df4751
+    tag: 26.4.0
+    digest: sha256:13814309307a71b0502e8f6a2ee64b4c916801bf873b19b5c933ca0c31d587be
   url: oci://oci.trueforge.org/truecharts/sonarr
