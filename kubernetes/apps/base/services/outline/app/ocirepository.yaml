@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 21.8.3
-    digest: sha256:e7508b0104f6f2476bdd4bfd44a656831c089733a186562bd67f1864429dfe45
+    tag: 21.10.0
+    digest: sha256:73facfa62f40c4d71fde7b3c664909eb147e12b346497d071f1d11185045884d
   url: oci://oci.trueforge.org/truecharts/outline
