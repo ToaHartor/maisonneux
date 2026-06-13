@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 25.4.3
-    digest: sha256:28655f8dfdab48c608c7e472d7429db72a48cea6866fe386c5c5a101f80d08b7
+    tag: 25.5.0
+    digest: sha256:dbcf0d3e96f31f31b9a8406628f24800fcfbde542bfa18625f48d4f65f35aece
   url: oci://oci.trueforge.org/truecharts/qbittorrent
