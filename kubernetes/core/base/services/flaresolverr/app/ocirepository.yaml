@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 17.4.0
-    digest: sha256:b2ede2e5c0bd5bdb004c314961475bc3ce66bf8e134a3dc254757f2e5e9ff33e
+    tag: 17.5.0
+    digest: sha256:06f0a8fc564bc30fead390600b5066087ddcd85bb3ebcf99e14e6c8a9767d2a6
   url: oci://oci.trueforge.org/truecharts/flaresolverr
