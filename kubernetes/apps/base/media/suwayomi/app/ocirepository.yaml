@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 10.3.8
-    digest: sha256:56ea17e26d049bb30fe3ab423c11414645117a019ba71223630891ad46c72beb
+    tag: 10.4.0
+    digest: sha256:8a550bbc96a7b48928e902b8da8fd5b1dbb95b8599321c1d116698df46cb6f3d
   url: oci://oci.trueforge.org/truecharts/tachidesk-docker
