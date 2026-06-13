@@ -30,7 +30,7 @@ spec:
     # https://github.com/onyx-dot-app/onyx/blob/main/deployment/helm/charts/onyx/values.yaml
     global:
       # renovate: datasource=docker depName=onyxdotapp/onyx-backend extractVersion=^(?<version>.+)$
-      version: "v4.0.7"
+      version: "v4.1.1"
 
     postgresql:
       enabled: false # We already use our own database provisioning
