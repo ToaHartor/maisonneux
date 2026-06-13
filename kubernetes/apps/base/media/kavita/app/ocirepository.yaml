@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 13.3.0
-    digest: sha256:ffcea1b33c0115551d7b922c30c9c9354f541ffea905a480a53171973f65f11d
+    tag: 13.4.0
+    digest: sha256:559568995609a836357b2e29a2b6b7aed848eb7e64040d0fdc920e887b42ec6f
   url: oci://oci.trueforge.org/truecharts/kavita
