@@ -13,14 +13,14 @@ if [ $# -eq 1 ]; then
     fi
 fi
 
-export GITEA_USERNAME="localdev"
-export RENOVATE_USERNAME="renovate"
-export RENOVATE_PASSWORD="password"
-export GITEA_INSTANCE_NAME="dev_gitea"
+export REPO_PATH=$(dirname $(dirname $(realpath "$0")))
 
-gitea_local_repo_name="maisonneux-local"
-gitea_addr="$(podman port "$GITEA_INSTANCE_NAME" 3000 | head -1)"
-gitea_url="http://$gitea_addr"
+# shellcheck disable=SC2046
+export $(grep -v '^#' "$REPO_PATH/dev/docker.env" | xargs)
+
+forgejo_local_repo_name="maisonneux-local"
+forgejo_addr="$(docker port "$FORGEJO_INSTANCE_NAME" 3000 | head -1)"
+forgejo_url="http://$forgejo_addr"
 
 # see https://docs.github.com/en/rest/rate-limit#get-rate-limit-status-for-the-authenticated-user
 # see https://github.com/settings/tokens
@@ -33,7 +33,7 @@ fi
 
 rm -f tmp/renovate/*.json
 
-# see https://docs.renovatebot.com/modules/platform/gitea/
+# see https://docs.renovatebot.com/modules/platform/forgejo/
 # see https://docs.renovatebot.com/self-hosted-configuration/#dryrun
 # see https://github.com/renovatebot/renovate/blob/main/docs/usage/examples/self-hosting.md
 # see https://github.com/renovatebot/renovate/tree/main/lib/modules/datasource
@@ -42,16 +42,16 @@ echo 'Running renovate...'
 # NB use --dry-run=lookup for not modifying the repository (e.g. for not
 #    creating pull requests).
 # Configuration will be retrieved from the repository, so no need to pass the configuration to the container
-podman run \
+docker run \
   --rm \
   --tty \
   --interactive \
   --net host \
   --env GITHUB_COM_TOKEN \
   --env NODE_OPTIONS=--no-deprecation \
-  --env RENOVATE_ENDPOINT=$gitea_url \
-  --env RENOVATE_TOKEN=$(cat tmp/renovate/renovate-gitea-token.txt) \
-  --env RENOVATE_REPOSITORIES=$GITEA_USERNAME/$gitea_local_repo_name \
+  --env RENOVATE_ENDPOINT=$forgejo_url \
+  --env RENOVATE_TOKEN=$(cat tmp/renovate/renovate-forgejo-token.txt) \
+  --env RENOVATE_REPOSITORIES=$FORGEJO_USERNAME/$forgejo_local_repo_name \
   --env RENOVATE_RECREATE_WHEN=always \
   --env RENOVATE_PR_HOURLY_LIMIT=0 \
   --env RENOVATE_PR_CONCURRENT_LIMIT=0 \
@@ -59,7 +59,7 @@ podman run \
   --env LOG_LEVEL=debug \
   --env LOG_FORMAT=json \
   "ghcr.io/renovatebot/renovate:$renovate_version" \
-  --platform=gitea \
+  --platform=forgejo \
   --git-url=endpoint \
   $DRY_RUN_ARG \
   >tmp/renovate/renovate-log.json
@@ -113,8 +113,8 @@ show_dependencies 'Dependencies' tmp/renovate/renovate-dependencies.json
 show_dependencies 'Dependencies Updates' tmp/renovate/renovate-dependencies-updates.json
 
 if [[ $DRY_RUN_ARG = "" ]]; then
-    # show the gitea project.
-    show_title "See PRs at $gitea_url/$RENOVATE_USERNAME/$gitea_local_repo_name/pulls (you can login as $RENOVATE_USERNAME:$RENOVATE_PASSWORD) and use 'Rebase then fast-forward' merge style. Some changes will be automerged (currently two by two as limited by Renovate), but several runs of this script will be needed to automerge everything."
+    # show the forgejo project.
+    show_title "See PRs at $forgejo_url/$RENOVATE_USERNAME/$forgejo_local_repo_name/pulls (you can login as $RENOVATE_USERNAME:$RENOVATE_PASSWORD) and use 'Rebase then fast-forward' merge style. Some changes will be automerged (currently two by two as limited by Renovate), but several runs of this script will be needed to automerge everything."
 else
-    echo "Run 'mise run renovate' to generate PRs for dependencies" 
+    echo "Run 'mise run renovate' to generate PRs for dependencies"
 fi

@@ -4,9 +4,7 @@ set -euo pipefail
 
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-export GITEA_INSTANCE_NAME="dev_gitea"
 export REPO_PATH=$(dirname $(dirname $(realpath "$0")))
-
 
 source "./scripts/utils/tf-utils.sh"
 
@@ -24,4 +22,4 @@ MINIO_ADDRESS=$(tfutils::get_tfvars_quoted_key "minio_access_url" "${TARGET_TFVA
 jq ".storage.storageDriver.regionendpoint |= \"http://${MINIO_ADDRESS}\"" "${REPO_PATH}/dev/zot-config.json" > "${REPO_PATH}/tmp/zot-config.json"
 mkdir -p "${REPO_PATH}/tmp/zot"
 
-podman compose -f "$SCRIPTPATH/../dev/docker-compose.yaml" up -d
+docker compose -f "$SCRIPTPATH/../dev/docker-compose.yaml" --env-file "$SCRIPTPATH/../dev/docker.env" up -d

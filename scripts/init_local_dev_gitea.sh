@@ -16,6 +16,7 @@ sudo rm -rf tmp/gitea
 mkdir -p tmp/gitea/data
 mkdir -p tmp/gitea/git
 sudo chown -R 525287:525287 tmp/gitea
+mkdir -p tmp/gitea-runner
 
 # export reused variables, use GitHub info for Gitea
 # export GITEA_USER_EMAIL=$(git config --list | grep "user.email" | cut -d"=" -f2)
@@ -32,7 +33,7 @@ mise run devenv start
 # ensure everything has the right permissions again
 sudo chown -R 525287:525287 tmp/gitea
 
-gitea_addr="$(podman port "$GITEA_INSTANCE_NAME" 3000 | head -1)"
+gitea_addr="$(docker port "$GITEA_INSTANCE_NAME" 3000 | head -1)"
 gitea_url="http://$gitea_addr"
 gitea_local_repo_name="maisonneux-local"
 
@@ -43,7 +44,7 @@ GITEA_URL="$gitea_url" bash -euc 'while [ -z "$(wget -qO- "$GITEA_URL/api/v1/ver
 export GIT_PUSH_REPOSITORY="http://$GITEA_USERNAME:$GITEA_PASSWORD@$gitea_addr/$GITEA_USERNAME/${gitea_local_repo_name}.git"
 
 # Create admin user used for pushes
-podman exec --user git "$GITEA_INSTANCE_NAME" gitea admin user create \
+docker exec --user git "$GITEA_INSTANCE_NAME" gitea admin user create \
     --admin \
     --email "$GITEA_USER_EMAIL" \
     --username "$GITEA_USERNAME" \
@@ -84,7 +85,7 @@ export RENOVATE_USERNAME="renovate"
 export RENOVATE_NAME='Renovate Bot'
 export RENOVATE_PASSWORD="password"
 
-podman exec --user git "$GITEA_INSTANCE_NAME" gitea admin user create \
+docker exec --user git "$GITEA_INSTANCE_NAME" gitea admin user create \
     --admin \
     --email "$RENOVATE_USERNAME@example.com" \
     --username "$RENOVATE_USERNAME" \
