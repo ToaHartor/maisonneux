@@ -138,7 +138,7 @@ services:
 
   runner-register:
     # renovate container:
-    image: data.forgejo.org/forgejo/runner:12.10.2
+    image: data.forgejo.org/forgejo/runner:12.11.1
     networks:
       - dev
     links:
@@ -168,7 +168,7 @@ services:
 
   runner-daemon:
     # renovate container:
-    image: data.forgejo.org/forgejo/runner:12.10.2
+    image: data.forgejo.org/forgejo/runner:12.11.1
     networks:
       - dev
     links:
