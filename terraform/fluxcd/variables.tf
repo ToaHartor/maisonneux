@@ -71,6 +71,15 @@ variable "tachi_config" {
   sensitive = true
 }
 
+# Forgejo runner config
+variable "forgejo_runner" {
+  type = object({
+    uuid  = string
+    token = string
+  })
+  sensitive = true
+}
+
 # SMTP settings
 
 variable "smtp_username" {

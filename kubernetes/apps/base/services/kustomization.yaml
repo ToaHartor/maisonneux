@@ -7,7 +7,8 @@ resources:
   - ./namespace.yaml
   - ./atuin/ks.yaml
   - ./cyberchef/ks.yaml
-  - ./gitea/ks.yaml
+  # - ./gitea/ks.yaml
+  - ./forgejo/ks.yaml
   - ./immich/ks.yaml
   - ./karakeep/ks.yaml
   - ./legacyapps/ks.yaml

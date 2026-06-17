@@ -1,0 +1,265 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: forgejo
+spec:
+  releaseName: forgejo
+  dependsOn:
+    - name: ${APP}-oidc
+  chartRef:
+    kind: OCIRepository
+    name: forgejo
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: ${APP}-oidc-authentik-application
+      valuesKey: clientID
+      targetPath: gitea.oauth[0].key
+    - kind: Secret
+      name: ${APP}-oidc-authentik-application
+      valuesKey: clientSecret
+      targetPath: gitea.oauth[0].secret
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/hostAliases
+                value:
+                  - ip: "${traefik_lb_ip}"
+                    hostnames:
+                    - "${auth_subdomain}.${main_domain}"
+                    - "${second_domain}"
+            target:
+              kind: Deployment
+              name: forgejo
+              annotationSelector: homelab/use-local-dns=true
+          # Modify the startup command to register the runner
+          - patch: |-
+              - op: add
+                path: /spec/template/spec/containers/0/command
+                value:
+                  - /bin/bash
+                  - -c
+              - op: add
+                path: /spec/template/spec/containers/0/args
+                value:
+                  - /usr/bin/dumb-init -- /usr/local/bin/docker-entrypoint.sh &
+                    sleep 10;
+                    forgejo forgejo-cli actions register --keep-labels --secret $${FORGEJO_RUNNER_SHARED_SECRET};
+                    sleep infinity
+            target:
+              kind: Deployment
+              name: forgejo
+
+  values:
+    # https://code.forgejo.org/forgejo-helm/forgejo-helm/src/branch/main/values.yaml
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 512Mi
+
+    deployment:
+      annotations:
+        # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
+        secret.reloader.stakater.com/reload: "${S3_USER}-garage,${APP}-db-creds,${APP}-oidc-authentik-application"
+        configmap.reloader.stakater.com/reload: "forgejo-app-ini"
+        homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
+      env:
+        # Runner
+        - name: FORGEJO_RUNNER_UUID
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-runner-secret
+              key: uuid
+        - name: FORGEJO_RUNNER_SHARED_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-runner-secret
+              key: token
+
+    httpRoute:
+      enabled: false # Declared as components
+    tcpRoute:
+      enabled: true
+      parentRefs:
+        - name: traefik-gateway
+          namespace: ingress
+          sectionName: ssh
+
+    service:
+      ssh:
+        port: &sshPort 2222
+
+    gitea:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+      # additionalConfigSources:
+      #   - configMap:
+      #       name: forgejo-app-ini
+      admin:
+        username: ""
+      config:
+        actions:
+          ENABLED: true
+        cron.archive_cleanup:
+          ENABLED: true
+          RUN_AT_START: true
+          SCHEDULE: "@every 1h"
+          OLDER_THAN: 2h
+        mailer:
+          ENABLED: false
+        queue:
+          TYPE: redis
+          CONN_STR: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379/4
+        cache:
+          ENABLED: true
+          ADAPTER: redis
+          HOST: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379/4
+        session:
+          PROVIDER: redis
+          PROVIDER_CONFIG: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379/4
+        security:
+          REVERSE_PROXY_TRUSTED_PROXIES: 10.24.0.0/16
+        server:
+          ROOT_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+          DOMAIN: ${SUBDOMAIN}.${DOMAIN}
+          ENABLE_PPROF: true
+          ENABLE_INTERNAL_SIGNIN: false
+          ENABLE_BASIC_AUTHENTICATION: true # for renovate / other accounts
+          SSH_DOMAIN: ${SUBDOMAIN}.${DOMAIN}
+          SSH_PORT: *sshPort
+          SSH_SERVER_HOST_KEYS: signing/privateKey # relative to /data
+          START_SSH_SERVER: true
+        indexer:
+          ISSUE_INDEXER_TYPE: bleve
+          REPO_INDEXER_ENABLED: true
+        service:
+          ALLOW_ONLY_EXTERNAL_REGISTRATION: true
+          DEFAULT_ENABLE_TIMETRACKING: false
+          ENABLE_INTERNAL_SIGNIN: false
+          ENABLE_PASSWORD_SIGNIN_FORM: false
+          SHOW_REGISTRATION_BUTTON: false
+          DISABLE_REGISTRATION: true
+        service.explore:
+          DISABLE_CODE_PAGE: false
+          DISABLE_ORGANIZATIONS_PAGE: true
+          DISABLE_USERS_PAGE: true
+          REQUIRE_SIGNIN_VIEW: false
+        webhook:
+          ALLOWED_HOST_LIST: "*"
+        database:
+          DB_TYPE: postgres
+          HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
+          NAME: ${PSQL_DB_NAME}
+          USER: ${PSQL_DB_USER}
+
+        storage:
+          STORAGE_TYPE: minio
+          SERVE_DIRECT: false
+          MINIO_BUCKET: ${BUCKET_NAME}
+          MINIO_USE_SSL: false
+          MINIO_INSECURE_SKIP_VERIFY: true
+          MINIO_BUCKET_LOOKUP_TYPE: path
+        repository:
+          DEFAULT_REPO_UNITS: repo.code,repo.releases,repo.issues,repo.pulls,repo.actions
+          DISABLED_REPO_UNITS: repo.ext_wiki,repo.ext_issues
+          DISABLE_DOWNLOAD_SOURCE_ARCHIVES: true
+        repository.pull-request:
+          DEFAULT_MERGE_STYLE: rebase
+        # repository.signing:
+        #   FORMAT: ssh
+        #   SIGNING_KEY: /data/signing/privateKey.pub
+        #   SIGNING_NAME: Homelab
+        #   SIGNING_EMAIL: noreply@homelab
+        #   INITIAL_COMMIT: pubkey
+        #   CRUD_ACTIONS: pubkey, parentsigned
+        #   WIKI: never
+        #   MERGES: pubkey
+        oidc:
+          ENABLE_OPENID_SIGNIN: false
+          ENABLE_OPENID_SIGNUP: false
+
+        oauth2_client:
+          OPENID_CONNECT_SCOPES: email profile forgejo
+          ENABLE_AUTO_REGISTRATION: true
+          UPDATE_AVATAR: true
+          ACCOUNT_LINKING: auto
+
+      oauth:
+        - name: "Authentik"
+          provider: "openidConnect"
+          # Existing secret contains key: as accessKey and secret: as secretKey
+          # existingSecret: gitea-oauth-secret
+          # key:  # Filled by fluxcd
+          # secret:   # Filled by fluxcd
+          iconUrl: https://${auth_subdomain}.${main_domain_websecure}/static/dist/assets/icons/icon.png
+          autoDiscoverUrl: "https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/.well-known/openid-configuration"
+          requiredClaimName: forgejo
+          groupClaimName: forgejo
+          adminGroup: admin
+          restrictedGroup: restricted
+
+      # Sensitive credentials generated by other resources (psql, minio, gorgejo oauth...)
+      additionalConfigFromEnvs:
+        - name: FORGEJO__STORAGE__MINIO_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: ${S3_USER}-garage
+              key: accessKey
+        - name: FORGEJO__STORAGE__MINIO_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ${S3_USER}-garage
+              key: secretKey
+        - name: FORGEJO__STORAGE__MINIO_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: ${S3_USER}-garage
+              key: host
+        - name: FORGEJO__STORAGE__MINIO_LOCATION
+          valueFrom:
+            secretKeyRef:
+              name: ${S3_USER}-garage
+              key: region
+        - name: FORGEJO__DATABASE__PASSWD
+          valueFrom:
+            secretKeyRef:
+              name: ${APP}-db-creds
+              key: password
+    # extraContainerVolumeMounts:
+    #   - name: signing-key
+    #     mountPath: /data/signing
+    #     readOnly: true
+    # extraInitVolumeMounts:
+    #   - name: signing-key
+    #     mountPath: /data/signing
+    #     readOnly: true
+    # extraVolumes:
+    #   - name: signing-key
+    #     secret:
+    #       secretName: forgejo-signing-secret
+    #       defaultMode: 0400
+    signing:
+      enable: true
+      ssh:
+        existingSecret: forgejo-signing-secret
+
+    persistence:
+      # Required to persist GPG keys, SSH keys when not provisioned
+      enabled: false
+      # storageClass: ${fastdata_storage}
+      # size: 1Gi
+      # labels:
+      #   homelab/backup-resource: "true"

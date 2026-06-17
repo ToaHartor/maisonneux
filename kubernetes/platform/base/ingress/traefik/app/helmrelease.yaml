@@ -153,6 +153,9 @@ spec:
           middlewares:
             - ingress-crowdsecbouncer@kubernetescrd
             - ingress-secure-headers@kubernetescrd
+      ssh:
+        port: 2222
+        exposedPort: ${traefik_ssh_lb_port}
       # websecure-legacy:
       #   port: 8443
       #   exposedPort: ${traefik_websecure_lb_port}
@@ -180,6 +183,11 @@ spec:
           certificateRefs:
             - name: ${main_domain}-tls
           mode: Terminate
+        ssh:
+          port: 2222
+          protocol: TCP
+          namespacePolicy:
+            from: All
         # TODO : add another web/websecure endpoint if the standard ones don't work
         # websecure-legacy:
         #   port: 8443

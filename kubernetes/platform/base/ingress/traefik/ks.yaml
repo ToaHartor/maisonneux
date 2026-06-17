@@ -88,6 +88,7 @@ spec:
       traefik_lb_ip: ${traefik_lb_ip}
       traefik_web_lb_port: ${quote}${traefik_web_lb_port}${quote}
       traefik_websecure_lb_port: ${quote}${traefik_websecure_lb_port}${quote}
+      traefik_ssh_lb_port: ${quote}${traefik_ssh_lb_port}${quote}
 
   prune: true
   sourceRef:

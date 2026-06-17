@@ -153,3 +153,16 @@ resource "kubernetes_secret_v1" "external_tachi_config" {
     cdn_secret_key     = var.tachi_config.cdn_secret_key
   }
 }
+
+resource "kubernetes_secret_v1" "external_forgejo_runner" {
+  metadata {
+    name      = "external-forgejo-runner"
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    uuid  = var.forgejo_runner.uuid
+    token = var.forgejo_runner.token
+  }
+}

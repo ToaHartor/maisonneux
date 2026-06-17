@@ -1,0 +1,123 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: forgejo
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: forgejo
+  dependsOn:
+    - name: authentik
+      namespace: authentik
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: forgejo-oidc
+      namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: forgejo
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/garage-bucket
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/httproute/common
+  path: "./kubernetes/apps/base/services/forgejo/app"
+  postBuild:
+    substitute:
+      APP: forgejo
+      SUBDOMAIN: forge
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: Git server
+      REDIRECT_URL: "https://forge.${main_domain_websecure}/user/oauth2/Authentik/callback"
+      S3_USER: forgejo-${environment}
+      BUCKET_NAME: forgejo-${environment}
+      PSQL_DB_USER: forgejo
+      PSQL_DB_NAME: forgejo
+      GATEWAY_SVC_NAME: forgejo-http
+      GATEWAY_SVC_PORT: "3000"
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      quote: '"'
+      patch_dns: ${quote}${patch_dns:=false}${quote}
+      traefik_lb_ip: ${traefik_lb_ip}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+      auth_subdomain: ${auth_subdomain}
+      fastdata_storage: ${fastdata_storage}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: forgejo"
+            parent: "authentik Admins"
+            bindID: "cf66b096-e161-4840-a630-9084e8a8cc22" # arbitrary uuid
+        - op: add
+          path: '/spec/values/blueprint/provider/oidc/scopes/-'
+          value:
+            name: "authentik default OAuth Mapping: OpenID 'forgejo'"
+            scope_name: "forgejo"
+            # Scope mapping to auto assign policies to users
+            expression: |
+              entitlement_names = {
+                entitlement.name
+                for entitlement in request.user.app_entitlements(provider.application)
+              }
+              forgejo_claims = {}
+
+              if "gituser" in entitlement_names:
+                forgejo_claims["forgejo"] = "user"
+              if "gitadmin" in entitlement_names:
+                forgejo_claims["forgejo"] = "admin"
+              if "gitrestricted" in entitlement_names:
+                forgejo_claims["forgejo"] = "restricted"
+
+              return forgejo_claims
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 10m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: forgejo-runner
+spec:
+  dependsOn:
+    - name: forgejo
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: forgejo-runner
+      namespace: services
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: forgejo
+  interval: 1h
+  path: "./kubernetes/apps/base/services/forgejo/runner"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 10m

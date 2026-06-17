@@ -22,6 +22,7 @@ locals {
   ingress_ports = {
     web       = var.opnsense_base_port_number + 80
     websecure = var.opnsense_base_port_number + 443
+    ssh       = var.opnsense_base_port_number + 22
   }
 
   general_config = merge({
@@ -53,6 +54,7 @@ locals {
     "traefik_lb_ip"             = var.k8s_lb_traefik_ip
     "traefik_web_lb_port"       = local.ingress_ports.web
     "traefik_websecure_lb_port" = local.ingress_ports.websecure
+    "traefik_ssh_lb_port"       = local.ingress_ports.ssh
     "influxdb_lb_ip"            = var.k8s_lb_influxdb_ip
     "legacy_vm_ip"              = var.legacy_vm_ip
     },
