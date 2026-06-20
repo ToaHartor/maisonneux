@@ -147,7 +147,11 @@ spec:
           REPO_INDEXER_ENABLED: true
         service:
           ALLOW_ONLY_EXTERNAL_REGISTRATION: true
+          REQUIRE_SIGNIN_VIEW: true
           DEFAULT_ENABLE_TIMETRACKING: false
+          DEFAULT_ORG_VISIBILITY: limited
+          DEFAULT_USER_VISIBILITY: limited
+          DEFAULT_KEEP_EMAIL_PRIVATE: true
           ENABLE_INTERNAL_SIGNIN: false
           ENABLE_PASSWORD_SIGNIN_FORM: false
           SHOW_REGISTRATION_BUTTON: false
@@ -178,16 +182,16 @@ spec:
           DISABLE_DOWNLOAD_SOURCE_ARCHIVES: true
         repository.pull-request:
           DEFAULT_MERGE_STYLE: rebase
-        # repository.signing:
-        #   FORMAT: ssh
-        #   SIGNING_KEY: /data/signing/privateKey.pub
-        #   SIGNING_NAME: Homelab
-        #   SIGNING_EMAIL: noreply@homelab
-        #   INITIAL_COMMIT: pubkey
-        #   CRUD_ACTIONS: pubkey, parentsigned
-        #   WIKI: never
-        #   MERGES: pubkey
-        oidc:
+        repository.signing:
+          FORMAT: ssh
+          SIGNING_KEY: /data/signing/privateKey.pub
+          SIGNING_NAME: Homelab
+          SIGNING_EMAIL: noreply@homelab
+          INITIAL_COMMIT: pubkey
+          CRUD_ACTIONS: pubkey, parentsigned
+          WIKI: never
+          MERGES: pubkey
+        openid:
           ENABLE_OPENID_SIGNIN: false
           ENABLE_OPENID_SIGNUP: false
 
@@ -238,19 +242,19 @@ spec:
             secretKeyRef:
               name: ${APP}-db-creds
               key: password
-    # extraContainerVolumeMounts:
-    #   - name: signing-key
-    #     mountPath: /data/signing
-    #     readOnly: true
-    # extraInitVolumeMounts:
-    #   - name: signing-key
-    #     mountPath: /data/signing
-    #     readOnly: true
-    # extraVolumes:
-    #   - name: signing-key
-    #     secret:
-    #       secretName: forgejo-signing-secret
-    #       defaultMode: 0400
+    extraContainerVolumeMounts:
+      - name: signing-key
+        mountPath: /data/signing
+        readOnly: true
+    extraInitVolumeMounts:
+      - name: signing-key
+        mountPath: /data/signing
+        readOnly: true
+    extraVolumes:
+      - name: signing-key
+        secret:
+          secretName: forgejo-signing-secret
+          defaultMode: 0400
     signing:
       enable: true
       ssh:

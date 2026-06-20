@@ -80,6 +80,15 @@ variable "forgejo_runner" {
   sensitive = true
 }
 
+variable "forgejo_signing" {
+  type = object({
+    private_key = string
+    public_key  = string
+  })
+  sensitive   = true
+  description = "SSH keypair for signing (generated with ssh-keygen -t ed25519 -N '' -q -C 'noreply@homelab')"
+}
+
 # SMTP settings
 
 variable "smtp_username" {

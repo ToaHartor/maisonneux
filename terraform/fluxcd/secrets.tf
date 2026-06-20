@@ -154,15 +154,17 @@ resource "kubernetes_secret_v1" "external_tachi_config" {
   }
 }
 
-resource "kubernetes_secret_v1" "external_forgejo_runner" {
+resource "kubernetes_secret_v1" "external_forgejo_secrets" {
   metadata {
-    name      = "external-forgejo-runner"
+    name      = "external-forgejo-secrets"
     namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
   }
   type = "Opaque"
 
   data = {
-    uuid  = var.forgejo_runner.uuid
-    token = var.forgejo_runner.token
+    uuid                = var.forgejo_runner.uuid
+    token               = var.forgejo_runner.token
+    signing_private_key = var.forgejo_signing.private_key
+    signing_public_key  = var.forgejo_signing.public_key
   }
 }
