@@ -3,7 +3,7 @@ set -euo pipefail
 
 # see https://github.com/siderolabs/talos/releases
 # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
-talos_version="1.13.0"
+talos_version="1.13.4"
 # https://github.com/siderolabs/pkgs/tags
 talos_pkg_branch="release-1.9"
 
@@ -284,7 +284,7 @@ output:
   outFormat: raw
 EOF
 
-sudo podman run --rm -i \
+sudo docker run --rm -i \
 -v $PWD/tmp/talos:/secureboot:ro \
 -v $PWD/tmp/talos:/out \
 -v /dev:/dev \

@@ -23,7 +23,7 @@ locals {
   base_schematic             = yamldecode(file("../../../scripts/talos_schematic.yaml"))
   nvidia_extensions          = yamldecode(file("../../../scripts/talos_nvidia_extensions.yaml"))
   merged_kernel_args         = local.base_schematic.customization.extraKernelArgs
-  merged_official_extensions = distinct(concat(local.base_schematic.customization.systemExtensions.officialExtensions, local.nvidia_extensions.customization.systemExtensions.officialExtensions))
+  merged_official_extensions = sort(distinct(concat(local.base_schematic.customization.systemExtensions.officialExtensions, local.nvidia_extensions.customization.systemExtensions.officialExtensions)))
 }
 
 data "http" "talos_factory_nvidia_schematic_id" {
@@ -322,6 +322,7 @@ resource "talos_machine_configuration_apply" "controller" {
     templatefile("${path.module}/templates/link-config.yaml.tftpl", { ip_address = "${local.controller_nodes[count.index].address}/${var.cluster_subnet}", node_gateway = var.cluster_node_network_gateway }),
     yamlencode({
       machine = {
+        type = "controlplane"
         // Specify installer to ease automatic upgrades with tuppr
         install = {
           image = "factory.talos.dev/installer/${jsondecode(data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"

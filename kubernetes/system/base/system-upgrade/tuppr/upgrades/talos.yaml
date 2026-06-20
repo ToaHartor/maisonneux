@@ -10,6 +10,9 @@ spec:
   policy:
     rebootMode: powercycle # default
     placement: hard
+    priorityClassName: system-node-critical
+  drain:
+    enabled: true
   healthChecks:
     # Check all nodes are ready
     - apiVersion: v1

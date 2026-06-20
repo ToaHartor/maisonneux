@@ -19,16 +19,16 @@ function upgrade_node() {
 
         # Still ask if same version, as we use upgrades to also update system extensions and kernel args
 
-        if [[ $ACCEPT_ALL == 1 ]]; then 
+        if [[ $ACCEPT_ALL == 1 ]]; then
             talosctl upgrade --nodes "$node_ip" \
-                --image "factory.talos.dev/installer/$schematic:v$TALOS_VERSION"
+                --image "factory.talos.dev/nocloud-installer/$schematic:v$TALOS_VERSION"
         else
             read -p "Proceed to upgrade node $node_ip from version $CURRENT_TALOS_VERSION to version v$TALOS_VERSION ? (y/n): " -n 1 -r
             echo    # (optional) move to a new line
             if [[ $REPLY =~ ^[Yy]$ ]]
             then
                 talosctl upgrade --nodes "$node_ip" \
-                    --image "factory.talos.dev/installer/$schematic:v$TALOS_VERSION"
+                    --image "factory.talos.dev/nocloud-installer/$schematic:v$TALOS_VERSION"
             fi
         fi
     done
@@ -79,7 +79,7 @@ IFS=',' read -r -a workers <<< "$WORKERS_IPS"
 SCHEMATIC_ID=$(curl -sS -X POST --data-binary @scripts/talos_schematic.yaml -H "Content-type: text/x-yaml" "https://factory.talos.dev/schematics" | jq -r '.id' -)
 
 # shellcheck disable=SC2016
-nvidia_schema=$(yq -r eval-all '. as $item ireduce ({}; . *+ $item)' scripts/talos_nvidia_extensions.yaml scripts/talos_schematic.yaml)
+nvidia_schema=$(yq -r eval-all '. as $item ireduce ({}; . *+ $item) | .customization.systemExtensions.officialExtensions |= sort' scripts/talos_nvidia_extensions.yaml scripts/talos_schematic.yaml)
 SCHEMATIC_NVIDIA_ID=$(curl -sS -X POST -H "Content-type: text/x-yaml" "https://factory.talos.dev/schematics"  --data-binary @- << EOF | jq -r '.id' -
 $nvidia_schema
 EOF
@@ -98,7 +98,7 @@ fi
 # Upgrade control planes first
 upgrade_node "${controlplanes[@]}"
 
-# Upgrade workers after, 
+# Upgrade workers after,
 if [ -n "$WORKERS_IPS" ]; then
     upgrade_node "${workers[@]}"
 fi

@@ -78,7 +78,7 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
       id      = local.worker_nodes[count.index].config.gpu.id # "0000:08:00"
       mapping = null
       # mdev     = "nvidia-47"
-      pcie     = false
+      pcie     = true
       rom_file = null
       rombar   = true
       xvga     = true
@@ -133,9 +133,10 @@ resource "talos_machine_configuration_apply" "worker" {
     templatefile("${path.module}/templates/link-config.yaml.tftpl", { ip_address = "${local.worker_nodes[count.index].address}/${var.cluster_subnet}", node_gateway = var.cluster_node_network_gateway }),
     yamlencode({
       machine = {
+        type = "worker"
         // Specify installer to ease automatic upgrades with tuppr
         install = {
-          image = "factory.talos.dev/installer/${jsondecode(local.worker_nodes[count.index].config.gpu != null ? data.http.talos_factory_nvidia_schematic_id.response_body : data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
+          image = "factory.talos.dev/nocloud-installer/${jsondecode(local.worker_nodes[count.index].config.gpu != null ? data.http.talos_factory_nvidia_schematic_id.response_body : data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
         }
         kubelet = {
           nodeIP = {
