@@ -61,7 +61,7 @@ spec:
         ingressClass: traefik
       kubernetesGateway:
         enabled: true
-        # experimentalChannel: true # TCPRoute and TLSRoute
+        experimentalChannel: true # TCPRoute and TLSRoute
 
     securityContext:
       seccompProfile:
@@ -155,7 +155,10 @@ spec:
             - ingress-secure-headers@kubernetescrd
       ssh:
         port: 2222
+        protocol: TCP
         exposedPort: ${traefik_ssh_lb_port}
+        expose:
+          default: true
       # websecure-legacy:
       #   port: 8443
       #   exposedPort: ${traefik_websecure_lb_port}

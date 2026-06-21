@@ -27,6 +27,8 @@ spec:
     - ../../../../../common/components/garage-bucket
     - ../../../../../common/components/cnpg/db
     - ../../../../../common/components/httproute/common
+    - ../../../../../common/components/secret/creds # Renovate account
+    # - ../../../../../common/components/secret/key # Renovate token
   path: "./kubernetes/apps/base/services/forgejo/app"
   postBuild:
     substitute:
@@ -37,10 +39,18 @@ spec:
       GROUP: Services
       DESCRIPTION: Git server
       REDIRECT_URL: "https://forge.${main_domain_websecure}/user/oauth2/Authentik/callback"
+      ## Generated secrets
+      # SECRET_KEY_NAME: forgejo-renovate-token
+      # SECRET_KEY_TYPE: api-key
+      SECRET_CREDS_NAME: forgejo-renovate-user
+      SECRET_CREDS_USER: renovate
+      # S3
       S3_USER: forgejo-${environment}
       BUCKET_NAME: forgejo-${environment}
+      # Postgres
       PSQL_DB_USER: forgejo
       PSQL_DB_NAME: forgejo
+      # Gateway http
       GATEWAY_SVC_NAME: forgejo-http
       GATEWAY_SVC_PORT: "3000"
       # inherited variables

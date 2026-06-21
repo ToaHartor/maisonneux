@@ -19,7 +19,8 @@ spec:
   healthCheckExprs:
     - apiVersion: dragonflydb.io/v1alpha1
       current: status.phase == 'Ready'
-      inProgress: status.phase == 'Configuring'
+      failed: status.phase != 'Ready'
+      # inProgress: status.phase == 'Configuring'
       kind: Dragonfly
   interval: 1h
   path: "./kubernetes/platform/base/dragonfly/dragonfly-cluster/app"

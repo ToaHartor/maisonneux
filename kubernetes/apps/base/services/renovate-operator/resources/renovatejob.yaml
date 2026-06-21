@@ -1,0 +1,90 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/renovate-operator.mogenius.com/renovatejob_v1alpha1.json
+apiVersion: renovate-operator.mogenius.com/v1alpha1
+kind: RenovateJob
+metadata:
+  name: maisonneux
+spec:
+  # renovate container:
+  image: ghcr.io/renovatebot/renovate:43.169.4@sha256:4c84638a2b70b2fe2c3bbf87d25e6f8aba40d83f8ca2b7c0bd3d0f1a4591ef7b
+  parallelism: 1 # Otherwise it will saturate the API
+  discoverTopics: [renovate] # Repository should have the topic "renovate"
+  provider:
+    name: forgejo
+    endpoint: https://forge.${DOMAIN_WEBSECURE} # automatically appends /api/v1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  schedule: 20 */6 * * *
+  secretRef: forgejo-renovate-token # Token must be set to RENOVATE_TOKEN key
+  webhook:
+    enabled: true
+    authentication:
+      enabled: false
+      # secretRef:
+      #   name: renovate-webhook-token
+      #   key: secretKey
+    forgejo:
+      sync:
+        enabled: true
+        webhookURL: http://renovate-operator.services.svc.cluster.local:8082/webhook/v1/forgejo
+        tokenSecretRef:
+          name: forgejo-renovate-token
+          key: RENOVATE_TOKEN
+        # authTokenSecretRef:
+        #   name: renovate-webhook-token
+        #   key: secretKey
+  discoveryFilters: ["*/maisonneux"] # Will match maisonneux repositories whatever the username/org is
+  extraEnv:
+    - name: LOG_LEVEL
+      value: debug
+    - name: RENOVATE_ALLOWED_COMMANDS
+      value: |-
+        ["pnpm run bundle"]
+    - name: RENOVATE_ALLOWED_UNSAFE_EXECUTIONS
+      value: |-
+        ["mise"]
+    - name: RENOVATE_PLATFORM_COMMIT_ENABLED
+      value: "true"
+    - name: RENOVATE_GIT_AUTHOR
+      value: "Renovate <renovate@homelab>"
+    - name: RENOVATE_REPOSITORY_CACHE
+      value: "enabled"
+    - name: RENOVATE_REDIS_URL
+      value: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379/5
+    - name: RENOVATE_ALLOW_PLUGINS
+      value: "true"
+    - name: RENOVATE_BRANCH_PREFIX
+      value: renovate-
+    - name: RENOVATE_PR_HOURLY_LIMIT
+      value: "0"
+    - name: RENOVATE_PR_CONCURRENT_LIMIT
+      value: "0"
+    - name: RENOVATE_RECREATE_WHEN
+      value: "always"
+    - name: GITHUB_COM_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: renovate-external-sources
+          key: github_pat
+    - name: DOCKERHUB_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: renovate-external-sources
+          key: dockerhub_username
+    - name: DOCKERHUB_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: renovate-external-sources
+          key: dockerhub_token
+    - name: RENOVATE_HOST_RULES
+      value: >-
+        [
+          {
+            "hostType": "docker",
+            "matchHost": "docker.io",
+            "username": "$(DOCKERHUB_USERNAME)",
+            "password": "$(DOCKERHUB_TOKEN)"
+          }
+        ]

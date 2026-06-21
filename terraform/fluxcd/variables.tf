@@ -55,6 +55,17 @@ variable "huggingface_token" {
   type        = string
 }
 
+# Renovate
+variable "external_sources_tokens" {
+  description = "External sources tokens (dockerhub, github...)"
+  sensitive   = true
+  type = object({
+    github_pat         = string
+    dockerhub_username = string
+    dockerhub_token    = string
+  })
+}
+
 # Tachi config
 
 variable "tachi_config" {

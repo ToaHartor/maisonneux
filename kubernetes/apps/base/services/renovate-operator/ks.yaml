@@ -1,0 +1,98 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: renovate-operator
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: renovate-operator
+  dependsOn:
+    - name: authentik
+      namespace: authentik
+    - name: forgejo
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: renovate-operator-oidc
+      namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: renovate-operator
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/httproute/common
+    # - ../../../../../common/components/secret/creds # Renovate account
+    # - ../../../../../common/components/secret/key # Renovate webhook token
+  path: "./kubernetes/apps/base/services/renovate-operator/app"
+  postBuild:
+    substitute:
+      APP: renovate-operator
+      SUBDOMAIN: renovate
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: Update manager
+      REDIRECT_URL: "https://renovate.${main_domain_websecure}/auth/callback"
+      # Gateway http
+      GATEWAY_SVC_NAME: renovate-operator
+      GATEWAY_SVC_PORT: "8081"
+      # Secret
+      # SECRET_KEY_NAME: renovate-webhook-token
+      # SECRET_KEY_TYPE: api-key
+      # inherited variables
+      quote: '"'
+      patch_dns: ${quote}${patch_dns:=false}${quote}
+      traefik_lb_ip: ${traefik_lb_ip}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+      auth_subdomain: ${auth_subdomain}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: renovate-operator"
+            parent: "authentik Admins"
+            bindID: "0496a651-80a9-4c15-84c9-8438683229df" # arbitrary uuid
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 10m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: renovate-resources
+spec:
+  dependsOn:
+    - name: renovate-operator
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: renovate-operator
+  interval: 1h
+  path: "./kubernetes/apps/base/services/renovate-operator/resources"
+  postBuild:
+    substitute:
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 10m

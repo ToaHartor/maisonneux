@@ -168,3 +168,17 @@ resource "kubernetes_secret_v1" "external_forgejo_secrets" {
     signing_public_key  = var.forgejo_signing.public_key
   }
 }
+
+resource "kubernetes_secret_v1" "external_sources_secrets" {
+  metadata {
+    name      = "external-sources-secrets"
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    github_pat         = var.external_sources_tokens.github_pat
+    dockerhub_username = var.external_sources_tokens.dockerhub_username
+    dockerhub_token    = var.external_sources_tokens.dockerhub_token
+  }
+}

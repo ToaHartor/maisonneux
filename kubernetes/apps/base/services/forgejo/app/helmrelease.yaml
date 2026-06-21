@@ -50,29 +50,116 @@ spec:
               - op: add
                 path: /spec/template/spec/containers/0/args
                 value:
-                  - /usr/bin/dumb-init -- /usr/local/bin/docker-entrypoint.sh &
+                  - |
+                    /usr/bin/dumb-init -- /usr/local/bin/docker-entrypoint.sh &
                     sleep 10;
                     forgejo forgejo-cli actions register --keep-labels --secret $${FORGEJO_RUNNER_SHARED_SECRET};
+
+                    NAMESPACE="services"
+                    SECRET_NAME="forgejo-renovate-token"
+                    TOKEN_NAME="renovate-operator"
+
+                    # 1. Check if Secret already exists (GET request)
+                    echo "🔍 Checking for existing secret..."
+                    EXISTING=$(curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                      -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+                      https://kubernetes.default.svc/api/v1/namespaces/$$NAMESPACE/secrets/$$SECRET_NAME)
+
+                    # If the response contains 'kind': 'Secret', it exists.
+                    if echo "$$EXISTING" | grep -q '"kind": "Secret"'; then
+                      echo "✅ Secret '$$SECRET_NAME' already exists in $$NAMESPACE. Skipping."
+                    else
+                      echo "🔨 Secret not found. Provisioning user and token..."
+
+                      # 2. Create User & Token (or generate if user exists)
+                      USER_EXISTS=$(forgejo admin user list | grep -c "$${RENOVATE_USERNAME}" || true)
+
+                      TOKEN=""
+                      if [ "$$USER_EXISTS" -gt 0 ]; then
+                        echo "👤 User exists. Generating new token..."
+                        # Check if we can get a current token
+                        # If the token already exist for the given name, it does not return a token
+                        # We must delete the token first (using the API as it does not exist with the cli)
+                        curl \
+                          --silent \
+                          --show-error \
+                          --fail-with-body \
+                          -X DELETE \
+                          -u "$${RENOVATE_USERNAME}:$${RENOVATE_PASSWORD}" \
+                          -H 'Accept: application/json' \
+                          "localhost:3000/api/v1/users/$${RENOVATE_USERNAME}/tokens/$${TOKEN_NAME}"
+
+                        TOKEN=$(forgejo admin user generate-access-token \
+                          --username "$${RENOVATE_USERNAME}" \
+                          --token-name "$${TOKEN_NAME}" \
+                          --scopes "all" \
+                          --raw)
+                      else
+                        echo "👤 Creating user and token..."
+                        # Note: 'create' outputs "token <value>", so we grep it.
+                        TOKEN=$(forgejo admin user create \
+                          --username "$${RENOVATE_USERNAME}" \
+                          --email "$${RENOVATE_USERNAME}"@homelab \
+                          --password "$${RENOVATE_PASSWORD}" \
+                          --must-change-password=false \
+                          --access-token \
+                          --access-token-name "$${TOKEN_NAME}" \
+                          --access-token-scopes "all" 2>&1 | awk '/token/ {print $$NF}')
+                      fi
+
+                      # 3. Base64 encode the token for the Secret payload
+                      ENCODED_TOKEN=$(echo -n "$$TOKEN" | base64)
+
+                      # 4. Create the Secret via K8s API (POST request)
+                      echo "💾 Creating Kubernetes Secret..."
+                      curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                        -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+                        -H "Content-Type: application/json" \
+                        -X POST \
+                        https://kubernetes.default.svc/api/v1/namespaces/$$NAMESPACE/secrets \
+                        -d "{
+                          \"apiVersion\": \"v1\",
+                          \"kind\": \"Secret\",
+                          \"metadata\": {
+                            \"name\": \"$$SECRET_NAME\",
+                            \"namespace\": \"$$NAMESPACE\"
+                          },
+                          \"type\": \"Opaque\",
+                          \"data\": {
+                            \"RENOVATE_TOKEN\": \"$$ENCODED_TOKEN\"
+                          }
+                        }"
+
+                      echo "✅ Provisioning complete."
+                    fi
                     sleep infinity
+
             target:
               kind: Deployment
               name: forgejo
 
   values:
     # https://code.forgejo.org/forgejo-helm/forgejo-helm/src/branch/main/values.yaml
+    serviceAccount:
+      name: forgejo-provisioner # Created separately
+    image:
+      rootless: true
+      registry: code.forgejo.org
+      repository: forgejo/forgejo
+      tag: 15.0.3-rootless
+
     resources:
       limits:
-        cpu: 1000m
-        memory: 512Mi
+        # cpu: 1000m
+        memory: 2Gi
       requests:
-        cpu: 100m
-        memory: 512Mi
+        cpu: 200m
+        memory: 1Gi
 
     deployment:
       annotations:
         # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-        secret.reloader.stakater.com/reload: "${S3_USER}-garage,${APP}-db-creds,${APP}-oidc-authentik-application"
-        configmap.reloader.stakater.com/reload: "forgejo-app-ini"
+        secret.reloader.stakater.com/reload: "${S3_USER}-garage,${APP}-db-creds,${APP}-oidc-authentik-application,forgejo-renovate-token"
         homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
       env:
         # Runner
@@ -86,6 +173,16 @@ spec:
             secretKeyRef:
               name: forgejo-runner-secret
               key: token
+        - name: RENOVATE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: ${SECRET_CREDS_NAME}
+              key: username
+        - name: RENOVATE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ${SECRET_CREDS_NAME}
+              key: password
 
     httpRoute:
       enabled: false # Declared as components
@@ -133,6 +230,7 @@ spec:
         security:
           REVERSE_PROXY_TRUSTED_PROXIES: 10.24.0.0/16
         server:
+          APP_DATA_PATH: /data/gitea
           ROOT_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
           DOMAIN: ${SUBDOMAIN}.${DOMAIN}
           ENABLE_PPROF: true
@@ -140,7 +238,7 @@ spec:
           ENABLE_BASIC_AUTHENTICATION: true # for renovate / other accounts
           SSH_DOMAIN: ${SUBDOMAIN}.${DOMAIN}
           SSH_PORT: *sshPort
-          SSH_SERVER_HOST_KEYS: signing/privateKey # relative to /data
+          SSH_SERVER_HOST_KEYS: ../signing/privateKey # relative to APP_DATA_PATH
           START_SSH_SERVER: true
         indexer:
           ISSUE_INDEXER_TYPE: bleve
@@ -168,6 +266,8 @@ spec:
           HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
           NAME: ${PSQL_DB_NAME}
           USER: ${PSQL_DB_USER}
+          MAX_OPEN_CONNS: 50
+          MAX_IDLE_CONNS: 10
 
         storage:
           STORAGE_TYPE: minio
@@ -176,7 +276,10 @@ spec:
           MINIO_USE_SSL: false
           MINIO_INSECURE_SKIP_VERIFY: true
           MINIO_BUCKET_LOOKUP_TYPE: path
+        lfs:
+          PATH: /data/git/lfs
         repository:
+          ROOT: /data/git/repositories
           DEFAULT_REPO_UNITS: repo.code,repo.releases,repo.issues,repo.pulls,repo.actions
           DISABLED_REPO_UNITS: repo.ext_wiki,repo.ext_issues
           DISABLE_DOWNLOAD_SOURCE_ARCHIVES: true
@@ -246,6 +349,8 @@ spec:
       - name: signing-key
         mountPath: /data/signing
         readOnly: true
+      - name: git
+        mountPath: "/data/git/"
     extraInitVolumeMounts:
       - name: signing-key
         mountPath: /data/signing
@@ -255,15 +360,17 @@ spec:
         secret:
           secretName: forgejo-signing-secret
           defaultMode: 0400
+      - name: git
+        persistentVolumeClaim:
+          claimName: forgejo-git
     signing:
       enable: true
       ssh:
         existingSecret: forgejo-signing-secret
 
     persistence:
-      # Required to persist GPG keys, SSH keys when not provisioned
+      # Required to persist git repositories and lfs
+      # We disable and create our own as we only want to mount /data/git and not the entire /data
       enabled: false
-      # storageClass: ${fastdata_storage}
-      # size: 1Gi
-      # labels:
-      #   homelab/backup-resource: "true"
+      create: false
+      mount: false
