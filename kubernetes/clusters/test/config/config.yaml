@@ -1,0 +1,50 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: general-config
+  namespace: flux-system
+data:
+  # Should reflect the terraform configmap bootstrap
+  acme_server_url: https://acme-v02.api.letsencrypt.org/directory
+  auth_subdomain: auth
+  environment: production
+  fastdata_storage: linstor-datastore
+  garage_admin_endpoint: 192.168.1.10:30190
+  garage_bootstrap_node: 4f7b7ea937d6a06fabc75505301f83daf0b9f0467a64ae0abacc7899bd79c048@192.168.1.10:30187
+  garage_gateway_lb_ip: 192.168.192.3
+  git_branch: localdev
+  git_repo_url: https://forge.example.com:443/home/maisonneux.git
+  gpu_runtime_class: nvidia
+  influxdb_lb_ip: 192.168.192.2
+  legacy_vm_ip: 192.168.1.11
+  local_dns_server: ""
+  main_domain: example.com
+  main_domain_ssh: example.com
+  main_domain_web: example.com
+  main_domain_websecure: example.com
+  minio_backup_bucket: backup-production
+  minio_url: 192.168.1.10:9000
+  nfs_path_download: /mnt/st2000/downloads
+  nfs_path_immich: /mnt/data-mirror/immich
+  nfs_path_media_1: /mnt/raw-18tb-media/media-18tb
+  nfs_path_media_2: /mnt/raw-8tb/animes
+  nfs_path_media_3: /mnt/wdblue/movies
+  nfs_path_media_4: /mnt/raw-8tb/animemovies
+  nfs_path_media_5: /mnt/raw-8tb/4kmovies
+  nfs_path_media_6: /mnt/wdblue/music
+  nfs_path_minio: /mnt/data-mirror/minio-k8s
+  nfs_server: 192.168.1.10
+  opnsense_exposed_ip: 192.168.1.12
+  patch_dns: "false"
+  psql_cluster_name: psql-cluster
+  psql_database_namespace: postgres
+  psql_suffix: ""
+  second_domain: example.org
+  second_domain_ssh: example.org
+  second_domain_web: example.org
+  second_domain_websecure: example.org
+  traefik_lb_ip: 192.168.192.1
+  traefik_ssh_lb_port: "10022"
+  traefik_web_lb_port: "10080"
+  traefik_websecure_lb_port: "10443"

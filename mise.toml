@@ -22,6 +22,8 @@ jq = "latest"
 yq = "latest"
 helm = "latest"
 mc = "latest"
+"github:home-operations/flate" = "latest"
+"github:home-operations/yayamlls" = "latest"
 # Python
 python = "3.13"
 uv = "latest"

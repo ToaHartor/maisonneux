@@ -2,6 +2,9 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Flate
 
+# TODO : CI is currently broken on OIDC applications, flate may bring additional corrections for that
+# We still run the job but if it fails because of OCIRepository for oidc application we skip
+
 on:
   workflow_dispatch:
   pull_request:
@@ -26,8 +29,9 @@ jobs:
         id: changed-files
         uses: https://github.com/bjw-s-labs/action-changed-files@a9a36fb08ce06db9b02fbd8026cc2c0945eb9841 # v0.6.0
         with:
-          patterns: kubernetes/**/*
-
+          patterns: |
+            kubernetes/**/*
+            .forgejo/workflows/flate.yaml
   flate:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
     needs: filter
@@ -38,7 +42,9 @@ jobs:
       contents: read
       pull-requests: write
     env:
-      FLATE_PATH: ./kubernetes/clusters/production # Used in all flate commands instead of --path <path>
+      # We point to a fake Kustomization that renders fake secrets/configmaps and creates another Kustomization that points at the production stack
+      FLATE_PATH: ./kubernetes/clusters/test # Used in all flate commands instead of --path <path>
+      FLATE_OUTPUT: gitea
     # strategy:
     #   matrix:
     #     resource:
@@ -47,30 +53,36 @@ jobs:
     #   fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # all history for all branches and tags
           persist-credentials: false
 
       - name: Install flate
-        uses: https://github.com/home-operations/flate/action@1e753d8a6b8f4ee39c93e57c64c0930cf4215b7e # v0.4.3
+        uses: https://github.com/home-operations/flate/action@a13598d5cb2faa79c2638e7bfe61711b1a1c1a5f # v0.4.9
         with:
           # Defaults to ${{ github.token }} — a Forgejo-issued token that github.com
           # rejects (401). flate's release is public, so force the unauthenticated path.
           token: ""
+          cache: false
 
       - name: Run flate test
-        run: flate test all --base ${{ forgejo.event.repository.default_branch }} --allow-missing-secrets
+        run: |-
+          flate test all --allow-missing-secrets --log-level "debug"
 
       - name: Run flate diff
         id: diff
         run: |-
-          diff=$(flate diff all)
+          out=$(flate diff all --allow-missing-secrets --output gitea)
           echo "Changes:"
-          echo "${diff}"
+          echo "${out}"
           {
             echo 'diff<<EOF'
-            echo "${diff}"
+            if [[ -n "$out" ]]; then
+              echo '```diff'
+              echo "$out"
+              echo '```'
+            fi
             echo 'EOF'
           } >> "${FORGEJO_OUTPUT}"
 
@@ -114,3 +126,18 @@ jobs:
               "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
               -d "${BODY_JSON}"
           fi
+
+  success:
+    if: ${{ !cancelled() }}
+    needs:
+      - flate
+    name: Flate - Success
+    runs-on: ubuntu-latest
+    steps:
+      - name: Any jobs failed?
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: exit 1
+
+      - name: All jobs passed or skipped?
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: echo "All jobs passed or skipped" && echo "${{ toJSON(needs.*.result) }}"
