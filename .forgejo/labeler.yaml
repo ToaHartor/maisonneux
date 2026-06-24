@@ -1,0 +1,31 @@
+---
+area/terraform:
+  - changed-files:
+      - any-glob-to-any-file:
+          - terraform/k8s/**/*
+area/bootstrap:
+  - changed-files:
+      - any-glob-to-any-file:
+          - terraform/fluxcd/**/*
+area/ci:
+  - changed-files:
+      - any-glob-to-any-file: ".forgejo/**/*"
+area/kubernetes:
+  - changed-files:
+      - any-glob-to-any-file: "kubernetes/**/*"
+area/renovate:
+  - changed-files:
+      - any-glob-to-any-file:
+          - renovate.json5
+stage/system:
+  - changed-files:
+      - any-glob-to-any-file: "kubernetes/system/**/*"
+stage/platform:
+  - changed-files:
+      - any-glob-to-any-file: "kubernetes/platform/**/*"
+stage/core:
+  - changed-files:
+      - any-glob-to-any-file: "kubernetes/core/**/*"
+stage/apps:
+  - changed-files:
+      - any-glob-to-any-file: "kubernetes/apps/**/*"
