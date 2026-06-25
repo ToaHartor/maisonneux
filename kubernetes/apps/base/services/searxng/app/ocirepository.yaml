@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 11.4.4
-    digest: sha256:5553e31f7461275356ae1424947d27bffce19dcb4f515519c4576e7748fcfedc
+    tag: 11.4.8
+    digest: sha256:e53d801d8c50b93341219be661d2b7b3a628db8f9a4b58f5e04c15f7a7d8275f
   url: oci://oci.trueforge.org/truecharts/searxng
