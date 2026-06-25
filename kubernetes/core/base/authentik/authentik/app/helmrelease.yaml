@@ -166,7 +166,7 @@ spec:
 
       extraContainers:
         - name: sidecar-blueprints
-          image: "ghcr.io/kiwigrid/k8s-sidecar:2.7.3@sha256:694950d736c8b532eba4006527ccbdac98fefc9f30b3346ba2de50b6cad91c94"
+          image: "ghcr.io/kiwigrid/k8s-sidecar:2.8.0@sha256:8fd1da830a3eeaa53001381d1925086ed79c67cc18380a8fbac8da47f4d91fcc"
           env:
             - name: "FOLDER"
               value: "/blueprints/sidecar"
@@ -184,7 +184,7 @@ spec:
             - name: sidecar-blueprints
               mountPath: /blueprints/sidecar
         - name: sidecar-certs
-          image: "ghcr.io/kiwigrid/k8s-sidecar:2.7.3@sha256:694950d736c8b532eba4006527ccbdac98fefc9f30b3346ba2de50b6cad91c94"
+          image: "ghcr.io/kiwigrid/k8s-sidecar:2.8.0@sha256:8fd1da830a3eeaa53001381d1925086ed79c67cc18380a8fbac8da47f4d91fcc"
           env:
             - name: "FOLDER"
               value: "/certs/sidecar"
