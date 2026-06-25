@@ -42,7 +42,7 @@ spec:
 
     # service:
     #   loadBalancerClass: io.cilium/node
-    logs:
+    log:
       level: "INFO"
       format: json
     accessLog:
