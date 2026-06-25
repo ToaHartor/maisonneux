@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 7.4.0
-    digest: sha256:6a798f1da0caf369a20aad6dae2f9a187e3196ce9686afbab40afee7622fe272
+    tag: 7.4.1
+    digest: sha256:f1fda058626a91aecc611ab34725f0e75af82182dd9dbc17dc0a7fe165eb4b3e
   url: oci://oci.trueforge.org/truecharts/jellystat
