@@ -82,6 +82,10 @@ seerr:
               DB_NAME: "seerr" # (optional) The name of the database to connect to. The default is "jellyseerr".
               DB_LOG_QUERIES: "false" # (optional) Whether to log the DB queries for debugging. The default is "false".
 
+  cnpg:
+    main:
+      enabled: false
+
   persistence:
     config:
       enabled: true
