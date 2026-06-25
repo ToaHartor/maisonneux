@@ -79,9 +79,7 @@ jobs:
           {
             echo 'diff<<EOF'
             if [[ -n "$out" ]]; then
-              echo '```diff'
               echo "$out"
-              echo '```'
             fi
             echo 'EOF'
           } >> "${FORGEJO_OUTPUT}"
