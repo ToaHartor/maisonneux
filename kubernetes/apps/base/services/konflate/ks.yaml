@@ -1,0 +1,53 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: konflate
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: konflate
+  dependsOn:
+    - name: forgejo
+  healthChecks:
+    # - apiVersion: helm.toolkit.fluxcd.io/v2
+    #   kind: HelmRelease
+    #   name: konflate-oidc
+    #   namespace: services
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: konflate
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    # - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/httproute/local
+    # - ../../../../../common/components/secret/creds # Renovate account
+    # - ../../../../../common/components/secret/key # Renovate webhook token
+  path: "./kubernetes/apps/base/services/konflate/app"
+  postBuild:
+    substitute:
+      APP: konflate
+      SUBDOMAIN: konflate
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      # Gateway http
+      GATEWAY_SVC_NAME: konflate
+      GATEWAY_SVC_PORT: "8080"
+      # inherited variables
+      quote: '"'
+      patch_dns: ${quote}${patch_dns:=false}${quote}
+      traefik_lb_ip: ${traefik_lb_ip}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      second_domain: ${second_domain}
+      auth_subdomain: ${auth_subdomain}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 10m

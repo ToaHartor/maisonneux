@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: konflate
+spec:
+  releaseName: konflate
+  chartRef:
+    kind: OCIRepository
+    name: konflate
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+  values:
+    # https://github.com/home-operations/konflate/blob/main/charts/konflate/values.yaml
+
+    config:
+      repo: forgejo://forge.${DOMAIN_WEBSECURE}/liam/maisonneux
+      clusterPath: "./kubernetes/clusters/test"
+      prComments: true
+      publicUrl: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
+
+      mcp: true # Deny /mcp endpoint from internet
+    persistence:
+      enabled: false
+
+    secret:
+      existingSecret: "konflate-secrets"
+    podAnnotations:
+      reloader.stakater.com/auto: "true"
+    monitoring:
+      serviceMonitor:
+        enabled: true
+
+    service:
+      port: ${GATEWAY_SVC_PORT}

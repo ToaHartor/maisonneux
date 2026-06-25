@@ -9,6 +9,7 @@ resources:
   - ./cyberchef/ks.yaml
   # - ./gitea/ks.yaml
   - ./forgejo/ks.yaml
+  - ./konflate/ks.yaml
   - ./renovate-operator/ks.yaml
   - ./immich/ks.yaml
   - ./karakeep/ks.yaml

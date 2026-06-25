@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/ocirepository-source-v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: konflate
+spec:
+  interval: 1h
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 0.2.32
+    digest: sha256:c3c77b7f3fdcf4fdfaf7632927b37aa1744a9318b0bda8de4b0cdeb8f82db360
+  url: oci://ghcr.io/home-operations/charts/konflate
