@@ -43,12 +43,11 @@ spec:
     # service:
     #   loadBalancerClass: io.cilium/node
     logs:
-      general:
-        level: "INFO" # Temp
-        format: json
-      access:
-        enabled: true
-        format: json
+      level: "INFO"
+      format: json
+    accessLog:
+      enabled: true
+      format: json
 
     ingressClass:
       name: traefik
