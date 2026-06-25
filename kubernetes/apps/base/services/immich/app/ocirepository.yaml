@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 28.8.0
-    digest: sha256:8342a693ea2c750fa1c7a7ea858053dcb0cdb61c41f4bb2dc53b6f3cee3b3aae
+    tag: 28.8.2
+    digest: sha256:e09bceb941fb8b208760906f1dc55cb5219e3cbc3cbf9c3e134c0c77f7bbcba8
   url: oci://oci.trueforge.org/truecharts/immich
