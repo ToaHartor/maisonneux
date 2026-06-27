@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 7.8.0
-    digest: sha256:00f5a3f1c4b3b0b79bfa2d9bfe2a604a1dd5db2522cbc57a5b87e852a2bc294a
+    tag: 7.9.0
+    digest: sha256:1feb23eb22930ca19e1d1639d2c9d5092e85b6869d5a8830972e6c75f3dffe30
   url: oci://oci.trueforge.org/truecharts/atuin
