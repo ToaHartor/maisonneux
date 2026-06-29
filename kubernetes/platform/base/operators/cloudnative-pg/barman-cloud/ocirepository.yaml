@@ -11,7 +11,7 @@ spec:
     operation: copy
   ref:
     tag: 0.7.0
-    digest: sha256:1d426d8624b0c866f299fe457f78f1484956757160a62213109fdcad2eebde91
+    digest: sha256:7c5e0862054294efc24bf5e31ffdb3a4ae232307fca3499b6d068c41051c07ad
   url: oci://ghcr.io/cloudnative-pg/charts/plugin-barman-cloud
   verify:
     provider: cosign
