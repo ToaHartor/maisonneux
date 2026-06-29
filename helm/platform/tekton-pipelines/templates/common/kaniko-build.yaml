@@ -1,3 +1,4 @@
+# Pipeline from https://github.com/tektoncd/catalog/pull/1385
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
@@ -15,35 +16,82 @@ spec:
     - name: TARGET
       description: The target stage
       default: base
+    - name: EXTRA_ARGS
+      type: array
+      default: []
+    - name: BUILDER_IMAGE
+      description: The image on which builds will run
+      # renovate container:
+      default: ghcr.io/osscontainertools/kaniko:v1.28.0@sha256:f072b11159668f4d11ba3a38d489db7ff18eb961b8140de91a437c71c1747583
+    - name: WRITER_IMAGE
+      description: The image on which the write-url step will run
+      # renovate container:
+      default: docker.io/library/bash:5.1.4@sha256:c523c636b722339f41b6a431b44588ab2f762c5de5ec3bd7964420ff982fb1d9
+    - name: KANIKO_DIR
+      description: Specifies the location of the kaniko binaries
+      default: /kaniko
 
   workspaces:
     - name: source
-      description: Holds the code to build
-    # - name: dockerconfig
-    #   description: Docker config.json for registry auth
-
+      description: Holds the context and Dockerfile
+    - name: dockerconfig
+      description: Includes a docker `config.json`
+      optional: true
+      mountPath: /kaniko/.docker
+  results:
+    - name: IMAGE_DIGEST
+      description: Digest of the image just built.
+    - name: IMAGE_URL
+      description: URL of the image just built.
   steps:
+    - name: get-image
+      image: $(params.WRITER_IMAGE)
+      script: |
+        set -e
+        image=$(echo "$(params.IMAGE)" | sed -E 's/:[^/:]*(@sha256:[a-f0-9]+)?$//' )
+        printf "%s" "${image}" | tee "$(step.results.image_path.path)"
+      results:
+        - name: image_path
+          description: Path of the image
+
     - name: build-and-push
-      # renovate container:
-      image: docker.io/martizih/kaniko:v1.27.6@sha256:95779f52d460ca70b65a4f4679d4f5163ad6c33edea3303dc8bbff847de5e05c
+      image: $(params.BUILDER_IMAGE)
+      workingDir: $(workspaces.source.path)
       env:
-        - name: DOCKER_CONFIG
-          value: /kaniko/.docker
+        # - name: DOCKER_CONFIG
+        #   value: /kaniko/.docker
+        - name: KANIKO_DIR
+          value: $(params.KANIKO_DIR)
+        # kaniko assumes it is running as root, which means this example fails on platforms
+        # that default to run containers as random uid (like OpenShift). Adding this securityContext
+        # makes it explicit that it needs to run as root.
+      securityContext:
+        runAsUser: 0
       command:
         - /kaniko/executor
       args:
+        - $(params.EXTRA_ARGS)
         - --dockerfile=$(params.DOCKERFILE)
         - --context=$(workspaces.source.path)/$(params.CONTEXT)
         - --destination=$(params.IMAGE)
+        - --digest-file=$(results.IMAGE_DIGEST.path)
         - --cache=true
-        - --cache-repo=$(params.IMAGE)/cache
+        - --cache-repo=$(steps.get-image.results.image_path)/cache
         - --registry-map="docker.io={{ .Values.registry.mirror }}/docker.io"
         - --snapshot-mode=redo
         - --target=$(params.TARGET)
         - --skip-tls-verify # Somehow it fails to verify tls when pulling from registry
+        - --insecure
       # volumeMounts:
       #   - name: $(workspaces.dockerconfig.volume)
       #     mountPath: /kaniko/.docker
+
+    - name: write-url
+      image: $(params.WRITER_IMAGE)
+      script: |
+        set -e
+        image="$(params.IMAGE)"
+        printf "%s" "${image}" | tee "$(results.IMAGE_URL.path)"
 ---
 apiVersion: tekton.dev/v1
 kind: Task
@@ -62,34 +110,70 @@ spec:
     - name: TARGET
       description: The target stage
       default: base
+    - name: EXTRA_ARGS
+      type: array
+      default: []
+    - name: BUILDER_IMAGE
+      description: The image on which builds will run
+      # renovate container:
+      default: ghcr.io/osscontainertools/kaniko:v1.28.0@sha256:f072b11159668f4d11ba3a38d489db7ff18eb961b8140de91a437c71c1747583
+    - name: WRITER_IMAGE
+      description: The image on which the write-url step will run
+      # renovate container:
+      default: docker.io/library/bash:5.1.4@sha256:c523c636b722339f41b6a431b44588ab2f762c5de5ec3bd7964420ff982fb1d9
+    - name: KANIKO_DIR
+      description: Specifies the location of the kaniko binaries
+      default: /kaniko
 
   workspaces:
     - name: source
-      description: Holds the code to build
+      description: Holds the context and Dockerfile
     - name: build-context
       description: Configmap holding the build context (Dockerfile, configs, etc.)
-    # - name: dockerconfig
-    #   description: Docker config.json for registry auth
+    - name: dockerconfig
+      description: Includes a docker `config.json`
+      optional: true
+      mountPath: /kaniko/.docker
+  results:
+    - name: IMAGE_DIGEST
+      description: Digest of the image just built.
+    - name: IMAGE_URL
+      description: URL of the image just built.
 
   steps:
     - name: build-and-push
-      # renovate container:
-      image: docker.io/martizih/kaniko:v1.27.6@sha256:95779f52d460ca70b65a4f4679d4f5163ad6c33edea3303dc8bbff847de5e05c
+      image: $(params.BUILDER_IMAGE)
+      workingDir: $(workspaces.source.path)
       env:
-        - name: DOCKER_CONFIG
-          value: /kaniko/.docker
+        - name: KANIKO_DIR
+          value: $(params.KANIKO_DIR)
+        # kaniko assumes it is running as root, which means this example fails on platforms
+        # that default to run containers as random uid (like OpenShift). Adding this securityContext
+        # makes it explicit that it needs to run as root.
+      securityContext:
+        runAsUser: 0
       command:
         - /kaniko/executor
       args:
+        - $(params.EXTRA_ARGS)
         - --dockerfile=$(workspaces.build-context.path)/$(params.DOCKERFILE)
         - --context=$(workspaces.source.path)/$(params.CONTEXT)
         - --destination=$(params.IMAGE)
+        - --digest-file=$(results.IMAGE_DIGEST.path)
         - --cache=true
-        - --cache-repo=$(params.IMAGE)/cache
+        - --cache-repo=$(echo '$(params.IMAGE)' | sed -E 's/:[^/:]*(@sha256:[a-f0-9]+)?$//' )/cache
         - --registry-map="docker.io={{ .Values.registry.mirror }}/docker.io"
         - --snapshot-mode=redo
         - --target=$(params.TARGET)
         - --skip-tls-verify # Somehow it fails to verify tls when pulling from registry
+        - --insecure
       # volumeMounts:
       #   - name: $(workspaces.dockerconfig.volume)
       #     mountPath: /kaniko/.docker
+
+    - name: write-url
+      image: $(params.WRITER_IMAGE)
+      script: |
+        set -e
+        image="$(params.IMAGE)"
+        printf "%s" "${image}" | tee "$(results.IMAGE_URL.path)"
