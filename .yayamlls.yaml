@@ -1,0 +1,7 @@
+catalog: true
+kubernetes:
+  enabled: true
+renderers:
+  flate:
+    enabled: true
+    path: kubernetes/clusters/test

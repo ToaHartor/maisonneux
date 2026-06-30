@@ -1,0 +1,125 @@
+---
+name: AI PR Review
+
+# Entirely from https://github.com/joryirving/home-ops/blob/main/.github/workflows/ai-pr-review.yaml
+
+on:
+  pull_request:
+    branches: ["localdev"]
+    # `labeled` enables the one-click re-review: add the `ai-review` label to
+    # force a fresh review (only write/triage can label — self-authorizing).
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
+  # workflow_dispatch:
+  #   inputs:
+  #     pr_number:
+  #       description: PR number to (re-)review
+  #       required: true
+
+# Never run this pipeline in parallel
+concurrency:
+  # `labeled` events each get their own group: net-new PRs are auto-labeled
+  # (Renovate adds several at creation), and with a shared group +
+  # cancel-in-progress those label runs would cancel the real opened review.
+  # group: ${{ forgejo.workflow }}-${{ forgejo.event.pull_request.number || inputs.pr_number || forgejo.ref }}${{ forgejo.event.action == 'labeled' && format('-label-{0}', forgejo.run_id) || '' }}
+  group: ai-pr-review
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review-pr:
+    name: AI PR Review
+    # pull_request is the normal path; adding the `ai-review` label is the
+    # normal re-review trigger (handled natively by the action). workflow_dispatch
+    # remains as a manual force-review path.
+    if: ${{ (forgejo.event_name == 'pull_request' && !forgejo.event.pull_request.draft) || forgejo.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      # - name: Resolve PR head for re-review
+      #   id: prctx
+      #   if: forgejo.event_name == 'workflow_dispatch'
+      #   env:
+      #     GH_TOKEN: ${{ forgejo.token }}
+      #     PR_NUMBER: ${{ inputs.pr_number }}
+      #   run: |
+      #     PR_DATA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+      #       "$FORGEJO_API_URL/repos/$FORGEJO_REPOSITORY/pulls/${PR_NUMBER}")
+      #     echo "head_sha=$(echo "$PR_DATA" | python3 -c 'import sys,json; print(json.load(sys.stdin)["head"]["sha"])')" >> $FORGEJO_OUTPUT
+
+      - name: Checkout
+        uses: https://github.com/actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ forgejo.event.pull_request.head.sha }} #  || steps.prctx.outputs.head_sha
+
+      - name: Install gh CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+          apt-get update
+          apt-get install -y gh
+
+      - name: Analyze PR with reusable AI reviewer
+        id: analyze
+        uses: https://github.com/misospace/pr-reviewer-action@b36ea146c6563a3f49a5b9a232d411f6cf970474 # v2.0.5
+        env:
+          # konflate's read-only MCP endpoint — the konflate evidence provider
+          # fetches the rendered (post-kustomize/Helm) Flux diff for this PR.
+          KONFLATE_MCP_URL: http://konflate.services.svc.cluster.local:8080/mcp
+        with:
+          platform: forgejo
+          forgejo_api_url: http://forgejo-http.services.svc.cluster.local:3000/
+          forgejo_token: ${{ secrets.FORGEJO_TOKEN }}
+          pr_number: ${{ forgejo.event.pull_request.number || inputs.pr_number }}
+          force_review: ${{ forgejo.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+          ai_primary_retries: "3"
+          ai_primary_retry_delay_sec: "15"
+          ai_base_url: http://qwen36.ai.svc.cluster.local:8080/v1
+          ai_api_format: openai
+          ai_model: "qwen36-27b-iq4-xs.gguf" # Change if model is different
+          ai_api_key: ""
+          ai_response_format: json_object
+          ai_max_tokens: "16000"
+          # ai_fallback_base_url:
+          # ai_fallback_api_format:
+          # ai_fallback_model:
+          # ai_fallback_api_key:
+          review_routing_mode: auto
+          # ai_smart_base_url:
+          # ai_smart_api_format:
+          # ai_smart_model:
+          # ai_smart_api_key:
+          allowed_source_hosts: "github.com,api.github.com,registry.terraform.io,opentofu.org,artifacthub.io,talos.dev,www.talos.dev,docs.siderolabs.com,codeberg.org,truecharts.org,trueforge.org"
+          context_limit_mode: normal
+          ci_status_check: "true"
+          ci_timeout_sec: "180"
+          ci_skip_on_timeout: "true"
+          search_url: "http://searxng.services.svc.cluster.local:8080/search"
+          tool_mode: native_loop
+          tool_max_rounds: "2"
+          tool_max_requests: "4"
+          tool_loop_wall_clock_sec: "600"
+          tool_planning_timeout_sec: "300"
+          tool_planning_max_context_bytes: "15000"
+          tool_planning_max_tokens: "16000"
+          tool_max_response_bytes: "12000"
+          tool_allowed_gh_api_repos: "*"
+          tool_request_timeout_sec: "15"
+          tool_enable_for_forks: "false"
+          tool_mcp_servers: "konflate=http://konflate.services.svc.cluster.local:8080/mcp"
+          system_prompt_file: .agents/instructions/pr-review.instructions.md
+          system_prompt_mode: append
+          standards_file_candidates: "AGENTS.md"
+          # Read-only konflate MCP: injects the rendered Flux YAML diff (the
+          # resources Flux will actually apply) as advisory evidence. Never
+          # gates — the provider exits clean with no findings on any failure
+          # or for PRs konflate isn't tracking.
+          evidence_providers_file: .forgejo/konflate-evidence-providers.json
+          on_model_failure: notice
+          inline_findings: "true"
+          publish_mode: review_comment

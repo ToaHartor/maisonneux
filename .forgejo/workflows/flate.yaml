@@ -53,7 +53,7 @@ jobs:
     #   fail-fast: false
     steps:
       - name: Checkout
-        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: https://github.com/actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0 # all history for all branches and tags
           persist-credentials: false
@@ -84,46 +84,48 @@ jobs:
             echo 'EOF'
           } >> "${FORGEJO_OUTPUT}"
 
-      - name: Add Comment
-        if: ${{ steps.diff.outputs.diff != '' }}
-        env:
-          GH_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
-          PR_NUMBER: ${{ forgejo.event.pull_request.number }}
-          MARKER: "<!-- sticky-comment: flate -->"
-          HEADER: "Changes:"
-          DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
-        run: |-
-          DIFF_LENGTH=${#DIFF_CONTENT}
+      # ! No longer needs to add a comment since konflate already posts the summary
 
-          if [[ ${DIFF_LENGTH} -gt 60000 ]]; then
-            RUN_URL="${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
-            BODY=$(printf $'%%s\n<details open>\n  <summary>%s (%%d chars — too large to post)</summary>\n\nDiff exceeds size limit. View the [workflow run](%%s) for full output.</details>' \
-              "${MARKER}" "${HEADER}" "${DIFF_LENGTH}" "${RUN_URL}")
-          else
-            BODY=$(printf $'%s\n<details open>\n  <summary>%s</summary>\n\n```diff\n%s\n```\n\n</details>' \
-              "${MARKER}" "${HEADER}" "${DIFF_CONTENT}")
-          fi
+      # - name: Add Comment
+      #   if: ${{ steps.diff.outputs.diff != '' }}
+      #   env:
+      #     GH_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+      #     PR_NUMBER: ${{ forgejo.event.pull_request.number }}
+      #     MARKER: "<!-- sticky-comment: flate -->"
+      #     HEADER: "Changes:"
+      #     DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
+      #   run: |-
+      #     DIFF_LENGTH=${#DIFF_CONTENT}
 
-          BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
+      #     if [[ ${DIFF_LENGTH} -gt 60000 ]]; then
+      #       RUN_URL="${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
+      #       BODY=$(printf $'%%s\n<details open>\n  <summary>%s (%%d chars — too large to post)</summary>\n\nDiff exceeds size limit. View the [workflow run](%%s) for full output.</details>' \
+      #         "${MARKER}" "${HEADER}" "${DIFF_LENGTH}" "${RUN_URL}")
+      #     else
+      #       BODY=$(printf $'%s\n<details open>\n  <summary>%s</summary>\n\n```diff\n%s\n```\n\n</details>' \
+      #         "${MARKER}" "${HEADER}" "${DIFF_CONTENT}")
+      #     fi
 
-          COMMENT_ID=$(curl -s \
-            -H "Authorization: token ${GH_TOKEN}" \
-            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
-            | jq -r --arg marker "${MARKER}" '.[] | select(.body | startswith($marker)) | .id' | head -1)
+      #     BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
 
-          if [[ -n "${COMMENT_ID}" ]]; then
-            curl -s -X PATCH \
-              -H "Authorization: token ${GH_TOKEN}" \
-              -H "Content-Type: application/json" \
-              "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/comments/${COMMENT_ID}" \
-              -d "${BODY_JSON}"
-          else
-            curl -s -X POST \
-              -H "Authorization: token ${GH_TOKEN}" \
-              -H "Content-Type: application/json" \
-              "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
-              -d "${BODY_JSON}"
-          fi
+      #     COMMENT_ID=$(curl -s \
+      #       -H "Authorization: token ${GH_TOKEN}" \
+      #       "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
+      #       | jq -r --arg marker "${MARKER}" '.[] | select(.body | startswith($marker)) | .id' | head -1)
+
+      #     if [[ -n "${COMMENT_ID}" ]]; then
+      #       curl -s -X PATCH \
+      #         -H "Authorization: token ${GH_TOKEN}" \
+      #         -H "Content-Type: application/json" \
+      #         "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/comments/${COMMENT_ID}" \
+      #         -d "${BODY_JSON}"
+      #     else
+      #       curl -s -X POST \
+      #         -H "Authorization: token ${GH_TOKEN}" \
+      #         -H "Content-Type: application/json" \
+      #         "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
+      #         -d "${BODY_JSON}"
+      #     fi
 
   success:
     if: ${{ !cancelled() }}
