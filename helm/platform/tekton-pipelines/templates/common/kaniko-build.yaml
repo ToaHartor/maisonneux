@@ -26,7 +26,7 @@ spec:
     - name: WRITER_IMAGE
       description: The image on which the write-url step will run
       # renovate container:
-      default: docker.io/library/bash:5.1.4@sha256:c523c636b722339f41b6a431b44588ab2f762c5de5ec3bd7964420ff982fb1d9
+      default: docker.io/library/bash:5.3.15@sha256:a19c811ee9e97fa8a080001d82b8e0ded303f0795cffdb1cbd162731bc8ce208
     - name: KANIKO_DIR
       description: Specifies the location of the kaniko binaries
       default: /kaniko
@@ -120,7 +120,7 @@ spec:
     - name: WRITER_IMAGE
       description: The image on which the write-url step will run
       # renovate container:
-      default: docker.io/library/bash:5.1.4@sha256:c523c636b722339f41b6a431b44588ab2f762c5de5ec3bd7964420ff982fb1d9
+      default: docker.io/library/bash:5.3.15@sha256:a19c811ee9e97fa8a080001d82b8e0ded303f0795cffdb1cbd162731bc8ce208
     - name: KANIKO_DIR
       description: Specifies the location of the kaniko binaries
       default: /kaniko
