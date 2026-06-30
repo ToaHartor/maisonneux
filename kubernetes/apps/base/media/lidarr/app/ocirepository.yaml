@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 29.4.1
-    digest: sha256:713bb32859d5d51f330d41a528a9fe5fd4f89f4dc2d0eae0b5f655a0399aeeb0
+    tag: 29.5.1
+    digest: sha256:6552eb10fc7175d58b76571af023f47efe193ebde7b28d1c4e5fd2452b72c21d
   url: oci://oci.trueforge.org/truecharts/lidarr
