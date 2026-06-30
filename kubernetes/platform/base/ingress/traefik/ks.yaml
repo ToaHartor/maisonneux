@@ -45,7 +45,7 @@ spec:
     labels:
       app.kubernetes.io/name: traefik
   interval: 1h
-  path: "./config/crd/experimental" # Installing experimental ones as we need TCPRoutes for ssh
+  path: "./config/crd"
   prune: false
   sourceRef:
     kind: GitRepository
