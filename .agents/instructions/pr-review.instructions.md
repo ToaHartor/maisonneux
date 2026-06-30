@@ -44,4 +44,8 @@ For Helm chart version updates, verify if the changelog is available in the Pull
 - If the changelog is the Helm chart one, summarize it and search for the app changelog by using the image version changes (when changes).
 - If no changelog is available, search for the Helm chart changelog using the source URL, and the app changelog (when changes).
 
-Helm chart changelog and app changelog must be separated.
+Helm chart changelog and app changelog must be separated. Indicate if there are any breaking changes and detail them.
+
+### Verify TODO comment and linked issues
+
+If a TODO comment is found linking a comment/issue, search if the issue is resolved and if the fixed version corresponds to the target version.
