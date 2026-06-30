@@ -132,8 +132,8 @@ spec:
           name: hf-token
           key: HF_TOKEN
   podSecurityContext:
-    runAsNonRoot: true
-    runAsUser: 101 # curl_user
+    # runAsNonRoot: true
+    # runAsUser: 101 # curl_user
     seccompProfile:
       type: RuntimeDefault
   # priorityClassName:
