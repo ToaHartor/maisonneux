@@ -106,7 +106,7 @@ securityContext:
         "SETGID",
         "SETUID",
       ]
-    cleanCiliumState: ["NET_ADMIN", "SYS_ADMIN", "SYS_RESOURCE"]
+    cleanCiliumState: [ "NET_ADMIN", "SYS_ADMIN", "SYS_RESOURCE" ]
 
 cgroup:
   autoMount:
@@ -121,8 +121,8 @@ routingMode: native
 
 rollOutCiliumPods: true
 resources:
-  limits:
-    memory: "1Gi"
+  # limits:
+  #   memory: "1Gi"
   requests:
     cpu: "200m"
     memory: "512Mi"
@@ -139,9 +139,9 @@ l2announcements:
   enabled: false # enable if no bgp
   # interface: "eth0"
 
-# Enabled by kubeProxyReplacement
-# externalIPs:
-#   enabled: true
+  # Enabled by kubeProxyReplacement
+  # externalIPs:
+  #   enabled: true
 
 loadBalancer:
   # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
@@ -157,7 +157,8 @@ loadBalancer:
 nodeIPAM:
   enabled: false
 
-gatewayAPI: # Using traefik for that
+gatewayAPI:
+  # Using traefik for that
   enabled: false
   enableAlpn: false
   enableAppProtocol: false
@@ -180,12 +181,12 @@ debug:
 #   enabled: false
 
 envoy:
-  enabled: true
+  enabled: false
   rollOutPods: true
   securityContext:
     capabilities:
       keepCapNetBindService: true
-      envoy: ["NET_ADMIN", "NET_BIND_SERVICE", "PERFMON", "BPF"] # "SYS_ADMIN"
+      envoy: [ "NET_ADMIN", "NET_BIND_SERVICE", "PERFMON", "BPF" ] # "SYS_ADMIN"
   debug:
     admin:
       enabled: false # Only if debugging
@@ -204,7 +205,7 @@ hubble:
     rollOutPods: true
   metrics:
     enableOpenMetrics: true
-    enabled: ["dns", "drop", "tcp", "flow", "icmp", "http"]
+    enabled: [ "dns", "drop", "tcp", "flow", "icmp", "http" ]
 
     dashboards:
       enabled: true
@@ -222,6 +223,7 @@ dashboards:
   enabled: true
   label: grafana_dashboard
   labelValue: "1"
+
 # Hardening
 # policyEnforcementMode: "always" # Enforce network policies
 # hostFirewall:
