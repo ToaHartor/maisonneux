@@ -193,6 +193,8 @@ spec:
             enabled: true
           clusterMetrics:
             enabled: true
+          kubernetesObjects:
+            enabled: true
 
         # Should run as root to collect hostMetrics
         securityContext:
