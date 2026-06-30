@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 22.4.0
-    digest: sha256:c099e5a3502ccb1bbe568d853bf733beb5e7c665fbcfb60534ab85a6ec02a45e
+    tag: 22.5.0
+    digest: sha256:6572ad5665b06074f2fa9916e798f3670364c374a4d9123cd60a80f6d3f63854
   url: oci://oci.trueforge.org/truecharts/jdownloader2
