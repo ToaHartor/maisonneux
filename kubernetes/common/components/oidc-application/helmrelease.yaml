@@ -11,7 +11,7 @@ spec:
   releaseName: ${APP}-oidc
   chartRef:
     kind: OCIRepository
-    name: authentik-application
+    name: ${APP}-authentik-application
   interval: 50m
   install:
     createNamespace: true
@@ -32,14 +32,14 @@ spec:
           # clientID:
           # clientSecret:
           redirectURL:
-          - "${REDIRECT_URL}"
+            - "${REDIRECT_URL}"
           tokenDuration: "minutes=5"
           signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
           scopes:
             - name: "authentik default OAuth Mapping: OpenID 'openid'"
             - name: "authentik default OAuth Mapping: OpenID 'email'"
             - name: "authentik default OAuth Mapping: OpenID 'profile'"
-            # Add scopes via 
+            # Add scopes via
             # - name:
             #   scope_name:
             #   expression:

@@ -13,4 +13,3 @@ transformers:
   - ./transformers
 components:
   - ../../../common/components/repos/app-template
-  - ../../../common/components/repos/authentik-application

@@ -10,5 +10,4 @@ resources:
 transformers:
   - ./transformers
 components:
-  - ../../../common/components/repos/authentik-application
   - ../../../common/components/clustersecretstore

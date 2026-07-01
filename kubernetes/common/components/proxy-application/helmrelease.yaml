@@ -11,7 +11,7 @@ spec:
   releaseName: ${APP}-proxy
   chartRef:
     kind: OCIRepository
-    name: authentik-application
+    name: ${APP}-authentik-application
   interval: 50m
   install:
     createNamespace: true
