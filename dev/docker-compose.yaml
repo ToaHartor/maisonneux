@@ -37,7 +37,7 @@ services:
 
   # gitea-actions:
   #   # renovate container:
-  #   image: ghcr.io/vegardit/gitea-act-runner:1.0.8
+  #   image: ghcr.io/vegardit/gitea-act-runner:2.0.0
   #   container_name: local_gitea_actions
   #   networks:
   #     - dev
