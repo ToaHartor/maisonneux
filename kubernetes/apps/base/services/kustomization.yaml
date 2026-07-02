@@ -27,6 +27,5 @@ resources:
 transformers:
   - ./transformers
 components:
-  - ../../../common/components/repos/app-template
   - ../../../common/components/traefik-middlewares
   - ../../../common/components/clustersecretstore

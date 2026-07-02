@@ -11,4 +11,3 @@ transformers:
   - ./transformers
 components:
   - ../../../common/components/github-creds
-  - ../../../common/components/repos/app-template

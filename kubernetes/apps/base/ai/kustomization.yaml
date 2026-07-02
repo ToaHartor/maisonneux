@@ -11,5 +11,3 @@ resources:
   # - ./vllm/ks.yaml
 transformers:
   - ./transformers
-components:
-  - ../../../common/components/repos/app-template

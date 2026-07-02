@@ -3,19 +3,19 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &name tachi
+  name: &app tachi
 spec:
-  releaseName: *name
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: app-template
+    name: *app
   interval: 50m
   install:
     createNamespace: true
     remediation:
       retries: 3
   values:
-    fullnameOverride: *name
+    fullnameOverride: *app
     defaultPodOptions:
       automountServiceAccountToken: false
       enableServiceLinks: false
