@@ -3,123 +3,122 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: vaultwarden
+  name: &app vaultwarden
 spec:
-  releaseName: vaultwarden
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: vaultwarden
+    name: app-template
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  valuesFrom:
-    - kind: Secret
-      name: ${SECRET_KEY_NAME}
-      valuesKey: secretKey
-      targetPath: vaultwarden.admin.token
-    # SMTP configuration mirrored from the external-secrets secret store
-    - kind: Secret
-      name: smtp-config
-      valuesKey: smtp_username
-      targetPath: vaultwarden.smtp.user
-    - kind: Secret
-      name: smtp-config
-      valuesKey: smtp_username
-      targetPath: vaultwarden.smtp.from
-    - kind: Secret
-      name: smtp-config
-      valuesKey: smtp_token
-      targetPath: vaultwarden.smtp.password
-    - kind: Secret
-      name: smtp-config
-      valuesKey: smtp_server
-      targetPath: vaultwarden.smtp.host
-    - kind: Secret
-      name: smtp-config
-      valuesKey: smtp_port
-      targetPath: vaultwarden.smtp.port
-
-  # see https://github.com/truecharts/public/blob/master/charts/stable/vaultwarden/values.yaml
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
-    waitPsqlImage:
-      repository: ghcr.io/home-operations/busybox
-      tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
-      pullPolicy: IfNotPresent
-
-    resources:
-      limits:
-        cpu: 500m
-        memory: 250Mi
-      requests:
-        cpu: 100m
-        memory: 100Mi
-
-    workload:
-      main:
+    controllers:
+      vaultwarden:
+        replicas: 1
+        strategy: RollingUpdate
         annotations:
-          # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds,smtp-config"
-          configmap.reloader.stakater.com/auto: "true"
-        podSpec:
-          # As UserNamespaces are not enabled on Talos
-          hostUsers: true
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000 # 568
+            runAsGroup: 1000 #568
+            fsGroup: 1000 # 568
+            fsGroupChangePolicy: OnRootMismatch
           priorityClassName: services-important
-          initContainers:
-            waitpsql:
-              enabled: true
-              type: init
-              imageSelector: waitPsqlImage
-              command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
-              env:
-                POD_NAME: postgres-db-rw # service name for psql rw operations
-                POD_NAMESPACE: ${psql_database_namespace}
-          containers:
-            main:
-              env:
-                DOMAIN: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
-                DATABASE_URL:
-                  secretKeyRef:
-                    name: ${APP}-db-creds
-                    key: uri
-                    expandObjectName: false
-              # Maybe we do not need to manage the private key in /data/rsa_key.pem as it only manages the encryption of the JWT for login
-    database:
-      type: postgresql
-      wal: false # disable if not using sqlite
-    vaultwarden:
-      allowSignups: false
-      showPasswordHint: false
-      allowInvitation: true
-      admin:
-        enabled: false # true
-        disableAdminToken: false
-        token: # Filled in valuesFrom
-      smtp:
-        enabled: true
-        # host: ""  # Filled in valuesFrom
-        # from: "" # Filled in valuesFrom
-        security: starttls
-        # port: 587 # Filled in valuesFrom
-        # user: ""  # Filled in valuesFrom
-        # password: ""  # Filled in valuesFrom
-      yubico:
-        enabled: false
-      push:
-        enabled: false
+        initContainers:
+          waitpsql:
+            enabled: true
+            image:
+              repository: ghcr.io/home-operations/busybox
+              tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
+              pullPolicy: IfNotPresent
+            command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: postgres-db-rw # service name for psql rw operations
+              POD_NAMESPACE: ${psql_database_namespace}
+        containers:
+          app:
+            image:
+              repository: vaultwarden/server
+              tag: 1.36.0@sha256:d626d04934cd1192ad8ced1adb975099fca78cec33ab467d2d3c923cde7f3b0c
+            env:
+              ADMIN_TOKEN:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+              DOMAIN: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
+              TZ: Europe/Paris
+              DATABASE_URL:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: uri
+              LOG_LEVEL: trace
+              EXTENDED_LOGGING: true
+              INVITATIONS_ALLOWED: true
+              ORG_CREATION_USERS: all
+              REQUIRE_DEVICE_EMAIL: false
+              ENABLE_DB_WAL: false # As we use sqlite
+              ROCKET_PORT: "${GATEWAY_SVC_PORT}"
+              SHOW_PASSWORD_HINT: false
+              SIGNUPS_ALLOWED: false
+              SIGNUPS_VERIFY: false
+              WEBSOCKET_ENABLED: true
+              WEB_VAULT_ENABLED: true
+              SMTP_HOST:
+                secretKeyRef:
+                  name: smtp-config
+                  key: smtp_server
+              SMTP_PORT:
+                secretKeyRef:
+                  name: smtp-config
+                  key: smtp_port
+              SMTP_FROM:
+                secretKeyRef:
+                  name: smtp-config
+                  key: smtp_username
+              SMTP_USER:
+                secretKeyRef:
+                  name: smtp-config
+                  key: smtp_username
+              SMTP_PASSORD:
+                secretKeyRef:
+                  name: smtp-config
+                  key: smtp_token
+              SMTP_SECURITY: "starttls"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+            resources:
+              limits:
+                memory: 100Mi
+              requests:
+                cpu: 100m
+                memory: 100Mi
+    service:
+      app:
+        ports:
+          http:
+            port: ${GATEWAY_SVC_PORT}
     persistence:
-      # We keep data as it contains cache and rsa key for signing jwt for sessions
-      # No need to backup it though
       data:
-        enabled: true
-        type: pvc
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
         size: 1Gi
         storageClass: ${fastdata_storage}-ha
-
-    cnpg:
-      main:
-        enabled: false # Disable postgres as we use our own db
-    ingress:
-      main:
-        required: false
