@@ -8,63 +8,87 @@ spec:
   releaseName: atuin
   chartRef:
     kind: OCIRepository
-    name: atuin
+    name: app-template
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/truecharts/public/blob/master/charts/stable/atuin/values.yaml
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
-    service:
-      main:
-        ports:
-          main:
-            port: ${GATEWAY_SVC_PORT}
-
-    resources:
-      limits:
-        cpu: 200m
-        memory: 100Mi
-      requests:
-        cpu: 100m
-        memory: 50Mi
-
-    workload:
-      main:
+    controllers:
+      atuin:
+        replicas: 1
+        strategy: RollingUpdate
         annotations:
           reloader.stakater.com/auto: "true"
-        strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
-        podSpec:
-          hostUsers: true
-          containers:
-            main:
-              env:
-                ATUIN_OPEN_REGISTRATION: "false" # When already registered
-                ATUIN_DB_URI:
-                  secretKeyRef:
-                    name: ${APP}-db-creds
-                    key: uri
-                    expandObjectName: false
-                ATUIN_DB_USERNAME:
-                  secretKeyRef:
-                    name: ${APP}-db-creds
-                    key: username
-                    expandObjectName: false
-                ATUIN_DB_PASSWORD:
-                  secretKeyRef:
-                    name: ${APP}-db-creds
-                    key: password
-                    expandObjectName: false
-
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          app:
+            image:
+              repository: ghcr.io/atuinsh/atuin
+              tag: 18.16.1@sha256:9d4d79507b51be6d292b218f5cc791d79ca0a72f51ab48f786b091bd6eafb39f
+            args: ["start"]
+            env:
+              TZ: Europe/Paris
+              ATUIN_HOST: 0.0.0.0
+              ATUIN_PORT: &port ${GATEWAY_SVC_PORT}
+              ATUIN_OPEN_REGISTRATION: false
+              ATUIN_CONFIG_DIR: /config
+              ATUIN_METRICS__ENABLE: true
+              ATUIN_METRICS__HOST: 0.0.0.0
+              ATUIN_METRICS__PORT: &metricsPort 8080
+              ATUIN_DB_URI:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: uri
+              ATUIN_DB_USERNAME:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: username
+              ATUIN_DB_PASSWORD:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: password
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              limits:
+                cpu: 200m
+                memory: 100Mi
+              requests:
+                cpu: 100m
+                memory: 50Mi
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+          metrics:
+            port: *metricsPort
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
     persistence:
       config:
-        enabled: true
         type: emptyDir
-
-    cnpg:
-      main:
-        enabled: false
