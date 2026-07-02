@@ -3,41 +3,77 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: cyberchef
+  name: &app cyberchef
 spec:
-  releaseName: cyberchef
+  releaseName: *app
   dependsOn:
     - name: ${APP}-proxy
   chartRef:
     kind: OCIRepository
-    name: cyberchef
+    name: *app
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   # see https://github.com/truecharts/public/blob/master/charts/stable/cyberchef/values.yaml
   values:
-    securityContext:
-      container:
-        readOnlyRootFilesystem: true
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-    
-    resources:
-      limits:
-        cpu: 100m
-        memory: 100Mi
-      requests:
-        cpu: 50m
-        memory: 50Mi
-
-    workload:
-      main:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+    controllers:
+      cyberchef:
+        replicas: 1
         strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
-        podSpec:
-          hostUsers: true
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          app:
+            image:
+              repository: docker.io/mpepping/cyberchef
+              tag: v11.2.0@sha256:40de0167deab2637706ded13626c30739bc7ae526bfecaf42841e0e1293d7179
+            securityContext:
+              readOnlyRootFilesystem: true # false
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: "10m"
+                memory: "64Mi"
+              limits:
+                memory: "64Mi"
+            probes:
+              liveness: &probes
+                enabled: true
+                type: HTTP
+                path: /
+              readiness: *probes
+              startup: *probes
+    service:
+      app:
+        ports:
+          http:
+            port: ${GATEWAY_SVC_PORT}
+    persistence:
+      tmp:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 16Mi
+        globalMounts:
+          - subPath: tmp
+            path: /tmp
+          - subPath: cache
+            path: /var/cache/nginx
+          - subPath: run
+            path: /var/run

@@ -32,7 +32,7 @@ spec:
       GROUP: Services
       DESCRIPTION: Crypto utilities
       GATEWAY_SVC_NAME: cyberchef
-      GATEWAY_SVC_PORT: "10219"
+      GATEWAY_SVC_PORT: "8000"
       # inherited variables
       auth_subdomain: ${auth_subdomain}
       main_domain: ${main_domain}
