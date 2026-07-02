@@ -52,10 +52,11 @@ spec:
   kind: Password
   generator:
     passwordSpec:
-      length: 64
+      length: 32 # x2 in hex
       symbols: 0
       noUpper: false
       allowRepeat: true
+      encoding: hex
 ---
 apiVersion: generators.external-secrets.io/v1alpha1
 kind: ClusterGenerator

@@ -24,6 +24,8 @@ spec:
     - ../../../../../common/components/garage-bucket
     - ../../../../../common/components/cnpg/db
     - ../../../../../common/components/httproute/common
+    - ../../../../../common/components/secret/key
+    - ../../../../../common/components/secret/key2
   path: "./kubernetes/apps/base/services/outline/app"
   postBuild:
     substitute:
@@ -39,7 +41,12 @@ spec:
       PSQL_DB_USER: outline
       PSQL_DB_NAME: outline
       GATEWAY_SVC_NAME: outline
-      GATEWAY_SVC_PORT: "10196"
+      GATEWAY_SVC_PORT: "8080"
+      # Secret keys
+      SECRET_KEY_NAME: outline-secret-key
+      SECRET_KEY_TYPE: 64hexa
+      SECRET2_KEY_NAME: outline-utils-key
+      SECRET2_KEY_TYPE: 64hexa
       # inherited variables
       psql_cluster_name: ${psql_cluster_name}
       psql_database_namespace: ${psql_database_namespace}
