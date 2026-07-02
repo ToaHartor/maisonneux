@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 17.5.0
-    digest: sha256:e4ae00ca72a90cf9118589b48b0711b2b52773f560b264f735b523fba4a394aa
+    tag: 17.6.0
+    digest: sha256:62f06e0e661b95b2271ff0bd86da0bf4c3b097fd4e58a9357fe4c27f4c807db2
   url: oci://oci.trueforge.org/truecharts/minio
