@@ -8,64 +8,96 @@ spec:
   releaseName: flaresolverr
   chartRef:
     kind: OCIRepository
-    name: flaresolverr
+    name: app-template
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/truecharts/public/blob/master/charts/stable/flaresolverr/values.yaml
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
-    resources:
-      limits:
-        cpu: 500m
-        memory: 512Mi
-      requests:
-        cpu: 50m
-        memory: 128Mi
-    securityContext:
-      container:
-        readOnlyRootFilesystem: false
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-
-    service:
-      metrics:
-        enabled: true
-        type: "ClusterIP"
-        ports:
-          metrics:
-            enabled: true
-            port: 8192
-            targetPort: 8192
-
-    workload:
-      main:
+    controllers:
+      flaresolverr:
+        replicas: 1
         strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
-        podSpec:
-          annotations:
-            prometheus.io/scrape: "true"
-            prometheus.io/port: "8192"
-            prometheus.io/path: "/metrics"
-          containers:
-            main:
-              env:
-                # TEST_URL: "https://www.google.com"
-                # BROWSER_TIMEOUT: 40000
-                HEADLESS: true
-                LOG_LEVEL: info
-                LOG_HTML: false
-                # At this time none of the captcha solvers work, defaults to none.
-                CAPTCHA_SOLVER: none
-                PROMETHEUS_ENABLED: true
-                PROMETHEUS_PORT: 8192
+        annotations:
+          reloader.stakater.com/auto: "true"
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8192"
+          prometheus.io/path: "/metrics"
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          app:
+            image:
+              repository: ghcr.io/flaresolverr/flaresolverr
+              tag: v3.5.0@sha256:139dfee1c6f89249c8d665d1333a42e8ec74ec0a86bc6bb1c8461e10d3a66a47
+            resources:
+              requests:
+                cpu: 15m
+                memory: 150Mi
+              limits:
+                memory: 512Mi
+            env:
+              # TEST_URL: "https://www.google.com"
+              # BROWSER_TIMEOUT: 40000
+              PORT: "8191"
+              HOST: "0.0.0.0"
+              HEADLESS: true
+              LOG_LEVEL: info
+              LOG_HTML: false
+              # At this time none of the captcha solvers work, defaults to none.
+              CAPTCHA_SOLVER: none
+              PROMETHEUS_ENABLED: true
+              PROMETHEUS_PORT: &monit-port 8192
 
-    persistence:
-      config:
-        enabled: true
-        type: emptyDir
-        mountPath: "/config"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false # Must be set to false
+              capabilities:
+                drop:
+                  - ALL
+
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8191
+                  periodSeconds: 10
+                  # /health responds slowly while Chromium is busy solving a
+                  # challenge; the 1s default timeout killed healthy pods
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8191
+                  failureThreshold: 30
+                  periodSeconds: 5
+    service:
+      app:
+        controller: flaresolverr
+        type: ClusterIP
+        ports:
+          http:
+            port: 8191
+          metrics:
+            port: *monit-port
