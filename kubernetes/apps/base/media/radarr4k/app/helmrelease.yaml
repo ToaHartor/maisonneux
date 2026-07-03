@@ -3,107 +3,184 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: radarr4k
+  name: &app radarr4k
 spec:
-  releaseName: radarr4k
-  dependsOn:
-    - name: ${APP}-proxy
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: radarr4k
+    name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/truecharts/public/blob/master/charts/stable/radarr/values.yaml
-  # see documentation https://truecharts.org/charts/stable/radarr/
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
-    waitPsqlImage:
-      repository: ghcr.io/home-operations/busybox
-      tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
-      pullPolicy: IfNotPresent
-
-    securityContext:
-      pod:
-        fsGroup: 1000
-      container:
-        runAsUser: 1000
-        runAsGroup: 1000
-
-    resources:
-      limits:
-        cpu: 1500m
-        memory: 800Mi
-      requests:
-        cpu: 200m
-        memory: 200Mi
-    workload:
-      main:
+    controllers:
+      radarr4k:
+        replicas: 1
         strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
         annotations:
-          # Reload pod on secret change
-          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
-        podSpec:
-          initContainers:
-            waitpsql:
-              enabled: true
-              type: init
-              imageSelector: waitPsqlImage
-              command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
-              env:
-                POD_NAME: postgres-db-rw # service name for psql rw operations
-                POD_NAMESPACE: ${psql_database_namespace}
-          containers:
-            main:
-              env:
-                RADARR__AUTH__APIKEY:
-                  secretKeyRef:
-                    name: ${SECRET_KEY_NAME}
-                    key: secretKey
-                    expandObjectName: false
-                RADARR__AUTH__METHOD: External
-                RADARR__APP__INSTANCENAME: Radarr4K
-                RADARR__APP__THEME: dark
-                RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
-                RADARR__LOG__LEVEL: info
-                RADARR__UPDATE__BRANCH: develop
-                RADARR__POSTGRES__HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
-                RADARR__POSTGRES__PORT: "5432"
-                RADARR__POSTGRES__USER: ${PSQL_DB_USER}
-                RADARR__POSTGRES__PASSWORD:
-                  secretKeyRef:
-                    name: ${APP}-db-creds
-                    key: password
-                    expandObjectName: false
-                RADARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
-                RADARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}
-            exportarr:
-              env:
-                API_KEY:
-                  secretKeyRef:
-                    name: ${SECRET_KEY_NAME}
-                    key: secretKey
-                    expandObjectName: false
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          priorityClassName: services-important
+        initContainers:
+          waitpsql:
+            enabled: true
+            image:
+              repository: ghcr.io/home-operations/busybox
+              tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
+              pullPolicy: IfNotPresent
+            command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: postgres-db-rw # service name for psql rw operations
+              POD_NAMESPACE: ${psql_database_namespace}
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-operations/radarr
+              tag: 6.2.0.10390@sha256:be596a2f896fdf15077af027f44500f73e1f6fb7b450a6494b37dd25b7cc5927
+            env:
+              TZ: Europe/Paris
+              # Categories are listed here https://github.com/Radarr/Radarr/tree/develop/src/NzbDrone.Common/Options
+              RADARR__AUTH__APIKEY:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+              RADARR__APP__INSTANCENAME: Radarr4k
+              RADARR__APP__THEME: dark
+              RADARR__AUTH__METHOD: External
+              RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
+              RADARR__LOG__DBENABLED: "False"
+              RADARR__LOG__LEVEL: info
+              RADARR__SERVER__PORT: &port ${GATEWAY_SVC_PORT}
+              RADARR__UPDATE__BRANCH: develop
+              RADARR__POSTGRES__HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
+              RADARR__POSTGRES__PORT: "5432"
+              RADARR__POSTGRES__USER: ${PSQL_DB_USER}
+              RADARR__POSTGRES__PASSWORD:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: password
+              RADARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
+              RADARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              limits:
+                memory: 800Mi
+              requests:
+                cpu: 200m
+                memory: 200Mi
+          exportarr:
+            image:
+              repository: ghcr.io/onedr0p/exportarr
+              tag: v2.3.0@sha256:af535d94061cf97a52e1661945ffba78c03f9443eae7c0da1a80a5a4be56b520
+            args:
+              - radarr
+            env:
+              INTERFACE: 0.0.0.0
+              PORT: &exporterPort 7879
+              URL: "http://radarr:${GATEWAY_SVC_PORT}"
+              # additional metrics (slow)
+              # ENABLE_ADDITIONAL_METRICS: false
+              # enable gathering unknown queue items
+              # ENABLE_UNKNOWN_QUEUE_ITEMS: false
+              CONFIG: "/config/config.xml"
+              API_KEY:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *exporterPort
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *exporterPort
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              limits:
+                memory: 10Mi
+              requests:
+                cpu: 10m
+                memory: 10Mi
+
+    service:
+      app:
+        controller: radarr4k
+        ports:
+          http:
+            port: *port
+          metrics:
+            port: *exporterPort
     persistence:
       config:
-        enabled: true
+        type: emptyDir
+      tmp:
         type: emptyDir
       downloads:
-        enabled: true
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_download}
-        mountPath: /downloads
-      media-5:
-        enabled: true
+        globalMounts:
+          - path: /downloads
+      media5:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_5}
-        mountPath: "/shared/media5/"
-    metrics:
-      main:
-        enabled: true
+        globalMounts:
+          - path: "/shared/media5/"
