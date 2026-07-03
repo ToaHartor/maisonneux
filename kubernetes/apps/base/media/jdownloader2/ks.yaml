@@ -32,7 +32,7 @@ spec:
       GROUP: Media
       DESCRIPTION: DDL manager
       GATEWAY_SVC_NAME: jdownloader2
-      GATEWAY_SVC_PORT: "10054"
+      GATEWAY_SVC_PORT: "5800"
       # inherited variables
       nfs_server: ${nfs_server}
       nfs_path_download: ${nfs_path_download}

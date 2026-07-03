@@ -1,64 +1,87 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: jdownloader2
+  name: &app jdownloader2
 spec:
-  releaseName: jdownloader2
-  dependsOn:
-    - name: ${APP}-proxy
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: jdownloader2
+    name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/truecharts/public/blob/master/charts/stable/jdownloader2/values.yaml
-  values:
-    resources:
-      limits:
-        cpu: 500m
-        memory: 800Mi
-      requests:
-        cpu: 100m
-        memory: 400Mi
-    securityContext:
-      pod:
-        fsGroup: 1000
-      container:
-        readOnlyRootFilesystem: false
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 1000
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
 
-    jdownloader:
-      DISPLAY_WIDTH: 1680
-      DISPLAY_HEIGHT: 800
-    
-    workload:
-      main:
+  values:
+    controllers:
+      jdownloader2:
+        replicas: 1
         strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
-    
-    # configmap:
-    #   jdownloader:
-    #     data:
-    #       USER_ID: "1000"
-    #       GROUP_ID: "1000"
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            fsGroup: 1000
+            # fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 1000
+            runAsNonRoot: false
+            runAsUser: 0
+        containers:
+          app:
+            image:
+              repository: ghcr.io/jlesage/jdownloader-2
+              tag: v26.03.1@sha256:3d6cb102bd9bacff12ab1ca5136a38cb8f93d6595a7ccf5bce60aac4df138ebd
+            env:
+              DARK_MODE: 1
+              DISPLAY_WIDTH: 1680
+              DISPLAY_HEIGHT: 800
+              KEEP_APP_RUNNING: "0"
+              SECURE_CONNECTION: "0"
+              ENABLE_CJK_FONT: "0"
+              VNC_PASSWORD: ""
+
+            resources:
+              limits:
+                memory: 800Mi
+              requests:
+                cpu: 100m
+                memory: 400Mi
+            probes:
+              liveness: &probes
+                enabled: true
+                type: TCP
+              readiness: *probes
+              startup: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              # readOnlyRootFilesystem: false
+              # capabilities:
+              #   drop: ["ALL"]
+              #   add: ["KILL", "NET_BIND_SERVICE"]
+
+    service:
+      app:
+        controller: jdownloader2
+        ports:
+          http:
+            port: ${GATEWAY_SVC_PORT}
 
     persistence:
       config:
-        enabled: true
         type: emptyDir
-        mountPath: "/config"
       output:
-        enabled: true
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_download}
-        mountPath: "/output"
+        globalMounts:
+          - path: /output
