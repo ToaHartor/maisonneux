@@ -3,96 +3,178 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: prowlarr
+  name: &app prowlarr
 spec:
-  releaseName: prowlarr
-  dependsOn:
-    - name: ${APP}-proxy
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: prowlarr
+    name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/truecharts/public/blob/master/charts/stable/prowlarr/values.yaml
-  # see documentation https://truecharts.org/charts/stable/prowlarr/
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
-    waitPsqlImage:
-      repository: ghcr.io/home-operations/busybox
-      tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
-      pullPolicy: IfNotPresent
-    resources:
-      limits:
-        cpu: 500m
-        memory: 250Mi
-      requests:
-        cpu: 20m
-        memory: 100Mi
-    workload:
-      main:
+    controllers:
+      prowlarr:
+        replicas: 1
         strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
         annotations:
-          # Reload pod on secret change
-          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
-        podSpec:
-          initContainers:
-            waitpsql:
-              enabled: true
-              type: init
-              imageSelector: waitPsqlImage
-              command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
-              env:
-                POD_NAME: postgres-db-rw # service name for psql rw operations
-                POD_NAMESPACE: ${psql_database_namespace}
-          containers:
-            main:
-              env:
-                PROWLARR__AUTH__APIKEY:
-                  secretKeyRef:
-                    name: ${SECRET_KEY_NAME}
-                    key: secretKey
-                    expandObjectName: false
-                PROWLARR__AUTH__METHOD: External
-                PROWLARR__APP__INSTANCENAME: Prowlarr
-                PROWLARR__APP__THEME: dark
-                PROWLARR__AUTH__REQUIRED: DisabledForLocalAddresses
-                PROWLARR__LOG__LEVEL: info
-                PROWLARR__UPDATE__BRANCH: develop
-                PROWLARR__POSTGRES__HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
-                PROWLARR__POSTGRES__PORT: "5432"
-                PROWLARR__POSTGRES__USER: ${PSQL_DB_USER}
-                PROWLARR__POSTGRES__PASSWORD:
-                  secretKeyRef:
-                    name: ${APP}-db-creds
-                    key: password
-                    expandObjectName: false
-                PROWLARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
-                PROWLARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}
-            exportarr:
-              env:
-                API_KEY:
-                  secretKeyRef:
-                    name: ${SECRET_KEY_NAME}
-                    key: secretKey
-                    expandObjectName: false
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          priorityClassName: services-important
+        initContainers:
+          waitpsql:
+            enabled: true
+            image:
+              repository: ghcr.io/home-operations/busybox
+              tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
+              pullPolicy: IfNotPresent
+            command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: postgres-db-rw # service name for psql rw operations
+              POD_NAMESPACE: ${psql_database_namespace}
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-operations/prowlarr
+              tag: 2.3.7.5365@sha256:b9557d772c974901aed9285189d904b613f1f07750fca930eecfe78544bd3d48
+            env:
+              TZ: Europe/Paris
+              # Categories are listed here https://github.com/Sonarr/Sonarr/tree/develop/src/NzbDrone.Common/Options
+              PROWLARR__AUTH__APIKEY:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+              PROWLARR__APP__INSTANCENAME: Prowlarr
+              PROWLARR__APP__THEME: dark
+              PROWLARR__AUTH__METHOD: External
+              PROWLARR__AUTH__REQUIRED: DisabledForLocalAddresses
+              PROWLARR__LOG__DBENABLED: "False"
+              PROWLARR__LOG__LEVEL: info
+              PROWLARR__SERVER__PORT: &port ${GATEWAY_SVC_PORT}
+              PROWLARR__UPDATE__BRANCH: develop
+              PROWLARR__POSTGRES__HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
+              PROWLARR__POSTGRES__PORT: "5432"
+              PROWLARR__POSTGRES__USER: ${PSQL_DB_USER}
+              PROWLARR__POSTGRES__PASSWORD:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: password
+              PROWLARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
+              PROWLARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                type: TCP
+                port: *port
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              limits:
+                memory: 800Mi
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          exportarr:
+            image:
+              repository: ghcr.io/onedr0p/exportarr
+              tag: v2.3.0@sha256:af535d94061cf97a52e1661945ffba78c03f9443eae7c0da1a80a5a4be56b520
+            args:
+              - prowlarr
+            env:
+              INTERFACE: 0.0.0.0
+              PORT: &exporterPort 9697
+              URL: "http://prowlarr:${GATEWAY_SVC_PORT}"
+              # additional metrics (slow)
+              # ENABLE_ADDITIONAL_METRICS: false
+              # enable gathering unknown queue items
+              # ENABLE_UNKNOWN_QUEUE_ITEMS: false
+              # enable backfill of historical metrics
+              # PROWLARR__BACKFILL: false
+              # Set a date from which to start the backfill
+              # PROWLARR__BACKFILL_SINCE_DATE: 1970-01-01
+              CONFIG: "/config/config.xml"
+              API_KEY:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *exporterPort
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *exporterPort
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              limits:
+                memory: 10Mi
+              requests:
+                cpu: 10m
+                memory: 10Mi
+
+    service:
+      app:
+        controller: prowlarr
+        ports:
+          http:
+            port: *port
+          metrics:
+            port: *exporterPort
     persistence:
       config:
-        enabled: true
         type: emptyDir
-    configmap:
-      dashboard:
-        enabled: true
-        labels:
-          grafana_dashboard: "1"
-        data:
-          prowlarr.json: >-
-            {{ .Files.Get "dashboard.json" }}
-
-    metrics:
-      main:
-        enabled: true
+      tmp:
+        type: emptyDir
