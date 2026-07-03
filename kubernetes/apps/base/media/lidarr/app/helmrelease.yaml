@@ -3,107 +3,184 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: lidarr
+  name: &app lidarr
 spec:
-  releaseName: lidarr
-  dependsOn:
-    - name: ${APP}-proxy
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: lidarr
+    name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/truecharts/public/blob/master/charts/stable/lidarr/values.yaml
-  # see documentation https://truecharts.org/charts/stable/lidarr/
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
-    waitPsqlImage:
-      repository: ghcr.io/home-operations/busybox
-      tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
-      pullPolicy: IfNotPresent
-
-    securityContext:
-      pod:
-        fsGroup: 1000
-      container:
-        runAsUser: 1000
-        runAsGroup: 1000
-
-    resources:
-      limits:
-        cpu: 1500m
-        memory: 800Mi
-      requests:
-        cpu: 200m
-        memory: 200Mi
-    workload:
-      main:
+    controllers:
+      lidarr:
+        replicas: 1
         strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
         annotations:
-          # Reload pod on secret change
-          secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
-        podSpec:
-          initContainers:
-            waitpsql:
-              enabled: true
-              type: init
-              imageSelector: waitPsqlImage
-              command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
-              env:
-                POD_NAME: postgres-db-rw # service name for psql rw operations
-                POD_NAMESPACE: ${psql_database_namespace}
-          containers:
-            main:
-              env:
-                LIDARR__AUTH__APIKEY:
-                  secretKeyRef:
-                    name: ${SECRET_KEY_NAME}
-                    key: secretKey
-                    expandObjectName: false
-                LIDARR__AUTH__METHOD: External
-                LIDARR__APP__INSTANCENAME: Lidarr
-                LIDARR__APP__THEME: dark
-                LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
-                LIDARR__LOG__LEVEL: info
-                LIDARR__UPDATE__BRANCH: develop
-                LIDARR__POSTGRES__HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
-                LIDARR__POSTGRES__PORT: "5432"
-                LIDARR__POSTGRES__USER: ${PSQL_DB_USER}
-                LIDARR__POSTGRES__PASSWORD:
-                  secretKeyRef:
-                    name: ${APP}-db-creds
-                    key: password
-                    expandObjectName: false
-                LIDARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
-                LIDARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}
-            exportarr:
-              env:
-                API_KEY:
-                  secretKeyRef:
-                    name: ${SECRET_KEY_NAME}
-                    key: secretKey
-                    expandObjectName: false
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          priorityClassName: services-important
+        initContainers:
+          waitpsql:
+            enabled: true
+            image:
+              repository: ghcr.io/home-operations/busybox
+              tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
+              pullPolicy: IfNotPresent
+            command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: postgres-db-rw # service name for psql rw operations
+              POD_NAMESPACE: ${psql_database_namespace}
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-operations/lidarr
+              tag: 3.1.3.4968@sha256:eb3db00c3219b93a433036e393e49d4233cdd992cfe42a7c02e6114a22491b1b
+            env:
+              TZ: Europe/Paris
+              # Categories are listed here https://github.com/Sonarr/Sonarr/tree/develop/src/NzbDrone.Common/Options
+              LIDARR__AUTH__APIKEY:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+              LIDARR__APP__INSTANCENAME: Sonarr
+              LIDARR__APP__THEME: dark
+              LIDARR__AUTH__METHOD: External
+              LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
+              LIDARR__LOG__DBENABLED: "False"
+              LIDARR__LOG__LEVEL: info
+              LIDARR__SERVER__PORT: &port ${GATEWAY_SVC_PORT}
+              LIDARR__UPDATE__BRANCH: develop
+              LIDARR__POSTGRES__HOST: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
+              LIDARR__POSTGRES__PORT: "5432"
+              LIDARR__POSTGRES__USER: ${PSQL_DB_USER}
+              LIDARR__POSTGRES__PASSWORD:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: password
+              LIDARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
+              LIDARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              limits:
+                memory: 800Mi
+              requests:
+                cpu: 200m
+                memory: 200Mi
+          exportarr:
+            image:
+              repository: ghcr.io/onedr0p/exportarr
+              tag: v2.3.0@sha256:af535d94061cf97a52e1661945ffba78c03f9443eae7c0da1a80a5a4be56b520
+            args:
+              - lidarr
+            env:
+              INTERFACE: 0.0.0.0
+              PORT: &exporterPort 8687
+              URL: "http://lidarr:${GATEWAY_SVC_PORT}"
+              # additional metrics (slow)
+              # ENABLE_ADDITIONAL_METRICS: false
+              # enable gathering unknown queue items
+              # ENABLE_UNKNOWN_QUEUE_ITEMS: false
+              CONFIG: "/config/config.xml"
+              API_KEY:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *exporterPort
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *exporterPort
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              limits:
+                memory: 10Mi
+              requests:
+                cpu: 10m
+                memory: 10Mi
+
+    service:
+      app:
+        controller: lidarr
+        ports:
+          http:
+            port: *port
+          metrics:
+            port: *exporterPort
     persistence:
       config:
-        enabled: true
+        type: emptyDir
+      tmp:
         type: emptyDir
       downloads:
-        enabled: true
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_download}
-        mountPath: /downloads
-      media-6:
-        enabled: true
+        globalMounts:
+          - path: /downloads
+      media6:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_6}
-        mountPath: "/shared/music/"
-    metrics:
-      main:
-        enabled: true
+        globalMounts:
+          - path: "/shared/media6/"
