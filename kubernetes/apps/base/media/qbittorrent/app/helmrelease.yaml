@@ -3,96 +3,169 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: qbittorrent
+  name: &app qbittorrent
 spec:
-  releaseName: qbittorrent
-  dependsOn:
-    - name: ${APP}-proxy
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: qbittorrent
+    name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/truecharts/public/blob/master/charts/stable/qbittorrent/values.yaml
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
-    # Gluetun setup
-    # https://trueforge.org/truetech/truecharts/guides/addons/vpn-setup/
-    addons:
-      gluetun:
-        enabled: true
-        container:
-          env:
-            FIREWALL: "on"
-            FIREWALL_OUTBOUND_SUBNETS: "192.168.1.0/24,192.168.128.0/24,10.24.0.0/16" # Local network, ingress network, kubernetes network
-            VPN_TYPE: "wireguard"
-            VPN_SERVICE_PROVIDER: "protonvpn"
-            WIREGUARD_PRIVATE_KEY:
-              secretKeyRef:
-                name: gluetun-config
-                key: private_key
-                expandObjectName: false
-            SERVER_COUNTRIES: "Netherlands,Switzerland"
-            DNS_UPSTREAM_RESOLVER_TYPE: "dot"
-            DNS_UPSTREAM_RESOLVERS: "cloudflare,google"
-            DOT: "on"
-            BLOCK_MALICIOUS: "off"
-            PORT_FORWARD_ONLY: "on"
-            VPN_PORT_FORWARDING: "on"
-            # https://www.reddit.com/r/gluetun/comments/1kpbfs2/the_definitive_howto_for_setting_up_protonvpn/?show=original
-            VPN_PORT_FORWARDING_UP_COMMAND: /bin/sh -c 'wget -O- --retry-connrefused
-              --post-data "json={\"listen_port\":{{ `{{PORTS}}` }}}"
-              http://127.0.0.1:10095/api/v2/app/setPreferences 2>&1'
-            # HTTP Proxy (for indexer)
-            HTTPPROXY: "on"
-            FIREWALL_INPUT_PORTS: 10095,8888
-            #optional
-            HTTPPROXY_LOG: "off" # "on" for debug
-            HTTPPROXY_LISTENING_ADDRESS: :8888
-    service:
-      proxy:
-        enabled: true
-        ports:
-          gluetun:
-            enabled: true
-            port: 8888
-            protocol: "http"
-            targetPort: 8888
-        type: "ClusterIP"
-    workload:
-      main:
-        strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      *app :
+        replicas: 1
         annotations:
-          # Reload pod on secret change
-          secret.reloader.stakater.com/reload: "gluetun-config"
-    #     podSpec:
-    #       containers:
-    #         main:
-    #           env:
-    #             QBT_DOWNLOADS_PATH: /downloads/complete
-    #             QBT_TEMP_PATH: /downloads/incomplete
-    #             QBT_TORRENT_PATH: /downloads/torrent
-    #             TZ: Europe/Paris
-    #             PUID: 1000 # User ID, should have the rights on the NFS share and the dataset
-    #             PGID: 1000 # Group ID
+          reloader.stakater.com/auto: "true"
+        containers:
+          gluetun:
+            image:
+              repository: ghcr.io/qdm12/gluetun
+              tag: v3.41.1@sha256:1a5bf4b4820a879cdf8d93d7ef0d2d963af56670c9ebff8981860b6804ebc8ab
+            env:
+              LOG_LEVEL: debug
+              FIREWALL: "on"
+              FIREWALL_OUTBOUND_SUBNETS: "192.168.1.0/24,192.168.128.0/24,10.24.0.0/16" # Local network, ingress cidr, pod cidr (svc cidr ?)
+              VPN_TYPE: "wireguard"
+              VPN_SERVICE_PROVIDER: "protonvpn"
+              WIREGUARD_PRIVATE_KEY:
+                secretKeyRef:
+                  name: gluetun-config
+                  key: private_key
+              # WIREGUARD_ENDPOINT_PORT: 51820
+              SERVER_COUNTRIES: "Netherlands,Switzerland"
+              DNS_UPSTREAM_RESOLVER_TYPE: "dot"
+              DNS_UPSTREAM_RESOLVERS: "cloudflare,google"
+              DOT: "on"
+              BLOCK_MALICIOUS: "off"
+              PORT_FORWARD_ONLY: "on"
+              VPN_PORT_FORWARDING: "on"
+              # https://www.reddit.com/r/gluetun/comments/1kpbfs2/the_definitive_howto_for_setting_up_protonvpn/?show=original
+              VPN_PORT_FORWARDING_UP_COMMAND: /bin/sh -c 'wget -O- --retry-connrefused
+                --post-data "json={\"listen_port\":{{ `{{PORTS}}` }}}"
+                http://127.0.0.1:${GATEWAY_SVC_PORT}/api/v2/app/setPreferences 2>&1'
+              # HTTP Proxy (for indexer)
+              HTTPPROXY: "on"
+              FIREWALL_INPUT_PORTS: ${GATEWAY_SVC_PORT},8888
+              #optional
+              HTTPPROXY_LOG: "off" # "on" for debug
+              HTTPPROXY_LISTENING_ADDRESS: :8888
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
+              runAsNonRoot: false
+              privileged: true
+              allowPrivilegeEscalation: true
+              readOnlyRootFilesystem: false # true
+              capabilities: { drop: ["ALL"], add: ["NET_ADMIN", "CHOWN"] }
+            resources:
+              requests:
+                cpu: 50m
+                memory: 50Mi
+              limits:
+                memory: 100Mi
+          app:
+            image:
+              repository: ghcr.io/home-operations/qbittorrent
+              tag: 5.2.2@sha256:24f2d793cb7f7a93e755e5d22e533be818e62eadc864f4a82315b901b6ffe807
+            env:
+              TZ: Europe/Paris
+              QBT_WEBUI_PORT: &port 8080
+              QBT_TORRENTING_PORT: &torrentPort 6881
+            ports:
+              - containerPort: *port
+                name: main
+                protocol: TCP
+              - containerPort: &gluetunPort 8888
+                name: gluetun
+                protocol: TCP
+              - containerPort: *torrentPort
+                name: torrent
+                protocol: TCP
+              - containerPort: *torrentPort
+                name: torrentudp
+                protocol: UDP
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v2/app/version
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                type: TCP
+                port: *port
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 100m
+                memory: 100Mi
+              limits:
+                memory: 500Mi
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+          gluetun:
+            port: *gluetunPort
+          torrent:
+            port: *torrentPort
 
     persistence:
       config:
-        enabled: true
         labels:
           homelab/backup-resource: "true"
-        type: pvc
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
         size: 1Gi
         storageClass: ${fastdata_storage}-ha
-        mountPath: /config
+        globalMounts:
+          - path: /config
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+            subPath: tmp
       downloads:
-        enabled: true
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_download}
-        mountPath: /downloads
+        globalMounts:
+          - path: /downloads

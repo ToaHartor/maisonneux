@@ -32,7 +32,7 @@ spec:
       GROUP: Media
       DESCRIPTION: Torrent manager
       GATEWAY_SVC_NAME: qbittorrent
-      GATEWAY_SVC_PORT: "10095"
+      GATEWAY_SVC_PORT: "8080"
       # inherited variables
       fastdata_storage: ${fastdata_storage}
       nfs_server: ${nfs_server}

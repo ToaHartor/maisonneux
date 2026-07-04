@@ -26,9 +26,9 @@ spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsUser: 977
+        runAsGroup: 977
+        fsGroup: 977
         fsGroupChangePolicy: "OnRootMismatch"
         runAsNonRoot: true
         seccompProfile:
@@ -39,28 +39,27 @@ spec:
         strategy: RollingUpdate
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-          securityContext:
-            runAsNonRoot: false
-            runAsUser: 0 # 977
-            runAsGroup: 977
-            fsGroup: 977
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           app:
             image:
               repository: ghcr.io/searxng/searxng
               tag: 2026.5.23-323ce7600@sha256:d137e9b7877b7982c5e8ccf878fda0a05d3c8564ebace7f66424a5a19a3c29d9
+            command: [/usr/local/searxng/.venv/bin/granian, searx.webapp:app]
             env:
+              TZ: Europe/Paris
               BIND_ADDRESS: "0.0.0.0:8080"
               INSTANCE_NAME: SearXng
               BASE_URL: ""
-              SEARXNG_PORT: &port 8080
+              # SEARXNG_PORT: &port 8080
+              GRANIAN_PORT: &port 8080
+              GRANIAN_BLOCKING_THREADS: "1"
               SEARXNG_VALKEY_URL: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379/12
               SEARXNG_SECRET:
                 secretKeyRef:
                   name: ${SECRET_KEY_NAME}
                   key: secretKey
+              UWSGI_WORKERS: 1
+              UWSGI_THREADS: 4
             ports:
               - containerPort: *port
                 name: http
@@ -110,6 +109,7 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
+            subPath: tmp
     service:
       app:
         controller: *app
