@@ -3,84 +3,100 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: jellystat
+  name: &app jellystat
 spec:
-  releaseName: jellystat
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: jellystat
+    name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/truecharts/public/blob/master/charts/stable/jellystat/values.yaml
-  # see documentation https://truecharts.org/charts/stable/jellystat/
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
-    waitPsqlImage:
-      repository: ghcr.io/home-operations/busybox
-      tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
-      pullPolicy: IfNotPresent
-    resources:
-      limits:
-        cpu: 500m
-        memory: 250Mi
-      requests:
-        cpu: 10m
-        memory: 100Mi
-    workload:
-      main:
+    controllers:
+      jellystat:
+        replicas: 1
         strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
         annotations:
-          # Reload pod on secret/cm change
           reloader.stakater.com/auto: "true"
-        podSpec:
-          initContainers:
-            waitpsql:
-              enabled: true
-              type: init
-              imageSelector: waitPsqlImage
-              command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
-              env:
-                POD_NAME: postgres-db-rw # service name for psql rw operations
-                POD_NAMESPACE: ${psql_database_namespace}
-          containers:
-            main:
-              env:
-                POSTGRES_DB: ${PSQL_DB_NAME}
-                POSTGRES_USER: ${PSQL_DB_USER}
-                POSTGRES_PASSWORD:
-                  secretKeyRef:
-                    name: ${APP}-db-creds
-                    key: password
-                    expandObjectName: false
-                POSTGRES_IP: "postgres-db-rw.${psql_database_namespace}.svc.cluster.local"
-                POSTGRES_PORT: "5432"
-                JWT_SECRET:
-                  secretKeyRef:
-                    name: ${SECRET_KEY_NAME}
-                    key: secretKey
-                    expandObjectName: false
-                JS_USER:
-                  secretKeyRef:
-                    name: ${SECRET_CREDS_NAME}
-                    key: username
-                    expandObjectName: false
-                JS_PASSWORD:
-                  secretKeyRef:
-                    name: ${SECRET_CREDS_NAME}
-                    key: password
-                    expandObjectName: false
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        initContainers:
+          waitpsql:
+            enabled: true
+            image:
+              repository: ghcr.io/home-operations/busybox
+              tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
+              pullPolicy: IfNotPresent
+            command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            env:
+              POD_NAME: postgres-db-rw # service name for psql rw operations
+              POD_NAMESPACE: ${psql_database_namespace}
+        containers:
+          app:
+            image:
+              repository: cyfershepard/jellystat
+              tag: 1.1.11@sha256:c4e2dfa8bddf8d5ac3a675d7202f71a54dcfe3540cc186899d9201e0fe701fa5
+            env:
+              POSTGRES_DB: ${PSQL_DB_NAME}
+              POSTGRES_USER: ${PSQL_DB_USER}
+              POSTGRES_PASSWORD:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: password
+              POSTGRES_IP: "postgres-db-rw.${psql_database_namespace}.svc.cluster.local"
+              POSTGRES_PORT: "5432"
+              JWT_SECRET:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+              JS_USER:
+                secretKeyRef:
+                  name: ${SECRET_CREDS_NAME}
+                  key: username
+              JS_PASSWORD:
+                secretKeyRef:
+                  name: ${SECRET_CREDS_NAME}
+                  key: password
+            ports:
+              - containerPort: &port 3000
+                name: http
+                protocol: TCP
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            resources:
+              limits:
+                cpu: 500m
+                memory: 250Mi
+              requests:
+                cpu: 10m
+                memory: 100Mi
 
-    persistence:
-      backup:
-        enabled: false
-      # config:
-      #   enabled: true
-      #   type: emptyDir # persistent
-    cnpg:
-      main:
-        enabled: false
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
