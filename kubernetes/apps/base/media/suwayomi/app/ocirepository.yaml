@@ -10,6 +10,11 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 10.5.2
-    digest: sha256:482c0de3c067ce40b34b468514365a05595aa2ccf81cfe8b739e6dec8c216b46
-  url: oci://oci.trueforge.org/truecharts/tachidesk-docker
+    tag: 5.0.1
+    digest: sha256:70a7cb6766eb468068c2c1700c8450253070dc671a9fbbd1a6346a66545e2b2b
+  url: oci://ghcr.io/bjw-s-labs/helm/app-template
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github.com/bjw-s-labs/helm-charts.*$"

@@ -3,70 +3,97 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: suwayomi
+  name: &app suwayomi
 spec:
-  releaseName: suwayomi
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: suwayomi
+    name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  # see https://github.com/truecharts/public/blob/master/charts/stable/tachidesk-docker/values.yaml
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
-    resources:
-      limits:
-        cpu: 1000m
-        memory: 1Gi
-      requests:
-        cpu: 500m
-        memory: 512Mi
-    securityContext:
-      pod:
-        fsGroup: 1000
-      container:
-        readOnlyRootFilesystem: false
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-
-    workload:
-      main:
-        podSpec:
-          containers:
-            main:
-              env:
-                # TZ: UTC
-                DOWNLOAD_AS_CBZ: true
-                # AUTO_DOWNLOAD_CHAPTERS: true
-                AUTO_DOWNLOAD_EXCLUDE_UNREAD: false
-                UPDATE_EXCLUDE_UNREAD: false
-                UPDATE_EXCLUDE_STARTED: false
-                UPDATE_EXCLUDE_COMPLETED: false
-                EXTENSION_REPOS: '["https://github.com/keiyoushi/extensions/tree/repo/"]'
-                UPDATE_MANGA_INFO: true
-                BASIC_AUTH_ENABLED: false
-                FLARESOLVERR_ENABLED: true
-                FLARESOLVERR_URL: "flaresolverr.services.svc.cluster.local:8191"
+    controllers:
+      suwayomi:
+        replicas: 1
+        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          app:
+            image:
+              repository: ghcr.io/suwayomi/tachidesk
+              tag: v2.3.2232@sha256:553eb2db2723c91717bc0f3e292fd2e80460a1658ad8d98f387440e53966ce67
+            env:
+              TZ: Europe/Paris
+              DEBUG: false
+              GQL_DEBUG: false
+              BIND_IP: "0.0.0.0"
+              BIND_PORT: &port 4567
+              DOWNLOAD_AS_CBZ: "true"
+              WEB_UI_CHANNEL: "preview"
+              AUTO_DOWNLOAD_CHAPTERS: "false"
+              AUTO_DOWNLOAD_EXCLUDE_UNREAD: "false"
+              MAX_SOURCES_IN_PARALLEL: 6
+              UPDATE_EXCLUDE_UNREAD: "false"
+              UPDATE_EXCLUDE_STARTED: "false"
+              UPDATE_EXCLUDE_COMPLETED: "false"
+              UPDATE_MANGA_INFO: "true"
+              UPDATE_INTERVAL: 12
+              BACKUP_INTERVAL: 1
+              BACKUP_TTL: 14
+              EXTENSION_REPOS: '["https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"]'
+              BASIC_AUTH_ENABLED: "false"
+              BASIC_AUTH_USERNAME: ""
+              BASIC_AUTH_PASSWORD: ""
+              FLARESOLVERR_ENABLED: "true"
+              FLARESOLVERR_URL: "flaresolverr.services.svc.cluster.local:8191"
+              FLARESOLVERR_TIMEOUT: 60
+              FLARESOLVERR_SESSION_NAME: "suwayomi"
+              FLARESOLVERR_SESSION_TTL: 15
+            resources:
+              limits:
+                memory: 1Gi
+              requests:
+                cpu: 500m
+                memory: 512Mi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
 
     persistence:
-      # Config also contains the sqlite database, so we have no choice but to use a PVC here
-      appdata:
+      config:
         labels:
           homelab/backup-resource: "true"
-        enabled: true
-        type: pvc
-        size: 1Gi # As media covers are cached, increase the PVC size 
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 1Gi
         storageClass: ${fastdata_storage}-ha
-        # mountPath: "/home/suwayomi/.local/share/Tachidesk"
-      library:
-        enabled: true
+        globalMounts:
+          - path: /home/suwayomi/.local/share/Tachidesk
+      downloads:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_download}
-        # mountPath: "/home/suwayomi/.local/share/Tachidesk/downloads"
-      # Disable local library mount, as we don't host any library on Suwayomi but instead on Kavita
-      local-library:
-        enabled: false
+        globalMounts:
+          - path: /home/suwayomi/.local/share/Tachidesk/downloads
+            # subPath: Downloads/suwayomi/sources
