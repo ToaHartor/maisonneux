@@ -17,11 +17,24 @@ spec:
     remediation:
       retries: 3
   values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
     controllers:
       bentopdf:
         containers:
           main:
             securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
               capabilities:
                 drop:
                   - ALL
@@ -29,6 +42,10 @@ spec:
               repository: ghcr.io/alam00000/bentopdf
               tag: 2.8.6@sha256:eaeea1e447205a79cb61d7efdc6966f37311dc1bc9c36a3a5c897bf79107c2c3
               pullPolicy: IfNotPresent
+            ports:
+              - containerPort: &port ${GATEWAY_SVC_PORT}
+                name: http
+                protocol: TCP
             probes:
               liveness:
                 enabled: true
@@ -47,4 +64,4 @@ spec:
         controller: bentopdf
         ports:
           http:
-            port: ${GATEWAY_SVC_PORT}
+            port: *port

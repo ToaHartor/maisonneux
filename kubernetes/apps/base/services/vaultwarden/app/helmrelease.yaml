@@ -22,20 +22,24 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      priorityClassName: services-important
     controllers:
       vaultwarden:
         replicas: 1
         strategy: RollingUpdate
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000 # 568
-            runAsGroup: 1000 #568
-            fsGroup: 1000 # 568
-            fsGroupChangePolicy: OnRootMismatch
-          priorityClassName: services-important
         initContainers:
           waitpsql:
             enabled: true
@@ -69,7 +73,7 @@ spec:
               ORG_CREATION_USERS: all
               REQUIRE_DEVICE_EMAIL: false
               ENABLE_DB_WAL: false # As we use sqlite
-              ROCKET_PORT: "${GATEWAY_SVC_PORT}"
+              ROCKET_PORT: &port ${GATEWAY_SVC_PORT}
               SHOW_PASSWORD_HINT: false
               SIGNUPS_ALLOWED: false
               SIGNUPS_VERIFY: false
@@ -96,6 +100,10 @@ spec:
                   name: smtp-config
                   key: smtp_token
               SMTP_SECURITY: "starttls"
+            ports:
+              - containerPort: *port
+                name: http
+                protocol: TCP
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -115,7 +123,7 @@ spec:
       app:
         ports:
           http:
-            port: ${GATEWAY_SVC_PORT}
+            port: *port
     persistence:
       data:
         type: persistentVolumeClaim

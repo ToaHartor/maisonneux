@@ -22,19 +22,23 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
     controllers:
       prowlarr:
         replicas: 1
         strategy: RollingUpdate
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
         initContainers:
           waitpsql:
             enabled: true
@@ -76,6 +80,10 @@ spec:
                   key: password
               PROWLARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
               PROWLARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}
+            ports:
+              - containerPort: *port
+                name: http
+                protocol: TCP
             probes:
               liveness: &probes
                 enabled: true
@@ -129,6 +137,10 @@ spec:
                 secretKeyRef:
                   name: ${SECRET_KEY_NAME}
                   key: secretKey
+            ports:
+              - containerPort: *exporterPort
+                name: http
+                protocol: TCP
             probes:
               liveness: &probes
                 enabled: true

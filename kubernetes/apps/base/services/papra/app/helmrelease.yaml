@@ -72,7 +72,7 @@ spec:
               APP_BASE_URL: "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"
               # TZ: "${TIMEZONE}"
 
-              PORT: "${GATEWAY_SVC_PORT}"
+              PORT: &port ${GATEWAY_SVC_PORT}
               AUTH_SECRET:
                 valueFrom:
                   secretKeyRef:
@@ -100,7 +100,7 @@ spec:
                   name: papra-oidc-spec # Defined below
                   key: oidc-spec
             ports:
-              - containerPort: 1221
+              - containerPort: *port
                 name: http
                 protocol: TCP
             probes:
@@ -130,8 +130,7 @@ spec:
         controller: *name
         ports:
           http:
-            port: ${GATEWAY_SVC_PORT}
-            targetPort: 1221
+            port: *port
 
     persistence:
       # Database storage

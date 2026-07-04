@@ -26,22 +26,28 @@ spec:
   values:
     defaultPodOptions:
       automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
     controllers:
       cyberchef:
         replicas: 1
         strategy: RollingUpdate
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           app:
             image:
               repository: docker.io/mpepping/cyberchef
               tag: v11.2.0@sha256:40de0167deab2637706ded13626c30739bc7ae526bfecaf42841e0e1293d7179
+            ports:
+              - containerPort: &port ${GATEWAY_SVC_PORT}
+                name: http
+                protocol: TCP
             securityContext:
               readOnlyRootFilesystem: true # false
               allowPrivilegeEscalation: false
@@ -64,7 +70,7 @@ spec:
       app:
         ports:
           http:
-            port: ${GATEWAY_SVC_PORT}
+            port: *port
     persistence:
       tmp:
         type: emptyDir

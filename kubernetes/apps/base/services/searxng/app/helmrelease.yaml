@@ -24,6 +24,15 @@ spec:
   values:
     defaultPodOptions:
       automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
     controllers:
       searxng:
         replicas: 1
@@ -52,7 +61,10 @@ spec:
                 secretKeyRef:
                   name: ${SECRET_KEY_NAME}
                   key: secretKey
-
+            ports:
+              - containerPort: *port
+                name: http
+                protocol: TCP
             probes:
               liveness: &probes
                 enabled: true

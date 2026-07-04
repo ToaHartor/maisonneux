@@ -22,19 +22,23 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
     controllers:
       suwayomi:
         replicas: 1
-        strategy: RollingUpdate
+        strategy: Recreate # As it uses sqlite db
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           app:
             image:
@@ -67,6 +71,21 @@ spec:
               FLARESOLVERR_TIMEOUT: 60
               FLARESOLVERR_SESSION_NAME: "suwayomi"
               FLARESOLVERR_SESSION_TTL: 15
+            ports:
+              - containerPort: *port
+                name: http
+                protocol: TCP
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false # We disable as it needs to write the config
+              capabilities:
+                drop:
+                  - ALL
             resources:
               limits:
                 memory: 1Gi

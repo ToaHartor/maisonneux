@@ -23,6 +23,17 @@ spec:
     keepHistory: false
 
   values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        # fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
     controllers:
       jdownloader2:
         replicas: 1
@@ -31,9 +42,6 @@ spec:
           reloader.stakater.com/auto: "true"
         pod:
           securityContext:
-            fsGroup: 1000
-            # fsGroupChangePolicy: OnRootMismatch
-            runAsGroup: 1000
             runAsNonRoot: false
             runAsUser: 0
         containers:
@@ -56,6 +64,16 @@ spec:
               requests:
                 cpu: 100m
                 memory: 400Mi
+            ports:
+              - containerPort: &port ${GATEWAY_SVC_PORT}
+                name: http
+                protocol: TCP
+              - containerPort: &vncPort 5900
+                name: vnc
+                protocol: TCP
+              - containerPort: &myjdPort 3129
+                name: myjd
+                protocol: TCP
             probes:
               liveness: &probes
                 enabled: true
@@ -74,7 +92,11 @@ spec:
         controller: jdownloader2
         ports:
           http:
-            port: ${GATEWAY_SVC_PORT}
+            port: *port
+          vnc:
+            port: *vncPort
+          myjd:
+            port: *myjdPort
 
     persistence:
       config:

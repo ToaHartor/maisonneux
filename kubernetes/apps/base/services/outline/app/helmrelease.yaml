@@ -40,6 +40,17 @@ spec:
               namespace: services
               annotationSelector: homelab/use-local-dns=true
   values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
     controllers:
       outline:
         replicas: 1
@@ -47,14 +58,6 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
           homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
-        pod:
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
-
         containers:
           app:
             image:
@@ -134,6 +137,10 @@ spec:
               # SMTP_PORT:
               # SMTP_FROM_EMAIL:
               # SMTP_SECURE:
+            ports:
+              - containerPort: *port
+                name: http
+                protocol: TCP
             probes:
               liveness: &probe
                 enabled: true

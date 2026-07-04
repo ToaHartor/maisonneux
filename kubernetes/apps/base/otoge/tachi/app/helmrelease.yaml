@@ -32,14 +32,6 @@ spec:
         annotations:
           # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
           secret.reloader.stakater.com/reload: "${APP}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
-
-        pod:
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           server:
             image:
@@ -227,13 +219,6 @@ spec:
               limits:
                 memory: 1000Mi
       worker:
-        pod:
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           worker:
             image:
@@ -287,13 +272,6 @@ spec:
               limits:
                 memory: 512Mi
       cron:
-        pod:
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           cron:
             image:
@@ -333,14 +311,6 @@ spec:
         # annotations:
         #   # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
         #   secret.reloader.stakater.com/reload: "${APP}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
-
-        pod:
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           client:
             image:
