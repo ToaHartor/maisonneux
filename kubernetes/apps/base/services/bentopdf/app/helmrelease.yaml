@@ -11,19 +11,26 @@ spec:
   chartRef:
     kind: OCIRepository
     name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
     defaultPodOptions:
       automountServiceAccountToken: false
       enableServiceLinks: false
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
         fsGroupChangePolicy: "OnRootMismatch"
         runAsNonRoot: true
         seccompProfile:
@@ -31,17 +38,17 @@ spec:
     controllers:
       bentopdf:
         containers:
-          main:
+          app:
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities:
-                drop:
-                  - ALL
+              readOnlyRootFilesystem: true # Entrypoints does modifications in /etc/nginx
+              capabilities: { drop: ["ALL"] }
             image:
-              repository: ghcr.io/alam00000/bentopdf
-              tag: 2.8.6@sha256:eaeea1e447205a79cb61d7efdc6966f37311dc1bc9c36a3a5c897bf79107c2c3
+              repository: ghcr.io/alam00000/bentopdf-simple
+              tag: 2.8.6@sha256:1a947a9d4ae515be27b381a2a1f8565d5fa33087c32abc2bb7a6754f83e95f4c
               pullPolicy: IfNotPresent
+            env:
+              TZ: Europe/Paris
             ports:
               - containerPort: &port ${GATEWAY_SVC_PORT}
                 name: http
@@ -56,9 +63,19 @@ spec:
             resources:
               requests:
                 cpu: 10m
-                memory: 200M
+                memory: 50M
               limits:
-                memory: 1Gi
+                memory: 512Mi
+    persistence:
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /var/cache/nginx
+            subPath: cache
+          - path: /etc/nginx/tmp
+            subPath: etc-tmp
+          - path: /var/lib/nginx/tmp
+            subPath: var-tmp
     service:
       app:
         controller: bentopdf
