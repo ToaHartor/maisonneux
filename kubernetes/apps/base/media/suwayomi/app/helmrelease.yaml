@@ -81,7 +81,7 @@ spec:
                 enabled: true
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false # We disable as it needs to write the config
+              readOnlyRootFilesystem: true # We disable as it needs to write the config
               capabilities:
                 drop:
                   - ALL
@@ -112,6 +112,9 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
+          - path: /var/cache/fontconfig
+          - path: /home/suwayomi/.cache/fontconfig
+          - path: /home/suwayomi/.fontconfig
       downloads:
         type: nfs
         server: ${nfs_server}
