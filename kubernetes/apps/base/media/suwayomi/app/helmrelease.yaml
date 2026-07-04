@@ -36,7 +36,6 @@ spec:
     controllers:
       suwayomi:
         replicas: 1
-        strategy: Recreate # As it uses sqlite db
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
