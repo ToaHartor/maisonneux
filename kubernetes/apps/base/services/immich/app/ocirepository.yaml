@@ -10,6 +10,11 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 28.10.0
-    digest: sha256:01b0a132c0123f3c9b2858fd5520478f03d03ebef2e1ce6f9ee9ae24ec4eb992
-  url: oci://oci.trueforge.org/truecharts/immich
+    tag: 5.0.1
+    digest: sha256:70a7cb6766eb468068c2c1700c8450253070dc671a9fbbd1a6346a66545e2b2b
+  url: oci://ghcr.io/bjw-s-labs/helm/app-template
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github.com/bjw-s-labs/helm-charts.*$"

@@ -80,6 +80,10 @@ spec:
                   key: password
               LIDARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
               LIDARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}
+            ports:
+              - containerPort: *port
+                name: http
+                protocol: TCP
             probes:
               liveness: &probes
                 enabled: true
@@ -127,6 +131,10 @@ spec:
                 secretKeyRef:
                   name: ${SECRET_KEY_NAME}
                   key: secretKey
+            ports:
+              - containerPort: *exporterPort
+                name: http
+                protocol: TCP
             probes:
               liveness: &probes
                 enabled: true

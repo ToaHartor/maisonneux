@@ -3,37 +3,24 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: immich
+  name: &app immich
 spec:
-  releaseName: immich
-  dependsOn:
-    - name: ${APP}-oidc
+  releaseName: *app
   chartRef:
     kind: OCIRepository
-    name: immich
+    name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
-  valuesFrom:
-    - kind: Secret
-      name: ${APP}-db-creds
-      valuesKey: password
-      targetPath: cnpg.main.creds.password
-    - kind: Secret
-      name: ${APP}-oidc-authentik-application
-      valuesKey: clientID
-      targetPath: authentikOidc.clientId
-    - kind: Secret
-      name: ${APP}-oidc-authentik-application
-      valuesKey: clientSecret
-      targetPath: authentikOidc.clientSecret
-    - kind: Secret
-      name: ${APP}-oidc-authentik-application
-      valuesKey: issuerURL
-      targetPath: authentikOidc.issuerUrl
-
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   # Patch only when local dns is used
   # Using postRenderers instead of patches in kustomizations, as variable substitution is not performed already
   postRenderers:
@@ -47,138 +34,355 @@ spec:
                     hostnames:
                     - "${auth_subdomain}.${main_domain}"
                     - "${second_domain}"
-
             target:
               kind: Deployment
               name: immich
               annotationSelector: homelab/use-local-dns=true
-
-  # see https://github.com/truecharts/public/blob/master/charts/stable/immich/values.yaml
+  valuesFrom:
+    - kind: Secret
+      name: ${APP}-oidc-authentik-application
+      valuesKey: clientID
+      targetPath: authentikOidc.clientId
+    - kind: Secret
+      name: ${APP}-oidc-authentik-application
+      valuesKey: clientSecret
+      targetPath: authentikOidc.clientSecret
+    - kind: Secret
+      name: ${APP}-oidc-authentik-application
+      valuesKey: issuerURL
+      targetPath: authentikOidc.issuerUrl
   values:
-    # storage:
-    #   persistentClassName: ${fastdata_storage}
-    authentikOidc:
-      # clientId: # Filled by fluxcd
-      # clientSecret: # Filled by fluxcd
-      # issuerUrl:
-      mobileRedirectUri:
-
-    cnpg:
-      main:
-        enabled: false
-        user: ${PSQL_DB_USER}
-        database: ${PSQL_DB_NAME}
-        creds:
-          host: postgres-db-rw.${psql_database_namespace}.svc.cluster.local
-          # password: "" # Filled by secrets
-    
-    redis:
-      enabled: false
-      creds:
-        plainhost: dragonfly-cluster.dragonfly.svc.cluster.local
-        redisPassword: ""
-
-    securityContext:
-      pod:
-        fsGroup: 1000
-      container:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
         runAsUser: 1000
         runAsGroup: 1000
-
-    resources:
-      limits:
-        cpu: 500m
-        memory: 600Mi
-      requests:
-        cpu: 100m
-        memory: 300Mi
-    service:
-      apimetrics:
-        enabled: true
-        type: "ClusterIP"
-        targetSelector: main
-        ports:
-          metrics:
-            enabled: true
-            port: 8081
-            protocol: http
-            targetPort: 8081
-            targetSelector: main
-      # microservicesmetrics:
-      #   enabled: true
-      #   type: "ClusterIP"
-      #   targetSelector: microservices
-      #   ports:
-      #     metrics:
-      #       enabled: true
-      #       port: 8082
-      #       protocol: http
-      #       targetPort: 8082
-      #       targetSelector: microservices
-    containerOptions:
-      NVIDIA_CAPS:
-        - all
-    workload:
-      main:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      server:
+        strategy: Recreate
         annotations:
-          # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-          secret.reloader.stakater.com/reload: "${APP}-db-creds,${APP}-oidc-authentik-application"
-          configmap.reloader.stakater.com/auto: "true"
-          homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
-        podSpec:
-          annotations:
-            prometheus.io/port: "8081"
-            prometheus.io/scrape: "true"
-            prometheus.io/path: "/metrics"
-          containers:
-            main:
-              env:
-                IMMICH_CONFIG_FILE: /config/immich-config.yaml
-                # Metrics
-                IMMICH_TELEMETRY_INCLUDE: api,io,repo,job
-                # WARNING : ONLY FOR DEBUG
-                NODE_TLS_REJECT_UNAUTHORIZED: "0"
-                # REDIS_DBINDEX: ""
-                # DB_PASSWORD:
-                #   valueFrom:
-                #     secretKeyRef:
-                #       name: immich-db-creds
-                #       key: password
+          reloader.stakater.com/auto: "true"
+        containers:
+          immich-server:
+            image:
+              repository: ghcr.io/immich-app/immich-server
+              tag: v3.0.1@sha256:46dedfc5848f7313bd6b584ea9f2648057430307aad6de56de968f6710a72cae
+            env:
+              TZ: &tz "Europe/Paris"
+              IMMICH_PORT: &port ${GATEWAY_SVC_PORT}
+              NODE_ENV: production
+              IMMICH_CONFIG_FILE: &immichConfig /config/immich-config.yaml
+              IMMICH_MEDIA_LOCATION: &mediaLocation /library
+              IMMICH_API_METRICS_PORT: &apiMetrics 8081
+              IMMICH_MICROSERVICES_METRICS_PORT: &msMetrics 8082
+              IMMICH_MACHINE_LEARNING_ENABLED: "true"
+              IMMICH_MACHINE_LEARNING_URL: "http://immich-machine-learning.services.svc.cluster.local:3003" # Sync with &mlPort below
+              IMMICH_TRUSTED_PROXIES: 10.24.0.0/16 # Pod IPs as we use traefik as reverse proxy
+              # Prevent NFS mount check failures
+              IMMICH_IGNORE_MOUNT_CHECK_ERRORS: "true"
+              DISABLE_REVERSE_GEOCODING: "true"
+              # Metrics
+              IMMICH_TELEMETRY_INCLUDE: api,io,repo,job
+              # Database
+              DB_USERNAME:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: username
+              DB_DATABASE_NAME:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: dbname
+              DB_HOSTNAME:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: host
+              DB_PASSWORD:
+                secretKeyRef:
+                  name: ${APP}-db-creds
+                  key: password
+              DB_PORT: "5432"
+              # Redis
+              REDIS_HOSTNAME: &redisHost "dragonfly-cluster.dragonfly.svc.cluster.local"
+              REDIS_PORT: &redisPort "6379"
+              REDIS_DBINDEX: &redisDB "0"
+            ports:
+              - containerPort: *port
+                name: http
+                protocol: TCP
+              - containerPort: *apiMetrics
+                name: metrics-api
+                protocol: TCP
+              - containerPort: *msMetrics
+                name: metrics-ms
+                protocol: TCP
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/server/ping
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/server/ping
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 60
+            # securityContext:
+            #   allowPrivilegeEscalation: false
+            #   readOnlyRootFilesystem: true
+            #   capabilities: { drop: ["ALL"] }
+            resources:
+              limits:
+                memory: 1Gi
+              requests:
+                cpu: 100m
+                memory: 300Mi
 
-      
-      microservices:
-        podSpec:
-      #     annotations:
-      #       prometheus.io/port: "8082"
-      #       prometheus.io/scrape: "true"
-          containers:
-            microservices:
-              env:
-                IMMICH_CONFIG_FILE: /config/immich-config.yaml
-    #             REDIS_DBINDEX: ""
-    #             DB_PASSWORD:
-    #               valueFrom:
-    #                 secretKeyRef:
-    #                   name: immich-db-creds
-    #                   key: password
-      
-      machinelearning:
-        podSpec:
+      machine-learning:
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        # If we want to activate GPU support
+        pod:
           priorityClassName: ${gpu_runtime_class}
           runtimeClassName: ${gpu_runtime_class}
-          containers:
-            machinelearning:
-              resources:
-                limits:
-              # env:
-              #   NVIDIA_VISIBLE_DEVICES: all
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: nvidia.com/gpu.present
+                        operator: In
+                        values: ["true"]
+        containers:
+          immich-machine-learning:
+            image:
+              repository: ghcr.io/immich-app/immich-machine-learning
+              tag: v3.0.1@sha256:cb2128c5cbc554fdaa2a036fb4419c808a9f3e0f27170e569dd9e727243da909
+            env:
+              TZ: *tz
+              IMMICH_PORT: &mlPort 3003
+              REDIS_HOSTNAME: *redisHost
+              REDIS_PORT: *redisPort
+              REDIS_DBINDEX: *redisDB
+              MPLCONFIGDIR: "/cache/matplotlib"
+              # ML cache folder paths
+              MACHINE_LEARNING_CACHE_FOLDER: "/cache"
+              TRANSFORMERS_CACHE: "/cache"
+              IMMICH_MEDIA_LOCATION: *mediaLocation
+              # GPU support
+              NVIDIA_VISIBLE_DEVICES: "all"
+              NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+            ports:
+              - containerPort: *mlPort
+                name: http
+                protocol: TCP
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *mlPort
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *mlPort
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 60
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              limits:
+                memory: 600Mi
+                nvidia.com/gpu: 1
+              requests:
+                cpu: 100m
+                memory: 300Mi
+                nvidia.com/gpu: 1
+    service:
+      server:
+        controller: server
+        ports:
+          http:
+            port: *port
+          metrics-api:
+            port: *apiMetrics
+          metrics-ms:
+            port: *msMetrics
+      machine-learning:
+        controller: machine-learning
+        ports:
+          http:
+            port: *mlPort
 
-    # https://immich.app/docs/install/config-file/
-    configmap:
-      immich-config:
-        enabled: true
+    persistence:
+      config:
+        type: configMap
+        name: &configmap immich-config
+        globalMounts:
+          - path: *immichConfig
+            subPath: immich-config.yaml
+            readOnly: true
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          server:
+            immich-server:
+              - path: /usr/src/app/.reverse-geocoding-dump
+                subPath: geocoding
+              - path: /usr/src/app/.transformers_cache
+                subPath: transformers
+              - path: /config/matplotlib
+                subPath: matplotlib
+      machine-learning-cache:
+        type: emptyDir
+        advancedMounts:
+          machine-learning:
+            immich-machine-learning:
+              - path: /cache
+                subPath: cache
+              - path: /.cache
+                subPath: dotCache
+      library:
+        type: nfs
+        server: ${nfs_server}
+        path: ${nfs_path_immich}
+        globalMounts:
+          - path: *mediaLocation
+
+    configMaps:
+      config:
+        forceRename: *configmap
         data:
           immich-config.yaml: |
+            backup:
+              database:
+                enabled: false # We use cnpg backups instead
+                cronExpression: "0 02 * * *"
+                keepLastAmount: 14
+
+            ffmpeg:
+              # Disable video transcoding. If we want to enable it, force schedule the server pod to the GPU node
+              transcode: disabled
+              accel: nvenc
+              accelDecode: false
+              acceptedAudioCodecs:
+                - aac
+                - mp3
+                - opus
+              acceptedContainers:
+                - mov
+                - ogg
+                - webm
+              acceptedVideoCodecs:
+                - hevc
+                - h264
+              bframes: -1
+              cqMode: auto
+              crf: 23
+              gopSize: 0
+              maxBitrate: "0"
+              preset: veryslow
+              refs: 0
+              targetAudioCodec: aac
+              targetResolution: "1080"
+              targetVideoCodec: hevc
+              temporalAQ: false
+              threads: 0
+              tonemap: "reinhard"
+              twoPass: false
+
+            image:
+              colorspace: p3
+              extractEmbedded: false
+              preview:
+                format: jpeg
+                quality: 80
+                size: 1440
+              thumbnail:
+                format: webp
+                quality: 80
+                size: 250
+
+            job:
+              backgroundTask: { concurrency: 5 }
+              faceDetection: { concurrency: 4 }
+              library: { concurrency: 5 }
+              metadataExtraction: { concurrency: 5 }
+              migration: { concurrency: 10 }
+              notifications: { concurrency: 5 }
+              ocr: { concurrency: 3 }
+              search: { concurrency: 10 }
+              sidecar: { concurrency: 5 }
+              smartSearch: { concurrency: 4 }
+              thumbnailGeneration: { concurrency: 6 }
+              videoConversion: { concurrency: 3 }
+
+            library:
+              scan:
+                cronExpression: "0 0 * * *"
+                enabled: true
+              watch:
+                enabled: false
+
+            machineLearning:
+              enabled: true
+              urls:
+                - http://immich-machine-learning.services.svc.cluster.local:3003
+              clip:
+                enabled: true
+                modelName: ViT-SO400M-16-SigLIP2-384__webli
+              duplicateDetection:
+                enabled: true
+                maxDistance: 0.01
+              facialRecognition:
+                enabled: true
+                maxDistance: 0.5
+                minFaces: 3
+                minScore: 0.7
+                modelName: buffalo_l
+              ocr:
+                enabled: true
+                maxResolution: 1280
+                minDetectionScore: 0.4
+                minRecognitionScore: 0.6
+                modelName: EN__PP-OCRv5_mobile
             oauth:
               enabled: true
               autoLaunch: false # true
@@ -192,7 +396,7 @@ spec:
               profileSigningAlgorithm: none
               storageLabelClaim: preferred_username
               # defaultStorageQuota:
-            
+
             passwordLogin:
               enabled: true # false
 
@@ -200,48 +404,28 @@ spec:
               smtp:
                 enabled: false
 
+            map:
+              enabled: true
 
-    persistence:
-      # mlcache:
-      
-      # microcache:
-          # enabled: true
-          # size: 10Gi
-          # type: emptyDir # or pvc
-          # # accessMode: ReadWriteMany
-          # # storageClass:
-      config:
-        enabled: true
-        type: configmap
-        objectName: immich-config
-        expandObjectName: true
-        optional: false
-        defaultMode: "0777"
-        mountPath: /config
-        targetSelector:
-          main:
-            main: {}
-          microservices:
-            microservices: {}
-    
-      library:
-        enabled: true
-        mountPath: /usr/src/app/upload
-        type: nfs
-        server: ${nfs_server}
-        path: ${nfs_path_immich}
+            newVersionCheck:
+              enabled: false
 
-      uploads:
-        enabled: false
-      
-      backups:
-        enabled: false
-      
-      thumbs:
-        enabled: false
+            reverseGeocoding:
+              enabled: true
 
-      profile:
-        enabled: false
-      
-      video:
-        enabled: false         
+            server:
+              externalDomain: ""
+              publicUsers: true
+              loginPageMessage: Welcome to Immich
+
+            storageTemplate:
+              enabled: true
+              hashVerificationEnabled: true
+              template: {{ printf "%q" "{{album}}/{{y}}/{{MM}}/{{filename}}" }}
+
+            trash:
+              enabled: true
+              days: 30
+
+            user:
+              deleteDelay: 7

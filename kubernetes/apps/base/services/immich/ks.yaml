@@ -44,8 +44,8 @@ spec:
           { name: cube, ensure: present },
           { name: earthdistance, ensure: present }
         ]
-      GATEWAY_SVC_NAME: immich
-      GATEWAY_SVC_PORT: "10323"
+      GATEWAY_SVC_NAME: immich-server
+      GATEWAY_SVC_PORT: "8080"
       # inherited variables
       psql_cluster_name: ${psql_cluster_name}
       psql_database_namespace: ${psql_database_namespace}
