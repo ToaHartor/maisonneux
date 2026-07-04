@@ -35,7 +35,6 @@ spec:
             runAsGroup: 1000
             fsGroup: 1000
             fsGroupChangePolicy: OnRootMismatch
-          priorityClassName: services-important
         initContainers:
           waitpsql:
             enabled: true
