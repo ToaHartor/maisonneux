@@ -108,6 +108,10 @@ spec:
         storageClass: ${fastdata_storage}-ha
         globalMounts:
           - path: /home/suwayomi/.local/share/Tachidesk
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
       downloads:
         type: nfs
         server: ${nfs_server}
