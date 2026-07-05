@@ -10,6 +10,6 @@ spec:
     mediaType: "application/vnd.cncf.helm.chart.content.v1.tar+gzip"
     operation: copy
   ref:
-    tag: 0.6.18
-    digest: sha256:061ec4db315dd80a3e21a3373e4c41c8c68a243dcb44426f1262f1ca556538c7
+    tag: 0.6.20
+    digest: sha256:617ecb0b367b242920b60ed059262db22e20fb77d7ee8565096558847c581071
   url: oci://ghcr.io/rajsinghtech/charts/garage-operator
