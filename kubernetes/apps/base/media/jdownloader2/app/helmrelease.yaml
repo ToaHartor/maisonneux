@@ -6,6 +6,8 @@ metadata:
   name: &app jdownloader2
 spec:
   releaseName: *app
+  dependsOn:
+    - name: ${APP}-proxy
   chartRef:
     kind: OCIRepository
     name: *app

@@ -6,6 +6,8 @@ metadata:
   name: &app outline
 spec:
   releaseName: *app
+  dependsOn:
+    - name: ${APP}-oidc
   chartRef:
     kind: OCIRepository
     name: *app

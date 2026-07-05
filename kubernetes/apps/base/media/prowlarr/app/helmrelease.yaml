@@ -6,6 +6,8 @@ metadata:
   name: &app prowlarr
 spec:
   releaseName: *app
+  dependsOn:
+    - name: ${APP}-proxy
   chartRef:
     kind: OCIRepository
     name: *app

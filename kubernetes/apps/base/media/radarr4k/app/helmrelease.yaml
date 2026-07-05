@@ -6,6 +6,8 @@ metadata:
   name: &app radarr4k
 spec:
   releaseName: *app
+  dependsOn:
+    - name: ${APP}-proxy
   chartRef:
     kind: OCIRepository
     name: *app

@@ -6,6 +6,8 @@ metadata:
   name: &app sonarr
 spec:
   releaseName: *app
+  dependsOn:
+    - name: ${APP}-proxy
   chartRef:
     kind: OCIRepository
     name: *app
