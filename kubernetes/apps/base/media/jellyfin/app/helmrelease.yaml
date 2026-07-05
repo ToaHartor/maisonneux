@@ -3,19 +3,26 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: jellyfin
+  name: &app jellyfin
 spec:
-  releaseName: jellyfin
+  releaseName: *app
   dependsOn:
     - name: ${APP}-oidc
   chartRef:
     kind: OCIRepository
-    name: jellyfin
+    name: *app
+  maxHistory: 2
   interval: 50m
   install:
-    createNamespace: true
     remediation:
       retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
   # Patch only when local dns is used
   # Using postRenderers instead of patches in kustomizations, as variable substitution is not performed already
   postRenderers:
@@ -34,118 +41,241 @@ spec:
               name: jellyfin
               namespace: media
               annotationSelector: homelab/use-local-dns=true
-
-  # see https://github.com/truecharts/public/blob/master/charts/stable/jellyfin/values.yaml
   values:
-    resources:
-      requests:
-        cpu: 100m
-        memory: 400Mi
-    securityContext:
-      container:
-        readOnlyRootFilesystem: false
-        # runAsNonRoot: false
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
         runAsUser: 1000
         runAsGroup: 1000
-
-    # affinity:
-    #   nodeAffinity:
-    #     requiredDuringSchedulingIgnoredDuringExecution:
-    #       nodeSelectorTerms:
-    #       - matchExpressions:
-    #         - key: nvidia.com/gpu.present
-    #           operator: In
-    #           values: ["true"]
-
-    containerOptions:
-      NVIDIA_CAPS:
-        - all
-    workload:
-      main:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      jellyfin:
         annotations:
+          reloader.stakater.com/auto: "true"
           homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
-        strategy: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 0
-          maxSurge: 1
-        podSpec:
+        pod:
           priorityClassName: ${gpu_runtime_class}
           runtimeClassName: ${gpu_runtime_class}
-          containers:
-            main:
-              env:
-                ## No need as it will be added automatically with resource requests
-                # NVIDIA_DRIVER_CAPABILITIES: all
-                # NVIDIA_VISIBLE_DEVICES: all
-                JELLYFIN_LOG_DIR: /logs
-                # JELLYFIN_DATA_DIR: /data
-                # JELLYFIN_CONFIG_DIR: /config
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: nvidia.com/gpu.present
+                        operator: In
+                        values: ["true"]
+        containers:
+          jellyfin:
+            image:
+              repository: ghcr.io/jellyfin/jellyfin
+              tag: 10.11.11@sha256:45f648c382a0c8b552582fcea40e95cb17c5d475473a891cba0eb7523fb92112
+            env:
+              TZ: Europe/Paris
+              JELLYFIN_AutoDiscovery: "false"
+              JELLYFIN_LOG_DIR: /logs
+              JELLYFIN_DATA_DIR: /data
+              JELLYFIN_CONFIG_DIR: /config
+              JELLYFIN_CACHE_DIR: /cache
+            ports:
+              - containerPort: &port ${GATEWAY_SVC_PORT} # 8096
+                name: http
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: http
+                  failureThreshold: 30
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: http
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
+            resources:
+              requests:
+                cpu: 200m
+                memory: 1Gi
+                nvidia.com/gpu: 1
+              limits:
+                nvidia.com/gpu: 1
+      vue:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          vue:
+            image:
+              repository: ghcr.io/jellyfin/jellyfin-vue
+              tag: unstable.2026-07-03.23ed388@sha256:88cdf369c8ee9dc5c2f462e3d032e3a94f7b80cac42cf4a585136fd78b68d444
+            command: ["nginx"]
+            args: ["-g", "daemon off;"]
+            env:
+              TZ: Europe/Paris
+            ports:
+              - containerPort: &vuePort 80
+                name: http
+            probes:
+              liveness: &vue-probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: http
+              readiness: *vue-probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
 
-    # /config/*.xml => pvc because config, maybe we switch to configmap but those files may need to be editable
-    # /data => pvc for database (no nfs of course)
-    # /data/metadata => nfs non-mirrored on ssd ? mainly image assets cache for studios/actors...
+    service:
+      jellyfin:
+        controller: jellyfin
+        ports:
+          http:
+            port: *port
+      vue:
+        controller: vue
+        ports:
+          http:
+            port: *vuePort
+
+    # TODO: enable metrics after upstream PR is merged and released
+    # https://github.com/jellyfin/jellyfin/pull/14052
+    # serviceMonitor:
+    #   jellyfin:
+    #     serviceName: jellyfin
+    #     endpoints:
+    #       - port: http
+    #         path: /metrics
+
+    configMaps:
+      config:
+        forceRename: &vueCm jellyfin-vue-config
+        data:
+          config.json: |
+            {
+              "defaultServerURLs": ["https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}"],
+              "allowServerSelection": false,
+              "routerMode": "history"
+            }
+
     persistence:
       config:
-        enabled: true
         labels:
           homelab/backup-resource: "true"
-        type: pvc
+        storageClass: ${fastdata_storage}
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
         size: 1Gi
-        storageClass: ${fastdata_storage}
-        mountPath: "/config" # all config (database.xml, system.xml...)
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /config # all config (database.xml, system.xml...)
+      config-vue:
+        type: configMap
+        name: *vueCm
+        advancedMounts:
+          vue:
+            vue:
+              - path: /usr/share/nginx/html/config.json
+                subPath: config.json
+                readOnly: true
       data:
-        enabled: true
         labels:
           homelab/backup-resource: "true"
-        type: pvc
-        size: 10Gi
         storageClass: ${fastdata_storage}
-        mountPath: "/data" # config includes database, but also metadata
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 10Gi
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /data # config includes database, but also metadata
+
       cache:
-        enabled: true
-        mountPath: "/cache" # also include transcodes/
         type: "emptyDir"
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /cache # also include transcodes/
+                subPath: cache
+      #         - path: /config/metadata
+      #           subPath: metadata
+      #         - path: /config/data/trickplay
+      #           subPath: data/trickplay
+
       logs:
-        enabled: true
-        mountPath: "/logs"
         type: "emptyDir"
-      # transcode:
-      #   enabled: true
-      #   mountPath: "/cache/transcodes"
-      #   type: "emptyDir"
-      media-1:
-        enabled: true
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /logs
+                subPath: logs
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+
+      media1:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_1}
-        mountPath: "/shared/media1/"
-      media-2:
-        enabled: true
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /shared/media1/
+
+      media2:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_2}
-        mountPath: "/shared/media2/"
-      media-3:
-        enabled: true
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /shared/media2/
+      media3:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_3}
-        mountPath: "/shared/media3/"
-      media-4:
-        enabled: true
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /shared/media3/
+      media4:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_4}
-        mountPath: "/shared/media4/"
-      media-5:
-        enabled: true
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /shared/media4/
+      media5:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_5}
-        mountPath: "/shared/media5/"
-      media-6:
-        enabled: true
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /shared/media5/
+      media6:
         type: nfs
         server: ${nfs_server}
         path: ${nfs_path_media_6}
-        mountPath: "/shared/music/"
+        advancedMounts:
+          jellyfin:
+            jellyfin:
+              - path: /shared/music/
