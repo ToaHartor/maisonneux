@@ -9,11 +9,12 @@ VELERO_NAMESPACE="system-backup"
 DEPLOYMENTS=(
   # When an annotation is added to a pvc that should be backed up, add an entry to the following array
   # Format : "deployment, namespace, pvc1|pvc2, appname"
-  "suwayomi-tachidesk-docker, media, suwayomi-tachidesk-docker-appdata, tachidesk-docker"
-  "kavita, media, kavita-config, kavita"
+  "suwayomi, media, suwayomi, suwayomi"
+  "kavita, media, kavita, kavita"
   "opencloud, services, opencloud, opencloud"
-  "qbittorrent, media, qbittorrent-config, qbittorrent"
+  "qbittorrent, media, qbittorrent, qbittorrent"
   "jellyfin, media, jellyfin-config|jellyfin-data, jellyfin"
+  "forgejo, services, forgejo-git, forgejo"
   # "jellyseerr, media, jellyseerr-config, jellyseerr"
 )
 
@@ -88,7 +89,7 @@ function restore_all() {
   for deployment in "${DEPLOYMENTS[@]}"
   do
     IFS=', ' read -r -a deployArgs <<< "$deployment"
-    
+
     pre_restore_deploy "${deployArgs[@]}"
 
   done
@@ -101,7 +102,7 @@ function restore_all() {
   for deployment in "${DEPLOYMENTS[@]}"
   do
     IFS=', ' read -r -a deployArgs <<< "$deployment"
-    
+
     post_restore_deploy "${deployArgs[@]}"
 
   done
