@@ -105,6 +105,10 @@
       matchPackageNames: ["/velero/"],
       groupName: "velero",
     },
+    {
+      matchPackageNames: ["/renovate/"],
+      groupName: "renovate",
+    },
     // Map sources
     {
       matchPackageNames: ["/papra-hq\/papra/"],
