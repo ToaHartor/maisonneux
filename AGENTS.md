@@ -164,9 +164,10 @@ When reviewing Renovate PRs, enforce these criteria. Reviews may include konflat
 ### HelmRelease Requirements
 
 - All applications MUST use `HelmRelease` via Flux, not raw manifests. In `${app}/resource/` folders, raw manifests are allowed.
-- HelmReleases MUST use in priority `spec.chartRef` pointing to an `OCIRepository` with a pinned `ref.tag`. Some applications such as `llmkube` still use the legacy `spec.chart` pattern.
-- Every app defines its own per-app `OCIRepository` in a dedicated `ocirepository.yaml` alongside the `HelmRelease`, named after the app, with `./ocirepository.yaml` listed in the app's `kustomization.yaml`. Do not put the `OCIRepository` inline in `helmrelease.yaml`, and do not rely on a shared/injected `OCIRepository`. For `app-template`-based apps, the `OCIRepository` component (`../../../common/components/repos/app-template`) must be imported in `components` of the `kustomization.yaml` at the root of the namespace directory.
+- HelmReleases MUST use in priority `spec.chartRef` pointing to an `OCIRepository` with a pinned `ref.tag` and the associated `ref.digest`. Some applications (`llmkube`, `onyx`, `zot`, `cert-manager-webhook-ovh`, `snapshot-controller`) still use the legacy `spec.chart` pattern.
+- Every app defines its own per-app `OCIRepository` in a dedicated `ocirepository.yaml` alongside the `HelmRelease`, named after the app, with `./ocirepository.yaml` listed in the app's `kustomization.yaml`. Do not put the `OCIRepository` inline in `helmrelease.yaml`, and do not rely on a shared/injected `OCIRepository`.
 - Must include `spec.interval` for reconciliation frequency
+- If the Helm chart installs CRDs, `spec.upgrade` must include `crds: CreateReplace` to support updates.
 - Resource limits (CPU/memory) SHOULD be specified for production workloads, but this is not a hard requirement
 - `valuesFrom` should reference ConfigMaps/Secrets, not inline values
 
@@ -217,7 +218,7 @@ For Helm chart and container image upgrades, you **must** use tool requests (e.g
 
 ### Kubernetes ↔ Talos compatibility
 
-This cluster runs on **Talos Linux**, which pins the node OS and the kubelet together. The deployed Talos version is the default value of the variable `talos_version` inside `terraform/k8s/nodes/variables.tf`. When a PR bumps the Kubernetes version (the kubelet image, a `KubernetesUpgrade` resource, or the `kubernetes` Renovate group), you MUST:
+This cluster runs on **Talos Linux**, which pins the node OS and the kubelet together. The deployed Talos version is the default value of the terraform variable `talos_version` inside `terraform/k8s/nodes/variables.tf`. When a PR bumps the Kubernetes version (the kubelet image, a `KubernetesUpgrade` resource, or the `kubernetes` Renovate group), you MUST:
 
 1. Read the deployed Talos version from `terraform/k8s/nodes/variables.tf`.
 2. Confirm the new Kubernetes version is supported on that Talos release against Talos's published support matrix — search the web for "talos <version> kubernetes support matrix" (the docs live at `docs.siderolabs.com`; the old `talos.dev` matrix URLs 404) and fetch it.
