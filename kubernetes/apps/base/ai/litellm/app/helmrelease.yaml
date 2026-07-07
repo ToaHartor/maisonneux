@@ -1,0 +1,154 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app litellm
+spec:
+  releaseName: *app
+  chartRef:
+    kind: OCIRepository
+    name: *app
+  interval: 50m
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
+
+  values:
+    # https://github.com/BerriAI/litellm/blob/main/deploy/charts/litellm-helm/values.yaml
+    replicaCount: 1
+
+    masterkeySecretName: ${SECRET_KEY_NAME}
+    masterkeySecretKey: secretKey
+
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
+
+    # securityContext:
+    #   capabilities:
+    #     drop:
+    #       - ALL
+    #   # At the time of writing, the litellm docker image requires write access to the
+    #   #  filesystem on startup so that prisma can install some dependencies.
+    #   readOnlyRootFilesystem: false
+    #   runAsNonRoot: true
+    #   runAsUser: 1000
+
+    # Reference: https://docs.litellm.ai/docs/proxy/configs
+    proxy_config:
+      # mcp_servers:
+
+      model_list:
+        - model_name: qwen-3.6-27B
+          model_info:
+            max_input_tokens: 65536
+            max_output_tokens: 65536
+            supports_function_calling: true
+            supports_vision: false
+            # See docs/notes/llm-setup.md for calculation
+            input_cost_per_token: 0.000000007
+            output_cost_per_token: 0.000000207
+            cache_creation_input_token_cost: 0.0
+            cache_read_input_token_cost: 0.0
+          litellm_params:
+            model: openai/qwen36_27B # model api format / alias in llama.cpp
+            # api_key: ""
+            api_base: http://qwen36.ai.svc.cluster.local:8080/v1
+            api_key: sk-no-key-required # Dummy key to bypass OpenAI client validation
+            drop_params: true
+      general_settings:
+        master_key: os.environ/PROXY_MASTER_KEY
+        ui_access_mode: "admin_only"
+
+    service:
+      port: ${GATEWAY_SVC_PORT}
+
+    # BETA : enable granian https://docs.litellm.ai/docs/proxy/deploy#4-granian-asgi-server-higher-throughput-beta
+    args:
+      # Stock args
+      - --config
+      - /etc/litellm/config.yaml
+      # Added args
+      - --run_granian
+
+    resources:
+      limits:
+        # cpu: 100m
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 1Gi
+
+    # key-value vars
+    envVars:
+      PROXY_BASE_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+      REDIS_URL: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379/3
+      # Set swagger to /docs and /ui to root path (/)
+      DOCS_URL: "/docs"
+      ROOT_REDIRECT_URL: "/ui"
+      # OIDC
+      GENERIC_SCOPE: "openid profile email litellm_role"
+      GENERIC_USER_ROLE_ATTRIBUTE: "litellm_role"
+      GENERIC_AUTHORIZATION_ENDPOINT: "https://${auth_subdomain}.${main_domain_websecure}/application/o/authorize/"
+      GENERIC_TOKEN_ENDPOINT: "https://${auth_subdomain}.${main_domain_websecure}/application/o/token/"
+      GENERIC_USERINFO_ENDPOINT: "https://${auth_subdomain}.${main_domain_websecure}/application/o/userinfo/"
+      PROXY_LOGOUT_URL: https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/end-session/
+      AUTO_REDIRECT_UI_LOGIN_TO_SSO: "true"
+    # vars needing valueFrom secret
+    extraEnvVars:
+      # OIDC
+      - name: GENERIC_CLIENT_ID
+        valueFrom:
+          secretKeyRef:
+            name: ${APP}-oidc-authentik-application
+            key: clientID
+      - name: GENERIC_CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: ${APP}-oidc-authentik-application
+            key: clientSecret
+      # Admin UI
+      - name: UI_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: ${SECRET_CREDS_NAME}
+            key: username
+      - name: UI_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: ${SECRET_CREDS_NAME}
+            key: password
+
+    db:
+      deployStandalone: false # Disable integrated deployment
+      useExisting: true
+      # endpoint:
+      database: ${PSQL_DB_NAME}
+      secret:
+        name: ${APP}-db-creds
+        usernameKey: username
+        passwordKey: password
+        endpointKey: host # overrides db.endpoint
+
+    redis:
+      enabled: false # Disable integrated deployment
+
+    ingress:
+      enabled: false
+
+    serviceMonitor:
+      enabled: true

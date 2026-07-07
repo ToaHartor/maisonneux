@@ -58,5 +58,6 @@ spec:
         - apollo
         - tachi
         - onyx
+        - litellm
         # Read only account
         - onyxro

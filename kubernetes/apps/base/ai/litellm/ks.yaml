@@ -1,0 +1,84 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: litellm
+spec:
+  dependsOn:
+    - name: llmkube-resources # needed for llm access
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: litellm
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: litellm
+      namespace: ai
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/httproute/common
+    - ../../../../../common/components/secret/key
+    - ../../../../../common/components/secret/creds
+  path: "./kubernetes/apps/base/ai/litellm/app"
+  postBuild:
+    substitute:
+      APP: litellm
+      SUBDOMAIN: llm
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: LLM servers
+      ## Database
+      PSQL_DB_USER: litellm
+      PSQL_DB_NAME: litellm
+      ## Gateway
+      GATEWAY_SVC_NAME: litellm
+      GATEWAY_SVC_PORT: "4000"
+      ## API key
+      SECRET_KEY_NAME: litellm-master-key
+      SECRET_KEY_TYPE: 64hexa
+      ## Admin user
+      SECRET_CREDS_NAME: litellm-admin-creds
+      SECRET_CREDS_USER: admin
+      REDIRECT_URL: https://llm.${main_domain_websecure}/sso/callback
+      # inherited variables
+      psql_cluster_name: ${psql_cluster_name}
+      psql_database_namespace: ${psql_database_namespace}
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: litellm"
+            parent: "authentik Admins"
+            bindID: "f588bba8-5707-4040-b6f7-06ca9f6c22e2" # arbitrary uuid
+        - op: add
+          path: '/spec/values/blueprint/provider/oidc/scopes/-'
+          value:
+            name: "LiteLLM role"
+            scope_name: "litellm_role"
+            # See roles list in documentation : https://docs.litellm.ai/docs/proxy/admin_ui_sso#usage-google-microsoft-okta-etc
+            # authentik Admins are admins, the rest are simple users
+            expression: |
+              if ak_is_group_member(request.user, name="authentik Admins"):
+                  return {"litellm_role": "proxy_admin"}
+              return {"litellm_role": "internal_user"}
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ai
+  timeout: 10m
