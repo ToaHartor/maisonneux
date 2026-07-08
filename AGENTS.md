@@ -51,7 +51,7 @@ Proxmox cluster of two nodes :
 - **datacenter** - Ryzen 7 5700X, RTX 5060Ti 16GB VRAM, 64GB RAM, 1.5TB NVME, 1.5TB SSD, 2.5GbE, hosts a TrueNAS VM (10TB mirror, 52TB raw)
 - **cthugha** - 1x MS-A2 (Ryzen 9 7945HX, 64GB RAM, 1TB NVME, 10Gb SFP+)
 
-Nodes are conencted to a **MikroTik CRS305-1G-4S** with 4x10Gb SFP+ ports.
+Nodes are connected to a **MikroTik CRS305-1G-4S** with 4x10Gb SFP+ ports.
 
 ## Key Technologies
 
@@ -95,11 +95,21 @@ At the base of the base namespace config folder can be found a `namespace.yaml` 
 
 This `ks.yaml` file references each folder found in the app folder (usually only an `app` folder), which contains a `kustomization.yaml` referencing all files in the folder (`helmrelease.yaml`, `ocirepository.yaml`...).
 
-Each stage depend on another one (`system -> platform -> core -> apps`) via `spec.dependsOn` field.
+Each stage depends on another one (`system -> platform -> core -> apps`) via `spec.dependsOn` field.
 
 ### Components
 
-TODO
+Components are reusable Kustomize configurations in `kubernetes/common/components/` that:
+
+- Common templates adapted to the cluster (app database, S3 bucket, HTTPRoute, Authentik application, generated secrets)
+- Inject namespace-specific settings (e.g., resource quotas, network policies)
+- Are referenced in per-namespace `kustomization.yaml` files (`clustersecretstore`, `traefik-middlewares`)
+- Are referenced in per-app `ks.yaml` files
+
+### Template Variables
+
+- HelmRelease values use `${VAR}` syntax for dynamic injection (e.g., `${APP}`, `${DOMAIN_WEBSECURE}`).
+- Two categories of variables : app-level defined in `ks.yaml` in uppercase, and cluster-level defined in `kubernetes/clusters/${cluster}` FluxCD Kustomization in lowercase. Full variable list is defined in the `general-config` ConfigMap created by Terraform FluxCD bootstrap in `terraform/fluxcd/configmaps.tf`.
 
 ## Conventions
 
@@ -117,13 +127,13 @@ TODO
 - **Scripts**: `scripts/` contains operational scripts. See `scripts/README.md` for the full list and usage.
 - **Task operations**: The repo is driven by mise. Run `mise tasks` to see all commands. Common tasks:
   - `mise run context <cluster>` — switch Kubernetes context
-  - `mise run backup <cluster>` — backup a target custer
-  - `mise run restore <cluster>` — restore a target custer
+  - `mise run backup <cluster>` — backup a target cluster
+  - `mise run restore <cluster>` — restore a target cluster
   - `mise run upgrade providers production` — upgrade Terraform providers
   - `mise run upgrade k8s <cluster>` — upgrade Kubernetes version
   - `mise run upgrade talos <cluster>` — upgrade Talos version
   - `mise run krr` — run Kubernetes Resource Recommendations on current cluster
-  - `mist run renovate` — run Renovate on local git repository
+  - `mise run renovate` — run Renovate on local git repository
   - `mise run generate-uuid` — generate a UUIDv4 for authentik groups with python
   - `mise run devenv start / mise run devenv stop` — start/stop the development stack (local forgejo, zot...)
 - **Tool management**: `mise.toml` manages required tools (e.g. `flate`, `talosctl`). Run `mise install` to set up the environment.
@@ -166,9 +176,10 @@ When reviewing Renovate PRs, enforce these criteria. Reviews may include konflat
 - All applications MUST use `HelmRelease` via Flux, not raw manifests. In `${app}/resource/` folders, raw manifests are allowed.
 - HelmReleases MUST use in priority `spec.chartRef` pointing to an `OCIRepository` with a pinned `ref.tag` and the associated `ref.digest`. Some applications (`llmkube`, `onyx`, `zot`, `cert-manager-webhook-ovh`, `snapshot-controller`) still use the legacy `spec.chart` pattern.
 - Every app defines its own per-app `OCIRepository` in a dedicated `ocirepository.yaml` alongside the `HelmRelease`, named after the app, with `./ocirepository.yaml` listed in the app's `kustomization.yaml`. Do not put the `OCIRepository` inline in `helmrelease.yaml`, and do not rely on a shared/injected `OCIRepository`.
-- Must include `spec.interval` for reconciliation frequency
-- If the Helm chart installs CRDs, `spec.upgrade` must include `crds: CreateReplace` to support updates.
-- Resource limits (CPU/memory) SHOULD be specified for production workloads, but this is not a hard requirement
+- **Inline Values**: Use `spec.values` for application configuration
+- **Reconciliation**: Must include `spec.interval`
+- **CRD Handling**: Include `crds: CreateReplace` in both `install` and `upgrade` sections
+- **Resources**: Define requests/limits for production workloads (except CPU limits), not a hard requirement
 - `valuesFrom` should reference ConfigMaps/Secrets, not inline values
 
 ### Namespace Convention
@@ -183,6 +194,12 @@ When reviewing Renovate PRs, enforce these criteria. Reviews may include konflat
 - **NEVER** commit plain-text secrets or credentials in Git
 - All imported secrets MUST be set in FluxCD terraform bootstrap, which creates kubernetes secrets prefixed by `external-` in the `external-secrets` namespace. They can be sourced by `external-secrets` resources in other namespaces using the `external-secrets` `ClusterSecretStore`.
 - If a PR introduces a new secret, verify it's external-secrets backed
+
+### Security Context Baseline
+
+- Deployments should default to `runAsNonRoot: true`, `readOnlyRootFilesystem: true` (unless app requires writes), and `capabilities.drop: ["ALL"]`.
+- Exceptions must be justified in comments (e.g., prisma init writes).
+- Reviewers should request changes if privileged contexts are introduced without justification.
 
 ### Image & Digest Policy
 
