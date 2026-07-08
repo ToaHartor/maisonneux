@@ -107,7 +107,7 @@
       groupName: "velero",
     },
     {
-      matchPackageNames: ["/renovate/"],
+      matchPackageNames: ["/renovate$/"],
       groupName: "renovate",
     },
     // Map sources
