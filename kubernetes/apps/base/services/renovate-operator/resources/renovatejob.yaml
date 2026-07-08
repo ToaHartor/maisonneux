@@ -25,16 +25,14 @@ spec:
       # secretRef:
       #   name: renovate-webhook-token
       #   key: secretKey
-    forgejo:
-      sync:
-        enabled: true
-        webhookURL: http://renovate-operator.services.svc.cluster.local:8082/webhook/v1/forgejo
-        tokenSecretRef:
-          name: forgejo-renovate-token
-          key: RENOVATE_TOKEN
-        # authTokenSecretRef:
-        #   name: renovate-webhook-token
-        #   key: secretKey
+    sync:
+      enabled: true
+      secretRef:
+        name: forgejo-renovate-token
+        key: RENOVATE_TOKEN
+      # authTokenSecretRef:
+      #   name: renovate-webhook-token
+      #   key: secretKey
   discoveryFilters: ["*/maisonneux"] # Will match maisonneux repositories whatever the username/org is
   extraEnv:
     - name: LOG_LEVEL
