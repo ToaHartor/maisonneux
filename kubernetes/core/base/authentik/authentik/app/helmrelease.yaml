@@ -141,6 +141,10 @@ spec:
         - name: postgres-creds
           mountPath: /postgres-creds
           readOnly: true
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
 
     worker:
       serviceAccountName: authentik
@@ -199,9 +203,17 @@ spec:
           volumeMounts:
             - name: sidecar-certs
               mountPath: /certs/sidecar
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
 
     serviceAccount:
       create: true
+
+    prometheus:
+      rules:
+        enabled: false
 
     # Disable included postgres and redis
     postgres:
