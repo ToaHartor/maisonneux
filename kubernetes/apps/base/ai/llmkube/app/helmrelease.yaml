@@ -59,7 +59,7 @@ spec:
 
     metrics:
       enabled: true
-      secure: true
+      secure: false
       service:
         type: ClusterIP
         port: 8443
@@ -71,6 +71,8 @@ spec:
       inferencePodMonitor:
         enabled: true
         interval: 30s
+      prometheusRule:
+        enabled: false
     modelCache:
       enabled: true
       size: 50Gi

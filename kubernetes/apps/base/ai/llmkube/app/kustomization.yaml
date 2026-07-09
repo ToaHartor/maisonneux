@@ -6,3 +6,4 @@ resources:
   - externalsecret.yaml
   - helmrepository.yaml
   - helmrelease.yaml
+  - dashboards.yaml

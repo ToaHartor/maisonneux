@@ -29,8 +29,18 @@ spec:
         memory: 256Mi
       requests:
         cpu: 10m
+
+    metrics:
+      enabled: true
+
     serviceMonitor:
       enabled: true
+
+    grafanaDashboard:
+      enabled: true
+
+    prometheusRules:
+      enabled: false
 
     webhooks:
       enabled: false

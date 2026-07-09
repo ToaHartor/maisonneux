@@ -1,0 +1,30 @@
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: llmkube-gpu
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 30s
+  datasources:
+    - datasourceName: Metrics as prometheus
+      inputName: DS_PROMETHEUS
+  url: https://raw.githubusercontent.com/defilantech/LLMKube/refs/heads/main/config/grafana/llmkube-gpu-dashboard.json
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: llmkube-inference
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 30s
+  datasources:
+    - datasourceName: Metrics as prometheus
+      inputName: DS_PROMETHEUS
+  url: https://raw.githubusercontent.com/defilantech/LLMKube/refs/heads/main/config/grafana/llmkube-inference-dashboard.json
