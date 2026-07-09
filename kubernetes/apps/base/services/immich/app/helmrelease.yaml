@@ -251,6 +251,7 @@ spec:
 
     serviceMonitor:
       server:
+        serviceName: immich-server
         endpoints:
           - port: metrics-api
           - port: metrics-ms

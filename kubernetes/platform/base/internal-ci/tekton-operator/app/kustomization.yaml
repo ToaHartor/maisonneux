@@ -5,3 +5,4 @@ kind: Kustomization
 resources:
   - gitrepository.yaml
   - helmrelease.yaml
+  - dashboard.yaml

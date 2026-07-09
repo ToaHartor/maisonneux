@@ -1,0 +1,18 @@
+---
+# https://grafana.com/grafana/dashboards/12530-sonarr-v3/
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: sonarrv3
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 30s
+  grafanaCom:
+    id: 12530
+    revision: 2
+  datasources:
+    - datasourceName: Metrics as prometheus
+      inputName: DS_PROMETHEUS

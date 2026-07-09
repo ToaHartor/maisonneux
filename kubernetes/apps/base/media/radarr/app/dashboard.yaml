@@ -1,0 +1,18 @@
+---
+# https://grafana.com/grafana/dashboards/12896-radarr-v3/
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: radarrv3
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 30s
+  grafanaCom:
+    id: 12896
+    revision: 1
+  datasources:
+    - datasourceName: Metrics as prometheus
+      inputName: DS_PROMETHEUS

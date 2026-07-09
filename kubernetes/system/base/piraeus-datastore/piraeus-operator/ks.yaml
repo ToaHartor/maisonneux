@@ -5,6 +5,10 @@ kind: Kustomization
 metadata:
   name: piraeus-operator
 spec:
+  dependsOn:
+    # Dashboard
+    - name: grafana-operator
+      namespace: monitoring
   commonMetadata:
     labels:
       app.kubernetes.io/name: piraeus-operator

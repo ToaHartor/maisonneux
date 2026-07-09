@@ -1,0 +1,68 @@
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: onyx-indexing-pipeline
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 30s
+  datasources:
+    - datasourceName: Metrics as prometheus
+      inputName: DS_PROMETHEUS
+  configMapRef:
+    name: onyx-indexing-pipeline-dashboard
+    key: onyx-indexing-pipeline.json
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: onyx-indexing-pruning
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 30s
+  datasources:
+    - datasourceName: Metrics as prometheus
+      inputName: DS_PROMETHEUS
+  configMapRef:
+    name: onyx-indexing-pruning-dashboard
+    key: onyx-indexing-pruning.json
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: onyx-opensearch-search-latency
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 30s
+  datasources:
+    - datasourceName: Metrics as prometheus
+      inputName: DS_PROMETHEUS
+  configMapRef:
+    name: onyx-opensearch-search-latency-dashboard
+    key: onyx-opensearch-search-latency.json
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: onyx-redis-queues
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 30s
+  datasources:
+    - datasourceName: Metrics as prometheus
+      inputName: DS_PROMETHEUS
+  configMapRef:
+    name: onyx-redis-queues-dashboard
+    key: onyx-redis-queues.json

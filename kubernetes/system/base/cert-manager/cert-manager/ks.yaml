@@ -34,6 +34,9 @@ spec:
       app.kubernetes.io/name: cert-manager
   dependsOn:
     - name: cert-manager
+    # dashboard
+    - name: grafana-operator
+      namespace: monitoring
   healthChecks:
     - apiVersion: cert-manager.io/v1
       kind: ClusterIssuer

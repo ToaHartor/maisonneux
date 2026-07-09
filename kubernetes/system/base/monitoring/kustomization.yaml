@@ -2,10 +2,9 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: monitoring
 resources:
-  - gateway.yaml
-  - userauth-secret.yaml
-  - ro-db-secret.yaml
-  - helmrepository.yaml
-  - helmrelease.yaml
-  - dashboards.yaml
+  - ./namespace.yaml
+  - ./grafana-operator/ks.yaml
+transformers:
+  - ./transformers

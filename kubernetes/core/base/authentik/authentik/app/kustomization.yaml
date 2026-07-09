@@ -9,3 +9,4 @@ resources:
   - base-blueprints.yaml
   - smtp-config.yaml
   - helmrelease.yaml
+  - dashboard.yaml

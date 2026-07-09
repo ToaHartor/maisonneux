@@ -50,6 +50,3 @@ spec:
     grafanaDashboard:
       enabled: true
       folder: database
-      labels:
-        name: grafana_dashboard
-        value: "1"

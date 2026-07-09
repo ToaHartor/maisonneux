@@ -142,8 +142,8 @@ spec:
                   cpu: 100m
                   memory: 256Mi
               volumeMounts:
-                - mountPath: /etc/grafana/provisioning/dashboards
-                  name: provisioning-config
+                # - mountPath: /etc/grafana/provisioning/dashboards
+                #   name: provisioning-config
                 - mountPath: /var/lib/grafana/dashboards
                   name: dashboards
                 #   - name: postgres-db-creds
@@ -155,29 +155,29 @@ spec:
 
                 # This container watches the namespace for configmaps with the `dashboards` label
                 # and creates files for all their keys under `FOLDER`
-            - name: dashboard-sidecar
-              # renovate container:
-              image: "ghcr.io/kiwigrid/k8s-sidecar:2.8.1@sha256:abb55b2165c60e8f97e473862c7a3123df6f67d44f592949577c29b8fb2df9d6"
-              env:
-                - name: LABEL
-                  value: "grafana_dashboard"
-                - name: LABEL_VALUE
-                  value: "1"
-                - name: FOLDER
-                  value: /var/lib/grafana/dashboards
-                - name: NAMESPACE
-                  value: ALL
-                - name: RESOURCE
-                  value: configmap
-              securityContext:
-                allowPrivilegeEscalation: false
-                readOnlyRootFilesystem: true
-                capabilities: { drop: ["ALL"] }
-                seccompProfile:
-                  type: RuntimeDefault
-              volumeMounts:
-                - mountPath: /var/lib/grafana/dashboards
-                  name: dashboards
+            # - name: dashboard-sidecar
+            #   # renovate container:
+            #   image: "ghcr.io/kiwigrid/k8s-sidecar:2.8.1@sha256:abb55b2165c60e8f97e473862c7a3123df6f67d44f592949577c29b8fb2df9d6"
+            #   env:
+            #     - name: LABEL
+            #       value: "grafana_dashboard"
+            #     - name: LABEL_VALUE
+            #       value: "1"
+            #     - name: FOLDER
+            #       value: /var/lib/grafana/dashboards
+            #     - name: NAMESPACE
+            #       value: ALL
+            #     - name: RESOURCE
+            #       value: configmap
+            #   securityContext:
+            #     allowPrivilegeEscalation: false
+            #     readOnlyRootFilesystem: true
+            #     capabilities: { drop: ["ALL"] }
+            #     seccompProfile:
+            #       type: RuntimeDefault
+            #   volumeMounts:
+            #     - mountPath: /var/lib/grafana/dashboards
+            #       name: dashboards
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
@@ -187,9 +187,9 @@ spec:
           volumes:
             - name: dashboards
               emptyDir: {}
-            - name: provisioning-config
-              configMap:
-                name: grafana-provisioning-config
+            # - name: provisioning-config
+            #   configMap:
+            #     name: grafana-provisioning-config
             #   - name: postgres-db-creds
             #     secret:
             #       defaultMode: 420

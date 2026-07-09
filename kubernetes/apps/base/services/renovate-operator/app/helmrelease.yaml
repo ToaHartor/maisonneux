@@ -89,11 +89,17 @@ spec:
         enabled: true
       dashboard:
         enabled: true
-      grafanaDashboard:
-        allowCrossNamespaceImport: true
-        instanceSelector:
-          matchLabels:
-            dashboards: grafana
+        # Default values force the use of the label grafana.internal/instance: "grafana"
+        # see https://github.com/mogenius/renovate-operator/issues/485
+        grafanaDashboard:
+          allowCrossNamespaceImport: true
+          instanceSelector:
+            matchLabels:
+              dashboards: grafana
+          resyncPeriod: 30s
+          datasources:
+            - datasourceName: Metrics as prometheus
+              inputName: DS_PROMETHEUS
     telemetry:
       enabled: true
       endpoint: "opentelemetry-kube-stack-daemon-collector.opentelemetry.svc.cluster.local:4317"
