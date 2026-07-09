@@ -249,6 +249,12 @@ spec:
           http:
             port: *mlPort
 
+    serviceMonitor:
+      server:
+        endpoints:
+          - port: metrics-api
+          - port: metrics-ms
+
     persistence:
       config:
         type: configMap

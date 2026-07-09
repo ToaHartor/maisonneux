@@ -101,3 +101,8 @@ spec:
             port: 8191
           metrics:
             port: *monit-port
+
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics

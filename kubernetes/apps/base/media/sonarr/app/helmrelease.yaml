@@ -180,6 +180,12 @@ spec:
             port: *port
           metrics:
             port: *exporterPort
+
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
+
     persistence:
       config:
         type: emptyDir
