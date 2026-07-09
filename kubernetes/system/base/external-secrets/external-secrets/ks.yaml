@@ -8,6 +8,12 @@ spec:
   dependsOn:
     - name: cert-manager
       namespace: cert-manager
+    # Dashboard
+    - name: grafana-operator
+      namespace: monitoring
+    # ServiceMonitor CRD
+    - name: prometheus-crds
+      namespace: opentelemetry
   commonMetadata:
     labels:
       app.kubernetes.io/name: external-secrets

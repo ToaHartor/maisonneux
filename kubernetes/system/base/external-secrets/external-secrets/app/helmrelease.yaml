@@ -23,6 +23,12 @@ spec:
 
     priorityClassName: &priority operators
 
+    serviceMonitor:
+      enabled: true
+
+    grafanaDashboard:
+      enabled: true
+
     resources:
       requests:
         cpu: 10m

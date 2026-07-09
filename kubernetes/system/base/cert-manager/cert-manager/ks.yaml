@@ -5,6 +5,10 @@ kind: Kustomization
 metadata:
   name: cert-manager
 spec:
+  dependsOn:
+    # ServiceMonitor CRDs
+    - name: prometheus-crds
+      namespace: opentelemetry
   commonMetadata:
     labels:
       app.kubernetes.io/name: cert-manager

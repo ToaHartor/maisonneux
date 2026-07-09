@@ -1,9 +1,8 @@
 ---
-# https://grafana.com/grafana/dashboards/20842-cert-manager-kubernetes/
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
-  name: cert-manager
+  name: external-secrets
 spec:
   allowCrossNamespaceImport: true
   instanceSelector:
@@ -13,4 +12,6 @@ spec:
   datasources:
     - datasourceName: Metrics as prometheus
       inputName: DS_PROMETHEUS
-  url: https://grafana.com/api/dashboards/20842/revisions/3/download
+  configMapRef:
+    name: external-secrets-dashboard
+    key: external-secrets.json

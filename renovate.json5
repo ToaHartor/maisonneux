@@ -29,6 +29,17 @@
     managerFilePatterns: ["/(^|/)terraform/.+\\.tf$/"],
   },
   ignorePaths: ["**/docker-compose/**"], // Exclude legacy stacks
+
+  // From https://github.com/home-operations/renovate-presets/blob/main/managers/grafanaDashboards.json5
+  customDatasources: {
+    "grafana-dashboards": {
+      defaultRegistryUrlTemplate: "https://grafana.com/api/dashboards/{{packageName}}",
+      format: "json",
+      transformTemplates: [
+        '{"releases":[{"version": $string(revision)}], "sourceDirectory": name}',
+      ],
+    },
+  },
   customManagers: [
     // Manually match missed items
     // For dependencies with OCI registries, use datasource=docker
@@ -62,12 +73,37 @@
       extractVersionTemplate: "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>v?.+)${{/if}}",
       // autoReplaceStringTemplate: "{{{comment}}}{{{prefix}}}{{#if quote}}{{{quote}}}{{/if}}{{{depName}}}:{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{else}}{{#if currentDigest}}@{{{currentDigest}}}{{/if}}{{/if}}{{#if quote}}{{{quote}}}{{/if}}",
     },
+    // Grafana dashboards
+    {
+      description: "Process Grafana dashboards",
+      customType: "regex",
+      managerFilePatterns: ["/grafanadashboard\\.yaml(?:\\.j2)?$/"],
+      matchStrings: [
+        "dashboards\\/(?<depName>\\d+)\\/revisions\\/(?<currentValue>\\d+)\\/download",
+      ],
+      datasourceTemplate: "custom.grafana-dashboards",
+      versioningTemplate: "regex:^(?<major>\\d+)$",
+      autoReplaceStringTemplate: "dashboards/{{depName}}/revisions/{{newValue}}/download",
+    },
   ],
   packageRules: [
     // Pin digests
     {
       matchDatasources: ["docker"],
       pinDigests: true,
+    },
+    // Grafana dashboards
+    {
+      addLabels: ["renovate/grafana-dashboard"],
+      automerge: true,
+      automergeType: "branch",
+      commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
+      commitMessageTopic: "dashboard {{sourceDirectory}}",
+      ignoreTests: true,
+      matchDatasources: ["custom.grafana-dashboards"],
+      matchUpdateTypes: ["major"],
+      semanticCommitScope: "grafana-dashboards",
+      semanticCommitType: "chore",
     },
     // In package rules, we also add non matched packages source url
     // Use opentofu registry as we use it instead of terraform

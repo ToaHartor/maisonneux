@@ -10,9 +10,7 @@ spec:
     matchLabels:
       dashboards: grafana
   resyncPeriod: 30s
-  grafanaCom:
-    id: 14837
-    revision: 2
   datasources:
     - datasourceName: Metrics as prometheus
       inputName: DS_PROMETHEUS
+  url: https://grafana.com/api/dashboards/14837/revisions/2/download
