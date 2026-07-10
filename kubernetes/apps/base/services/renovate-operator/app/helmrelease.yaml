@@ -89,8 +89,6 @@ spec:
         enabled: true
       dashboard:
         enabled: true
-        # Default values force the use of the label grafana.internal/instance: "grafana"
-        # see https://github.com/mogenius/renovate-operator/issues/485
         grafanaDashboard:
           allowCrossNamespaceImport: true
           instanceSelector:
