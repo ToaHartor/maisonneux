@@ -56,15 +56,15 @@ spec:
               ATUIN_METRICS__PORT: &metricsPort 8080
               ATUIN_DB_URI:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: uri
               ATUIN_DB_USERNAME:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: username
               ATUIN_DB_PASSWORD:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: password
             ports:
               - containerPort: *port

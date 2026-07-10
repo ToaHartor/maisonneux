@@ -80,7 +80,7 @@ spec:
               # Database
               DATABASE_URL:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: uri
               REDIS_URL: redis://dragonfly-cluster.dragonfly.svc.cluster.local:6379
               SECRET_KEY:

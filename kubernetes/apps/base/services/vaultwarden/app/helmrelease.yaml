@@ -65,7 +65,7 @@ spec:
               TZ: Europe/Paris
               DATABASE_URL:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: uri
               LOG_LEVEL: trace
               EXTENDED_LOGGING: true

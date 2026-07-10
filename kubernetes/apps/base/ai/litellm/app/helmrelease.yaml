@@ -139,7 +139,7 @@ spec:
       # endpoint:
       database: ${PSQL_DB_NAME}
       secret:
-        name: ${APP}-db-creds
+        name: ${PSQL_DB_USER}-db-creds
         usernameKey: username
         passwordKey: password
         endpointKey: host # overrides db.endpoint

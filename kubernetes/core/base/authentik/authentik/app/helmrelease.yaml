@@ -65,7 +65,7 @@ spec:
       addPrometheusAnnotations: true
       priorityClassName: services-important
       deploymentAnnotations:
-        secret.reloader.stakater.com/reload: "${S3_USER}-garage,${APP}-db-creds,smtp-config"
+        secret.reloader.stakater.com/reload: "${S3_USER}-garage,${PSQL_DB_USER}-db-creds,smtp-config"
         configmap.reloader.stakater.com/reload: "authentik-base-blueprints"
 
       deploymentStrategy:
@@ -136,7 +136,7 @@ spec:
       volumes:
         - name: postgres-creds
           secret:
-            secretName: &authentik-db-secret ${APP}-db-creds
+            secretName: &authentik-db-secret ${PSQL_DB_USER}-db-creds
       volumeMounts:
         - name: postgres-creds
           mountPath: /postgres-creds

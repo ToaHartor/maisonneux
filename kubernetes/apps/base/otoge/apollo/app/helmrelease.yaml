@@ -58,7 +58,7 @@ spec:
             valueFrom:
               secretKeyRef:
                 key: password
-                name: ${APP}-db-creds
+                name: ${PSQL_DB_USER}-db-creds
           # - name: CONFIG__S3__ENDPOINT
           #   valueFrom:
           #     secretKeyRef:

@@ -60,7 +60,7 @@ spec:
               POSTGRES_USER: ${PSQL_DB_USER}
               POSTGRES_PASSWORD:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: password
               POSTGRES_IP: "postgres-db-rw.${psql_database_namespace}.svc.cluster.local"
               POSTGRES_PORT: "5432"

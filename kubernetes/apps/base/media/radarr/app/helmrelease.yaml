@@ -78,7 +78,7 @@ spec:
               RADARR__POSTGRES__USER: ${PSQL_DB_USER}
               RADARR__POSTGRES__PASSWORD:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: password
               RADARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
               RADARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}

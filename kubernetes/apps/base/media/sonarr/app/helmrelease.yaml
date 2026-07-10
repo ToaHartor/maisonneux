@@ -78,7 +78,7 @@ spec:
               SONARR__POSTGRES__USER: ${PSQL_DB_USER}
               SONARR__POSTGRES__PASSWORD:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: password
               SONARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
               SONARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}

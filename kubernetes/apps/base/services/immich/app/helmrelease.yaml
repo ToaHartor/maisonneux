@@ -94,19 +94,19 @@ spec:
               # Database
               DB_USERNAME:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: username
               DB_DATABASE_NAME:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: dbname
               DB_HOSTNAME:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: host
               DB_PASSWORD:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: password
               DB_PORT: "5432"
               # Redis

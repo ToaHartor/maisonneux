@@ -78,7 +78,7 @@ spec:
               LIDARR__POSTGRES__USER: ${PSQL_DB_USER}
               LIDARR__POSTGRES__PASSWORD:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: password
               LIDARR__POSTGRES__MAINDB: ${PSQL_DB_NAME}
               LIDARR__POSTGRES__LOGDB: ${PSQL_LOG_DB_NAME}

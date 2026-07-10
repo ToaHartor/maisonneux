@@ -28,7 +28,7 @@ spec:
 
     deploymentAnnotations:
       # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-      secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
+      secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${PSQL_DB_USER}-db-creds"
       configmap.reloader.stakater.com/auto: "true"
 
     agent:
@@ -69,7 +69,7 @@ spec:
 
       deployAnnotations:
         # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-        secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${APP}-db-creds"
+        secret.reloader.stakater.com/reload: "${SECRET_KEY_NAME},${PSQL_DB_USER}-db-creds"
         configmap.reloader.stakater.com/auto: "true"
 
       env:
@@ -92,7 +92,7 @@ spec:
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: ${APP}-db-creds
+              name: ${PSQL_DB_USER}-db-creds
               key: password
     config:
       config.yaml.local: |

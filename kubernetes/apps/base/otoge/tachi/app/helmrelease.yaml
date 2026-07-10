@@ -31,7 +31,7 @@ spec:
       server:
         annotations:
           # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-          secret.reloader.stakater.com/reload: "${APP}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
+          secret.reloader.stakater.com/reload: "${PSQL_DB_USER}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
         containers:
           server:
             image:
@@ -44,7 +44,7 @@ spec:
               REDIS_URL: "dragonfly-cluster.dragonfly.svc.cluster.local:6379/13"
               POSTGRES_URL:
                 secretKeyRef:
-                  name: ${APP}-db-creds
+                  name: ${PSQL_DB_USER}-db-creds
                   key: uri
               LOG_LEVEL: info
               TACHI_SIGNUPS_ENABLED: "true"
@@ -310,7 +310,7 @@ spec:
       client:
         # annotations:
         #   # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-        #   secret.reloader.stakater.com/reload: "${APP}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
+        #   secret.reloader.stakater.com/reload: "${PSQL_DB_USER}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
         containers:
           client:
             image:

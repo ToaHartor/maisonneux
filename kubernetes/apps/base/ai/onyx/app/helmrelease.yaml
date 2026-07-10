@@ -349,13 +349,13 @@ spec:
     auth:
       postgresql:
         enabled: true
-        existingSecret: ${APP}-db-creds
+        existingSecret: ${PSQL_DB_USER}-db-creds
         secretKeys:
           POSTGRES_USER: username
           POSTGRES_PASSWORD: password
       dbreadonly:
         enabled: true
-        existingSecret: "${APP}ro-db-creds"
+        existingSecret: "${PSQL_RO_USER}-db-creds"
         secretKeys:
           DB_READONLY_USER: username
           DB_READONLY_PASSWORD: password

@@ -159,7 +159,7 @@ spec:
     deployment:
       annotations:
         # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
-        secret.reloader.stakater.com/reload: "${S3_USER}-garage,${APP}-db-creds,${APP}-oidc-authentik-application,forgejo-renovate-token"
+        secret.reloader.stakater.com/reload: "${S3_USER}-garage,${PSQL_DB_USER}-db-creds,${APP}-oidc-authentik-application,forgejo-renovate-token"
         homelab/use-local-dns: ${quote}${patch_dns:=false}${quote}
       env:
         # Runner
@@ -343,7 +343,7 @@ spec:
         - name: FORGEJO__DATABASE__PASSWD
           valueFrom:
             secretKeyRef:
-              name: ${APP}-db-creds
+              name: ${PSQL_DB_USER}-db-creds
               key: password
     extraContainerVolumeMounts:
       - name: signing-key

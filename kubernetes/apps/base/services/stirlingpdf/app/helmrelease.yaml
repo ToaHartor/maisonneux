@@ -63,7 +63,7 @@ spec:
 
     serviceMonitor:
       enabled: true
-    
+
     resources:
       limits:
         cpu: 2
@@ -112,17 +112,17 @@ spec:
       - name: SYSTEM_DATASOURCE_CUSTOMDATABASEURL
         valueFrom:
           secretKeyRef:
-            name: ${APP}-db-creds
+            name: ${PSQL_DB_USER}-db-creds
             key: jdbc-uri
       - name: SYSTEM_DATASOURCE_USERNAME
         valueFrom:
           secretKeyRef:
-            name: ${APP}-db-creds
+            name: ${PSQL_DB_USER}-db-creds
             key: username
       - name: SYSTEM_DATASOURCE_PASSWORD
         valueFrom:
           secretKeyRef:
-            name: ${APP}-db-creds
+            name: ${PSQL_DB_USER}-db-creds
             key: password
       - name: DOCKER_ENABLE_SECURITY
         value: "true"
