@@ -1,0 +1,18 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: ${PSQL_DB_USER}
+spec:
+  cluster:
+    name: ${psql_cluster_name}
+  name: ${PSQL_DB_USER}
+  ensure: present
+  comment: "${PSQL_DB_USER} user for app ${APP}"
+  login: true
+  superuser: false
+  createdb: false
+  databaseRoleReclaimPolicy: delete
+  # inRoles:
+  #   - pg_monitor
+  passwordSecret:
+    name: ${PSQL_DB_USER}-db-creds

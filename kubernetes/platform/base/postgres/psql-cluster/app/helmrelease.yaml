@@ -34,30 +34,3 @@ spec:
       enableAntiAffinity: true
       postgres:
         clusterName: ${psql_cluster_name}${psql_suffix:=}
-      users:
-        - authentik
-        - sonarr
-        - vaultwarden
-        - wakapi
-        - outline
-        # - stirlingpdf
-        - gitea
-        - forgejo
-        - radarr
-        - radarr4k
-        - lidarr
-        - prowlarr
-        - seerr
-        - jellystat
-        - paperless
-        - grafana
-        - crowdsec
-        - immich
-        - atuin
-        # otoge
-        - apollo
-        - tachi
-        - onyx
-        - litellm
-        # Read only account
-        - onyxro

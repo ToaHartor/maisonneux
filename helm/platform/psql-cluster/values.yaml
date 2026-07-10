@@ -10,5 +10,3 @@ database:
   enableAntiAffinity: true
   # postgres:
   #   clusterName: # Defined in common
-  users:
-    - default

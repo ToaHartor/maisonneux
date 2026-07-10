@@ -26,6 +26,7 @@ spec:
     - ../../../../../common/components/oidc-application
     - ../../../../../common/components/garage-bucket
     - ../../../../../common/components/cnpg/db # TODO : with extensions like immich ?
+    - ../../../../../common/components/cnpg/ro-user
     - ../../../../../common/components/secret/creds
     # - ../../../../../common/components/httproute/local
   path: "./kubernetes/apps/base/ai/onyx/app"
@@ -44,6 +45,7 @@ spec:
       # Database
       PSQL_DB_USER: onyx
       PSQL_DB_NAME: onyx
+      PSQL_RO_USER: onyxro
       # DATABASE_EXTENSIONS: |
       #   [
       #     { name: vector, ensure: present },
@@ -63,7 +65,7 @@ spec:
       fastdata_storage: ${fastdata_storage}
       psql_cluster_name: ${psql_cluster_name}
       psql_database_namespace: ${psql_database_namespace}
-      quote: "\""
+      quote: '"'
       auth_subdomain: ${auth_subdomain}
       main_domain: ${main_domain}
       main_domain_websecure: ${main_domain_websecure}

@@ -59,10 +59,10 @@ spec:
           - /usr/share/postgresql/18/
 
   plugins:
-  - name: barman-cloud.cloudnative-pg.io
-    isWALArchiver: true
-    parameters:
-      barmanObjectName: s3-backup # Ref to the ObjectStore resource
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: s3-backup # Ref to the ObjectStore resource
 
   # Restore section added in restore script
   # bootstrap:
@@ -90,17 +90,18 @@ spec:
               name: "postgres-db-rw"
             spec:
               type: ClusterIP
-
-    roles:
-      {{- range $user := .Values.database.users }}
-      - name: {{ $user }}
-        ensure: present
-        comment: {{ $user }} database user
-        login: true
-        superuser: false
-        passwordSecret:
-          name:  {{ include "common.db.secret-name" (dict "DatabaseUser" $user) }}
-      {{- end }}
+    {{/*
+    # roles:
+    #   {{- range $user := .Values.database.users }}
+    #   - name: {{ $user }}
+    #     ensure: present
+    #     comment: {{ $user }} database user
+    #     login: true
+    #     superuser: false
+    #     passwordSecret:
+    #       name:  {{ include "common.db.secret-name" (dict "DatabaseUser" $user) }}
+    #   {{- end }}
+    */}}
 
   monitoring:
     enablePodMonitor: true
