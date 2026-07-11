@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # see https://github.com/siderolabs/talos/releases
-# renovate: datasource=docker depName=ghcr.io/siderolabs/installer
+# renovate: datasource=github-releases depName=siderolabs/talos
 talos_version="1.13.4"
 # https://github.com/siderolabs/pkgs/tags
 talos_pkg_branch="release-1.9"

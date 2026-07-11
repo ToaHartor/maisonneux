@@ -90,7 +90,7 @@ spec:
   deployment:
     metadata:
       annotations:
-        secret.reloader.stakater.com/reload: "${APP}-oidc-authentik-application,${APP}-db-creds" # ${SECRET_CREDS_NAME},
+        secret.reloader.stakater.com/reload: "${APP}-oidc-authentik-application,${PSQL_DB_USER}-db-creds" # ${SECRET_CREDS_NAME},
     spec:
       strategy:
         type: RollingUpdate
@@ -126,7 +126,7 @@ spec:
                 - name: GF_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: ${APP}-db-creds
+                      name: ${PSQL_DB_USER}-db-creds
                       key: uri
               securityContext:
                 allowPrivilegeEscalation: false

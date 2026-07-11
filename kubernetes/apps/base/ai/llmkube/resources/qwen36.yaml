@@ -122,7 +122,7 @@ spec:
   # https://github.com/ikawrakow/ik_llama.cpp/pkgs/container/ik-llama-cpp/versions?filters[version_type]=tagged
   # image: ghcr.io/ikawrakow/ik-llama-cpp:cu13-server-4672
   # BeeLlama image https://github.com/Anbeeld/beellama.cpp
-  # Manual update...
+  # renovate container:
   image: ghcr.io/anbeeld/beellama.cpp:server-cuda13-preview-v0.3.2
   replicas: 1
   endpoint:

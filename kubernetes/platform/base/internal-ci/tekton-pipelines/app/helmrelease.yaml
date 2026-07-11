@@ -49,7 +49,7 @@ spec:
 
     tachi:
       repository:
-        # renovate: datasource=git-refs depName=https://github.com/zkldi/tachi
+        # renovate: datasource=git-refs depName=https://github.com/zkldi/tachi gitRef=main
         branch: a815848fb623151249c6057191f6db3883621b5e
       parameters:
         serverUrl: https://xn--sck3h9451a.${second_domain}

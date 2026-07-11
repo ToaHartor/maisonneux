@@ -36,8 +36,8 @@ spec:
           server:
             image:
               repository: ghcr.io/zkldi/tachi
-              # renovate: datasource=git-refs depName=https://github.com/zkldi/tachi
-              tag: a815848fb623151249c6057191f6db3883621b5e
+              # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
+              tag: main@sha256:4d9fe39d1b7ce56de3959476d344b6d67c8cf1a4804db0882f22a1f02f5866da
             env: &server-env
               NODE_ENV: production
               PORT: "8080" # server
@@ -223,8 +223,8 @@ spec:
           worker:
             image:
               repository: ghcr.io/zkldi/tachi
-              # renovate: datasource=git-refs depName=https://github.com/zkldi/tachi
-              tag: a815848fb623151249c6057191f6db3883621b5e
+              # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
+              tag: main@sha256:4d9fe39d1b7ce56de3959476d344b6d67c8cf1a4804db0882f22a1f02f5866da
             command: ["bun", "run", "./typescript/server/src/job-queue-worker.ts"]
             env:
               <<: *server-env
@@ -276,8 +276,8 @@ spec:
           cron:
             image:
               repository: ghcr.io/zkldi/tachi
-              # renovate: datasource=git-refs depName=https://github.com/zkldi/tachi
-              tag: a815848fb623151249c6057191f6db3883621b5e
+              # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
+              tag: main@sha256:4d9fe39d1b7ce56de3959476d344b6d67c8cf1a4804db0882f22a1f02f5866da
             command: ["bun", "run", "./typescript/server/src/cron-worker.ts"]
             env:
               <<: *server-env
@@ -314,10 +314,11 @@ spec:
         containers:
           client:
             image:
+              # renovate: datasource=local
               repository: localhost:32000/tachi-client # Client
               # Should be in sync with the server and the image built in pipeline
-              # renovate: datasource=git-refs depName=https://github.com/zkldi/tachi
-              tag: a815848fb623151249c6057191f6db3883621b5e@sha256:8a3ced7fd714c4d760ac54cb2f76e84e9d005d302c7bd8336a0dc54b21d2b6aa
+              # renovate: datasource=git-refs depName=https://github.com/zkldi/tachi gitRef=main
+              tag: a815848fb623151249c6057191f6db3883621b5e
               pullPolicy: Always
             # env:
             ports:
