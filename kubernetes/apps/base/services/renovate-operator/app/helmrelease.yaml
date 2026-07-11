@@ -100,6 +100,6 @@ spec:
               inputName: DS_PROMETHEUS
     telemetry:
       enabled: true
-      endpoint: "opentelemetry-kube-stack-daemon-collector.opentelemetry.svc.cluster.local:4317"
+      endpoint: "https://opentelemetry-kube-stack-daemon-collector.opentelemetry.svc.cluster.local:4317"
       protocol: grpc
       forwardToJobs: true

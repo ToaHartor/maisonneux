@@ -5,12 +5,18 @@
     "helm-values",
     "helmv3",
     "flux",
-    "custom.regex",
     "github-actions",
     // "mise",
   ], // Only enable comments
   // Group major-minor-patch PRs
-  extends: ["config:recommended", "helpers:pinGitHubActionDigests"],
+  extends: [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    "docker:enableMajor",
+    ":semanticCommits",
+    ":disableRateLimiting",
+    ":dependencyDashboard",
+  ],
   separateMajorMinor: false,
   separateMultipleMajor: true,
   separateMinorPatch: false,
@@ -238,15 +244,32 @@
     // Automerge settings
     // Setting from https://docs.renovatebot.com/key-concepts/automerge/#automerge-non-major-updates
     // * Non major updates for development tools
-    // {
-    //   matchDatasources: ["docker"],
-    //   matchPackageNames: ["renovate/renovate"],
-    //   matchUpdateTypes: ["minor", "patch"],
-    //   matchCurrentVersion: "!/^0/",
-    //   ignoreTests: true,
-    //   automerge: true,
-    //   automergeType: "pr",
-    // },
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/renovate$/"],
+      matchUpdateTypes: ["minor", "patch"],
+      matchCurrentVersion: "!/^0/",
+      ignoreTests: true,
+      automerge: true,
+      automergeType: "pr",
+    },
+    // * Automerge patches for specific versions
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: [
+        "/prowlarr/",
+        "/suwayomi/",
+        "/sonarr/",
+        "/radarr/",
+        "/lidarr/",
+      ],
+      matchUpdateTypes: ["patch"],
+      matchCurrentVersion: "!/^0/",
+      ignoreTests: true,
+      automerge: true,
+      automergeType: "pr",
+    },
+
     // // * Non major updates for truecharts
     // {
     //   matchDatasources: ["docker"],
