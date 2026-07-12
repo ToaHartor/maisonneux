@@ -64,9 +64,10 @@
         "/^mise\\.toml$/",
       ],
       matchStrings: [
-        "# renovate: datasource=(?<datasource>[^:]+?) depName=(?<depName>.+?)( versioning=(?<versioning>.+?))?( extractVersion=(?<extractVersion>.+?))?( registryUrl=(?<ocimatch>oci:\\/\\/)?(?<registryUrl>.+?))?( gitRef=(?<gitRef>.+?))?\\s.+?(:\\s|\\s?=)(&\\S+)?\\s*[\"']?(?<currentValue>.+?)[\"']?\\s",
+        "# renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)( versioning=(?<versioning>.+?))?( extractVersion=(?<extractVersion>.+?))?( registryUrl=(?<ocimatch>oci:\\/\\/)?(?<registryUrl>.+?))?( gitRef=(?<gitRef>.+?))?\\s.+?(:\\s|\\s?=)(&\\S+)?\\s*[\"']?(?<currentValue>.+?)[\"']?\\s",
       ],
       datasourceTemplate: "{{#if datasource}}{{{datasource}}}{{else}}docker{{/if}}",
+      packageNameTemplate: "{{depName}}",
       currentValueTemplate: "{{#if gitRef}}{{{gitRef}}}{{else}}{{{currentValue}}}{{/if}}", // Only used if the datasource is gitrefs, the currentValue should refer to the branch
       registryUrlTemplate: "{{#if registryUrl}}{{#if ocimatch}}https://{{/if}}{{{registryUrl}}}{{/if}}",
       versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}semver-coerced{{/if}}",
@@ -97,18 +98,21 @@
       versioningTemplate: "regex:^(?<major>\\d+)$",
       autoReplaceStringTemplate: "dashboards/{{depName}}/revisions/{{newValue}}/download",
     },
-    // Tachi git refs
-    // {
-    //   customType: "regex",
-    //   description: "Match tachi git refs",
-    //   managerFilePatterns: ["/\\.ya?ml$/"],
-    //   matchStrings: [
-    //     "dashboards\\/(?<depName>\\d+)\\/revisions\\/(?<currentValue>\\d+)\\/download",
-    //   ],
-    //   datasourceTemplate: "custom.grafana-dashboards",
-    //   versioningTemplate: "regex:^(?<major>\\d+)$",
-    //   autoReplaceStringTemplate: "dashboards/{{depName}}/revisions/{{newValue}}/download",
-    // },
+    {
+      customType: "regex",
+      description: "Match git refs with only the commit hash as value (and branch ref in comment)",
+      managerFilePatterns: [
+        "/tachi\/app\/helmrelease\\.ya?ml$/",
+        "/tekton-pipelines\/app\/helmrelease\\.ya?ml$/",
+      ],
+      matchStrings: [
+        "# renovate gitref: depName=(?<depName>.+?)( extractVersion=(?<extractVersion>.+?))?( registryUrl=(?<ocimatch>oci:\\/\\/)?(?<registryUrl>.+?))?( gitRef=(?<currentValue>.+?))?\\s.+?(:\\s|\\s?=)(&\\S+)?\\s*[\"']?(?<currentDigest>.+?)[\"']?\\s",
+      ],
+      datasourceTemplate: "{{#if datasource}}{{{datasource}}}{{else}}git-refs{{/if}}",
+      packageNameTemplate: "{{depName}}",
+      versioningTemplate: "git",
+      extractVersionTemplate: "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}",
+    },
   ],
   packageRules: [
     // Pin digests
@@ -118,8 +122,10 @@
     },
     // Tachi grouping : some have docker tags and client uses git refs
     {
-      matchPackageNames: ["/zkldi\/tachi/"],
+      matchPackageNames: ["/zkldi\/[tT]achi/"],
       groupName: "Tachi",
+      automerge: false,
+      commitMessageExtra: "({{#each upgrades}}{{#if currentVersion}}{{#unless @first}}, {{/unless}}{{{currentVersion}}} ➔ {{{newVersion}}}{{/if}}{{/each}})",
       // pinDigests: false,
     },
     // In package rules, we also add non matched packages source url
@@ -127,6 +133,9 @@
     {
       matchDatasources: ["terraform-provider"],
       registryUrls: ["https://registry.opentofu.org"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} terraform provider",
+      },
     },
     // Exclude localhost:32000 images
     {
@@ -181,7 +190,6 @@
       matchPackageNames: ["ghcr.io/anbeeld/beellama.cpp"],
       versioning: "regex:^server-(?<compatibility>[a-z0-9]+)-(?<preview>preview-)?v(?<version>(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+))$",
     },
-
     // Map sources
     {
       matchPackageNames: ["/papra-hq\/papra/"],
@@ -223,12 +231,6 @@
     //   changelogUrl: "https://trueforge.org/truetech/truecharts/charts/stable/{{replace 'oci.trueforge.org/truecharts/' '' depName}}/changelog/",
     // },
     // Terraform providers
-    {
-      matchDatasources: ["terraform-provider"],
-      group: {
-        commitMessageTopic: "{{{groupName}}} terraform provider",
-      },
-    },
     {
       matchPackageNames: ["bpg/proxmox"],
       matchDatasources: ["terraform-provider"],
@@ -293,7 +295,7 @@
     {
       addLabels: ["renovate/grafana-dashboard"],
       automerge: false, // true,
-      automergeType: "pr",
+      automergeType: "branch",
       commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
       commitMessageTopic: "dashboard {{sourceDirectory}}",
       ignoreTests: true,
@@ -303,7 +305,7 @@
       semanticCommitType: "chore",
     },
     {
-      description: "Auto merge minors and patches",
+      description: "Auto merge patches",
       matchDatasources: ["docker"],
       matchPackageNames: [
         "/prowlarr/",
