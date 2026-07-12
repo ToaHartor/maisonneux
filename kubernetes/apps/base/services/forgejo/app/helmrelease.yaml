@@ -144,9 +144,6 @@ spec:
       name: forgejo-provisioner # Created separately
     image:
       rootless: true
-      registry: code.forgejo.org
-      repository: forgejo/forgejo
-      tag: 15.0.3-rootless
 
     resources:
       limits:
