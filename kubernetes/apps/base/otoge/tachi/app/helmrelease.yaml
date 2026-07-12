@@ -37,7 +37,7 @@ spec:
             image:
               repository: ghcr.io/zkldi/tachi
               # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
-              tag: main@sha256:4d9fe39d1b7ce56de3959476d344b6d67c8cf1a4804db0882f22a1f02f5866da
+              tag: main@sha256:8ef40dbaf2a6bf2d697cea4f1f30eca4edd8fb7210544fc90a25fc8e8b474e2d
             env: &server-env
               NODE_ENV: production
               PORT: "8080" # server
@@ -224,7 +224,7 @@ spec:
             image:
               repository: ghcr.io/zkldi/tachi
               # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
-              tag: main@sha256:4d9fe39d1b7ce56de3959476d344b6d67c8cf1a4804db0882f22a1f02f5866da
+              tag: main@sha256:8ef40dbaf2a6bf2d697cea4f1f30eca4edd8fb7210544fc90a25fc8e8b474e2d
             command: ["bun", "run", "./typescript/server/src/job-queue-worker.ts"]
             env:
               <<: *server-env
@@ -277,7 +277,7 @@ spec:
             image:
               repository: ghcr.io/zkldi/tachi
               # renovate: datasource=docker depName=ghcr.io/zkldi/tachi
-              tag: main@sha256:4d9fe39d1b7ce56de3959476d344b6d67c8cf1a4804db0882f22a1f02f5866da
+              tag: main@sha256:8ef40dbaf2a6bf2d697cea4f1f30eca4edd8fb7210544fc90a25fc8e8b474e2d
             command: ["bun", "run", "./typescript/server/src/cron-worker.ts"]
             env:
               <<: *server-env
