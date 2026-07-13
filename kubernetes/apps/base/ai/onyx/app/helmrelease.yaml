@@ -398,7 +398,9 @@ spec:
       # https://github.com/onyx-dot-app/onyx/blob/main/backend/shared_configs/configs.py
       DOMAIN: ${SUBDOMAIN}.${DOMAIN}
       WEB_DOMAIN: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+      # Craft
       ENABLE_CRAFT: "true"
+      SANDBOX_API_SERVER_URL: http://onyx-api-service.ai.svc.cluster.local:8080
       # Redis
       REDIS_HOST: "dragonfly-cluster.dragonfly.svc.cluster.local"
       REDIS_PORT: "6379"
