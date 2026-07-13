@@ -40,7 +40,18 @@
   terraform: {
     managerFilePatterns: ["/(^|/)terraform/.+\\.tf$/"],
   },
-  ignorePaths: ["**/docker-compose/**"], // Exclude legacy stacks
+  ignorePaths: [
+    // Exclude legacy stacks
+    "**/docker-compose/**",
+  ],
+  ignoreDeps: [
+    // Exclude localhost:32000 images
+    "^localhost:32000/tachi*",
+    // Unused / legacy dependencies
+    "/mariadb/",
+    "/mongodb/",
+    "/proxmox-csi-plugin/",
+  ],
   customDatasources: {
     "grafana-dashboards": {
       defaultRegistryUrlTemplate: "https://grafana.com/api/dashboards/{{packageName}}",
@@ -56,13 +67,7 @@
     {
       customType: "regex",
       description: "Match annotated dependencies with distinct version",
-      managerFilePatterns: [
-        "/\\.ya?ml$/",
-        "/\\.tf$/",
-        "/\\.sh$/",
-        "/\\.md$/",
-        "/^mise\\.toml$/",
-      ],
+      managerFilePatterns: ["/\\.ya?ml$/", "/\\.tf$/", "/\\.sh$/", "/\\.md$/", "/^mise\\.toml$/"],
       matchStrings: [
         "# renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)( versioning=(?<versioning>.+?))?( extractVersion=(?<extractVersion>.+?))?( registryUrl=(?<ocimatch>oci:\\/\\/)?(?<registryUrl>.+?))?( gitRef=(?<gitRef>.+?))?\\s.+?(:\\s|\\s?=)(&\\S+)?\\s*[\"']?(?<currentValue>.+?)[\"']?\\s",
       ],
@@ -136,12 +141,6 @@
       group: {
         commitMessageTopic: "{{{groupName}}} terraform provider",
       },
-    },
-    // Exclude localhost:32000 images
-    {
-      matchDatasources: ["docker"],
-      matchPackageNames: ["^localhost:32000/tachi*"],
-      enabled: false,
     },
     // Grouping packages for common PRs
     // * Helm charts and their CRDs
@@ -290,11 +289,10 @@
     },
     // Automerge settings
     // Setting from https://docs.renovatebot.com/key-concepts/automerge/#automerge-non-major-updates
-    // * Non major updates for development tools
-    // Grafana dashboards
     {
+      description: "Auto merge Grafana dashboards",
       addLabels: ["renovate/grafana-dashboard"],
-      automerge: false, // true,
+      automerge: true,
       automergeType: "branch",
       commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
       commitMessageTopic: "dashboard {{sourceDirectory}}",
@@ -305,7 +303,7 @@
       semanticCommitType: "chore",
     },
     {
-      description: "Auto merge patches",
+      description: "Auto merge frequent image patches",
       matchDatasources: ["docker"],
       matchPackageNames: [
         "/prowlarr/",
@@ -313,23 +311,64 @@
         "/sonarr/",
         "/radarr/",
         "/lidarr/",
+        "/qbittorrent/",
+        "/meilisearch/",
+        "/mcp-grafana/",
       ],
       matchUpdateTypes: ["patch"],
       matchCurrentVersion: "!/^0/",
       ignoreTests: true,
-      automerge: false, // true,
+      automerge: true,
+      automergeType: "branch",
+    },
+    // {
+    //   description: "Auto-merge high-cadence packages weekly",
+    //   matchDatasources: ["docker"],
+    //   automerge: true,
+    //   matchUpdateTypes: ["minor", "patch"],
+    //   matchPackageNames: ["/renovate$/"],
+    //   schedule: ["before 6am on Sunday"], // So that if there is any problem we can fix it on subday :)
+    // },
+    {
+      description: "Auto-merge llama.cpp group digests",
+      matchDatasources: ["docker"],
+      automerge: true,
       automergeType: "pr",
+      matchUpdateTypes: ["digest"],
+      matchPackageNames: ["ghcr.io/ggml-org/llama.cpp"],
+      ignoreTests: false,
     },
     {
-      description: "Auto-merge high-cadence packages weekly",
+      description: "Auto-merge OCI Charts patches",
       matchDatasources: ["docker"],
-      automerge: false, // true,
+      automerge: true,
+      automergeType: "pr",
+      matchUpdateTypes: ["patch"],
+      matchPackageNames: [
+        "/opentelemetry-kube-stack/",
+        "/traefik/",
+        "/toolhive-operator/",
+        "/zot/",
+        "ghcr.io/mogenius/helm-charts/renovate-operator",
+        "ghcr.io/home-operations/charts/konflate",
+        // "ghcr.io/home-operations/charts/tuppr",
+        "/trust-manager/",
+        "/external-secrets/",
+      ],
+      ignoreTests: false,
+    },
+    {
+      description: "Auto-merge dev packages",
+      matchDatasources: ["docker"],
+      automerge: true,
+      automergeType: "branch",
+      ignoreTests: true,
       matchUpdateTypes: ["minor", "patch"],
       matchPackageNames: [
         "/renovate$/",
-        "ghcr.io/mogenius/helm-charts/renovate-operator",
+        "data.forgejo.org/forgejo/runner",
+        "ghcr.io/project-zot/zot-linux-amd64",
       ],
-      schedule: ["before 6am on Sunday"], // So that if there is any problem we can fix it on subday :)
     },
     // // * Non major updates for truecharts
     // {

@@ -1,1 +1,0 @@
-{{- include "common.secret.key" (dict "SecretName" "seafile-jwt" "SecretNamespace" .Release.Namespace "AdditionalLabels" .Values.backupLabel) }}

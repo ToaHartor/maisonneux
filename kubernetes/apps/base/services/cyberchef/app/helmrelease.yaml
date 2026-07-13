@@ -22,7 +22,6 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
-  # see https://github.com/truecharts/public/blob/master/charts/stable/cyberchef/values.yaml
   values:
     defaultPodOptions:
       automountServiceAccountToken: false

@@ -54,7 +54,7 @@ spec:
           initContainer:
             name: "wait-for-cache-server"
             image: lmcache/vllm-openai:nightly-2026-05-16
-            command: [ "/bin/sh", "-c" ]
+            command: ["/bin/sh", "-c"]
             # Install from https://github.com/vllm-project/vllm-gguf-plugin to handle gguf models
             # source /opt/venv/bin/activate && uv pip install "git+https://github.com/vllm-project/vllm-gguf-plugin@main" --torch-backend=auto
             mountPvcStorage:
@@ -126,7 +126,7 @@ spec:
               - --trust-remote-code
               - --language-model-only
               - --speculative-config
-              - "{\"method\":\"qwen3_next_mtp\",\"num_speculative_tokens\":3}"
+              - '{"method":"qwen3_next_mtp","num_speculative_tokens":3}'
               - --quantization
               - Q3_K_M
               - --kv-cache-dtype
@@ -143,7 +143,7 @@ spec:
               # - --tool-call-parser
               # - qwen3_coder
               - --default-chat-template-kwargs
-              - "{\"preserve_thinking\":true}"
+              - '{"preserve_thinking":true}'
               # - --no-scheduler-reserve-full-isl
               # logging
               ## apiserverchoice

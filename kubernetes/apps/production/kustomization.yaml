@@ -5,7 +5,6 @@ kind: Kustomization
 resources:
   - ../base/ai
   - ../base/media
-  # - ../base/seafile
   - ../base/services
   - ../base/otoge
 # patches:

@@ -17,9 +17,7 @@
   "http": {
     "address": "0.0.0.0",
     "port": "15000",
-    "compat": [
-      "docker2s2"
-    ]
+    "compat": ["docker2s2"]
   },
   "extensions": {
     "ui": {
@@ -42,9 +40,7 @@
       "downloadDir": "/tmp/zot/mirror",
       "registries": [
         {
-          "urls": [
-            "https://index.docker.io"
-          ],
+          "urls": ["https://index.docker.io"],
           "content": [
             {
               "destination": "/docker.io",
@@ -55,9 +51,7 @@
           "tlsVerify": true
         },
         {
-          "urls": [
-            "https://registry.gitlab.com"
-          ],
+          "urls": ["https://registry.gitlab.com"],
           "content": [
             {
               "destination": "/registry.gitlab.com",
@@ -68,9 +62,7 @@
           "tlsVerify": true
         },
         {
-          "urls": [
-            "https://ghcr.io"
-          ],
+          "urls": ["https://ghcr.io"],
           "content": [
             {
               "destination": "/ghcr.io",
@@ -81,9 +73,7 @@
           "tlsVerify": true
         },
         {
-          "urls": [
-            "https://quay.io"
-          ],
+          "urls": ["https://quay.io"],
           "content": [
             {
               "destination": "/quay.io",
@@ -94,9 +84,7 @@
           "tlsVerify": true
         },
         {
-          "urls": [
-            "https://gcr.io"
-          ],
+          "urls": ["https://gcr.io"],
           "content": [
             {
               "destination": "/gcr.io",
@@ -107,9 +95,7 @@
           "tlsVerify": true
         },
         {
-          "urls": [
-            "https://registry.k8s.io"
-          ],
+          "urls": ["https://registry.k8s.io"],
           "content": [
             {
               "destination": "/registry.k8s.io",
@@ -120,9 +106,7 @@
           "tlsVerify": true
         },
         {
-          "urls": [
-            "https://nvcr.io"
-          ],
+          "urls": ["https://nvcr.io"],
           "content": [
             {
               "destination": "/nvcr.io",

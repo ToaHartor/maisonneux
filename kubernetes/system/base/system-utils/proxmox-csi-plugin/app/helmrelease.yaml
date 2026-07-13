@@ -16,23 +16,23 @@ spec:
   values:
     # Created with TF
     existingConfigSecret: proxmox-csi-creds
-    
+
     storageClass:
       - name: ${fastdata_storage}
         storage: fastdata-raw
         reclaimPolicy: Delete
         fstype: ext4
-    
+
     node:
       nodeSelector:
         node.cloudprovider.kubernetes.io/platform: nocloud
-    
+
       tolerations:
         - operator: Exists
 
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
-    
+
     tolerations:
       - key: node-role.kubernetes.io/control-plane
         effect: NoSchedule

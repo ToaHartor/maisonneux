@@ -139,17 +139,17 @@ Components are reusable Kustomize configurations in `kubernetes/common/component
 - **Tool management**: `mise.toml` manages required tools (e.g. `flate`, `talosctl`). Run `mise install` to set up the environment.
 - **Validate locally**: Run `flate` before pushing GitOps changes:
 
-    ```bash
-    # Test Kustomizations + HelmReleases for a cluster
-    # Always use "test" cluster
-    flate test all --path ./kubernetes/clusters/test
+  ```bash
+  # Test Kustomizations + HelmReleases for a cluster
+  # Always use "test" cluster
+  flate test all --path ./kubernetes/clusters/test
 
-    # Diff against a baseline (e.g., localdev branch)
-    git worktree add --detach ./tmp/baseline origin/localdev
-    flate diff ks --path ./kubernetes/clusters/test --path-orig ./tmp/baseline/kubernetes/clusters/test
-    flate diff hr --path ./kubernetes/clusters/test --path-orig ./tmp/baseline/kubernetes/clusters/test
-    git worktree remove ./tmp/baseline --force
-    ```
+  # Diff against a baseline (e.g., localdev branch)
+  git worktree add --detach ./tmp/baseline origin/localdev
+  flate diff ks --path ./kubernetes/clusters/test --path-orig ./tmp/baseline/kubernetes/clusters/test
+  flate diff hr --path ./kubernetes/clusters/test --path-orig ./tmp/baseline/kubernetes/clusters/test
+  git worktree remove ./tmp/baseline --force
+  ```
 
 ## Documentation
 

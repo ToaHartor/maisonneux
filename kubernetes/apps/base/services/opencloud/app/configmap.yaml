@@ -53,4 +53,4 @@ data:
           - role_name: user
             claim_value: Drive Users
           - role_name: guest
-            claim_value: Guests 
+            claim_value: Guests

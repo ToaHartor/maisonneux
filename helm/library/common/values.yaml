@@ -2,11 +2,11 @@ exports:
   defaults:
     # Common chart parameters which are used by default for any chart importing it
     # The values defined here are bound to the root values
-    # Following https://github.com/companyinfo/helm-charts/blob/main/charts/helmet/values.yaml 
+    # Following https://github.com/companyinfo/helm-charts/blob/main/charts/helmet/values.yaml
 
     storage:
       persistentClassName: default
-    
+
     ingress:
       domain:
       externalUrl:
@@ -24,7 +24,7 @@ exports:
       mariadb:
         clusterName: mariadb-galera
         clusterSecretName: mariadb-secrets
-    
+
     secretGenerators:
       databasePassword: db-password-generator
       password: password

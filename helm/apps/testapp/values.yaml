@@ -1,5 +1,0 @@
-images:
-  testapp:
-    repository: localhost:32000
-    image: testowner/app
-    tag: 0.0.0

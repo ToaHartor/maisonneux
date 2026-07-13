@@ -6,8 +6,8 @@ metadata:
 spec:
   refreshPolicy: CreatedOnce
   dataFrom:
-  - extract:
-      key: external-smtp-config
+    - extract:
+        key: external-smtp-config
   refreshInterval: 5m
   secretStoreRef:
     kind: ClusterSecretStore

@@ -10,7 +10,7 @@ spec:
       app.kubernetes.io/name: cert-manager-webhook-ovh
   dependsOn:
     - name: cert-manager
-    # We need the clusterstore to be deployed to be able to reference 
+    # We need the clusterstore to be deployed to be able to reference
     - name: external-secrets-resources
       namespace: external-secrets
   healthChecks:

@@ -91,7 +91,7 @@ services:
   docker-in-docker:
     # renovate container:
     image: data.forgejo.org/oci/docker:dind
-    hostname: docker  # Must set hostname as TLS certificates are only valid for docker or localhost
+    hostname: docker # Must set hostname as TLS certificates are only valid for docker or localhost
     networks:
       - dev
     privileged: true

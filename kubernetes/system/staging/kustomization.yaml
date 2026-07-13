@@ -89,7 +89,7 @@ patches:
         value: false
       - op: remove
         path: /spec/values/webhook/topologySpreadConstraints
-      
+
       - op: replace
         path: /spec/values/cainjector/replicaCount
         value: 1

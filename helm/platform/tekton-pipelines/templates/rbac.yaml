@@ -10,8 +10,8 @@ metadata:
   name: tekton-triggers-eventlistener-binding
   namespace: internal-ci
 subjects:
-- kind: ServiceAccount
-  name: tekton-eventlistener-sa
+  - kind: ServiceAccount
+    name: tekton-eventlistener-sa
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -22,9 +22,9 @@ kind: ClusterRoleBinding
 metadata:
   name: tekton-triggers-eventlistener-clusterbinding
 subjects:
-- kind: ServiceAccount
-  name: tekton-eventlistener-sa
-  namespace: internal-ci
+  - kind: ServiceAccount
+    name: tekton-eventlistener-sa
+    namespace: internal-ci
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

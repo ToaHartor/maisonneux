@@ -47,25 +47,25 @@ spec:
               topologyKey: topology.kubernetes.io/zone
               labelSelector:
                 matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - piraeus-datastore
-                - key: app.kubernetes.io/component
-                  operator: In
-                  values:
-                  - piraeus-operator
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - piraeus-datastore
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - piraeus-operator
           # Anti affinity on the same node
           - weight: 50
             podAffinityTerm:
               topologyKey: kubernetes.io/hostname
               labelSelector:
                 matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - piraeus-datastore
-                - key: app.kubernetes.io/component
-                  operator: In
-                  values:
-                  - piraeus-operator
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - piraeus-datastore
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - piraeus-operator

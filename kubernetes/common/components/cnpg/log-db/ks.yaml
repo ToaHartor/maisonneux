@@ -24,7 +24,7 @@ spec:
       # psql_database_namespace: ${psql_database_namespace}
 
       EXTENSIONS: ${q:='}${DATABASE_EXTENSIONS}${q:='}
-      emptyArray: '[]'
+      emptyArray: "[]"
   prune: true
   sourceRef:
     kind: GitRepository

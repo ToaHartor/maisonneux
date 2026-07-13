@@ -4,6 +4,8 @@ _.python.venv = { path = ".venv", create = true, uv_create_args = ['--seed'] }
 KRR_VERSION = "1.28.0"
 
 [settings]
+lockfile = true
+lockfile_platforms = ["linux-x64"]
 python.uv_venv_auto = "create|source"
 
 [tools]
@@ -16,7 +18,7 @@ tekton-cli = "latest"
 flux2 = "latest"
 # renovate: datasource=github-releases depName=siderolabs/kubelet
 kubectl = "1.35.6"
-opentofu = "1.10.6"
+opentofu = "1"
 velero = "latest"
 jq = "latest"
 yq = "latest"
@@ -24,6 +26,8 @@ helm = "latest"
 mc = "latest"
 "github:home-operations/flate" = "latest"
 "github:home-operations/yayamlls" = "latest"
+oxfmt = "latest"
+oxlint = "latest"
 # Python
 python = "3.13"
 uv = "latest"
