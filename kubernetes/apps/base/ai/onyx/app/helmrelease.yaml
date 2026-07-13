@@ -320,14 +320,14 @@ spec:
       enabled: false
 
     mcpServer:
-      enabled: false # Might set this to true afterwards
-      # resources:
-      #   requests:
-      #     cpu: "250m"
-      #     memory: "256Mi"
-      #   limits:
-      #     cpu: "500m"
-      #     memory: "512Mi"
+      enabled: true
+      resources:
+        requests:
+          cpu: "250m"
+          memory: "256Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
 
       # We use our own redis/minio
     redis:

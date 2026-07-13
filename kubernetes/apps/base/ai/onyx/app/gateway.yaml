@@ -17,28 +17,31 @@ spec:
     # https://github.com/onyx-dot-app/onyx/blob/main/deployment/helm/charts/onyx/templates/nginx-conf.yaml
 
     # Match oauth callback with the nameserver before MCP paths
-    # - matches:
-    #     - path:
-    #         type: Exact
-    #         value: /mcp/oauth/callback
-    #   backendRefs:
-    #     - name: ${APP}-webserver
-    #       port: 3000
+    - matches:
+        - path:
+            type: Exact
+            value: /mcp/oauth/callback
+      backendRefs:
+        - name: ${APP}-webserver
+          port: 3000
     #   filters: *filters
     # # MCP server
-    # - matches:
-    #     - path:
-    #         type: RegularExpression
-    #         value: /mcp(/.*)?  # /mcp(/|$)(.*)
-    # backendRefs:
-    #   - name: ${APP}-mcp-server-service
-    #     port: 3000
-    # filters:
-    # - type: URLRewrite
-    #   urlRewrite:
-    #     path:
-    #       type: ReplacePrefixMatch
-    #       replacePrefixMatch: /
+    - matches:
+        # - path:
+        #     type: RegularExpression
+        #     value: /mcp(/.*)? # /mcp(/|$)(.*)
+        - path:
+            type: PathPrefix
+            value: /mcp
+      backendRefs:
+        - name: ${APP}-mcp-server-service
+          port: 3000
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
 
     # API Server
     - matches:
