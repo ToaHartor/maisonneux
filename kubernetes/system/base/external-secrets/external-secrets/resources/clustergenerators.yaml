@@ -72,3 +72,13 @@ spec:
       symbolCharacters: ""
       noUpper: false
       allowRepeat: true
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: ClusterGenerator
+metadata:
+  name: ssh-ed25519
+spec:
+  kind: SSHKey
+  generator:
+    sshKeySpec:
+      keyType: "ed25519"

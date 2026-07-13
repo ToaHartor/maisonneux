@@ -393,6 +393,12 @@ spec:
           USER_AUTH_SECRET: secretKey
       metricsAuth:
         enabled: false
+      sandboxPushSecret:
+        enabled: true
+        allPods: false
+        existingSecret: "onyx-sandbox-push-secret"
+        secretKeys:
+          ONYX_SANDBOX_PUSH_PRIVATE_KEY: privateKey
 
     configMap:
       # https://github.com/onyx-dot-app/onyx/blob/main/backend/shared_configs/configs.py
@@ -401,6 +407,7 @@ spec:
       # Craft
       ENABLE_CRAFT: "true"
       SANDBOX_API_SERVER_URL: http://onyx-api-service.ai.svc.cluster.local:8080
+      SANDBOX_SERVICE_ACCOUNT_NAME: "onyx-sandbox"
       # Redis
       REDIS_HOST: "dragonfly-cluster.dragonfly.svc.cluster.local"
       REDIS_PORT: "6379"
