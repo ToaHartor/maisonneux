@@ -8,4 +8,5 @@ resources:
   - ro-db-secret.yaml
   - helmrepository.yaml
   - helmrelease.yaml
+  - sandbox-netpol.yaml
   - dashboards.yaml
