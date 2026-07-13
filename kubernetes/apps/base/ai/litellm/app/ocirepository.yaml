@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 1.91.1
-    digest: sha256:016c1311861e24599a92f025338d2d1f532359d63b77ee2a1452da6eeb5374f1
+    tag: 1.92.0
+    digest: sha256:243024aa01437456fd93d8c5bdba100ee3a50253de753a6844f128eaca69a25c
   url: oci://ghcr.io/berriai/litellm-helm
