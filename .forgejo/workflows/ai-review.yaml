@@ -67,7 +67,7 @@ jobs:
 
       - name: Analyze PR with reusable AI reviewer
         id: analyze
-        uses: https://github.com/misospace/pr-reviewer-action@a177c3478b52a6f8402ebbe9a0ba59c61cf028ed # v2.1.2
+        uses: https://github.com/misospace/pr-reviewer-action@9e96ced346f7080b21f6e61722b04969c6d4b50a # v2.1.4
         env:
           # konflate's read-only MCP endpoint — the konflate evidence provider
           # fetches the rendered (post-kustomize/Helm) Flux diff for this PR.
