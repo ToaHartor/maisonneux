@@ -6,7 +6,7 @@ metadata:
 spec:
   kubernetes:
     # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet extractVersion=^(?<version>.+)$
-    version: v1.35.6
+    version: v1.36.2
   healthChecks:
     # Check all nodes are ready
     - apiVersion: v1
