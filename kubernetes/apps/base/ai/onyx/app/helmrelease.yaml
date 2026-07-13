@@ -398,6 +398,7 @@ spec:
       # https://github.com/onyx-dot-app/onyx/blob/main/backend/shared_configs/configs.py
       DOMAIN: ${SUBDOMAIN}.${DOMAIN}
       WEB_DOMAIN: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+      ENABLE_CRAFT: "true"
       # Redis
       REDIS_HOST: "dragonfly-cluster.dragonfly.svc.cluster.local"
       REDIS_PORT: "6379"
