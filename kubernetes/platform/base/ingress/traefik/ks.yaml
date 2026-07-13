@@ -45,7 +45,7 @@ spec:
     labels:
       app.kubernetes.io/name: traefik
   interval: 1h
-  path: "./config/crd"
+  path: "./config/crd/experimental" # Need to keep the v1alpha2 of TCPRoute
   prune: false
   sourceRef:
     kind: GitRepository
