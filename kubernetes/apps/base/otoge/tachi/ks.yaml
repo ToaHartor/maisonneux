@@ -41,7 +41,8 @@ spec:
       # uuid-ossp pgcrypto pg_trgm
       DATABASE_EXTENSIONS: |
         [
-          { name: pg_stat_statements, ensure: present }
+          { name: pg_stat_statements, ensure: present },
+          { name: pg_partman_bgw, ensure: present }
         ]
       ## API key
       SECRET_KEY_NAME: tachi-session-secret

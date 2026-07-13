@@ -46,7 +46,8 @@ spec:
       hot_standby_feedback: "on"
 
     shared_preload_libraries:
-      - "vchord"
+      - "vchord" # Immich
+      - 'pg_partman_bgw' # Tachi
 
     extensions:
       - name: vchord
@@ -57,6 +58,12 @@ spec:
           - /usr/lib/postgresql/18/lib/
         extension_control_path:
           - /usr/share/postgresql/18/
+    # Using https://github.com/pglayers/pglayers#cloudnativepg-usage
+      - name: pg-partman
+        image:
+          reference: ghcr.io/pglayers/pgx-pg_partman:18-v5.4.3
+        ld_library_path:
+          - lib
 
   plugins:
     - name: barman-cloud.cloudnative-pg.io
