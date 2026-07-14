@@ -20,6 +20,7 @@
     ":disableRateLimiting",
     ":dependencyDashboard",
     ":automergeDigest",
+    ":timezone(Europe/Paris)",
     // Common presets from https://github.com/home-operations/renovate-presets
     "github>home-operations/renovate-presets//policies/semanticCommits.json5",
   ],

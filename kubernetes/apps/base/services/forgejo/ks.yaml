@@ -124,6 +124,12 @@ spec:
       app.kubernetes.io/name: forgejo
   interval: 1h
   path: "./kubernetes/apps/base/services/forgejo/runner"
+  postBuild:
+    substitute:
+      APP: forgejo
+      SUBDOMAIN: forge
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
   prune: true
   sourceRef:
     kind: GitRepository

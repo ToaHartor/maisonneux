@@ -4,15 +4,8 @@ name: Labeler
 
 on:
   workflow_dispatch:
-  pull_request:
+  pull_request_target:
     branches: ["localdev"]
-    paths: [".forgejo/labels.yaml"]
-  schedule:
-    - cron: "0 0 * * *" # Every day at midnight
-
-permissions:
-  contents: read
-  pull-requests: write
 
 jobs:
   labeler:
@@ -21,37 +14,8 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write
     steps:
-      - name: Checkout
-        uses: https://github.com/actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          fetch-depth: 0
-
-      - name: Ensure labels exist
-        env:
-          GH_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
-          FORGEJO_API_URL: ${{ forgejo.server_url }}
-          REPO: ${{ forgejo.repository }}
-        run: |
-          set -e
-          mapfile -t LABELS < <(grep -E '^[^ -]' .forgejo/labeler.yaml | grep -v '^#' | sed 's/:[[:space:]]*$//')
-          for label in ${LABELS[@]}; do
-            status=$(curl -s -o /dev/null -w '%{http_code}' \
-              -H "Authorization: token $GH_TOKEN" \
-              "$FORGEJO_API_URL/api/v1/repos/$REPO/labels?name=$(printf '%s' "$label" | jq -sRr @uri)")
-            if [ "$status" = "200" ]; then
-              echo "exists: $label"
-              continue
-            fi
-            echo "creating: $label"
-            curl -sf -X POST \
-              -H "Authorization: token $GH_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "{\"name\": \"$label\", \"color\": \"#ededed\", \"description\": \"Auto-created by labeler workflow\"}" \
-              "$FORGEJO_API_URL/api/v1/repos/$REPO/labels"
-            echo
-          done
-
       - name: Labeler
         uses: https://github.com/actions/labeler@b8dd2d9be0f68b860e7dae5dae7d772984eacd6d # v6.2.0
         with:

@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: "Label Sync"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["localdev"]
+    paths: [".forgejo/labels.yaml"]
+  schedule:
+    - cron: "0 0 * * *" # Every day at midnight
+
+jobs:
+  label-sync:
+    name: Label Sync
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: https://github.com/actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Sync Labels
+        uses: https://github.com/EndBug/label-sync@52074158190acb45f3077f9099fea818aa43f97a # v2.3.3
+        with:
+          config-file: .forgejo/labels.yaml
+          delete-other-labels: true
