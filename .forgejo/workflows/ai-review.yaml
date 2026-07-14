@@ -34,7 +34,8 @@ jobs:
     # pull_request is the normal path; adding the `ai-review` label is the
     # normal re-review trigger (handled natively by the action). workflow_dispatch
     # remains as a manual force-review path.
-    if: ${{ (forgejo.event_name == 'pull_request' && !forgejo.event.pull_request.draft) || forgejo.event_name == 'workflow_dispatch' }}
+    # also exclude automatic reviews when change is only a digest
+    if: ${{ (forgejo.event_name == 'pull_request' && !forgejo.event.pull_request.draft && !contains(forgejo.event.label.*.name, 'type/digest')) || forgejo.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
 

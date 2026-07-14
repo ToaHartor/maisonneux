@@ -12,6 +12,7 @@
   ], // Only enable comments
   // Group major-minor-patch PRs
   extends: [
+    "abandonments:recommended",
     "config:recommended",
     "helpers:pinGitHubActionDigests",
     "docker:enableMajor",
@@ -30,6 +31,7 @@
     automerge: true,
     automergeType: "branch",
   },
+  addLabels: ["type/{{updateType}}", "renovate/{{semanticCommitScope}}"],
   dependencyDashboardTitle: "Renovate Dashboard 🤖",
   registryAliases: {
     "mirror.gcr.io": "docker.io",

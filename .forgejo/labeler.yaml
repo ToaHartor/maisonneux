@@ -17,6 +17,22 @@ area/renovate:
   - changed-files:
       - any-glob-to-any-file:
           - renovate.json5
+area/scripts:
+  - changed-files:
+      - any-glob-to-any-file: "scripts/**/*"
+area/dev:
+  - changed-files:
+      - any-glob-to-any-file:
+          - dev/*
+          - .yamllint
+          - .yayamlls.yaml
+          - .editorconfig
+          - .vscode/*
+area/docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "README.md"
+          - docs/**/*
 stage/system:
   - changed-files:
       - any-glob-to-any-file: "kubernetes/system/**/*"
