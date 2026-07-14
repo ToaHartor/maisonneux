@@ -142,7 +142,7 @@ spec:
           app:
             image:
               repository: docker.io/zenika/alpine-chrome
-              tag: 124@sha256:220e53bb3876606282789210e1f0583ef4963cd82ff36a45cd5ea5b68ff7647a
+              tag: 124@sha256:9665d057a904a8555750f663862e071002bb18984fca2eb02936095c06734bff
             command:
               - chromium-browser
             args:
