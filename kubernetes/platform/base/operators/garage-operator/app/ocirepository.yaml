@@ -11,5 +11,5 @@ spec:
     operation: copy
   ref:
     tag: 0.6.21
-    digest: sha256:12313db1352a4130c488d834631951e3dbd042735be5f4eadabd871ea2ad2a73
+    digest: sha256:6319713196b4f3ba0d17342d3cc2e299ad17de5f662f945641776a9589073223
   url: oci://ghcr.io/rajsinghtech/charts/garage-operator
