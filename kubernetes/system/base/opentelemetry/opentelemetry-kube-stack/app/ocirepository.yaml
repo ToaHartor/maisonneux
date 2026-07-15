@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.19.0
-    digest: sha256:1c8e8ac968e3fbe52cdd910812b8cb8ddd7856a184bc0fd5ee5b1df51c532073
+    tag: 0.19.1
+    digest: sha256:2f2c6388b9dd25ca0d9b7db8a4c8dcebe8e2d395bd4a4f72b45cf4428659ea37
   url: oci://ghcr.io/open-telemetry/opentelemetry-helm-charts/opentelemetry-kube-stack
