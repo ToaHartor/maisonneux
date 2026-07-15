@@ -35,7 +35,7 @@ spec:
             value: /mcp
       backendRefs:
         - name: ${APP}-mcp-server-service
-          port: 3000
+          port: 8090
       filters:
         - type: URLRewrite
           urlRewrite:
