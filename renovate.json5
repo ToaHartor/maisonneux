@@ -317,6 +317,7 @@
         "/qbittorrent/",
         "/meilisearch/",
         "/mcp-grafana/",
+        "/atuin/",
       ],
       matchUpdateTypes: ["patch"],
       matchCurrentVersion: "!/^0/",
@@ -324,14 +325,16 @@
       automerge: true,
       automergeType: "branch",
     },
-    // {
-    //   description: "Auto-merge high-cadence packages weekly",
-    //   matchDatasources: ["docker"],
-    //   automerge: true,
-    //   matchUpdateTypes: ["minor", "patch"],
-    //   matchPackageNames: ["/renovate$/"],
-    //   schedule: ["before 6am on Sunday"], // So that if there is any problem we can fix it on subday :)
-    // },
+    {
+      description: "Auto-merge high-cadence packages weekly",
+      matchDatasources: ["docker"],
+      ignoreTests: true,
+      automerge: true,
+      automergeType: "branch",
+      matchUpdateTypes: ["minor", "patch"],
+      matchPackageNames: ["/renovate$/"],
+      schedule: ["before 6am on Sunday"], // So that if there is any problem we can fix it on subday :)
+    },
     {
       description: "Auto-merge llama.cpp group digests",
       matchDatasources: ["docker"],
@@ -343,7 +346,7 @@
     },
     {
       description: "Auto-merge OCI Charts patches",
-      matchDatasources: ["docker"],
+      matchDatasources: ["docker", "helm"],
       automerge: true,
       automergeType: "pr",
       matchUpdateTypes: ["patch"],
@@ -368,10 +371,19 @@
       ignoreTests: true,
       matchUpdateTypes: ["minor", "patch"],
       matchPackageNames: [
-        "/renovate$/",
+        // "/renovate$/",
         "data.forgejo.org/forgejo/runner",
+        "codeberg.org/forgejo/forgejo",
         "ghcr.io/project-zot/zot-linux-amd64",
       ],
+    },
+    {
+      description: "Auto-merge github-actions non-major updates",
+      matchDatasources: ["github-actions"],
+      automerge: true,
+      automergeType: "branch",
+      ignoreTests: true,
+      matchUpdateTypes: ["minor", "patch"],
     },
     // // * Non major updates for truecharts
     // {
