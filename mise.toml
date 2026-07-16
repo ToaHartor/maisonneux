@@ -16,6 +16,7 @@ cilium-hubble = "latest"
 talosctl = "1.13.4"
 tekton-cli = "latest"
 flux2 = "latest"
+flux-operator = "latest"
 # renovate: datasource=github-releases depName=siderolabs/kubelet
 kubectl = "1.35.6"
 opentofu = "1"

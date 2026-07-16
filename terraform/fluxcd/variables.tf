@@ -142,6 +142,12 @@ variable "github_app_config" {
   default = null
 }
 
+# Fluxcd
+
+variable "fluxcd_bootstrap_revision" {
+  type        = number
+  description = "FluxCD bootstrap revision, increment this revision if you need to force a re-bootstrap"
+}
 
 # Fluxcd credentials
 variable "flux_git_user" {

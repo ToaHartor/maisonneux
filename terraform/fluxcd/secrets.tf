@@ -1,24 +1,25 @@
-resource "kubernetes_secret_v1" "flux_git_credentials" {
-  metadata {
-    name      = "flux-git-credentials"
-    namespace = kubernetes_namespace_v1.flux_system.metadata[0].name
-  }
+// TODO : comment
+# resource "kubernetes_secret_v1" "flux_git_credentials" {
+#   metadata {
+#     name      = "flux-git-credentials"
+#     namespace = kubernetes_namespace_v1.flux_system.metadata[0].name
+#   }
 
-  type = "Opaque"
+#   type = "Opaque"
 
-  # We need to provide git credentials for private Github pipelines
-  data = merge(var.flux_git_ssh_config != null ? {
-    "identity"     = var.flux_git_ssh_config.private_key
-    "identity.pub" = var.flux_git_ssh_config.public_key
-    "known_hosts"  = var.flux_git_ssh_config.known_hosts
-    } : {}
-    ,
-    {
-      "username" = var.flux_git_user
-      "password" = var.flux_git_token
-    }
-  )
-}
+#   # We need to provide git credentials for private Github pipelines
+#   data = merge(var.flux_git_ssh_config != null ? {
+#     "identity"     = var.flux_git_ssh_config.private_key
+#     "identity.pub" = var.flux_git_ssh_config.public_key
+#     "known_hosts"  = var.flux_git_ssh_config.known_hosts
+#     } : {}
+#     ,
+#     {
+#       "username" = var.flux_git_user
+#       "password" = var.flux_git_token
+#     }
+#   )
+# }
 
 # data "local_sensitive_file" "proxmox_csi_creds_file" {
 #   filename = "${path.module}/../../tmp/proxmoxcsi.yaml"

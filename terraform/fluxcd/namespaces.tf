@@ -5,6 +5,13 @@ resource "kubernetes_namespace_v1" "flux_system" {
       "kustomize.toolkit.fluxcd.io/prune" = "disabled"
     }
   }
+  // FluxCD bootstrap adds several annotations and labels that are specific
+  lifecycle {
+    ignore_changes = [
+      metadata[0].annotations,
+      metadata[0].labels
+    ]
+  }
 }
 
 resource "kubernetes_namespace_v1" "external_secrets" {

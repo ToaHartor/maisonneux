@@ -18,6 +18,10 @@ checksum = "sha256:c7c37a5f27ed2ae2d5495c6ddbecc61cebbb841508e77af3c131e96f005ed
 url = "https://github.com/cilium/hubble/releases/download/v1.19.4/hubble-linux-amd64.tar.gz"
 url_api = "https://api.github.com/repos/cilium/hubble/releases/assets/439544269"
 
+[[tools.flux-operator]]
+version = "0.55.0"
+backend = "aqua:controlplaneio-fluxcd/flux-operator"
+
 [[tools.flux2]]
 version = "2.9.1"
 backend = "aqua:fluxcd/flux2"
