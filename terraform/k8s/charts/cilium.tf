@@ -9,7 +9,7 @@ resource "helm_release" "cilium" {
   chart      = "cilium"
   version    = "1.19.5"
   # values     = [local.cilium_values]
-  values          = [file("./cilium_values.yaml")]
+  values          = [file("../../../kubernetes/system/base/kube-system/cilium/app/cilium_values.yaml")]
   wait            = false # Do not wait for resources as the chart is designed like this
   upgrade_install = true
   set = [
@@ -23,6 +23,11 @@ resource "helm_release" "cilium" {
       value = var.cluster_pod_cidr
     }
   ]
+
+  // Only install once, chart is then managed by fluxcd
+  lifecycle {
+      ignore_changes = all
+  }
 }
 
 # Nodes become ready when CNI is established, so this checks if cilium install worked correctly
