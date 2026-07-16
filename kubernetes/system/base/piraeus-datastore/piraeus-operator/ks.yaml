@@ -78,6 +78,7 @@ spec:
     labels:
       app.kubernetes.io/name: piraeus-operator
   dependsOn:
+    - name: piraeus-operator
     - name: piraeus-resources
   interval: 1h
   path: ./config/extras/monitoring
