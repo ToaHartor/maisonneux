@@ -27,6 +27,9 @@ locals {
 
   general_config = merge({
     "environment" = terraform.workspace
+    # cilium config
+    "control_plane_endpoints" = join(" ", [for ip in split(",", var.controller_nodes) : "https://${ip}:6443"])
+    "cluster_pod_cidr" = var.cluster_pod_cidr
     # s3 stuff
     "minio_url"             = var.minio_access_url
     "minio_backup_bucket"   = var.minio_backup_bucket
@@ -162,4 +165,33 @@ resource "helm_release" "fluxcd_sync" {
 
   values     = [yamlencode(local.flux_sync_helm_values)]
   depends_on = [helm_release.fluxcd]
+}
+
+module "flux_operator_bootstrap" {
+  source  = "controlplaneio-fluxcd/flux-operator-bootstrap/kubernetes"
+  version = "0.8.0"
+
+  # Increment this revision if you need to force a re-bootstrap
+  revision = 1
+
+  gitops_resources = {
+    instance_yaml = file("${path.root}/flux-instance.yaml")
+  }
+
+  # Optional: Manage the git pull secret declaratively.
+  # If you prefer to keep your existing kubernetes_secret_v1 resource,
+  # you can omit this block and just ensure the secret name matches .spec.sync.pullSecret.
+  managed_resources = {
+    secrets_yaml = <<-YAML
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: flux-system
+        namespace: flux-system
+      type: Opaque
+      stringData:
+        username: git
+        password: ${var.git_token}
+    YAML
+  }
 }

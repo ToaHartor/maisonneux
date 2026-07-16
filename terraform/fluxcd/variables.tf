@@ -273,6 +273,18 @@ variable "ovh_consumer_key" {
   description = "OVH consumer key"
 }
 
+# Bootstrap variables (filled in tf-plan.sh)
+variable "cluster_pod_cidr" {
+  description = "CIDR of IP address of pods inside the cluster"
+  type        = string
+  default     = "10.244.0.0/16"
+}
+
+variable "controller_nodes" {
+  type        = string
+  description = "String with the list of controllers from nodes deployment"
+}
+
 # K8S LB
 variable "is_internet_ingress" {
   type        = bool
