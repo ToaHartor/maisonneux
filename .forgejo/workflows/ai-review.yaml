@@ -8,7 +8,8 @@ on:
     branches: ["localdev"]
     # `labeled` enables the one-click re-review: add the `ai-review` label to
     # force a fresh review (only write/triage can label — self-authorizing).
-    types: [opened, reopened, synchronize, ready_for_review, labeled]
+    # Currently has troubles to function, disabling
+    types: [opened, reopened, synchronize, ready_for_review] # , labeled
   # workflow_dispatch:
   #   inputs:
   #     pr_number:
