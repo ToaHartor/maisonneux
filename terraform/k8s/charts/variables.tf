@@ -27,6 +27,11 @@ variable "use_nvidia_gpu" {
   default     = false
 }
 
+variable "cluster_bootstrap" {
+  description = "Should the cluster be bootstrapped ? (Also force to reconcile the bootstrap of cilium)"
+  type        = bool
+}
+
 variable "cluster_name" {
   description = "A name to provide for the Talos cluster"
   type        = string
@@ -88,7 +93,7 @@ variable "opnsense_api_secret" {
   sensitive   = true
 }
 
-# K8S LB 
+# K8S LB
 variable "opnsense_base_port_number" {
   type        = number
   description = "Starting port number on the router to expose services (e.g. value of 10000 will make the service with a base port of 80 be exposed on port 10080 on the router)"

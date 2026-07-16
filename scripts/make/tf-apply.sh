@@ -9,7 +9,7 @@ source "./scripts/utils/tf-utils.sh"
 tfutils::get_folder_env "$1"
 
 # If environment is recognized for fluxcd-$env, switch env to the right one and set TF folder and config file
-# For k8s terraform environment, we do this in the if right after 
+# For k8s terraform environment, we do this in the if right after
 if [ "${TF_FOLDER}" == "fluxcd" ]; then \
     # Env in this TF folder
     pushd "terraform/${TF_FOLDER}"
@@ -41,6 +41,12 @@ if [ "${TF_FOLDER}" == "k8s" ]; then
     pushd charts
         tofu plan -out "${TF_FOLDER}.tfplan" -var="deploy_env=${TF_DEPLOY_ENV}" -var="kubeprism_port=$KUBEPRISM_PORT" -var="controllers=$CONTROLLER_NODES" -var="workers=$WORKER_NODES" -var-file="../${TF_CONFIG_VARS_FILE}" -var-file='../../env/credentials.tfvars'
         tofu apply "${TF_FOLDER}.tfplan";
+
+        # Set bootstrap to false in config variables and remove the chart from the state
+        tfvars_file="../${TF_CONFIG_VARS_FILE}"
+        sed -i -E "s/cluster_bootstrap(\s+)\=(\s+)(.*)/cluster_bootstrap\1\=\2false/" "${tfvars_file}"
+        echo "Removing cilium from state, can fail if not found"
+        tofu state rm helm_release.cilium || echo "Chart not found in state, ok."
     popd
 else
     tofu apply "${TF_FOLDER}.tfplan";

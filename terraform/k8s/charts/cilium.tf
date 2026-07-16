@@ -2,13 +2,13 @@
 // see https://github.com/cilium/cilium/releases
 // see https://github.com/cilium/cilium/tree/v1.16.0/install/kubernetes/cilium
 resource "helm_release" "cilium" {
-  depends_on = [data.http.wait_k8sapi]
-  namespace  = "kube-system"
-  name       = "cilium"
-  repository = "https://helm.cilium.io"
-  chart      = "cilium"
-  version    = "1.19.5"
-  # values     = [local.cilium_values]
+  count           = var.cluster_bootstrap ? 1 : 0
+  depends_on      = [data.http.wait_k8sapi]
+  namespace       = "kube-system"
+  name            = "cilium"
+  repository      = "https://helm.cilium.io"
+  chart           = "cilium"
+  version         = "1.19.5"
   values          = [file("../../../kubernetes/system/base/kube-system/cilium/app/cilium_values.yaml")]
   wait            = false # Do not wait for resources as the chart is designed like this
   upgrade_install = true
@@ -26,7 +26,7 @@ resource "helm_release" "cilium" {
 
   // Only install once, chart is then managed by fluxcd
   lifecycle {
-      ignore_changes = all
+    ignore_changes = all
   }
 }
 
