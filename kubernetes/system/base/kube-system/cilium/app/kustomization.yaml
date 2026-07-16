@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ocirepository.yaml
+  - helmrelease.yaml
+
+configMapGenerator:
+  - name: cilium-values
+    namespace: kube-system
+    files:
+      - values.yaml=cilium_values.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    reconcile.fluxcd.io/watch: Enabled

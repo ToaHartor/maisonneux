@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: kube-system
 resources:
   - ./namespace.yaml
+  - ./cilium/ks.yaml
   - ./metrics-server/ks.yaml
 transformers:
   - ./transformers

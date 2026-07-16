@@ -4,7 +4,7 @@ ipam:
 
 operator:
   rollOutPods: true
-  replicas: 3
+  replicas: 2
 
   topologySpreadConstraints:
     # Maximum 2 pod per Proxmox hypervisor
@@ -172,7 +172,7 @@ ingressController:
   enforceHttps: false
   # service:
   #   annotations:
-  #     #     "io.cilium/lb-ipam-ips": ${var.cluster_vip}
+  #     #     "io.cilium/lb-ipam-ips":
 
 debug:
   enabled: false # Only if debugging

@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+spec:
+  releaseName: cilium
+  chartRef:
+    kind: OCIRepository
+    name: cilium
+  interval: 50m
+  install:
+    createNamespace: false # specify to false to take over the deployment
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: ConfigMap
+      name: cilium-values
+      valuesKey: values.yaml
+  values:
+    k8s:
+      apiServerURLs: ${control_plane_endpoints}
+    ipv4NativeRoutingCIDR: ${cluster_pod_cidr}
