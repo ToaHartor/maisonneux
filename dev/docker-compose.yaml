@@ -36,7 +36,7 @@ services:
 
   forgejo:
     # renovate container:
-    image: codeberg.org/forgejo/forgejo:15
+    image: codeberg.org/forgejo/forgejo:16
     container_name: ${FORGEJO_INSTANCE_NAME:-local_forgejo}
     networks:
       - dev
