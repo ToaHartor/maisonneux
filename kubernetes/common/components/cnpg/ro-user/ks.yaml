@@ -17,6 +17,7 @@ spec:
   path: "./kubernetes/common/components/cnpg/ro-user/app"
   postBuild:
     substitute:
+      APP: ${APP}
       PSQL_RO_USER: ${PSQL_RO_USER}
       PSQL_DB_NAME: ${PSQL_DB_NAME}
       # inherited variables

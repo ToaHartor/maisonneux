@@ -17,13 +17,14 @@ spec:
   path: "./kubernetes/common/components/cnpg/db/app"
   postBuild:
     substitute:
+      APP: ${APP}
       PSQL_DB_USER: ${PSQL_DB_USER}
       PSQL_DB_NAME: ${PSQL_DB_NAME}
       # inherited variables
       psql_cluster_name: ${psql_cluster_name}
       # psql_database_namespace: ${psql_database_namespace}
 
-      EXTENSIONS: ${q:='}${DATABASE_EXTENSIONS}${q:='}
+      EXTENSIONS: ${q:='}${DATABASE_EXTENSIONS:=}${q:='}
       emptyArray: "[]"
   prune: true
   sourceRef:
