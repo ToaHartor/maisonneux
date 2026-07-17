@@ -32,7 +32,7 @@ if [ "${TF_FOLDER}" == "fluxcd" ]; then \
     TF_CONFIG_VARS+=("-var=use_nvidia_gpu=${use_nvidia_gpu}")
     # Set git remote domain for fluxcd
     # TODO : maybe do this only for TF_DEPLOY_ENV != production
-    sed -i -E "s/flux_git_remote_domain(\s+)\=(\s+)\"(.*)\"/flux_git_remote_domain\1\=\2\"$(sh scripts/get_dev_machine_ip.sh)\"/" "terraform/${TF_FOLDER}/${TF_CONFIG_VARS_FILE}"
+    # sed -i -E "s/flux_git_remote_domain(\s+)\=(\s+)\"(.*)\"/flux_git_remote_domain\1\=\2\"$(sh scripts/get_dev_machine_ip.sh)\"/" "terraform/${TF_FOLDER}/${TF_CONFIG_VARS_FILE}"
 fi
 
 
