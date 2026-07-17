@@ -389,6 +389,15 @@
       ignoreTests: true,
       matchUpdateTypes: ["minor", "patch"],
     },
+    {
+      description: "Strictly disable auto-merge",
+      automerge: false,
+      ignoreTests: false,
+      matchPackageNames: [
+        "/cilium/",
+        "ghcr.io/cloudnative-pg/postgresql",
+      ],
+    },
     // // * Non major updates for truecharts
     // {
     //   matchDatasources: ["docker"],
