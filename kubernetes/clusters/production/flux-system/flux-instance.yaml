@@ -1,0 +1,97 @@
+apiVersion: fluxcd.controlplane.io/v1
+kind: FluxInstance
+metadata:
+  name: flux
+  namespace: flux-system
+  annotations:
+    fluxcd.controlplane.io/reconcileEvery: "1h"
+    fluxcd.controlplane.io/reconcileArtifactEvery: "10m"
+    fluxcd.controlplane.io/reconcileTimeout: "5m"
+spec:
+  distribution:
+    version: "2.x"
+    registry: "ghcr.io/fluxcd"
+    artifact: "oci://ghcr.io/controlplaneio-fluxcd/flux-operator-manifests"
+  components:
+    - source-controller
+    - kustomize-controller
+    - helm-controller
+    - notification-controller
+    - image-reflector-controller
+    - image-automation-controller
+  cluster:
+    type: kubernetes
+    size: medium
+    multitenant: false
+    networkPolicy: false
+    domain: "cluster.local"
+  sync:
+    kind: GitRepository
+    # Variables provisioned in runtime_info of the bootstrap, creating a ConfigMap in the cluster
+    url: ${source_repo_url}
+    ref: "refs/heads/${source_repo_branch}"
+    path: .${source_repo_cluster_directory}
+    pullSecret: flux-git-credentials
+    # provider:
+    interval: 1m
+    name: &instance flux-system
+  kustomize:
+    patches:
+      # Add runtime-info ConfigMap created by the bootstrap to the flux-system kustomization
+      - target:
+          kind: Kustomization
+          name: *instance
+        patch: |
+          - op: add
+            path: /spec/postBuild
+            value:
+              substituteFrom:
+                - kind: ConfigMap
+                  name: flux-runtime-info
+      # Additional OCIRepository settings
+      - target:
+          kind: OCIRepository
+        patch: |
+          - op: add
+            path: /spec/ignore
+            value: |
+              # Ignore all folders, but include the ones with cluster resources
+              /*
+              # Cluster folders include
+              !${source_repo_cluster_directory}
+              !/kubernetes/apps/
+              !/kubernetes/core/
+              !/kubernetes/common/
+              !/kubernetes/platform/
+              !/kubernetes/system/
+              # Include helm charts folder as well
+              !/helm/
+              # Remove flux-system as well
+              # kubernetes/clusters/**/flux-system/"
+      # Common controller addons
+      - target:
+          kind: Deployment
+          name: "(kustomize-controller|helm-controller|source-controller)"
+        patch: |
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --concurrent=15
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --requeue-dependency=5s
+        # - op: replace
+        #   path: /spec/template/spec/containers/0/resources/limits
+        #   value:
+        #     cpu: 2000m
+        #     memory: 2048Mi
+      - target:
+          kind: Deployment
+        patch: |
+          - op: replace
+            path: /spec/template/spec/priorityClassName
+            value: system-cluster-critical
+          - op: add
+            path: /spec/template/spec/tolerations
+            value:
+              - key: "CriticalAddonsOnly"
+                operator: "Exists"

@@ -1,0 +1,11 @@
+# https://artifacthub.io/packages/helm/flux-operator/flux-operator?modal=values
+
+installCRDs: true
+
+multitenancy:
+  enabled: false
+
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
