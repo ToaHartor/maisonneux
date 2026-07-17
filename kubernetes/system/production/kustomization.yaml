@@ -7,6 +7,7 @@ resources:
   - ../base/cert-manager
   - ../base/external-secrets
   - ../base/kube-system
+  - ../base/nvidia-system # Enable if we use a NVIDIA GPU
   - ../base/opentelemetry
   - ../base/piraeus-datastore
   - ../base/system-utils

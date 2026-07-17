@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: nvidia-gpu-operator
+spec:
+  dependsOn:
+    # ServiceMonitor CRD
+    - name: prometheus-crds
+      namespace: opentelemetry
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: nvidia-gpu-operator
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: nvidia-gpu-operator
+      namespace: &ns nvidia-system
+  interval: 1h
+  path: "./kubernetes/system/base/nvidia-system/nvidia-gpu-operator/app"
+  postBuild:
+    substitute:
+      gpu_runtime_class: ${gpu_runtime_class}
+  # inherited variables
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *ns
+  timeout: 10m

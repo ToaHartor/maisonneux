@@ -1,0 +1,14 @@
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: ${gpu_runtime_class}
+value: 100000000
+globalDefault: false
+description: "PriorityCLass for workloads requiring a NVIDIA GPU"
+---
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: ${gpu_runtime_class}
+handler: ${gpu_runtime_class}

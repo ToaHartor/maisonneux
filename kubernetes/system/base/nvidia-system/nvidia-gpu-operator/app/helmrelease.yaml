@@ -1,0 +1,76 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nvidia-gpu-operator
+spec:
+  releaseName: nvidia-gpu-operator
+  chartRef:
+    kind: OCIRepository
+    name: gpu-operator
+  interval: 50m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+
+  values:
+    # https://github.com/NVIDIA/gpu-operator/blob/main/deployments/gpu-operator/values.yaml
+    operator:
+      runtimeClass: ${gpu_runtime_class}
+
+    # Handled by Talos extension
+    driver:
+      enabled: false
+
+    # Installed via Talos extension
+    toolkit:
+      enabled: false
+
+    devicePlugin:
+      enabled: true
+      config:
+        name: device-plugin-config
+        create: true
+        data:
+          default: |-
+            version: v1
+            flags:
+              migStrategy: none
+            sharing:
+              timeSlicing:
+                renameByDefault: false
+                failRequestsGreaterThanOne: false
+                resources:
+                  - name: nvidia.com/gpu
+                    replicas: 5
+    # DCGM exporter for monitoring
+    dcgmExporter:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+
+    # GPU Feature Discovery
+    gfd:
+      enabled: true
+
+    # MIG manager (only relevant for A100/A30/H100 GPUs)
+    migManager:
+      enabled: false
+
+    # Node Feature Discovery
+    nfd:
+      enabled: true
+
+    # Validator
+    validator:
+      env:
+        - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
+          value: "true"
