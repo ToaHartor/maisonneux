@@ -14,7 +14,7 @@ spec:
   priorityClassName: services-critical
 
   # renovate container:
-  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie@sha256:b2c03bf5c6f8bc16495aacc0bb0765c77fe3e8ce6bc94ade26958f62ab9b4a14
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie@sha256:1e6adb18ff3d5a538ff8fcc422c47652cc3b2cc133d5c87b6fd306660f36ffe9
 
   enableSuperuserAccess: true
   superuserSecret:
