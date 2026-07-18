@@ -227,7 +227,7 @@
       matchDatasources: ["docker"],
       matchPackageNames: ["ghcr.io/goauthentik/helm-charts/authentik"],
       changelogUrl: "https://github.com/goauthentik/helm/compare/authentik-{{ currentVersion }}...authentik-{{ newVersion }}",
-    }
+    },
     // TrueCharts packages
     // All of them can't be matched with packageNames oci.trueforge.org/truecharts/*, so we're matching the registryUrl
     // {
@@ -393,10 +393,7 @@
       description: "Strictly disable auto-merge",
       automerge: false,
       ignoreTests: false,
-      matchPackageNames: [
-        "/cilium/",
-        "ghcr.io/cloudnative-pg/postgresql",
-      ],
+      matchPackageNames: ["/cilium/", "ghcr.io/cloudnative-pg/postgresql"],
     },
     // // * Non major updates for truecharts
     // {
