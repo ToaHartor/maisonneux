@@ -14,10 +14,9 @@ spec:
       name: firecrawl
       namespace: services
   interval: 1h
-  # components:
-  #   # relative to spec.path
-  #   - ../../../../../common/components/proxy-application
-  #   - ../../../../../common/components/httproute/proxyauth
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/secret/key
   path: "./kubernetes/apps/base/services/firecrawl/app"
   postBuild:
     substitute:
@@ -25,9 +24,13 @@ spec:
       CREDS_SECRET_NAME: firecrawl-creds
       PSQL_DB_USER: postgres
       PSQL_DB_NAME: postgres
+      ## API key
+      SECRET_KEY_NAME: firecrawl-bull-key
+      SECRET_KEY_TYPE: 64hexa
       # GATEWAY_SVC_NAME: firecrawl
       # GATEWAY_SVC_PORT: "8000"
       # inherited variables
+      fastdata_storage: ${fastdata_storage}
 
   prune: true
   sourceRef:
