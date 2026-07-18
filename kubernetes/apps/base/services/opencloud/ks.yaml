@@ -21,6 +21,7 @@ spec:
   path: "./kubernetes/apps/base/services/opencloud/oidc"
   postBuild:
     substitute:
+      APP: opencloud
       SUBDOMAIN: drive
       # inherited variables
       main_domain: ${main_domain}

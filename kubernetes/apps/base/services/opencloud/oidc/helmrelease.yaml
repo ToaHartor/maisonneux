@@ -4,15 +4,15 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: opencloud-oidc
+  name: ${APP}-oidc
 spec:
-  releaseName: opencloud-oidc
+  releaseName: ${APP}-oidc
   dependsOn:
     - name: authentik
       namespace: authentik
   chartRef:
     kind: OCIRepository
-    name: authentik-application
+    name: ${APP}-authentik-application
   interval: 50m
   install:
     createNamespace: true
@@ -88,15 +88,15 @@ spec:
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: opencloud-desktop-oidc
+  name: ${APP}-desktop-oidc
 spec:
-  releaseName: opencloud-desktop-oidc
+  releaseName: ${APP}-desktop-oidc
   dependsOn:
     - name: authentik
       namespace: authentik
   chartRef:
     kind: OCIRepository
-    name: authentik-application
+    name: ${APP}-authentik-application
   interval: 50m
   install:
     createNamespace: true
