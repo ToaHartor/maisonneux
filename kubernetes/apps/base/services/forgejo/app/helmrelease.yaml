@@ -153,6 +153,8 @@ spec:
         cpu: 200m
         memory: 1Gi
 
+    priorityClassName: services-critical
+
     deployment:
       annotations:
         # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
