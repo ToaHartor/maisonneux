@@ -8,7 +8,7 @@ resource "helm_release" "cilium" {
   name            = "cilium"
   repository      = "https://helm.cilium.io"
   chart           = "cilium"
-  version         = "1.19.5"
+  version         = "1.19.6"
   values          = [file("../../../kubernetes/system/base/kube-system/cilium/app/cilium_values.yaml")]
   wait            = false # Do not wait for resources as the chart is designed like this
   upgrade_install = true
