@@ -22,6 +22,12 @@ url_api = "https://api.github.com/repos/cilium/hubble/releases/assets/439544269"
 version = "0.55.0"
 backend = "aqua:controlplaneio-fluxcd/flux-operator"
 
+[tools.flux-operator."platforms.linux-x64"]
+checksum = "sha256:67a9dad35c06ad76a298b6a28440022be0e2db3b93ef96dd090b4eaa77f542f7"
+url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.55.0/flux-operator_0.55.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/475574497"
+provenance = "github-attestations"
+
 [[tools.flux2]]
 version = "2.9.1"
 backend = "aqua:fluxcd/flux2"
