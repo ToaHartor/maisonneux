@@ -98,11 +98,11 @@ spec:
 
       resources:
         limits:
-          cpu: 10m
-          memory: 96Mi
+          cpu: 100m
+          memory: 152Mi
         requests:
-          cpu: 10m
-          memory: 64Mi
+          cpu: 20m
+          memory: 96Mi
 
       topologySpreadConstraints:
         # Maximum 1 pod per Proxmox hypervisor
