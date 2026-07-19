@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: local-qwen-3-6
+spec:
+  modelName: local/qwen-3.6-27B
+  params:
+    model: openai/qwen36_27B # model api format / alias in llama.cpp
+    apiBase: http://qwen36.ai.svc.cluster.local:8080/v1
+    apiKey: sk-no-key-required # Dummy key to bypass OpenAI client validation
+    dropParams: true
+  info:
+    maxInputTokens: 65536
+    maxOutputTokens: 65536
+    supportsFunctionCalling: true
+    supportsPromptCaching: true
+    supportsVision: false
+    extra:
+      supports_reasoning: true
+      # See docs/notes/llm-setup.md for calculation
+      input_cost_per_token: 0.000000007
+      output_cost_per_token: 0.000000207
+      cache_creation_input_token_cost: 0.0
+      cache_read_input_token_cost: 0.0

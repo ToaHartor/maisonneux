@@ -8,7 +8,8 @@ resources:
   - ./onyx/ks.yaml
   - ./toolhive/ks.yaml
   - ./llmkube/ks.yaml
-  - ./litellm/ks.yaml
+  # - ./litellm/ks.yaml
+  - ./litellm-operator/ks.yaml
   # - ./vllm/ks.yaml
 transformers:
   - ./transformers

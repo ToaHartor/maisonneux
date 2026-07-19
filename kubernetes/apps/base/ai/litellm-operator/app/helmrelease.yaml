@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app litellm-operator
+spec:
+  releaseName: *app
+  chartRef:
+    kind: OCIRepository
+    name: *app
+  interval: 50m
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
+
+  values:
+    # https://github.com/home-operations/litellm-operator/blob/main/charts/litellm-operator/values.yaml
+    controller:
+      leaderElection:
+        enabled: true
+    webhook:
+      enabled: true
+    llmkube:
+      # We create the LiteLLMModel manually as we want to define token counts
+      autoRegister: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 128Mi

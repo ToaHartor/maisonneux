@@ -1,0 +1,100 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmproxy_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMProxy
+metadata:
+  name: litellm
+spec:
+  # renovate: datasource=docker depName=ghcr.io/berriai/litellm
+  image: ghcr.io/berriai/litellm:v1.93.0-rc.2@sha256:edf0c9b47c54433d681a40fc72f9eb531810dd683492f659b42c15126da83946
+  replicas: 1
+  generalSettings:
+    health_check_endpoint: /v1/health
+  routerSettings:
+    routing_strategy: simple-shuffle
+    redis_host: os.environ/REDIS_HOST
+    redis_port: os.environ/REDIS_PORT
+    num_retries: 3
+    timeout: 600
+    fallbacks:
+      - local/qwen-3.6-27B: ["openai/qwen36_27B"]
+  litellmSettings:
+    success_callback: ["prometheus"]
+    prometheus_adapter: true
+    cache: true
+    cache_params:
+      type: redis
+      host: os.environ/REDIS_HOST
+      port: os.environ/REDIS_PORT
+    drop_params: true
+    merge_reasoning_content_in_choices: true
+    set_verbose: false
+  env:
+    - name: PROXY_BASE_URL
+      value: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+      # Set swagger to /docs and /ui to root path (/)
+    - name: DOCS_URL
+      value: /docs
+    - name: ROOT_REDIRECT_URL
+      value: /ui
+    - name: LITELLM_LOG
+      value: INFO
+    - name: REDIS_HOST
+      value: dragonfly-cluster.dragonfly.svc.cluster.local
+    - name: REDIS_PORT
+      value: "6379"
+    # OIDC
+    - name: GENERIC_SCOPE
+      value: "openid profile email litellm_role"
+    - name: GENERIC_USER_ROLE_ATTRIBUTE
+      value: "litellm_role"
+    - name: GENERIC_AUTHORIZATION_ENDPOINT
+      value: "https://${auth_subdomain}.${main_domain_websecure}/application/o/authorize/"
+    - name: GENERIC_TOKEN_ENDPOINT
+      value: "https://${auth_subdomain}.${main_domain_websecure}/application/o/token/"
+    - name: GENERIC_USERINFO_ENDPOINT
+      value: "https://${auth_subdomain}.${main_domain_websecure}/application/o/userinfo/"
+    - name: PROXY_LOGOUT_URL
+      value: https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/end-session/
+    - name: AUTO_REDIRECT_UI_LOGIN_TO_SSO
+      value: "true"
+    - name: GENERIC_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: ${APP}-oidc-authentik-application
+          key: clientID
+    - name: GENERIC_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: ${APP}-oidc-authentik-application
+          key: clientSecret
+    # Admin UI
+    - name: UI_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: ${SECRET_CREDS_NAME}
+          key: username
+    - name: UI_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: ${SECRET_CREDS_NAME}
+          key: password
+    # Master API key
+    - name: LITELLM_MASTER_KEY
+      valueFrom:
+        secretKeyRef:
+          name: ${SECRET_KEY_NAME}
+          key: secretKey
+  resources:
+    limits:
+      # cpu: 100m
+      memory: 2Gi
+    requests:
+      cpu: 100m
+      memory: 1Gi
+  service:
+    type: ClusterIP
+    port: 4000
+  # route:
+  #   hostnames:
+  #   parentRefs:
