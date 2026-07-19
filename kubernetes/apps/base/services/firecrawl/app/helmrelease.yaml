@@ -335,6 +335,13 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
+      nodecache:
+        type: emptyDir
+        advancedMounts:
+          playwright-service:
+            app:
+              - path: /home/node
+
       data:
         type: emptyDir
         advancedMounts:
