@@ -1,0 +1,159 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app hermes-webui
+spec:
+  releaseName: *app
+  dependsOn:
+    - name: ${APP}-oidc
+  chartRef:
+    kind: OCIRepository
+    name: *app
+  interval: 50m
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
+
+  values:
+    defaultPodOptions:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        # The image bakes `groupadd -g 1024 / useradd -u 1024 hermeswebui`. Its
+        # /hermeswebui_init.bash entrypoint normally starts as root only to align
+        # the runtime UID/GID with mounted volumes, then execs the server as 1024.
+        # Started directly as 1024 it detects the non-root start, skips that root
+        # branch, seeds /app + builds the venv as 1024, and asserts UID/GID == 1024
+        # — so we bypass the root init entirely (no self-chown needed). fsGroup
+        # 1024 makes the /data PVC group-writable so HERMES_WEBUI_STATE_DIR persists.
+        runAsNonRoot: true
+        runAsUser: 1024
+        runAsGroup: 1024
+        fsGroup: 1024
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      hermes-webui:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/nesquena/hermes-webui
+              tag: 0.52.76@sha256:abd43bf66168e51291954ff1ec35718307666b11f7608e2ab00261a0a9af0713
+            env:
+              HERMES_WEBUI_HOST: 0.0.0.0
+              HERMES_WEBUI_PORT: &port ${GATEWAY_SVC_PORT}
+              HERMES_WEBUI_STATE_DIR: /data
+              HERMES_WEBUI_CHAT_BACKEND: gateway
+              HERMES_WEBUI_GATEWAY_BASE_URL: http://hermes.ai.svc.cluster.local:8642
+              HERMES_WEBUI_GATEWAY_API_KEY:
+                secretKeyRef:
+                  name: hermes-api-key
+                  key: secretKey
+              # HERMES_WEBUI_PASSWORD:
+              # OIDC config
+              # https://github.com/nesquena/hermes-webui/blob/704e19adfe74e4fa4dd0067c390c21f74d786779/api/auth_oidc.py#L172
+              HERMES_WEBUI_OIDC_ISSUER:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: issuerURL
+              HERMES_WEBUI_OIDC_CLIENT_ID:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: clientID
+              HERMES_WEBUI_OIDC_CLIENT_SECRET:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: clientSecret
+              HERMES_WEBUI_OIDC_REDIRECT_URI:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: redirectURL
+              HERMES_WEBUI_OIDC_SCOPES: openid profile email
+              HERMES_WEBUI_OIDC_ALLOW_CLAIM: email
+              HERMES_WEBUI_OIDC_ALLOW_VALUES: "*" # "user@example.com" # TODO : set admin email via variable ?
+            ports:
+              - containerPort: *port
+                name: http
+                protocol: TCP
+            probes:
+              # The WebUI serves an unauthenticated GET /health on :8787.
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probe
+              # First boot (and every pod start — the venv lives on the ephemeral
+              # image layer, not the PVC) builds a Python venv via `uv pip install`
+              # before /health answers, so gate liveness/readiness on a generous
+              # startup probe (~5 min) instead of a long initialDelaySeconds.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  periodSeconds: 10
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              # The entrypoint seeds /app and builds the venv on the writable
+              # image layer, so the root FS cannot be read-only.
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+
+    persistence:
+      data:
+        labels:
+          homelab/backup-resource: "true"
+        storageClass: ${fastdata_storage}-ha
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        globalMounts:
+          - path: /data
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+            subPath: tmp

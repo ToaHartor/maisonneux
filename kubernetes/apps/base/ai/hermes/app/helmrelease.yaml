@@ -1,0 +1,316 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app hermes
+spec:
+  releaseName: *app
+  dependsOn:
+    - name: ${APP}-oidc
+  chartRef:
+    kind: OCIRepository
+    name: *app
+  interval: 50m
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
+
+  values:
+    defaultPodOptions:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+    controllers:
+      hermes:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          copy-agent-source:
+            image:
+              repository: docker.io/nousresearch/hermes-agent
+              tag: v2026.7.7.2@sha256:9c841866021c54c4596849f6135717e8a4d52ba510b7f52c50aef1de1a283973
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -e
+                # hermes-agent >= v2026.7.x ships root-only playwright .deps files;
+                # tolerate those but still fail on any other copy error.
+                cp -r /opt/hermes/. /agent-src/ 2>/tmp/cp.err || true
+                if grep -v 'Permission denied' /tmp/cp.err; then exit 1; fi
+                test -e /agent-src/.venv
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              runAsGroup: 1000
+              runAsUser: 1000
+          init:
+            image:
+              repository: docker.io/library/alpine
+              tag: "3.24"
+            command:
+              - sh
+              - -c
+              - |
+                set -euo pipefail
+                mkdir -p /opt/data
+                cp /run/config/config.yaml /opt/data/config.yaml
+                # cp /run/config/env /opt/data/.env
+                # chmod 600 /opt/data/.env
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              runAsGroup: 1000
+              runAsUser: 1000
+
+          install-tools:
+            image:
+              repository: nousresearch/hermes-agent
+              tag: v2026.7.7.2@sha256:9c841866021c54c4596849f6135717e8a4d52ba510b7f52c50aef1de1a283973
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -e
+                # mkdir -p /opt/data/.local/bin /opt/data/.local/go
+
+                # rm -f /opt/data/.local/bin/hermes /opt/data/.local/bin/docker
+
+                # if [ ! -f /opt/data/.local/bin/gh ]; then
+                #   cd /tmp
+                #   curl -fsSL https://github.com/cli/cli/releases/download/v2.61.0/gh_2.61.0_linux_amd64.tar.gz -o gh.tar.gz
+                #   tar xzf gh.tar.gz
+                #   cp gh_2.61.0_linux_amd64/bin/gh /opt/data/.local/bin/
+                #   rm -rf gh.tar.gz gh_2.61.0_linux_amd64
+                # fi
+
+                # if [ ! -f /opt/data/.local/go/bin/go ]; then
+                #   cd /tmp
+                #   curl -fsSL https://go.dev/dl/go1.23.5.linux-amd64.tar.gz -o go.tar.gz
+                #   tar xzf go.tar.gz
+                #   mv go /opt/data/.local/
+                #   rm -rf go.tar.gz
+                # fi
+
+                # if [ ! -f /opt/data/.local/homebrew/bin/brew ]; then
+                #   export HOMEBREW_PREFIX=/opt/data/.local/homebrew
+                #   mkdir -p $HOMEBREW_PREFIX
+                #   git clone --depth 1 https://github.com/Homebrew/brew $HOMEBREW_PREFIX
+                # fi
+                echo "Installation complete"
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              runAsGroup: 1000
+
+        containers:
+          app:
+            image:
+              repository: docker.io/nousresearch/hermes-agent
+              tag: v2026.7.7.2@sha256:9c841866021c54c4596849f6135717e8a4d52ba510b7f52c50aef1de1a283973
+            args:
+              - gateway
+              - run
+              - --no-supervise
+            env:
+              # Settings can be overriden by env variables :
+              # https://github.com/NousResearch/hermes-agent/blob/main/cli-config.yaml.example
+              TZ: Europe/Paris
+              HERMES_HOME: /opt/data
+              HERMES_CRON_TIMEOUT: 0
+              HOME: /opt/data
+              API_SERVER_ENABLED: true
+              API_SERVER_HOST: 0.0.0.0
+              API_SERVER_KEY:
+                secretKeyRef:
+                  name: ${SECRET_KEY_NAME}
+                  key: secretKey
+              API_SERVER_CORS_ORIGINS: "*"
+              HERMES_UID: 1000
+              HERMES_GID: 1000
+              HERMES_DASHBOARD: true
+              HERMES_DASHBOARD_HOST: 0.0.0.0
+              HERMES_DASHBOARD_PORT: &port 9119
+              HERMES_DASHBOARD_PUBLIC_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+              # OIDC
+              HERMES_DASHBOARD_OIDC_CLIENT_ID:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: clientID
+              HERMES_DASHBOARD_OIDC_CLIENT_SECRET:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: clientSecret
+              HERMES_DASHBOARD_OIDC_SCOPES: openid profile email
+              HERMES_DASHBOARD_OIDC_ISSUER:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: issuerURL
+              LITELLM_API_KEY:
+                secretKeyRef:
+                  name: litellm-master-key
+                  key: secretKey
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &httpGet
+                    path: /api/status
+                    port: *port
+                  initialDelaySeconds: 10
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *httpGet
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *httpGet
+                  timeoutSeconds: 5
+            resources:
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              limits:
+                memory: 4Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                add:
+                  - CHOWN
+                  - DAC_OVERRIDE
+                  - FOWNER
+                  - FSETID
+                  - SETGID
+                  - SETUID
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: false
+              runAsGroup: 0
+              runAsNonRoot: false
+              runAsUser: 0
+    service:
+      app:
+        controller: *app
+        ports:
+          gateway:
+            port: 8642 # GATEWAY_SVC_PORT
+          dashboard:
+            port: *port
+
+    persistence:
+      agent-source:
+        type: emptyDir
+        advancedMounts:
+          hermes:
+            copy-agent-source:
+              - path: /agent-src
+            install-tools:
+              - path: /opt/hermes
+            app:
+              - path: /opt/hermes
+      data:
+        labels:
+          homelab/backup-resource: "true"
+        storageClass: ${fastdata_storage}-ha
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 10Gi
+        globalMounts:
+          - path: /opt/data
+      config:
+        type: configMap
+        name: &configmap hermes-configmap
+        defaultMode: 0o755
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/config.yaml
+                subPath: config.yaml
+      run:
+        type: emptyDir
+        advancedMounts:
+          hermes:
+            app:
+              - path: /run
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+            subPath: tmp
+
+    configMaps:
+      config:
+        forceRename: *configmap
+        data:
+          config.yaml: |-
+            custom_providers:
+            - name: litellm
+              base_url: http://litellm.ai.svc.cluster.local:4000/v1
+              key_env: LITELLM_API_KEY
+              models:
+                openai/qwen36_27B:
+                  context_length: 65535
+            model:
+              default: openai/qwen36_27B
+              provider: custom:litellm
+              context_length: 65535
+            model_aliases:
+              qwen:
+                model: openai/qwen36_27B
+                provider: custom:litellm
+            memory:
+              provider: memini
+            plugins:
+              enabled:
+                - memini
+            terminal:
+              backend: local
+              cwd: /opt/data/workspace
+              timeout: 900
+              lifetime_seconds: 1800
+              persistent_shell: true
+            approvals:
+              mode: smart
+              timeout: 60
+              cron_mode: deny
+            mcp_servers:
+              homelab:
+                url: http://litellm.ai:4000/mcp
+                headers:
+                  Authorization: "Bearer $${LITELLM_API_KEY}"

@@ -5,6 +5,8 @@ kind: Kustomization
 namespace: ai
 resources:
   - ./namespace.yaml
+  - ./hermes/ks.yaml
+  - ./hermes-webui/ks.yaml
   - ./onyx/ks.yaml
   - ./toolhive/ks.yaml
   - ./llmkube/ks.yaml

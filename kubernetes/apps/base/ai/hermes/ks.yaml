@@ -1,0 +1,63 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: hermes
+spec:
+  dependsOn:
+    - name: litellm-resources # needed for llm access
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: hermes
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: hermes
+      namespace: ai
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/oidc-application
+    - ../../../../../common/components/httproute/local # common
+    - ../../../../../common/components/secret/key
+  path: "./kubernetes/apps/base/ai/hermes/app"
+  postBuild:
+    substitute:
+      APP: hermes
+      SUBDOMAIN: hermes
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      GROUP: Services
+      DESCRIPTION: AI Agent manager
+      REDIRECT_URL: https://hermes.${main_domain_websecure}/auth/callback
+      ## Gateway
+      GATEWAY_SVC_NAME: hermes
+      GATEWAY_SVC_PORT: "9119"
+      ## API key
+      SECRET_KEY_NAME: hermes-api-key
+      SECRET_KEY_TYPE: 64hexa
+      # inherited variables
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      fastdata_storage: ${fastdata_storage}
+  patches:
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: hermes"
+            parent: "authentik Admins"
+            bindID: "a38ee047-ee3a-4ee3-a178-677b676371e7" # arbitrary uuid
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ai
+  timeout: 10m
