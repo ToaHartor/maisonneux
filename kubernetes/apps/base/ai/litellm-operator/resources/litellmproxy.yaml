@@ -43,6 +43,24 @@ spec:
       value: dragonfly-cluster.dragonfly.svc.cluster.local
     - name: REDIS_PORT
       value: "6379"
+    # Database
+    - name: DATABASE_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: ${PSQL_DB_USER}-db-creds
+          key: username
+    - name: DATABASE_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: ${PSQL_DB_USER}-db-creds
+          key: password
+    - name: DATABASE_HOST
+      valueFrom:
+        secretKeyRef:
+          name: ${PSQL_DB_USER}-db-creds
+          key: host
+    - name: DATABASE_NAME
+      value: ${PSQL_DB_NAME}
     # OIDC
     - name: GENERIC_SCOPE
       value: "openid profile email litellm_role"
