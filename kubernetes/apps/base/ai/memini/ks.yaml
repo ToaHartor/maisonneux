@@ -1,0 +1,49 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: memini
+spec:
+  dependsOn:
+    - name: hermes
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: memini
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: hermes-webui
+      namespace: ai
+  interval: 1h
+  components:
+    - ../../../../../common/components/cnpg/db
+    # relative to spec.path
+    - ../../../../../common/components/secret/key
+  path: "./kubernetes/apps/base/ai/memini/app"
+  postBuild:
+    substitute:
+      APP: memini
+      # Database settings
+      PSQL_DB_USER: memini
+      PSQL_DB_NAME: memini
+      DATABASE_EXTENSIONS: |
+        [
+          { name: vector, ensure: present },
+          { name: vchord, ensure: present }
+        ]
+      ## API key
+      SECRET_KEY_NAME: memini-api-key
+      SECRET_KEY_TYPE: 64hexa
+      # inherited variables
+      auth_subdomain: ${auth_subdomain}
+      main_domain: ${main_domain}
+      main_domain_websecure: ${main_domain_websecure}
+      fastdata_storage: ${fastdata_storage}
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ai
+  timeout: 10m

@@ -1,0 +1,94 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app memini
+spec:
+  releaseName: *app
+  chartRef:
+    kind: OCIRepository
+    name: *app
+  interval: 50m
+  maxHistory: 2
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure # retry failed upgrades instead of rollback
+      retryInterval: 5m
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  uninstall:
+    keepHistory: false
+
+  values:
+    global:
+      fullnameOverride: *app
+    controllers:
+      main:
+        type: deployment
+        replicas: 1
+        pod:
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+        containers:
+          main:
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            env:
+              MEMINI_BACKEND: postgres
+              MEMINI_LOG_FORMAT: json
+              MEMINI_DEMOTE_AFTER: 1440h
+              MEMINI_TOMBSTONE_TTL: 720h
+              MEMINI_EMBED_BASE_URL: http://qwen3-embedding.ai.svc.cluster.local:8080/v1
+              MEMINI_EMBED_MODEL: qwen3-embedding-0.6b
+              MEMINI_EMBED_DIMS: "1024"
+              MEMINI_EMBED_QUERY_PREFIX: "Instruct: Given a user message, retrieve relevant past memories\nQuery: "
+              MEMINI_RECALL_EMBED_TIMEOUT: "10s"
+              MEMINI_EMBED_MAX_CONCURRENCY: "2"
+              MEMINI_LLM_API: openai
+              MEMINI_LLM_BASE_URL: https://llm.${main_domain_websecure}/v1
+              MEMINI_LLM_MODEL: local/qwen-3.6-27B
+              MEMINI_LLM_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-master-key
+                    key: secretKey
+              MEMINI_POSTGRES_DSN:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${APP}-db-creds
+                    key: uri
+              MEMINI_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${SECRET_KEY_NAME}
+                    key: secretKey
+    persistence:
+      data:
+        enabled: false
+    serviceMonitor:
+      main:
+        enabled: true
+    # route:
+    #   main:
+    #     enabled: true
+    #     parentRefs:
+    #     hostnames:
+    #   # Split-horizon: same host, internal gateway serves the UI (catch-all) on-LAN.
+    #   ui:
+    #     enabled: true
+    #     parentRefs:
+    #     hostnames:

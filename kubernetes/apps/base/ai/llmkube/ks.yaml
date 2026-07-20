@@ -56,6 +56,10 @@ spec:
       kind: InferenceService
       name: qwen36
       namespace: ai
+    - apiVersion: inference.llmkube.dev/v1alpha1
+      kind: InferenceService
+      name: qwen3-embedding
+      namespace: ai
   healthCheckExprs:
     - apiVersion: inference.llmkube.dev/v1alpha1
       # current: status.conditions.filter(e, e.type == 'Available').all(e, e.status == 'True')
