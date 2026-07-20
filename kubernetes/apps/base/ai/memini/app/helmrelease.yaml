@@ -59,7 +59,7 @@ spec:
               MEMINI_RECALL_EMBED_TIMEOUT: "10s"
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
               MEMINI_LLM_API: openai
-              MEMINI_LLM_BASE_URL: https://llm.${main_domain_websecure}/v1
+              MEMINI_LLM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
               MEMINI_LLM_MODEL: local/qwen-3.6-27B
               MEMINI_LLM_API_KEY:
                 valueFrom:

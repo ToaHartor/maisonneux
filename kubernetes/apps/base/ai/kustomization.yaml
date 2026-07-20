@@ -11,6 +11,7 @@ resources:
   - ./toolhive/ks.yaml
   - ./llmkube/ks.yaml
   # - ./litellm/ks.yaml
+  - ./memini/ks.yaml
   - ./litellm-operator/ks.yaml
   # - ./vllm/ks.yaml
 transformers:

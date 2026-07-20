@@ -6,14 +6,14 @@ metadata:
   name: memini
 spec:
   dependsOn:
-    - name: hermes
+    - name: litellm-resources
   commonMetadata:
     labels:
       app.kubernetes.io/name: memini
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
-      name: hermes-webui
+      name: memini
       namespace: ai
   interval: 1h
   components:
@@ -36,10 +36,8 @@ spec:
       SECRET_KEY_NAME: memini-api-key
       SECRET_KEY_TYPE: 64hexa
       # inherited variables
-      auth_subdomain: ${auth_subdomain}
-      main_domain: ${main_domain}
-      main_domain_websecure: ${main_domain_websecure}
-      fastdata_storage: ${fastdata_storage}
+      psql_database_namespace: ${psql_database_namespace}
+      psql_cluster_name: ${psql_cluster_name}
   prune: true
   sourceRef:
     kind: GitRepository

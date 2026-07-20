@@ -140,8 +140,9 @@ spec:
               - run
               - --no-supervise
             env:
-              # Settings can be overriden by env variables :
+              # Some settings can be overriden by env variables :
               # https://github.com/NousResearch/hermes-agent/blob/main/cli-config.yaml.example
+              # https://github.com/nousresearch/hermes-agent/blob/main/website/docs/reference/environment-variables.md
               TZ: Europe/Paris
               HERMES_HOME: /opt/data
               HERMES_CRON_TIMEOUT: 0
@@ -177,6 +178,19 @@ spec:
                 secretKeyRef:
                   name: litellm-master-key
                   key: secretKey
+              MEMINI_URL: http://memini.ai.svc.cluster.local:8080
+              MEMINI_NAMESPACE: hermes
+              MEMINI_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: memini-api-key
+                    key: secretKey
+              FIRECRAWL_API_URL: http://firecrawl-api.services.svc.cluster.local:3002/v2/scrape
+              FIRECRAWL_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: firecrawl-api-key
+                    key: secretKey
             probes:
               startup:
                 enabled: true
