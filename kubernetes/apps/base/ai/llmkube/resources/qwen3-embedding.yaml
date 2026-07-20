@@ -1,0 +1,64 @@
+---
+# Current working and fast setup
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen3-embedding-0.6b
+spec:
+  source: https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/main/Qwen3-Embedding-0.6B-Q8_0.gguf
+  quantization: Q8_0
+  hardware:
+    accelerator: cpu
+  resources:
+    cpu: "1"
+    memory: 4Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen3-embedding
+spec:
+  modelRef: qwen3-embedding-0.6b
+  # runtimeClassName:
+  runtime: llamacpp
+  # We use CPU server version as we want to keep the embedding only on cpu
+  # renovate container:
+  image: ghcr.io/ikawrakow/ik-llama-cpp:cpu-server-4672
+  replicas: 1
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  contextSize: 8192
+  parallelSlots: 2
+  batchSize: 8192
+  uBatchSize: 4096
+  env:
+    - name: HF_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: hf-token
+          key: HF_TOKEN
+  podSecurityContext:
+    # runAsNonRoot: true
+    # runAsUser: 101 # curl_user
+    seccompProfile:
+      type: RuntimeDefault
+
+  resources:
+    cpu: "1"
+    memory: 4Gi
+  extraArgs:
+    # Qwen3-Embedding uses last-token pooling with left padding;
+    # --embedding + --pooling last exposes the OpenAI-compatible
+    # /v1/embeddings endpoint.
+    - --embedding
+    - --pooling
+    - last
+    - --cache-ram
+    - "0"
+    - --no-mmap
+    # - --sleep-idle-seconds
+    # - "300"
+    - --alias
+    - qwen3-embedding-0.6b
+    - --metrics
