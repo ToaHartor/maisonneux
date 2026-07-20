@@ -101,8 +101,8 @@ spec:
                   - ALL
             resources:
               requests:
-                cpu: 500m
-                memory: 1Gi
+                cpu: 250m
+                memory: 750Mi
               # limits:
               #   memory: 6Gi
 
@@ -158,8 +158,8 @@ spec:
                   - ALL
             resources:
               requests:
-                cpu: 500m
-                memory: 1Gi
+                cpu: 250m
+                memory: 500Mi
               # limits:
               #   cpu: 1
               #   memory: 4Gi
@@ -216,8 +216,8 @@ spec:
                   - ALL
             resources:
               requests:
-                cpu: 500m
-                memory: 1Gi
+                cpu: 250m
+                memory: 500Mi
               # limits:
               #   cpu: 1
               #   memory: 4Gi
@@ -258,7 +258,7 @@ spec:
                   - ALL
             resources:
               requests:
-                cpu: 500m
+                cpu: 250m
                 memory: 1Gi
               # limits:
               #   cpu: 1
@@ -310,7 +310,6 @@ spec:
                 cpu: 250m
                 memory: 512Mi
               limits:
-                cpu: 500m
                 memory: 1Gi
 
     service:
