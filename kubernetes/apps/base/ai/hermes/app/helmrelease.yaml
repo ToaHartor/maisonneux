@@ -42,6 +42,7 @@ spec:
           type: RuntimeDefault
 
     controllers:
+      # Example in docker compose : https://github.com/nesquena/hermes-webui/blob/master/docker-compose.two-container.yml
       hermes:
         annotations:
           reloader.stakater.com/auto: "true"
@@ -467,11 +468,12 @@ spec:
             webui:
               - path: /home/hermeswebui/.hermes
       webui-data:
-        forceRename: hermes-webui
-        storageClass: ${fastdata_storage}-ha
-        type: persistentVolumeClaim
-        accessMode: ReadWriteOnce
-        size: 2Gi
+        # forceRename: hermes-webui
+        type: emptyDir
+        # storageClass: ${fastdata_storage}-ha
+        # type: persistentVolumeClaim
+        # accessMode: ReadWriteOnce
+        # size: 2Gi
         advancedMounts:
           hermes:
             webui:
