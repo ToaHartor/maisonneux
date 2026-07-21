@@ -32,7 +32,6 @@ spec:
 
   values:
     defaultPodOptions:
-      terminationGracePeriodSeconds: 120
       securityContext:
         # The image bakes `groupadd -g 1024 / useradd -u 1024 hermeswebui`. Its
         # /hermeswebui_init.bash entrypoint normally starts as root only to align
@@ -57,13 +56,14 @@ spec:
           app:
             image:
               repository: ghcr.io/nesquena/hermes-webui
-              tag: 0.52.76@sha256:abd43bf66168e51291954ff1ec35718307666b11f7608e2ab00261a0a9af0713
+              tag: 0.52.130@sha256:fee263b03dcc6f9421686a5baf11595d1aeaf2879854626c1484c273f20875e5
             env:
               HERMES_WEBUI_HOST: 0.0.0.0
               HERMES_WEBUI_PORT: &port ${GATEWAY_SVC_PORT}
               HERMES_WEBUI_STATE_DIR: /data
               HERMES_WEBUI_CHAT_BACKEND: gateway
               HERMES_WEBUI_GATEWAY_BASE_URL: http://hermes.ai.svc.cluster.local:8642
+              HERMES_WEBUI_GATEWAY_USE_RUNS_API: "true"
               HERMES_WEBUI_GATEWAY_API_KEY:
                 secretKeyRef:
                   name: hermes-api-key
@@ -87,9 +87,9 @@ spec:
                 secretKeyRef:
                   name: ${APP}-oidc-authentik-application
                   key: redirectURL
-              HERMES_WEBUI_OIDC_SCOPES: openid profile email
-              HERMES_WEBUI_OIDC_ALLOW_CLAIM: email
-              HERMES_WEBUI_OIDC_ALLOW_VALUES: "*" # "user@example.com" # TODO : set admin email via variable ?
+              HERMES_WEBUI_OIDC_SCOPES: openid profile email groups
+              HERMES_WEBUI_OIDC_ALLOW_CLAIM: groups
+              HERMES_WEBUI_OIDC_ALLOW_VALUES: "app: hermeswebui" # Group to allow, should correspond to the property mapping patch
             ports:
               - containerPort: *port
                 name: http

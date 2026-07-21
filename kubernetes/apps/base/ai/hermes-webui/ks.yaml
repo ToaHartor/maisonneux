@@ -50,6 +50,16 @@ spec:
             slug: "app: hermeswebui"
             parent: "authentik Admins"
             bindID: "8c055d4d-d7ab-4923-ac07-8428dd909c50" # arbitrary uuid
+        - op: add
+          path: '/spec/values/blueprint/provider/oidc/scopes/-'
+          value:
+            name: "Hermes Group"
+            scope_name: "groups"
+            expression: |
+              return [group.name for group in user.ak_groups.all()]
+              # if ak_is_group_member(request.user, name="app: hermeswebui"):
+              #   return ["allowed_user"]
+              # return ["none"]
   prune: true
   sourceRef:
     kind: GitRepository
