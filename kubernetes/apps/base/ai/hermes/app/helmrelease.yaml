@@ -287,6 +287,7 @@ spec:
               WANTED_GID: 1024
               GATEWAY_HEALTH_URL: http://localhost:8642
               HERMES_HOME: /home/hermeswebui/.hermes
+              HERMES_WEBUI_AGENT_DIR: /home/hermeswebui/.hermes/hermes-agent
               HERMES_WEBUI_STATE_DIR: /home/hermeswebui/.hermes/webui
               HERMES_WEBUI_HOST: 0.0.0.0
               HERMES_WEBUI_PORT: &webuiPort 8787
@@ -404,20 +405,33 @@ spec:
             backendRefs:
               - name: hermes
                 port: *webuiPort
+          # - matches:
+          #     - path:
+          #         type: PathPrefix
+          #         value: /dashboard
+          #   backendRefs:
+          #     - name: hermes
+          #       port: *dashboardPort
+          #   filters:
+          #     - type: URLRewrite
+          #       urlRewrite:
+          #         path:
+          #           type: ReplacePrefixMatch
+          #           replacePrefixMatch: /
+
           - matches:
               - path:
                   type: PathPrefix
-                  value: /dashboard
-            backendRefs:
-              - name: hermes
-                port: *dashboardPort
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: /api
+                  value: /gateway
             backendRefs:
               - name: hermes
                 port: *apiPort
+            filters:
+              - type: URLRewrite
+                urlRewrite:
+                  path:
+                    type: ReplacePrefixMatch
+                    replacePrefixMatch: /
 
     persistence:
       agent-source:
@@ -430,6 +444,8 @@ spec:
               - path: /opt/hermes
             app:
               - path: /opt/hermes
+            webui:
+              - path: /home/hermeswebui/.hermes/hermes-agent
       data:
         forceRename: hermes-data
         labels:

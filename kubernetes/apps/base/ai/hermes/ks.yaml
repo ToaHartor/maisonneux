@@ -31,9 +31,9 @@ spec:
       DOMAIN_WEBSECURE: ${main_domain_websecure}
       GROUP: Services
       DESCRIPTION: AI Agent manager
-      REDIRECT_URL: ""
+      # REDIRECT_URL: ""
       # REDIRECT_URL: https://hermes.${main_domain_websecure}/auth/callback
-      # REDIRECT_URL: https://hermes.${main_domain_websecure}/api/auth/oidc/callback
+      REDIRECT_URL: https://hermes.${main_domain_websecure}/api/auth/oidc/callback
       ## Gateway
       # GATEWAY_SVC_NAME: hermes
       # GATEWAY_SVC_PORT: "9119"
@@ -64,9 +64,9 @@ spec:
             scope_name: "groups"
             expression: |
               return [group.name for group in user.ak_groups.all()]
-        - op: replace
-          path: '/spec/values/blueprint/provider/oidc/redirectURL'
-          value: ["https://hermes.${main_domain_websecure}/auth/callback", "https://hermes.${main_domain_websecure}/api/auth/oidc/callback"]
+        # - op: replace
+        #   path: '/spec/values/blueprint/provider/oidc/redirectURL'
+        #   value: ["https://hermes.${main_domain_websecure}/auth/callback", "https://hermes.${main_domain_websecure}/api/auth/oidc/callback"]
 
   prune: true
   sourceRef:
