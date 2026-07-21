@@ -32,12 +32,12 @@ spec:
 
   values:
     defaultPodOptions:
-      terminationGracePeriodSeconds: 120
+      # terminationGracePeriodSeconds: 120
       securityContext:
-        fsGroup: 1000
+        fsGroup: 1024
         fsGroupChangePolicy: OnRootMismatch
-        runAsGroup: 1000
-        runAsUser: 1000
+        runAsGroup: 1024
+        runAsUser: 1024
         seccompProfile:
           type: RuntimeDefault
 
@@ -65,8 +65,8 @@ spec:
               capabilities:
                 drop:
                   - ALL
-              runAsGroup: 1000
-              runAsUser: 1000
+              runAsGroup: 1024
+              runAsUser: 1024
           init:
             image:
               repository: docker.io/library/alpine
@@ -85,8 +85,8 @@ spec:
               capabilities:
                 drop:
                   - ALL
-              runAsGroup: 1000
-              runAsUser: 1000
+              runAsGroup: 1024
+              runAsUser: 1024
 
           install-tools:
             image:
@@ -128,7 +128,7 @@ spec:
               capabilities:
                 drop:
                   - ALL
-              runAsGroup: 1000
+              runAsGroup: 1024
 
         containers:
           app:
@@ -154,11 +154,11 @@ spec:
                   name: ${SECRET_KEY_NAME}
                   key: secretKey
               API_SERVER_CORS_ORIGINS: "*"
-              HERMES_UID: 1000
-              HERMES_GID: 1000
+              HERMES_UID: 1024
+              HERMES_GID: 1024
               HERMES_DASHBOARD: true
               HERMES_DASHBOARD_HOST: 0.0.0.0
-              HERMES_DASHBOARD_PORT: &port 9119
+              HERMES_DASHBOARD_PORT: &dashboardPort 9119
               HERMES_DASHBOARD_PUBLIC_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
               # OIDC
               HERMES_DASHBOARD_OIDC_CLIENT_ID:
@@ -191,6 +191,13 @@ spec:
                   secretKeyRef:
                     name: firecrawl-api-key
                     key: secretKey
+            ports:
+              - containerPort: &apiPort 8642
+                name: api
+                protocol: TCP
+              - containerPort: *dashboardPort
+                name: dashboard
+                protocol: TCP
             probes:
               startup:
                 enabled: true
@@ -198,7 +205,7 @@ spec:
                 spec:
                   httpGet: &httpGet
                     path: /api/status
-                    port: *port
+                    port: *dashboardPort
                   initialDelaySeconds: 10
                   periodSeconds: 5
                   timeoutSeconds: 5
@@ -238,14 +245,179 @@ spec:
               runAsGroup: 0
               runAsNonRoot: false
               runAsUser: 0
+          webui:
+            image:
+              repository: ghcr.io/nesquena/hermes-webui
+              tag: 0.52.130@sha256:fee263b03dcc6f9421686a5baf11595d1aeaf2879854626c1484c273f20875e5
+            # From https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all/blob/main/deploy/k3s/manifests/06-hermes.yaml
+            # command: [sh, -c]
+            # args:
+            #   - |
+            #     mkdir -p /home/hermeswebui/.hermes
+            #     # echo "LITELLM_API_KEY=$${LITELLM_API_KEY}" > /home/hermeswebui/.hermes/.env
+            #     # chmod 644 /home/hermeswebui/.hermes/.env
+
+            #     for i in $(seq 1 90); do
+            #       HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8642/ 2>/dev/null)
+            #       [ "$HTTP" = "200" ] || [ "$HTTP" = "404" ] && break
+            #       sleep 2
+            #     done
+
+            #     (while true; do
+            #       NOW=$(python3 -c "from datetime import datetime,timezone;print(datetime.now(timezone.utc).isoformat())")
+            #       printf '{"gateway_state":"running","updated_at":"%s","pid":1,"platform":"hermes-agent","version":"0.13.0"}\n' "$NOW" > /home/hermeswebui/.hermes/gateway_state.json 2>/dev/null
+            #       sleep 25
+            #     done) &
+
+            #     rm -f /home/hermeswebui/.hermes/.skills_prompt_snapshot.json 2>/dev/null
+
+            #     if [ -f /hermeswebui_init.bash ]; then
+            #       sed -i 's/chmod 700 "$itdir"/chmod 755 "$itdir"/' /hermeswebui_init.bash 2>/dev/null
+            #       # sed -i '/cd \/app; python server.py/i test -f /home/hermeswebui/.hermes/replace_icons.sh \&\& sh /home/hermeswebui/.hermes/replace_icons.sh 2>/dev/null || true' /hermeswebui_init.bash 2>/dev/null
+            #       exec /hermeswebui_init.bash
+            #     else
+            #       echo "WebUI init script not found, sleeping..."
+            #       sleep infinity
+            #     fi
+            env:
+              # PLAYWRIGHT_BROWSERS_PATH: /opt/data/playwright-browsers
+              # LD_LIBRARY_PATH: /opt/shared-tools/lib
+              # PATH: "/opt/shared-tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+              WANTED_UID: 1024
+              WANTED_GID: 1024
+              GATEWAY_HEALTH_URL: http://localhost:8642
+              HERMES_HOME: /home/hermeswebui/.hermes
+              HERMES_WEBUI_STATE_DIR: /home/hermeswebui/.hermes/webui
+              HERMES_WEBUI_HOST: 0.0.0.0
+              HERMES_WEBUI_PORT: &webuiPort 8787
+              HERMES_WEBUI_CHAT_BACKEND: gateway
+              HERMES_WEBUI_GATEWAY_BASE_URL: http://hermes.ai.svc.cluster.local:8642
+              HERMES_WEBUI_GATEWAY_USE_RUNS_API: "true"
+              HERMES_WEBUI_GATEWAY_API_KEY:
+                secretKeyRef:
+                  name: hermes-api-key
+                  key: secretKey
+              # HERMES_WEBUI_PASSWORD:
+              # OIDC config
+              # https://github.com/nesquena/hermes-webui/blob/704e19adfe74e4fa4dd0067c390c21f74d786779/api/auth_oidc.py#L172
+              HERMES_WEBUI_OIDC_ISSUER:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: issuerURL
+              HERMES_WEBUI_OIDC_CLIENT_ID:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: clientID
+              HERMES_WEBUI_OIDC_CLIENT_SECRET:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: clientSecret
+              HERMES_WEBUI_OIDC_REDIRECT_URI:
+                secretKeyRef:
+                  name: ${APP}-oidc-authentik-application
+                  key: redirectURL
+              HERMES_WEBUI_OIDC_SCOPES: openid profile email groups
+              HERMES_WEBUI_OIDC_ALLOW_CLAIM: groups
+              HERMES_WEBUI_OIDC_ALLOW_VALUES: "app: hermes" # Group to allow, should correspond to the property mapping patch
+              # test
+              # HERMES_SKIP_CHMOD: 1
+            ports:
+              - containerPort: *webuiPort
+                name: http
+                protocol: TCP
+            probes:
+              # The WebUI serves an unauthenticated GET /health on :8787.
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *webuiPort
+                  initialDelaySeconds: 0
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probe
+              # First boot (and every pod start — the venv lives on the ephemeral
+              # image layer, not the PVC) builds a Python venv via `uv pip install`
+              # before /health answers, so gate liveness/readiness on a generous
+              # startup probe (~5 min) instead of a long initialDelaySeconds.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *webuiPort
+                  periodSeconds: 10
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              # The entrypoint seeds /app and builds the venv on the writable
+              # image layer, so the root FS cannot be read-only.
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop:
+                  - ALL
+              # runAsGroup: 0
+              runAsNonRoot: false
+              # runAsUser: 0
+              runAsGroup: 1024
+              runAsUser: 1024
+              seccompProfile:
+                type: RuntimeDefault
+
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
     service:
       app:
         controller: *app
         ports:
           gateway:
-            port: 8642 # GATEWAY_SVC_PORT
+            port: *apiPort
           dashboard:
-            port: *port
+            port: *dashboardPort
+          webui:
+            port: *webuiPort
+
+    route:
+      app:
+        enabled: true
+        parentRefs:
+          - group: gateway.networking.k8s.io
+            kind: Gateway
+            name: traefik-gateway
+            namespace: ingress
+            sectionName: websecure
+        hostnames:
+          - ${SUBDOMAIN}.${DOMAIN}
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+            backendRefs:
+              - name: hermes
+                port: *webuiPort
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /dashboard
+            backendRefs:
+              - name: hermes
+                port: *dashboardPort
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api
+            backendRefs:
+              - name: hermes
+                port: *apiPort
 
     persistence:
       agent-source:
@@ -259,14 +431,36 @@ spec:
             app:
               - path: /opt/hermes
       data:
+        forceRename: hermes-data
         labels:
           homelab/backup-resource: "true"
         storageClass: ${fastdata_storage}-ha
         type: persistentVolumeClaim
         accessMode: ReadWriteOnce
         size: 10Gi
-        globalMounts:
-          - path: /opt/data
+        advancedMounts:
+          hermes:
+            copy-agent-source:
+              - path: /opt/data
+            init:
+              - path: /opt/data
+            install-tools:
+              - path: /opt/data
+            app:
+              - path: /opt/data
+            webui:
+              - path: /home/hermeswebui/.hermes
+      webui-data:
+        forceRename: hermes-webui
+        storageClass: ${fastdata_storage}-ha
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 2Gi
+        advancedMounts:
+          hermes:
+            webui:
+              - path: /app # Execution directory, where webui source is copied to on startup
+
       config:
         type: configMap
         name: &configmap hermes-configmap
@@ -282,6 +476,8 @@ spec:
           hermes:
             app:
               - path: /run
+            # webui:
+            #   - path: /app # Execution directory, where webui source is copied to on startup
       tmpfs:
         type: emptyDir
         globalMounts:

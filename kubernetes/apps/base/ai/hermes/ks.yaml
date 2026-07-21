@@ -20,7 +20,7 @@ spec:
   components:
     # relative to spec.path
     - ../../../../../common/components/oidc-application
-    - ../../../../../common/components/httproute/local # common
+    # - ../../../../../common/components/httproute/local # common
     - ../../../../../common/components/secret/key
   path: "./kubernetes/apps/base/ai/hermes/app"
   postBuild:
@@ -31,10 +31,12 @@ spec:
       DOMAIN_WEBSECURE: ${main_domain_websecure}
       GROUP: Services
       DESCRIPTION: AI Agent manager
-      REDIRECT_URL: https://hermes.${main_domain_websecure}/auth/callback
+      REDIRECT_URL: ""
+      # REDIRECT_URL: https://hermes.${main_domain_websecure}/auth/callback
+      # REDIRECT_URL: https://hermes.${main_domain_websecure}/api/auth/oidc/callback
       ## Gateway
-      GATEWAY_SVC_NAME: hermes
-      GATEWAY_SVC_PORT: "9119"
+      # GATEWAY_SVC_NAME: hermes
+      # GATEWAY_SVC_PORT: "9119"
       ## API key
       SECRET_KEY_NAME: hermes-api-key
       SECRET_KEY_TYPE: 64hexa
@@ -55,6 +57,17 @@ spec:
             slug: "app: hermes"
             parent: "authentik Admins"
             bindID: "a38ee047-ee3a-4ee3-a178-677b676371e7" # arbitrary uuid
+        - op: add
+          path: '/spec/values/blueprint/provider/oidc/scopes/-'
+          value:
+            name: "Hermes Group"
+            scope_name: "groups"
+            expression: |
+              return [group.name for group in user.ak_groups.all()]
+        - op: replace
+          path: '/spec/values/blueprint/provider/oidc/redirectURL'
+          value: ["https://hermes.${main_domain_websecure}/auth/callback", "https://hermes.${main_domain_websecure}/api/auth/oidc/callback"]
+
   prune: true
   sourceRef:
     kind: GitRepository
