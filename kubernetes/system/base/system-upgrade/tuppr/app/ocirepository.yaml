@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.3.2
-    digest: sha256:181f5e940ef1e3bb155f43ba96e9c4f825da82891ba22cf04fdc29b8ecb82040
+    tag: 0.4.1
+    digest: sha256:a3333bf36964e1d08afc50c9bb111a71193b0f49309012046d863c024d0f5ebc
   url: oci://ghcr.io/home-operations/charts/tuppr
