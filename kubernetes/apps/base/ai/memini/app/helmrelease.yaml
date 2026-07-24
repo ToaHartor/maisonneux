@@ -58,6 +58,7 @@ spec:
               MEMINI_EMBED_QUERY_PREFIX: "Instruct: Given a user message, retrieve relevant past memories\nQuery: "
               MEMINI_RECALL_EMBED_TIMEOUT: "10s"
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
+              MEMINI_RERANK: llm
               MEMINI_LLM_API: openai
               MEMINI_LLM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
               MEMINI_LLM_MODEL: local/qwen-3.6-27B

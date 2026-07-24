@@ -81,6 +81,32 @@ spec:
                 cp /run/config/config.yaml /opt/data/config.yaml
                 # cp /run/config/env /opt/data/.env
                 # chmod 600 /opt/data/.env
+
+                # https://github.com/LukeEvansTech/talos-cluster/blob/fa46c31b2363b272019510be81fea9c883036760/kubernetes/apps/ai/hermes/app/helmrelease.yaml#L36
+                # Install the memini memory-provider plugin from the upstream
+                # standalone mirror eleboucher/memini-hermes (a release-synced
+                # copy of integrations/hermes/plugin/memini). Pinned to a
+                # commit, guarded by a .ref marker so normal restarts stay
+                # offline and it only refetches when the pin changes. The mirror
+                # is untagged, so bump this SHA by hand (verify the new commit
+                # and diff the two files before bumping).
+
+                # renovate gitref: depName=https://github.com/eleboucher/memini-hermes gitRef=main
+                MEMINI_PLUGIN_REF=2c9e7a5c12d4bafd8369e105ff56e944e83bea2b
+                PLUGIN_DIR=/opt/data/plugins/memini
+                if [ "$(cat "$PLUGIN_DIR/.ref" 2>/dev/null)" != "$MEMINI_PLUGIN_REF" ]; then
+                  BASE="https://raw.githubusercontent.com/eleboucher/memini-hermes/$MEMINI_PLUGIN_REF"
+                  if wget -qO /tmp/memini-init.py "$BASE/__init__.py" && wget -qO /tmp/memini-plugin.yaml "$BASE/plugin.yaml"; then
+                    rm -rf "$PLUGIN_DIR"
+                    mkdir -p "$PLUGIN_DIR"
+                    mv /tmp/memini-init.py "$PLUGIN_DIR/__init__.py"
+                    mv /tmp/memini-plugin.yaml "$PLUGIN_DIR/plugin.yaml"
+                    printf '%s' "$MEMINI_PLUGIN_REF" > "$PLUGIN_DIR/.ref"
+                    chown -R 1024:1024 "$PLUGIN_DIR"
+                  else
+                    echo "WARN: memini plugin fetch failed; starting with whatever is present"
+                  fi
+                fi
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -160,26 +186,26 @@ spec:
               HERMES_DASHBOARD: true
               HERMES_DASHBOARD_HOST: 0.0.0.0
               HERMES_DASHBOARD_PORT: &dashboardPort 9119
-              HERMES_DASHBOARD_PUBLIC_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+              HERMES_DASHBOARD_PUBLIC_URL: https://${DASHBOARD_SUBDOMAIN}.${DOMAIN_WEBSECURE}
               # OIDC
               HERMES_DASHBOARD_OIDC_CLIENT_ID:
                 secretKeyRef:
-                  name: ${APP}-oidc-authentik-application
+                  name: ${APP}-dashboard-oidc-authentik-application
                   key: clientID
               HERMES_DASHBOARD_OIDC_CLIENT_SECRET:
                 secretKeyRef:
-                  name: ${APP}-oidc-authentik-application
+                  name: ${APP}-dashboard-oidc-authentik-application
                   key: clientSecret
               HERMES_DASHBOARD_OIDC_SCOPES: openid profile email
               HERMES_DASHBOARD_OIDC_ISSUER:
                 secretKeyRef:
-                  name: ${APP}-oidc-authentik-application
+                  name: ${APP}-dashboard-oidc-authentik-application
                   key: issuerURL
               LITELLM_API_KEY:
                 secretKeyRef:
                   name: litellm-master-key
                   key: secretKey
-              MEMINI_URL: http://memini.ai.svc.cluster.local:8080
+              MEMINI_BASE_URL: http://memini.ai.svc.cluster.local:8080
               MEMINI_NAMESPACE: hermes
               MEMINI_API_KEY:
                 valueFrom:
@@ -290,6 +316,7 @@ spec:
               HERMES_HOME: /home/hermeswebui/.hermes
               HERMES_WEBUI_AGENT_DIR: /home/hermeswebui/.hermes/hermes-agent
               HERMES_WEBUI_STATE_DIR: /home/hermeswebui/.hermes/webui
+              HERMES_WEBUI_DEFAULT_WORKSPACE: /home/hermeswebui/.hermes/workspace
               HERMES_WEBUI_HOST: 0.0.0.0
               HERMES_WEBUI_PORT: &webuiPort 8787
               HERMES_WEBUI_CHAT_BACKEND: gateway
@@ -406,20 +433,6 @@ spec:
             backendRefs:
               - name: hermes
                 port: *webuiPort
-          # - matches:
-          #     - path:
-          #         type: PathPrefix
-          #         value: /dashboard
-          #   backendRefs:
-          #     - name: hermes
-          #       port: *dashboardPort
-          #   filters:
-          #     - type: URLRewrite
-          #       urlRewrite:
-          #         path:
-          #           type: ReplacePrefixMatch
-          #           replacePrefixMatch: /
-
           - matches:
               - path:
                   type: PathPrefix
@@ -427,12 +440,31 @@ spec:
             backendRefs:
               - name: hermes
                 port: *apiPort
+
+      dashboard:
+        enabled: true
+        parentRefs:
+          - group: gateway.networking.k8s.io
+            kind: Gateway
+            name: traefik-gateway
+            namespace: ingress
+            sectionName: websecure
+        hostnames:
+          - ${DASHBOARD_SUBDOMAIN}.${DOMAIN}
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+            backendRefs:
+              - name: hermes
+                port: *dashboardPort
             filters:
-              - type: URLRewrite
-                urlRewrite:
-                  path:
-                    type: ReplacePrefixMatch
-                    replacePrefixMatch: /
+              - type: ExtensionRef
+                extensionRef:
+                  group: traefik.io
+                  kind: Middleware
+                  name: chain-local
 
     persistence:
       agent-source:
@@ -507,20 +539,22 @@ spec:
         forceRename: *configmap
         data:
           config.yaml: |-
+            dashboard:
+              theme: "mono"
             custom_providers:
             - name: litellm
               base_url: http://litellm.ai.svc.cluster.local:4000/v1
               key_env: LITELLM_API_KEY
               models:
-                openai/qwen36_27B:
+                local/qwen-3.6-27B:
                   context_length: 65535
             model:
-              default: openai/qwen36_27B
+              default: local/qwen-3.6-27B
               provider: custom:litellm
               context_length: 65535
             model_aliases:
               qwen:
-                model: openai/qwen36_27B
+                model: local/qwen-3.6-27B
                 provider: custom:litellm
             memory:
               provider: memini

@@ -31,9 +31,12 @@ spec:
       DOMAIN_WEBSECURE: ${main_domain_websecure}
       GROUP: Services
       DESCRIPTION: AI Agent manager
-      # REDIRECT_URL: ""
-      # REDIRECT_URL: https://hermes.${main_domain_websecure}/auth/callback
       REDIRECT_URL: https://hermes.${main_domain_websecure}/api/auth/oidc/callback
+      # Dashboard OIDC
+      DASHBOARD_SUBDOMAIN: hermes-dashboard
+      DASHBOARD_GROUP: Services
+      DASHBOARD_DESCRIPTION: Hermes agent dashboard
+      DASHBOARD_REDIRECT_URL: https://hermes-dashboard.${main_domain_websecure}/auth/callback
       ## Gateway
       # GATEWAY_SVC_NAME: hermes
       # GATEWAY_SVC_PORT: "9119"
@@ -67,6 +70,17 @@ spec:
         # - op: replace
         #   path: '/spec/values/blueprint/provider/oidc/redirectURL'
         #   value: ["https://hermes.${main_domain_websecure}/auth/callback", "https://hermes.${main_domain_websecure}/api/auth/oidc/callback"]
+    - target:
+        kind: HelmRelease
+        # match with label since name has variable in it
+        labelSelector: homelab/auth-component-dashboard=true
+      patch: |
+        - op: add
+          path: '/spec/values/blueprint/groups/-'
+          value:
+            slug: "app: hermes dashboard"
+            parent: "authentik Admins"
+            bindID: "b98bf36a-bb72-4212-8d45-2091704bb41c" # arbitrary uuid
 
   prune: true
   sourceRef:

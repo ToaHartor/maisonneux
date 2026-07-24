@@ -185,6 +185,10 @@
       groupName: "cilium",
     },
     {
+      matchPackageNames: ["/memini/"],
+      groupName: "memini",
+    },
+    {
       description: "llama.cpp uses build-number tags with variant prefix (intel, vulkan, ...). Capture the variant as 'compatibility' so Renovate only proposes upgrades within the same variant stream.",
       matchDatasources: ["docker"],
       matchPackageNames: ["ghcr.io/ggml-org/llama.cpp"],
