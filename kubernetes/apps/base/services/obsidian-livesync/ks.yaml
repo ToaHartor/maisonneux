@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: obsidian-livesync
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: obsidian-livesync
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: obsidian-livesync
+      namespace: services
+  interval: 1h
+  components:
+    # relative to spec.path
+    - ../../../../../common/components/httproute/local
+    - ../../../../../common/components/secret/creds
+  path: "./kubernetes/apps/base/services/obsidian-livesync/app"
+  postBuild:
+    substitute:
+      APP: obsidian-livesync
+      SUBDOMAIN: obsidian
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
+      ## Gateway
+      GATEWAY_SVC_NAME: obsidian-livesync
+      GATEWAY_SVC_PORT: "5984"
+      ## CouchDB creds
+      SECRET_CREDS_NAME: obsidian-couchdb-creds
+      SECRET_CREDS_USER: obsidian
+      # inherited variables
+      fastdata_storage: ${fastdata_storage}
+      # main_domain: ${main_domain}
+      # main_domain_websecure: ${main_domain_websecure}
+
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: services
+  timeout: 10m

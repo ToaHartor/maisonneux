@@ -13,6 +13,7 @@ resources:
   - ./immich/ks.yaml
   - ./karakeep/ks.yaml
   - ./legacyapps/ks.yaml
+  - ./obsidian-livesync/ks.yaml
   - ./opencloud/ks.yaml
   - ./outline/ks.yaml
   - ./bentopdf/ks.yaml

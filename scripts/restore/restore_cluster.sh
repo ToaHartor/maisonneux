@@ -15,6 +15,8 @@ DEPLOYMENTS=(
   "qbittorrent, media, qbittorrent, qbittorrent"
   "jellyfin, media, jellyfin-config|jellyfin-data, jellyfin"
   "forgejo, services, forgejo-git, forgejo"
+  "hermes, ai, hermes-data, hermes"
+  "obdisian-couchdb, services, obsidian-couchdb, obsidian-livesync"
   # "jellyseerr, media, jellyseerr-config, jellyseerr"
 )
 
