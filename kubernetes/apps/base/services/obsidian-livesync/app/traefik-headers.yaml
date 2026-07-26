@@ -1,0 +1,25 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: obsidian-headers
+spec:
+  headers:
+    accessControlAllowMethods:
+      - GET
+      - OPTIONS
+      - PUT
+      - POST
+      - HEAD
+      - DELETE
+    accessControlAllowOriginListRegex:
+      - "app://obsidian.md"
+      - "capacitor://localhost"
+      - "http://localhost"
+    accessControlAllowHeaders:
+      - "accept"
+      - "authorization"
+      - "content-type"
+      - "origin"
+      - "referer"
+    accessControlAllowCredentials: true
+    accessControlMaxAge: 3600

@@ -81,7 +81,32 @@ spec:
         controller: obsidian-couchdb
         ports:
           http:
-            port: ${GATEWAY_SVC_PORT}
+            port: &httpPort 5984
+
+    route:
+      app:
+        enabled: true
+        parentRefs:
+          - kind: Gateway
+            name: traefik-gateway
+            namespace: ingress
+            sectionName: websecure
+        hostnames:
+          - ${SUBDOMAIN}.${DOMAIN}
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+            backendRefs:
+              - name: *app
+                port: *httpPort
+            filters:
+              - type: ExtensionRef
+                extensionRef:
+                  group: traefik.io
+                  kind: Middleware
+                  name: obsidian-headers
 
     persistence:
       config:

@@ -16,7 +16,7 @@ spec:
   interval: 1h
   components:
     # relative to spec.path
-    - ../../../../../common/components/httproute/local
+    # - ../../../../../common/components/httproute/local
     - ../../../../../common/components/secret/creds
   path: "./kubernetes/apps/base/services/obsidian-livesync/app"
   postBuild:
@@ -26,8 +26,8 @@ spec:
       DOMAIN: ${main_domain}
       DOMAIN_WEBSECURE: ${main_domain_websecure}
       ## Gateway
-      GATEWAY_SVC_NAME: obsidian-livesync
-      GATEWAY_SVC_PORT: "5984"
+      # GATEWAY_SVC_NAME: obsidian-livesync
+      # GATEWAY_SVC_PORT: "5984"
       ## CouchDB creds
       SECRET_CREDS_NAME: obsidian-couchdb-creds
       SECRET_CREDS_USER: obsidian
