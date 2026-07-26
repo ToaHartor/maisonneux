@@ -22,7 +22,6 @@ spec:
     # relative to spec.path
     - ../../../../../common/components/oidc-application
     - ../../../../../common/components/garage-bucket
-    - ../../../../../common/components/httproute/common
     - ../../../../../common/components/secret/key
     - ../../../../../common/components/secret/key2
   path: "./kubernetes/apps/base/services/karakeep/app"
@@ -38,9 +37,6 @@ spec:
       ## S3 storage
       S3_USER: karakeep-${environment}
       BUCKET_NAME: karakeep-${environment}
-      ## Gateway
-      GATEWAY_SVC_NAME: karakeep
-      GATEWAY_SVC_PORT: "3000"
       ## Nextauth jwt secret
       SECRET_KEY_NAME: karakeep-jwt
       SECRET_KEY_TYPE: api-key

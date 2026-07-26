@@ -5,7 +5,9 @@ metadata:
 spec:
   chain:
     middlewares:
-      - name: secure-headers
+      # - name: secure-headers
+      #   namespace: ingress
+      - name: default-cors-headers
         namespace: ingress
       - name: local-ip
         namespace: ingress

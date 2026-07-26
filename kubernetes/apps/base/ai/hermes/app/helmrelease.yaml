@@ -418,8 +418,7 @@ spec:
       app:
         enabled: true
         parentRefs:
-          - group: gateway.networking.k8s.io
-            kind: Gateway
+          - kind: Gateway
             name: traefik-gateway
             namespace: ingress
             sectionName: websecure
@@ -444,8 +443,7 @@ spec:
       dashboard:
         enabled: true
         parentRefs:
-          - group: gateway.networking.k8s.io
-            kind: Gateway
+          - kind: Gateway
             name: traefik-gateway
             namespace: ingress
             sectionName: websecure

@@ -106,7 +106,7 @@ spec:
                 extensionRef:
                   group: traefik.io
                   kind: Middleware
-                  name: obsidian-headers
+                  name: obsidian-cors-headers
 
     persistence:
       config:
@@ -146,6 +146,7 @@ spec:
             require_valid_user = true
             bind_address = any
             max_http_request_size = 4294967296
+            enable_cors = true
 
             [chttpd_auth]
             require_valid_user = true
@@ -160,4 +161,4 @@ spec:
             credentials = true
             headers = accept, authorization, content-type, origin, referer
             methods = GET, PUT, POST, HEAD, DELETE
-            max_age = 3600
+            max_age = 86400

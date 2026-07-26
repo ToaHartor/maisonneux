@@ -22,3 +22,10 @@ spec:
         - name: ${GATEWAY_SVC_NAME}
           # namespace:
           port: ${GATEWAY_SVC_PORT}
+
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: chain-default

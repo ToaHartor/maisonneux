@@ -218,21 +218,6 @@ spec:
           namespace: "{{ .Release.Namespace }}"
         spec:
           headers:
-            accessControlAllowMethods:
-              - GET
-              - OPTIONS
-              - PUT
-            accessControlAllowOriginListRegex:
-              - ".*://([a-z]*\\.)?${main_domain}"
-              - ".*://([a-z]*\\.)?${second_domain}"
-              # Karakeep specific
-              - "chrome-extension://kgcjekpmcjjogibpjebkhaanilehneje"
-              - "moz-extension://739b0e68-bf1f-49a8-9a11-ef362c1468cc"
-            accessControlAllowHeaders:
-              - Authorization
-              - Content-Type
-            addVaryHeader: true
-            accessControlMaxAge: 100
             hostsProxyHeaders:
               - X-Forwarded-Host
             stsSeconds: 63072000
@@ -247,6 +232,27 @@ spec:
             customResponseHeaders:
               X-Robots-Tag: "none,nosnippet,noarchive,notranslate,noimageindex,nositelinkssearchbox"
               server: ""
+
+      - apiVersion: traefik.io/v1alpha1
+        kind: Middleware
+        metadata:
+          name: default-cors-headers
+          namespace: "{{ .Release.Namespace }}"
+        spec:
+          headers:
+            accessControlAllowMethods:
+              - GET
+              - OPTIONS
+              - PUT
+            accessControlAllowOriginListRegex:
+              - ".*://([a-z]*\\.)?${main_domain}"
+              - ".*://([a-z]*\\.)?${second_domain}"
+            accessControlAllowHeaders:
+              - Authorization
+              - Content-Type
+            addVaryHeader: true
+            accessControlMaxAge: 100
+
       - apiVersion: traefik.io/v1alpha1
         kind: Middleware
         metadata:
@@ -327,30 +333,7 @@ spec:
             middlewares:
               - name: secure-headers
               - name: authentik
-      # - apiVersion: traefik.io/v1alpha1
-      #   kind: Middleware
-      #   metadata:
-      #     name: chain-forwardauth
-      #     namespace: services
-      #   spec:
-      #     chain:
-      #       middlewares:
-      #         - name: secure-headers
-      #           namespace: "{{ .Release.Namespace }}"
-      #         - name: authentik
-      #           namespace: "{{ .Release.Namespace }}"
-      # - apiVersion: traefik.io/v1alpha1
-      #   kind: Middleware
-      #   metadata:
-      #     name: chain-forwardauth
-      #     namespace: media
-      #   spec:
-      #     chain:
-      #       middlewares:
-      #         - name: secure-headers
-      #           namespace: "{{ .Release.Namespace }}"
-      #         - name: authentik
-      #           namespace: "{{ .Release.Namespace }}"
+              - name: default-cors-headers
       ## Other middlewares
       - apiVersion: traefik.io/v1alpha1
         kind: Middleware
@@ -362,6 +345,7 @@ spec:
             middlewares:
               - name: secure-headers
               - name: authentik-plex
+              - name: default-cors-headers
       - apiVersion: traefik.io/v1alpha1
         kind: Middleware
         metadata:
@@ -371,3 +355,4 @@ spec:
           chain:
             middlewares:
               - name: secure-headers
+              - name: default-cors-headers
