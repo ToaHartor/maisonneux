@@ -16,7 +16,9 @@ DEPLOYMENTS=(
   "jellyfin, media, jellyfin-config|jellyfin-data, jellyfin"
   "forgejo, services, forgejo-git, forgejo"
   "hermes, ai, hermes-data, hermes"
-  "obdisian-couchdb, services, obsidian-couchdb, obsidian-livesync"
+  "karakeep, services, karakeep, karakeep"
+  "papra, services, papra, papra"
+  "obsidian-couchdb, services, obsidian-couchdb, obsidian-livesync"
   # "jellyseerr, media, jellyseerr-config, jellyseerr"
 )
 
