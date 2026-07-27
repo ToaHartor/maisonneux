@@ -281,6 +281,7 @@ spec:
             # This address should point to the cluster endpoint provided by the kubernetes service, not the Ingress.
             address: http://authentik-server.authentik.svc.cluster.local:80/outpost.goauthentik.io/auth/traefik
             trustForwardHeader: true
+            maxResponseBodySize: 1000000 # 1MB
             authResponseHeaders:
               - Cookie
               - Authorization
@@ -306,6 +307,7 @@ spec:
             # This address should point to the cluster endpoint provided by the kubernetes service, not the Ingress.
             address: http://authentik-server.authentik.svc.cluster.local:80/outpost.goauthentik.io/auth/traefik
             trustForwardHeader: true
+            maxResponseBodySize: 1000000 # 1MB
             authResponseHeaders:
               - X-authentik-username
               - X-authentik-groups

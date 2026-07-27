@@ -8,3 +8,5 @@ resources:
   - ./authentik/ks.yaml
 transformers:
   - ./transformers
+components:
+  - ../../../common/components/traefik-middlewares
