@@ -10,8 +10,8 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.40.1
-    digest: sha256:756dc5868df9c53f17934092fa5ff8b9152f90408c102265d9a9ad4e476dc0f8
+    tag: 0.41.0
+    digest: sha256:f1a3147e5b16bd24da45150f93d1b9ebfcfa26ef62ef654734025b793c0fe570
   url: oci://ghcr.io/stacklok/toolhive/toolhive-operator
   verify:
     provider: cosign
