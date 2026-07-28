@@ -406,6 +406,7 @@ spec:
       WEB_DOMAIN: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
       # Craft
       ENABLE_CRAFT: "true"
+      ONYX_SERVER_URL: http://onyx-api-service.ai.svc.cluster.local:8080
       SANDBOX_API_SERVER_URL: http://onyx-api-service.ai.svc.cluster.local:8080
       SANDBOX_SERVICE_ACCOUNT_NAME: "onyx-sandbox"
       # Redis
