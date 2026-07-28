@@ -263,6 +263,8 @@ spec:
               key: HF_TOKEN
     # Inference model is required to retrieve from knowledge base somehow
     inferenceCapability:
+      strategy:
+        type: Recreate
       replicaCount: 1
       securityContext:
         privileged: false
