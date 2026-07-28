@@ -222,14 +222,6 @@ spec:
     # Currently it is unable to use the GPU (unable to customize runtimeClasses, capabilities etc)
     indexCapability:
       replicaCount: 1
-      podSecurityContext:
-        fsGroup: 1001
-        fsGroupChangePolicy: "OnRootMismatch"
-      securityContext:
-        privileged: false
-        # runAsNonRoot: true
-        runAsUser: 0 # Required to move files from temp_huggingface/ to hugginface/
-        runAsGroup: 1001
       # service is still used, so maybe redirect to our custom pod
       service:
         portName: modelserver
@@ -266,10 +258,6 @@ spec:
       strategy:
         type: Recreate
       replicaCount: 1
-      securityContext:
-        privileged: false
-        # runAsNonRoot: true
-        runAsUser: 0 # Required to move files from temp_huggingface/ to hugginface/
       # nodeSelector:
       #   nvidia.com/gpu.present: "true"
       service:
