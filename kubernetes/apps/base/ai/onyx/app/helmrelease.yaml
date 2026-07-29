@@ -30,7 +30,7 @@ spec:
     # https://github.com/onyx-dot-app/onyx/blob/main/deployment/helm/charts/onyx/values.yaml
     global:
       # renovate: datasource=docker depName=onyxdotapp/onyx-backend extractVersion=^(?<version>.+)$
-      version: "v4.4.7"
+      version: "v4.4.6"
 
     postgresql:
       enabled: false # We already use our own database provisioning
@@ -420,6 +420,7 @@ spec:
       # TODO : removal is planned in 4.5.x...
       OPENID_CONFIG_URL: https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/.well-known/openid-configuration
       REQUIRE_VERIFIED_EMAIL: "false"
+      REQUIRE_EMAIL_VERIFICATION: "false"
       # TRACK_EXTERNAL_IDP_EXPIRY:
       OIDC_SCOPE_OVERRIDE: "openid,profile,email,offline_access"
       # External AI models
