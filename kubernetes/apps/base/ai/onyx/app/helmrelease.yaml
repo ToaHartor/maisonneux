@@ -416,7 +416,10 @@ spec:
       DEFAULT_USER_FILE_MAX_UPLOAD_SIZE_MB: "500" # 500MB
       # Auth
       AUTH_TYPE: "oidc"
+      # Specification no longer works post 4.4.0 ....
+      # TODO : removal is planned in 4.5.x...
       OPENID_CONFIG_URL: https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/.well-known/openid-configuration
+      REQUIRE_VERIFIED_EMAIL: "false"
       # TRACK_EXTERNAL_IDP_EXPIRY:
       OIDC_SCOPE_OVERRIDE: "openid,profile,email,offline_access"
       # External AI models
