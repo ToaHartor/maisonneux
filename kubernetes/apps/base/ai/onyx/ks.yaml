@@ -81,10 +81,22 @@ spec:
             slug: "app: onyx"
             parent: "authentik Admins"
             bindID: "d21b4415-6348-49b9-b0a8-f43206a0c780" # arbitrary uuid
+        - op: remove
+          path: '/spec/values/blueprint/provider/oidc/scopes/1' # Remove normal email claim
         - op: add
           path: '/spec/values/blueprint/provider/oidc/scopes/-'
           value:
             name: "authentik default OAuth Mapping: OpenID 'offline_access'"
+        - op: add
+          path: '/spec/values/blueprint/provider/oidc/scopes/-'
+          value:
+            name: "Onyx Email verified" # Required by Onyx to work
+            scope_name: "email"
+            expression: |
+              return {
+                "email": request.user.email,
+                "email_verified": True
+              }
   prune: true
   sourceRef:
     kind: GitRepository

@@ -103,24 +103,24 @@ spec:
         requests:
           cpu: 250m
           # cpu: 500m
-          memory: 400Mi
+          memory: 300Mi
           # memory: 2Gi
         limits:
           # cpu: 1000m
           # memory: 12Gi
-          memory: 800Mi
+          memory: 600Mi
 
     celery_worker_light:
       resources:
         requests:
           cpu: 250m
           # cpu: 500m
-          memory: 512Mi
+          memory: 350Mi
           # memory: 512Mi
         limits:
           # cpu: 1000m
           # memory: 4Gi
-          memory: 1Gi
+          memory: 700Mi
 
     celery_worker_monitoring:
       resources:
@@ -132,19 +132,19 @@ spec:
         limits:
           # cpu: 1000m
           # memory: 4Gi
-          memory: 1Gi
+          memory: 600Mi
 
     celery_worker_primary:
       resources:
         requests:
           cpu: 250m
           # cpu: 500m
-          memory: 400Mi
+          memory: 300Mi
           # memory: 2Gi
         limits:
           # cpu: 1000m
           # memory: 4Gi
-          memory: 800Mi
+          memory: 600Mi
 
     celery_worker_user_file_processing:
       resources:
@@ -175,12 +175,12 @@ spec:
         requests:
           cpu: 250m
           # cpu: 500m
-          memory: 512Mi
+          memory: 256Mi
           # memory: 2Gi
         limits:
           # cpu: 1000m
           # memory: 16Gi
-          memory: 1Gi
+          memory: 512Mi
 
     monitoring:
       grafana:
@@ -238,8 +238,8 @@ spec:
           #     cpu: 4000m
           #     memory: 3Gi
         limits:
-          cpu: 2
-          memory: 4Gi
+          cpu: 1500m
+          memory: 3Gi
           # nvidia.com/gpu: "1"
           #     cpu: 6000m
           #     memory: 6Gi
@@ -271,9 +271,9 @@ spec:
           memory: 2Gi
           # nvidia.com/gpu: "1"
         limits:
-          cpu: 2
+          cpu: 1500m
+          memory: 3Gi
           # memory: 10Gi
-          memory: 4Gi
           # nvidia.com/gpu: "1"
 
       extraEnv:
@@ -419,10 +419,9 @@ spec:
       # Specification no longer works post 4.4.0 ....
       # TODO : removal is planned in 4.5.x...
       OPENID_CONFIG_URL: https://${auth_subdomain}.${main_domain_websecure}/application/o/${APP}/.well-known/openid-configuration
-      REQUIRE_VERIFIED_EMAIL: "false"
       REQUIRE_EMAIL_VERIFICATION: "false"
       # TRACK_EXTERNAL_IDP_EXPIRY:
-      OIDC_SCOPE_OVERRIDE: "openid,profile,email,offline_access"
+      OIDC_SCOPE_OVERRIDE: "openid,profile,email,email_verified,offline_access"
       # External AI models
       # GEN_AI_MODEL_PROVIDER: custom
       # GEN_AI_MODEL_VERSION: "qwen36-35b-a3b"
