@@ -56,10 +56,11 @@ spec:
 
       resources:
         requests:
-          cpu: 2000m
+          cpu: 1000m
           # memory: 4Gi
           memory: 2Gi
         limits:
+          cpu: 2000m
           # cpu: 4000m
           # memory: 8Gi
           memory: 4Gi
@@ -304,12 +305,18 @@ spec:
           cpu: 1500m
           memory: 1500Mi
 
-    celery_shared:
-      strategy:
-        type: Recreate
+    # celery_shared:
     #   securityContext:
     #     runAsNonRoot: true
     #     runAsUser: 1001
+    sandboxProxy:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 300Mi
+        limits:
+          cpu: 500m
+          memory: 600Mi
 
     discordbot:
       enabled: false
@@ -407,6 +414,11 @@ spec:
       ONYX_SERVER_URL: http://onyx-api-service.ai.svc.cluster.local:8080
       SANDBOX_API_SERVER_URL: http://onyx-api-service.ai.svc.cluster.local:8080
       SANDBOX_SERVICE_ACCOUNT_NAME: "onyx-sandbox"
+      ## Sandbox tuning
+      SANDBOX_POD_CPU_REQUEST: 500m # 1000m
+      SANDBOX_POD_MEMORY_REQUEST: 1Gi # 2Gi
+      SANDBOX_POD_CPU_LIMIT: 2000m # 2000m
+      SANDBOX_POD_MEMORY_LIMIT: 4Gi # 10Gi
       # Redis
       REDIS_HOST: "dragonfly-cluster.dragonfly.svc.cluster.local"
       REDIS_PORT: "6379"
