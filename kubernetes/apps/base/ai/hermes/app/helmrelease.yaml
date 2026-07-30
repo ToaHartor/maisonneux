@@ -275,7 +275,7 @@ spec:
           webui:
             image:
               repository: ghcr.io/nesquena/hermes-webui
-              tag: 0.52.130@sha256:fee263b03dcc6f9421686a5baf11595d1aeaf2879854626c1484c273f20875e5
+              tag: 0.52.158@sha256:28783c1ec13cda2f65ec1249a8537d3b9353fcfe5f97f4d24865ab524d26815d
             # From https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all/blob/main/deploy/k3s/manifests/06-hermes.yaml
             # command: [sh, -c]
             # args:
