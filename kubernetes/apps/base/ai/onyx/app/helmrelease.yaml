@@ -83,7 +83,7 @@ spec:
           memory: 256Mi
           # memory: 512Mi
         limits:
-          # cpu: 1000m
+          cpu: 1000m
           # memory: 1Gi
           memory: 512Mi
 
@@ -94,7 +94,7 @@ spec:
           memory: 256Mi
           # memory: 512Mi
         limits:
-          # cpu: 1000m
+          cpu: 1000m
           # memory: 2Gi
           memory: 512Mi
 
@@ -106,6 +106,7 @@ spec:
           memory: 300Mi
           # memory: 2Gi
         limits:
+          cpu: 500m
           # cpu: 1000m
           # memory: 12Gi
           memory: 600Mi
@@ -118,6 +119,7 @@ spec:
           memory: 350Mi
           # memory: 512Mi
         limits:
+          cpu: 500m
           # cpu: 1000m
           # memory: 4Gi
           memory: 700Mi
@@ -130,6 +132,7 @@ spec:
           memory: 256Mi
           # memory: 512Mi
         limits:
+          cpu: 500m
           # cpu: 1000m
           # memory: 4Gi
           memory: 600Mi
@@ -142,6 +145,7 @@ spec:
           memory: 300Mi
           # memory: 2Gi
         limits:
+          cpu: 500m
           # cpu: 1000m
           # memory: 4Gi
           memory: 600Mi
@@ -154,6 +158,7 @@ spec:
           memory: 256Mi
           # memory: 512Mi
         limits:
+          cpu: 500m
           # cpu: 2000m
           # memory: 2Gi
           memory: 512Mi
@@ -166,6 +171,7 @@ spec:
           memory: 256Mi
           # memory: 512Mi
         limits:
+          cpu: 500m
           # cpu: 2000m
           # memory: 2Gi
           memory: 512Mi
@@ -178,7 +184,7 @@ spec:
           memory: 256Mi
           # memory: 2Gi
         limits:
-          # cpu: 1000m
+          cpu: 500m
           # memory: 16Gi
           memory: 512Mi
 
