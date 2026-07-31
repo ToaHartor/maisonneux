@@ -10,8 +10,8 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.13.1
-    digest: sha256:4f039e1036c0faeb1ef2a83af12fa3c4ab838a04c0d8324e0c013cb788c1afaa
+    tag: 0.14.0
+    digest: sha256:ade14ed15fd3e4f5329940713c81265ee52047496ac5662edea2ada418f6737b
   url: oci://ghcr.io/victoriametrics/helm-charts/victoria-metrics-operator-crds
   verify:
     provider: cosign
