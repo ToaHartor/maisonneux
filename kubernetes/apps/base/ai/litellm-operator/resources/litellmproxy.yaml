@@ -5,7 +5,7 @@ kind: LiteLLMProxy
 metadata:
   name: litellm
 spec:
-  # renovate: datasource=docker depName=ghcr.io/berriai/litellm
+  # renovate container:
   image: ghcr.io/berriai/litellm:v1.93.0-rc.2@sha256:edf0c9b47c54433d681a40fc72f9eb531810dd683492f659b42c15126da83946
   replicas: 1
   generalSettings:

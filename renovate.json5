@@ -111,6 +111,7 @@
       managerFilePatterns: [
         "/tachi\/app\/helmrelease\\.ya?ml$/",
         "/tekton-pipelines\/app\/helmrelease\\.ya?ml$/",
+        "/hermes\/app\/helmrelease\\.ya?ml$/",
       ],
       matchStrings: [
         "# renovate gitref: depName=(?<depName>.+?)( extractVersion=(?<extractVersion>.+?))?( registryUrl=(?<ocimatch>oci:\\/\\/)?(?<registryUrl>.+?))?( gitRef=(?<currentValue>.+?))?\\s.+?(:\\s|\\s?=)(&\\S+)?\\s*[\"']?(?<currentDigest>.+?)[\"']?\\s",
@@ -386,7 +387,8 @@
     },
     {
       description: "Auto-merge github-actions non-major updates",
-      matchDatasources: ["github-actions"],
+      matchDatasources: ["github-tags"],
+      matchDepTypes: ["action"],
       automerge: true,
       automergeType: "branch",
       ignoreTests: true,
