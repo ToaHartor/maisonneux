@@ -53,7 +53,7 @@ jobs:
       #     echo "head_sha=$(echo "$PR_DATA" | python3 -c 'import sys,json; print(json.load(sys.stdin)["head"]["sha"])')" >> $FORGEJO_OUTPUT
 
       - name: Checkout
-        uses: https://github.com/actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: https://github.com/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ forgejo.event.pull_request.head.sha }} #  || steps.prctx.outputs.head_sha
