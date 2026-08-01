@@ -6,7 +6,7 @@ metadata:
   name: litellm
 spec:
   # renovate container:
-  image: ghcr.io/berriai/litellm:v1.93.0-rc.2@sha256:edf0c9b47c54433d681a40fc72f9eb531810dd683492f659b42c15126da83946
+  image: ghcr.io/berriai/litellm:v1.93.0@sha256:a1745e629abfb17d434426ff48b115f54f4f4c4a0f5af241de569e93c63c411e
   replicas: 1
   generalSettings:
     health_check_endpoint: /v1/health
