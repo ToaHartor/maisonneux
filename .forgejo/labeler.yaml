@@ -1,26 +1,26 @@
 ---
-area/terraform:
+area:terraform:
   - changed-files:
       - any-glob-to-any-file:
           - terraform/k8s/**/*
-area/bootstrap:
+area:bootstrap:
   - changed-files:
       - any-glob-to-any-file:
           - terraform/fluxcd/**/*
-area/ci:
+area:ci:
   - changed-files:
       - any-glob-to-any-file: ".forgejo/**/*"
-area/kubernetes:
+area:kubernetes:
   - changed-files:
       - any-glob-to-any-file: "kubernetes/**/*"
-area/renovate:
+area:renovate:
   - changed-files:
       - any-glob-to-any-file:
           - renovate.json5
-area/scripts:
+area:scripts:
   - changed-files:
       - any-glob-to-any-file: "scripts/**/*"
-area/dev:
+area:dev:
   - changed-files:
       - any-glob-to-any-file:
           - dev/*
@@ -28,20 +28,20 @@ area/dev:
           - .yayamlls.yaml
           - .editorconfig
           - .vscode/*
-area/docs:
+area:docs:
   - changed-files:
       - any-glob-to-any-file:
           - "README.md"
           - docs/**/*
-stage/system:
+stage:system:
   - changed-files:
       - any-glob-to-any-file: "kubernetes/system/**/*"
-stage/platform:
+stage:platform:
   - changed-files:
       - any-glob-to-any-file: "kubernetes/platform/**/*"
-stage/core:
+stage:core:
   - changed-files:
       - any-glob-to-any-file: "kubernetes/core/**/*"
-stage/apps:
+stage:apps:
   - changed-files:
       - any-glob-to-any-file: "kubernetes/apps/**/*"
