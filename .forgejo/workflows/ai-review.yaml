@@ -38,6 +38,9 @@ jobs:
     # also exclude automatic reviews when change is only a digest
     if: ${{ (forgejo.event_name == 'pull_request' && !forgejo.event.pull_request.draft && !contains(forgejo.event.label.*.name, 'type:digest')) || forgejo.event_name == 'workflow_dispatch' || forgejo.event.action == 'labeled' && forgejo.event.label.name == 'ai-review' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     timeout-minutes: 35
 
     steps:
@@ -74,9 +77,10 @@ jobs:
           # fetches the rendered (post-kustomize/Helm) Flux diff for this PR.
           KONFLATE_MCP_URL: http://konflate.services.svc.cluster.local:8080/mcp
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           platform: forgejo
           forgejo_api_url: http://forgejo-http.services.svc.cluster.local:3000/
-          forgejo_token: ${{ secrets.FORGEJO_TOKEN }}
+          forgejo_token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ forgejo.event.pull_request.number || inputs.pr_number }}
           force_review: ${{ forgejo.event_name == 'workflow_dispatch' && 'true' || 'false' }}
           ai_primary_retries: "3"
@@ -96,7 +100,7 @@ jobs:
           # ai_smart_api_format:
           # ai_smart_model:
           # ai_smart_api_key:
-          allowed_source_hosts: "github.com,api.github.com,registry.terraform.io,opentofu.org,artifacthub.io,talos.dev,www.talos.dev,docs.siderolabs.com,codeberg.org,truecharts.org,trueforge.org"
+          allowed_source_hosts: "github.com,api.github.com,registry.terraform.io,opentofu.org,artifacthub.io,talos.dev,www.talos.dev,docs.siderolabs.com,codeberg.org,truecharts.org,trueforge.org,git.erwanleboucher.dev"
           context_limit_mode: normal
           ci_status_check: "true"
           ci_timeout_sec: "180"
@@ -113,7 +117,7 @@ jobs:
           tool_allowed_gh_api_repos: "*"
           tool_request_timeout_sec: "15"
           tool_enable_for_forks: "false"
-          tool_mcp_servers: "konflate=http://konflate.services.svc.cluster.local:8080/mcp"
+          tool_mcp_servers: "tools=http://litellm.ai.svc.cluster.local:4000/mcp,konflate=http://konflate.services.svc.cluster.local:8080/mcp"
           system_prompt_file: .agents/instructions/pr-review.instructions.md
           system_prompt_mode: append
           standards_file_candidates: "AGENTS.md"
