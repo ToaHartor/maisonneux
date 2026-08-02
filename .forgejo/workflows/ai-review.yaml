@@ -71,6 +71,8 @@ jobs:
 
       - name: Analyze PR with reusable AI reviewer
         id: analyze
+        #  TODO : Pin to 2.1.6 until token permission issue with forgejois resolved
+        # ref : https://github.com/misospace/pr-reviewer-action/commit/1b4bc2e47513c5842893836ff4d43075b744a948
         uses: https://github.com/misospace/pr-reviewer-action@2f3713c246216f5d1a4fc5c3d944932d5567b4b5 # v2.1.6
         env:
           # konflate's read-only MCP endpoint — the konflate evidence provider

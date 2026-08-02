@@ -385,11 +385,12 @@
         "ghcr.io/project-zot/zot-linux-amd64",
       ],
     },
+    // TODO : currently disabled
     {
       description: "Auto-merge github-actions non-major updates",
       matchDatasources: ["github-tags"],
       matchDepTypes: ["action"],
-      automerge: true,
+      automerge: false,
       automergeType: "branch",
       ignoreTests: true,
       matchUpdateTypes: ["minor", "patch"],
