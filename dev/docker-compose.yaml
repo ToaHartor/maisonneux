@@ -7,7 +7,7 @@ services:
   # Zot for image mirroring
   zot:
     # renovate container:
-    image: ghcr.io/project-zot/zot-linux-amd64:v2.1.18
+    image: ghcr.io/project-zot/zot-linux-amd64:v2.1.19
     container_name: zot
     networks:
       - dev
