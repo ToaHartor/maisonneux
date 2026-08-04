@@ -1,0 +1,86 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: arr-api-keys
+spec:
+  data:
+    - secretKey: sonarrKey
+      remoteRef:
+        key: sonarr-api-key
+        property: secretKey
+    - secretKey: radarrKey
+      remoteRef:
+        key: radarr-api-key
+        property: secretKey
+    - secretKey: prowlarrKey
+      remoteRef:
+        key: prowlarr-api-key
+        property: secretKey
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: media-secretstore
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    template:
+      data:
+        sonarr_key: "{{ .sonarrKey }}"
+        radarr_key: "{{ .radarrKey }}"
+        prowlarr_key: "{{ .prowlarrKey }}"
+      engineVersion: v2
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: arr
+spec:
+  alias: arr
+  transport: http
+  workload:
+    # renovate container
+    image: ghcr.io/aplaceforallmystuff/mcp-arr:1.7.3@sha256:ace72c56448e8695e1d2d060e7437470e3f883fcc9316f1294e3a7f682e1efa1
+    # args: ["-t", "streamable-http"]
+    port: 8080
+    env:
+      - name: MCP_TRANSPORT
+        value: http # streamable-http
+      - name: HOST
+        value: 0.0.0.0
+      - name: PORT
+        value: "8080"
+      - name: SONARR_URL
+        value: http://sonarr.media.svc.cluster.local:8989
+      - name: RADARR_URL
+        value: http://radarr.media.svc.cluster.local:7878
+      - name: PROWLARR_URL
+        value: http://prowlarr.media.svc.cluster.local:9696
+      # Somehow it does not support using the same secret for multiple env variables
+      - name: SONARR_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: arr-api-keys
+            key: sonarr_key
+      - name: RADARR_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: arr-api-keys
+            key: radarr_key
+      - name: PROWLARR_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: arr-api-keys
+            key: prowlarr_key
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities: { drop: ["ALL"] }
+    resources:
+      limits:
+        cpu: "500m"
+      requests:
+        cpu: "10m"

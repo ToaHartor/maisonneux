@@ -1,0 +1,47 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: &name grafana-mcp-token
+spec:
+  dataFrom:
+    - extract:
+        key: grafana-mcp
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: monitoring-secretstore
+  target:
+    name: *name
+    creationPolicy: Owner
+    deletionPolicy: Retain
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: grafana
+spec:
+  alias: grafana
+  transport: http
+  workload:
+    # renovate container:
+    image: docker.io/grafana/mcp-grafana:1.0.0-alpine@sha256:b04c198d78ef3ae9bf22147802df510460b71ea573ef3932a4ab8ad87e595198
+    port: 8000
+    args:
+      [
+        "-t",
+        "streamable-http",
+        "--address",
+        "0.0.0.0:8000",
+        "--allowed-hosts",
+        "grafana.ai.svc.cluster.local:8000",
+      ]
+    env:
+      - name: GRAFANA_URL
+        value: http://grafana-service.observability.svc.cluster.local:3000
+      - name: GRAFANA_SERVICE_ACCOUNT_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: grafana-mcp-token
+            key: token
