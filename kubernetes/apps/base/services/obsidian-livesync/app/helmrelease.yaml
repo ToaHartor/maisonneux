@@ -70,18 +70,87 @@ spec:
                   secretKeyRef:
                     name: ${SECRET_CREDS_NAME}
                     key: password
+            ports:
+              - containerPort: &httpPort 5984
+                name: http
+                protocol: TCP
+            probes:
+              # The WebUI also serves GET /_up on :5984, but apparently it requires authentication
+              liveness: &probe
+                enabled: true
+                type: TCP
+                port: *httpPort
+                spec:
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probe
+
             resources:
               requests:
                 cpu: 15m
                 memory: 200Mi
               limits:
                 memory: 200Mi
+          mcp:
+            image:
+              repository: ghcr.io/es617/obsidian-sync-mcp
+              tag: v0.6.1@sha256:be8651deb627b5452af1f017d909c159d135f9906d0850789759cfa71f8bb213
+            env:
+              DATA_DIR: /data/couchdb/mcpserver
+              COUCHDB_URL: http://localhost:5984
+              COUCHDB_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${SECRET_CREDS_NAME}
+                    key: username
+              COUCHDB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: ${SECRET_CREDS_NAME}
+                    key: password
+              COUCHDB_DATABASE: obsidian
+              VAULT_NAME: Docs # Change depending on the vault name
+              # If e2e is enabled
+              # COUCHDB_PASSPHRASE:
+              #   value: passphrase
+              COUCHDB_OBFUSCATE_PROPERTIES: "false"
+              # We don't enable password auth as it is covered by litellm
+              # MCP_AUTH_TOKEN: password
+              MCP_ALLOWED_HOSTS: obsidian-livesync.services.svc.cluster.local
+              BASE_URL: http://obsidian-livesync.services.svc.cluster.local:8787 # https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+            ports:
+              - containerPort: &mcpPort 8787
+                name: http
+                protocol: TCP
+            probes:
+              # The WebUI serves an unauthenticated GET /health on :8787.
+              liveness: &probe
+                enabled: true
+                type: TCP
+                port: *mcpPort
+                spec:
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probe
+
+            resources:
+              requests:
+                cpu: 15m
+                memory: 75Mi
+              limits:
+                memory: 150Mi
     service:
       app:
         controller: obsidian-couchdb
         ports:
           http:
-            port: &httpPort 5984
+            port: *httpPort
+          mcp:
+            port: *mcpPort
 
     route:
       app:
@@ -94,6 +163,19 @@ spec:
         hostnames:
           - ${SUBDOMAIN}.${DOMAIN}
         rules:
+          # - matches:
+          #     - path:
+          #         type: PathPrefix
+          #         value: /mcp
+          #   backendRefs:
+          #     - name: *app
+          #       port: *mcpPort
+          #   filters:
+          #     - type: ExtensionRef
+          #       extensionRef:
+          #         group: traefik.io
+          #         kind: Middleware
+          #         name: obsidian-cors-headers
           - matches:
               - path:
                   type: PathPrefix
@@ -132,6 +214,14 @@ spec:
           obsidian-couchdb:
             app:
               - path: /opt/couchdb/data
+            mcp:
+              - path: /data/couchdb
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          obsidian-couchdb:
+            mcp:
+              - path: /.obsidian-mcp
 
     configMaps:
       config:
