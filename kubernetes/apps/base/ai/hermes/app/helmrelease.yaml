@@ -92,7 +92,7 @@ spec:
                 # and diff the two files before bumping).
 
                 # renovate gitref: depName=https://github.com/eleboucher/memini-hermes gitRef=main
-                MEMINI_PLUGIN_REF=21c05ae5de1b3148f1490b48ecd8727c09300af2
+                MEMINI_PLUGIN_REF=338800768d1b21f1ce1a2616b62b6c7cff3a76ee
                 PLUGIN_DIR=/opt/data/plugins/memini
                 if [ "$(cat "$PLUGIN_DIR/.ref" 2>/dev/null)" != "$MEMINI_PLUGIN_REF" ]; then
                   BASE="https://raw.githubusercontent.com/eleboucher/memini-hermes/$MEMINI_PLUGIN_REF"
