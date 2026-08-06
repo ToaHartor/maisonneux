@@ -570,3 +570,19 @@ spec:
                 url: http://litellm.ai:4000/mcp
                 headers:
                   Authorization: "Bearer $${LITELLM_API_KEY}"
+            compression:
+              enabled: true
+              protect_last_n: 20
+              threshold: 0.5
+            streaming:
+              enabled: true
+            approvals:
+              mode: smart
+              timeout: 60
+              cron_mode: deny
+            privacy:
+              redact_pii: true
+            web:
+              backend: firecrawl
+            security:
+              redact_secrets: true
