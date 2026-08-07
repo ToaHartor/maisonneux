@@ -32,12 +32,26 @@ spec:
         annotations:
           # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
           secret.reloader.stakater.com/reload: "${PSQL_DB_USER}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
-        containers:
-          server:
-            image:
+        initContainers:
+          load-seeds:
+            image: &tachiImage
               repository: ghcr.io/zkldi/tachi
               # renovate: datasource=docker depName=ghcr.io/zkldi/tachi versioning=loose
-              tag: &tachiTag 20260717-39bf4dd
+              tag: 20260717-39bf4dd
+            # From https://github.com/zkldi/Tachi/blob/d14a21df888d9ec845885e00481b3f1714b2df14/.just/db.just#L39
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -euo pipefail
+                cd typescript/server
+                export POSTGRES_URL="$${POSTGRES_URL}"
+                export SEEDS_DIR="../../db/seeds"
+                if [[ -z "$${SEEDS_COMMIT_HASH:-}" ]]; then
+                  SEEDS_COMMIT_HASH="$(git rev-parse HEAD 2>/dev/null || echo local)"
+                fi
+                export SEEDS_COMMIT_HASH
+                bun run src/scripts/load-seeds-pg.ts
             env: &server-env
               NODE_ENV: production
               PORT: "8080" # server
@@ -175,6 +189,10 @@ spec:
               TACHI_IMPORT_TYPES: file/eamusement-iidx-csv,file/eamusement-sdvx-csv,file/batch-manual,file/solid-state-squad,file/pli-iidx-csv,ir/direct-manual,ir/barbatos,ir/fervidex,ir/fervidex-static,ir/beatoraja,ir/usc,ir/kshook-sv6c
               TACHI_SEEDS_TYPE: LOCAL_FILES
               TACHI_SEEDS_PATH: ./db/seeds
+        containers:
+          server:
+            image: *tachiImage
+            env: *server-env
             ports:
               - containerPort: 8080
                 name: server
@@ -221,9 +239,7 @@ spec:
       worker:
         containers:
           worker:
-            image:
-              repository: ghcr.io/zkldi/tachi
-              tag: *tachiTag
+            image: *tachiImage
             command: ["bun", "run", "./typescript/server/src/job-queue-worker.ts"]
             env:
               <<: *server-env
@@ -273,9 +289,7 @@ spec:
       cron:
         containers:
           cron:
-            image:
-              repository: ghcr.io/zkldi/tachi
-              tag: *tachiTag
+            image: *tachiImage
             command: ["bun", "run", "./typescript/server/src/cron-worker.ts"]
             env:
               <<: *server-env
