@@ -48,6 +48,10 @@ spec:
       kind: LiteLLMMCPServer
       name: obsidian
       namespace: ai
+    - apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      name: litellm
+      namespace: ai
   healthCheckExprs:
     - apiVersion: litellm.home-operations.com/v1alpha1
       current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
