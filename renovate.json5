@@ -21,7 +21,7 @@
     ":dependencyDashboard",
     ":timezone(Europe/Paris)",
     // Common presets from https://github.com/home-operations/renovate-presets
-    "github>home-operations/renovate-presets//policies/semanticCommits.json5",
+    // "github>home-operations/renovate-presets//policies/semanticCommits.json5",
   ],
   separateMajorMinor: false,
   separateMultipleMajor: true,
@@ -127,6 +127,64 @@
     {
       matchDatasources: ["docker"],
       pinDigests: true,
+    },
+    // Semantic commits
+    // from https://github.com/home-operations/renovate-presets
+    // as all configs have been merged into default.json, but we only need this one
+    {
+      matchUpdateTypes: ["major"],
+      semanticCommitType: "feat",
+      commitMessagePrefix: "{{semanticCommitType}}({{semanticCommitScope}})!:",
+      commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
+    },
+    {
+      matchUpdateTypes: ["minor"],
+      semanticCommitType: "feat",
+      commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
+    },
+    {
+      matchUpdateTypes: ["patch"],
+      semanticCommitType: "fix",
+      commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
+    },
+    {
+      matchUpdateTypes: ["digest"],
+      semanticCommitType: "fix",
+      commitMessageExtra: "({{currentDigestShort}} ➔ {{newDigestShort}})",
+    },
+    {
+      matchDatasources: ["docker"],
+      semanticCommitScope: "container",
+      commitMessageTopic: "image {{depName}}",
+    },
+    {
+      matchDatasources: ["helm"],
+      semanticCommitScope: "helm",
+      commitMessageTopic: "chart {{depName}}",
+    },
+    {
+      matchManagers: ["github-actions"],
+      semanticCommitType: "ci",
+      semanticCommitScope: "github-action",
+      commitMessageTopic: "action {{depName}}",
+    },
+    {
+      matchDatasources: ["github-releases"],
+      semanticCommitType: "chore",
+      semanticCommitScope: "github-release",
+      commitMessageTopic: "release {{depName}}",
+    },
+    {
+      matchManagers: ["renovate-config"],
+      semanticCommitType: "chore",
+      semanticCommitScope: "renovate-config",
+      commitMessageTopic: "config {{depName}}",
+    },
+    {
+      matchManagers: ["mise"],
+      semanticCommitType: "chore",
+      semanticCommitScope: "mise",
+      commitMessageTopic: "tool {{depName}}",
     },
     // Tachi grouping : some have docker tags and client uses git refs
     {
