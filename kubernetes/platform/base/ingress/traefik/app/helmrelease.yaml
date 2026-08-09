@@ -268,7 +268,11 @@ spec:
         spec:
           ipWhiteList:
             sourceRange:
+              # Local network
               - 192.168.1.254/32
+              # OPNSense VPN network
+              - 192.168.203.1/24
+              # Pod IP network
               - 10.0.0.1/16
         # Forward auth middlewares
       - apiVersion: traefik.io/v1alpha1
