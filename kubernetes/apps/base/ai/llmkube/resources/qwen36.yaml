@@ -123,7 +123,7 @@ spec:
   # image: ghcr.io/ikawrakow/ik-llama-cpp:cu13-server-4672
   # BeeLlama image https://github.com/Anbeeld/beellama.cpp
   # renovate container:
-  image: ghcr.io/anbeeld/beellama.cpp:server-cuda13-preview-v0.4.2
+  image: ghcr.io/anbeeld/beellama.cpp:server-cuda13-preview-v0.4.4
   replicas: 1
   endpoint:
     port: 8080
