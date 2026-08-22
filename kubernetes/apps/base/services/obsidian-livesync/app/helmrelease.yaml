@@ -96,7 +96,7 @@ spec:
           mcp:
             image:
               repository: ghcr.io/es617/obsidian-sync-mcp
-              tag: v0.6.1@sha256:be8651deb627b5452af1f017d909c159d135f9906d0850789759cfa71f8bb213
+              tag: v0.6.3@sha256:a2a4f42e0b70f2f3db49f3698eb5d8fb07f83dbe9199729aaafd55acffbbfdd1
             env:
               DATA_DIR: /data/couchdb/mcpserver
               COUCHDB_URL: http://localhost:5984
