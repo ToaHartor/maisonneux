@@ -10,8 +10,8 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 26.3.3
-    digest: sha256:799a6e7b9162332ce1693b22a7d31365cbf567ff22ab0d8f72e4652dcd604e6c
+    tag: 26.7.0
+    digest: sha256:5e0d5ca75c5a37245924a0f893871cb72e58a7055458299eeb3752efd8d43546
   url: oci://ghcr.io/home-operations/charts-mirror/nvidia-gpu-operator
   verify:
     provider: cosign
