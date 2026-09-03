@@ -22,7 +22,7 @@ spec:
     - name: BUILDER_IMAGE
       description: The image on which builds will run
       # renovate container:
-      default: ghcr.io/osscontainertools/kaniko:v1.28.3@sha256:779f463aaa3219151ceff518249aa043a60bcb09a17fab58b915f63c678ecde6
+      default: ghcr.io/osscontainertools/kaniko:v1.28.4@sha256:447ae463e61067e5c562f266861a156e000014fc2d03fe7d543f9e4c5b2c96e7
     - name: WRITER_IMAGE
       description: The image on which the write-url step will run
       # renovate container:
@@ -116,7 +116,7 @@ spec:
     - name: BUILDER_IMAGE
       description: The image on which builds will run
       # renovate container:
-      default: ghcr.io/osscontainertools/kaniko:v1.28.3@sha256:779f463aaa3219151ceff518249aa043a60bcb09a17fab58b915f63c678ecde6
+      default: ghcr.io/osscontainertools/kaniko:v1.28.4@sha256:447ae463e61067e5c562f266861a156e000014fc2d03fe7d543f9e4c5b2c96e7
     - name: WRITER_IMAGE
       description: The image on which the write-url step will run
       # renovate container:
