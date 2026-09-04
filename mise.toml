@@ -13,7 +13,7 @@ k9s = "latest"
 cilium-cli = "latest"
 cilium-hubble = "latest"
 # renovate: datasource=github-releases depName=siderolabs/talos
-talosctl = "1.13.4"
+talosctl = "1.14.0"
 tekton-cli = "latest"
 flux2 = "latest"
 flux-operator = "latest"
