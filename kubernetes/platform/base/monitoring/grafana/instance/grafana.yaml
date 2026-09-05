@@ -156,7 +156,7 @@ spec:
                 # and creates files for all their keys under `FOLDER`
             # - name: dashboard-sidecar
             #   # renovate container:
-            #   image: "ghcr.io/kiwigrid/k8s-sidecar:2.10.1@sha256:7eac5c4fed714a18d038fc9fea57d8744d113367935dac0ea4eb6a87cef704a3"
+            #   image: "ghcr.io/kiwigrid/k8s-sidecar:2.11.2@sha256:2912be006f62f9ea080194cf6d3afcd90daead8d101d0ba686a137a849f6a4f6"
             #   env:
             #     - name: LABEL
             #       value: "grafana_dashboard"
