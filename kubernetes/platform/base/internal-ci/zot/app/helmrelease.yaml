@@ -18,6 +18,7 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+  timeout: 15m # Should wait until the database is rebuilt
   values:
     # https://github.com/project-zot/helm-charts/blob/main/charts/zot/values.yaml
     deploymentAnnotations:
