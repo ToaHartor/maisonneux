@@ -87,9 +87,9 @@ jobs:
           force_review: ${{ forgejo.event_name == 'workflow_dispatch' && 'true' || 'false' }}
           ai_primary_retries: "3"
           ai_primary_retry_delay_sec: "15"
-          ai_base_url: http://qwen36.ai.svc.cluster.local:8080/v1
+          ai_base_url: http://qwen38.ai.svc.cluster.local:8080/v1
           ai_api_format: openai
-          ai_model: "qwen36_27B" # "qwen36-27b-iq4-xs.gguf" # Change if model is different
+          ai_model: "qwen38_27B" # "qwen36-27b-iq4-xs.gguf" # Change if model is different
           ai_api_key: ""
           ai_response_format: json_object
           ai_max_tokens: "16000"

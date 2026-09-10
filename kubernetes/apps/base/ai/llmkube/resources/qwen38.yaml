@@ -1,0 +1,164 @@
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen38-27b
+spec:
+  source: hf://HauhauCS/Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-MTP-GGUF
+  files:
+    - Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-Q5_K_P.gguf # Main model
+    # - Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-FastMTP-32K.gguf # Requires special patch
+  format: gguf
+  quantization: Q5_K_P
+  mmproj: mmproj-Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-BF16.gguf
+  sourceSecretRef:
+    name: hf-token
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 2
+      layers: -1 # All
+      sharding:
+        strategy: layer # tensor results in row which is outdated
+        # layerSplit:
+        #   - 0-49
+        #   - 50-99
+      memory: 15Gi # Per GPU
+    # memoryBudget: 14Gi
+  resources:
+    cpu: "6"
+    memory: 16Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen38
+spec:
+  # Parameters from https://github.com/5p00kyy/club-5060ti/blob/main/docs/single-5060ti.md
+  ## ! Select first the dflash then the real model
+  modelRef: qwen38-27b
+  runtimeClassName: ${gpu_runtime_class}
+  runtime: llamacpp
+  # https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp/versions?filters[version_type]=tagged
+  # image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b9843
+  # https://github.com/ikawrakow/ik_llama.cpp/pkgs/container/ik-llama-cpp/versions?filters[version_type]=tagged
+  # image: ghcr.io/ikawrakow/ik-llama-cpp:cu13-server-4672
+  # BeeLlama image https://github.com/Anbeeld/beellama.cpp
+  # renovate container:
+  image: ghcr.io/anbeeld/beellama.cpp:server-cuda13-preview-v0.4.5
+  replicas: 1
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  priority: high
+  evictionProtection: false
+  contextSize: 262144 # -c
+  flashAttention: true # -fa
+  parallelSlots: 1 # -np
+  cacheTypeCustomK: kvarn4 # q5_0 # turbo4
+  cacheTypeCustomV: kvarn4 # q4_0 # turbo3_tcq
+  batchSize: 1024 # -b
+  uBatchSize: 512 # -ub
+  # moeCPULayers: 17  # Too slow
+  # moeCPUOffload: true # Offload all expert layers to CPU
+
+  # noKvOffload: true # KV in RAM instead of VRAM if offload
+  reasoningBudget: 8096 # Necessary for models like Qwen
+  # skipModelInit:
+  # tensorOverrides:
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  env:
+    - name: HF_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: hf-token
+          key: HF_TOKEN
+  podSecurityContext:
+    # runAsNonRoot: true
+    # runAsUser: 101 # curl_user
+    seccompProfile:
+      type: RuntimeDefault
+  # priorityClassName:
+  extraArgs:
+    # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+    # https://github.com/ikawrakow/ik_llama.cpp/blob/main/docs/parameters.md
+    - --alias
+    - qwen38_27B
+    # Log level
+    - -lv
+    - "4"
+    # - --spec-draft-hf
+    # - "Anbeeld/Qwen3.6-27B-DFlash-GGUF:IQ4_XS"
+    - --spec-type
+    - draft-mtp # ,ngram-mod
+    # - dflash
+    # - --spec-dflash-cross-ctx
+    # - "512"
+    - -ngl
+    - all
+    # - --spec-draft-ngl
+    # - all
+    # - --spec-default
+    # - "on"
+    - --spec-draft-n-max
+    - "3"
+    - --spec-draft-p-min
+    - "0"
+    - --reasoning
+    - "on"
+    - --reasoning-effort
+    - "medium"
+    # - --reasoning-preserve
+    - --reasoning-format
+    - "deepseek"
+    # - --no-mmap # No keep model in ram (deprecated)
+    # - --spec-draft-model
+    # - /models/5b4369128cc20c4a/qwen36-27b-iq4-xs-dflash.gguf
+    - --jinja
+    # - --ctx-checkpoints
+    # - "128"
+    # - --threads
+    # - "6"
+    - --temp
+    - "1.0"
+    - --top-p
+    - "0.95"
+    - --min-p
+    - "0.00"
+    - --top-k
+    - "20"
+    - --presence-penalty
+    - "0.0"
+    - --repeat-penalty
+    - "1.0"
+    - --fit
+    - "on"
+    - --kv-unified
+    - --cache-ram
+    - "0"
+    - --no-mmproj-offload
+    - --load-mode
+    - "none" # No mmap or mlock
+    - --chat-template-kwargs
+    - '{"preserve_thinking": true}'
+    # ik_llama specific settings
+    # - --defer-experts
+    # - --spec-type
+    # - mtp
+    # - -mtp
+    # - --draft-max
+    # - "2"
+
+  # podLabels:
+  #   app.kubernetes.io/name: llmkube
+  # podAnnotations:
+  #   sidecar.istio.io/inject: "true"
+  resources:
+    gpu: 2
+    cpu: "4"
+    gpuMemory: 30Gi
+    hostMemory: 10Gi
+    memory: 12Gi

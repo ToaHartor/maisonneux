@@ -2,20 +2,20 @@
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMModel
 metadata:
-  name: local-qwen-3-6
+  name: local-qwen-3-8
 spec:
-  modelName: local/qwen-3.6-27B
+  modelName: local/qwen-3.8-27B
   params:
-    model: openai/qwen36_27B # model api format / alias in llama.cpp
-    apiBase: http://qwen36.ai.svc.cluster.local:8080/v1
+    model: openai/qwen38_27B # model api format / alias in llama.cpp
+    apiBase: http://qwen38.ai.svc.cluster.local:8080/v1
     apiKey: sk-no-key-required # Dummy key to bypass OpenAI client validation
     dropParams: true
   info:
-    maxInputTokens: 65536
-    maxOutputTokens: 65536
+    maxInputTokens: 262144
+    maxOutputTokens: 262144
     supportsFunctionCalling: true
     supportsPromptCaching: true
-    supportsVision: false
+    supportsVision: true
     extra:
       supports_reasoning: true
       # See docs/notes/llm-setup.md for calculation

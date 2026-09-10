@@ -17,7 +17,7 @@ spec:
     num_retries: 3
     timeout: 600
     fallbacks:
-      - local/qwen-3.6-27B: ["openai/qwen36_27B"]
+      - local/qwen-3.8-27B: ["openai/qwen38_27B"]
   litellmSettings:
     success_callback: ["prometheus"]
     prometheus_adapter: true

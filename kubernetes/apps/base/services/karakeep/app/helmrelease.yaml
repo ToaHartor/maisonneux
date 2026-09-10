@@ -117,8 +117,8 @@ spec:
               # AI settings
               # TODO : if model changes, change the following
               OPENAI_API_KEY: "ollama"
-              OPENAI_BASE_URL: http://qwen36.ai.svc.cluster.local:8080/v1
-              INFERENCE_TEXT_MODEL: "qwen36_27B" # qwen36-27b-iq4-xs.gguf
+              OPENAI_BASE_URL: http://qwen38.ai.svc.cluster.local:8080/v1
+              INFERENCE_TEXT_MODEL: "qwen38_27B" # qwen36-27b-iq4-xs.gguf
               INFERENCE_JOB_TIMEOUT_SEC: "120"
               INFERENCE_ENABLE_AUTO_TAGGING: "true"
               INFERENCE_ENABLE_AUTO_SUMMARIZATION: "true"

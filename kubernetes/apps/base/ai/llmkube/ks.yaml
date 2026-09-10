@@ -54,7 +54,7 @@ spec:
     #   namespace: ai
     - apiVersion: inference.llmkube.dev/v1alpha1
       kind: InferenceService
-      name: qwen36
+      name: qwen38
       namespace: ai
     - apiVersion: inference.llmkube.dev/v1alpha1
       kind: InferenceService
