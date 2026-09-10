@@ -98,8 +98,10 @@ spec:
     gpu:
       enabled: true
       vendor: nvidia
-      count: 1
+      count: 2
       layers: 99
+      sharding:
+        strategy: layer
     #   memory: 14Gi
     # memoryBudget: 14Gi
   resources:
@@ -130,7 +132,7 @@ spec:
     type: ClusterIP
   priority: high
   evictionProtection: false
-  contextSize: 65536 # 32768 # -c
+  contextSize: 262144 # 65536 # 32768 # -c
   flashAttention: true # -fa
   parallelSlots: 1 # -np
   cacheTypeCustomK: kvarn4 # q5_0 # turbo4
@@ -223,9 +225,9 @@ spec:
   # podAnnotations:
   #   sidecar.istio.io/inject: "true"
   resources:
-    gpu: 1
+    gpu: 2
     cpu: "2"
-    gpuMemory: 14Gi
+    gpuMemory: 28Gi
     hostMemory: 10Gi
     memory: 12Gi
 
