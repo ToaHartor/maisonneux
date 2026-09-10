@@ -52,7 +52,7 @@ spec:
         maxSurge: 1
     # Adjust startup probe to take into account the repository scan
     startupProbe:
-      initialDelaySeconds: 30
+      initialDelaySeconds: 300
       periodSeconds: 10
       failureThreshold: 15
     service:
