@@ -54,7 +54,7 @@ spec:
     type: ClusterIP
   priority: high
   evictionProtection: false
-  contextSize: 262144 # -c
+  contextSize: 131072 # 262144 # -c
   flashAttention: true # -fa
   parallelSlots: 1 # -np
   cacheTypeCustomK: kvarn4 # q5_0 # turbo4
