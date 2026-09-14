@@ -6,7 +6,7 @@ resources:
   - gateway.yaml
   - externalsecrets.yaml
   - ro-db-secret.yaml
-  - helmrepository.yaml
+  - ocirepository.yaml
   - helmrelease.yaml
   - sandbox-netpol.yaml
   - dashboards.yaml

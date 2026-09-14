@@ -3,18 +3,14 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: onyx
+  name: &app onyx
 spec:
-  releaseName: onyx
+  releaseName: *app
   dependsOn:
     - name: ${APP}-oidc
-  chart:
-    spec:
-      chart: onyx
-      version: "0.8.25"
-      sourceRef:
-        kind: HelmRepository
-        name: onyx
+  chartRef:
+    kind: OCIRepository
+    name: *app
   interval: 50m
   timeout: 15m # Pulling images takes a lot of time
   install:
