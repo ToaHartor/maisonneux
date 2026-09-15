@@ -49,7 +49,7 @@ spec:
       replicaCount: 1 # Number of hypervisors
 
       pdb:
-        create: true
+        create: false
         minAvailable: 1
 
       topologySpreadConstraints:
@@ -137,8 +137,8 @@ spec:
             podMonitorSelector: {}
             serviceMonitorSelector: {}
 
-        podDisruptionBudget:
-          minAvailable: 1
+        # podDisruptionBudget:
+        #   minAvailable: 1
 
         presets:
           kubernetesAttributes:

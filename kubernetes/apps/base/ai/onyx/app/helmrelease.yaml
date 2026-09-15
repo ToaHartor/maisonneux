@@ -39,9 +39,11 @@ spec:
     # vespa:
     #   enabled: false
 
+    # https://github.com/opensearch-project/helm-charts/blob/main/charts/opensearch/values.yaml
     opensearch:
       enabled: true
       singleNode: true
+      maxUnavailable: 0
 
       extraEnvs:
         - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD

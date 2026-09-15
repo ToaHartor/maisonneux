@@ -21,7 +21,7 @@ spec:
       keep: true
     replicaCount: &replicas 1
     podDisruptionBudget:
-      enabled: true
+      enabled: false
       minAvailable: 1
 
     resources:
@@ -61,7 +61,7 @@ spec:
     webhook:
       replicaCount: *replicas
       podDisruptionBudget:
-        enabled: true
+        enabled: false
         minAvailable: 1
 
       resources:
@@ -93,7 +93,7 @@ spec:
     cainjector:
       replicaCount: *replicas
       podDisruptionBudget:
-        enabled: true
+        enabled: false
         minAvailable: 1
 
       resources:

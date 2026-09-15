@@ -7,12 +7,13 @@ spec:
   talos:
     # renovate: datasource=docker depName=ghcr.io/siderolabs/installer extractVersion=^(?<version>.+)$
     version: v1.13.10
+    prePull: true
   policy:
     rebootMode: powercycle # default
     placement: hard
     priorityClassName: system-node-critical
-  drain:
-    enabled: true
+    nodrain: false
+    waitForVolumeDetach: false
   healthChecks:
     # Check all nodes are ready
     - apiVersion: v1

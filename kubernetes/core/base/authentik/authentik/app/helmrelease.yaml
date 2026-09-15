@@ -121,7 +121,7 @@ spec:
       serviceAccountName: authentik
       replicas: 1
       pdb:
-        enabled: true
+        enabled: false
         minAvailable: 1
       resources:
         limits:
@@ -150,7 +150,7 @@ spec:
       serviceAccountName: authentik
       replicas: 1
       pdb:
-        enabled: true
+        enabled: false
         minAvailable: 1
       resources:
         limits:
