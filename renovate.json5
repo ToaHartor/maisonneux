@@ -191,6 +191,8 @@
       matchPackageNames: ["/zkldi\/[tT]achi/"],
       groupName: "Tachi",
       automerge: false,
+      separateMinorPatch: false,
+      separateMultipleMajor: false,
       commitMessageExtra: "({{#each upgrades}}{{#if currentVersion}}{{#unless @first}}, {{/unless}}{{{currentVersion}}} ➔ {{{newVersion}}}{{/if}}{{/each}})",
       // pinDigests: false,
     },
