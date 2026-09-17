@@ -22,7 +22,7 @@ metadata:
   name: grafana-mcp
 spec:
   # renovate container:
-  image: docker.io/grafana/mcp-grafana:1.4.2-alpine@sha256:2b6ea3f0fb1d0875c993ef3c5290519fa6f472450a345360352e47ee2d484b1a
+  image: docker.io/grafana/mcp-grafana:1.5.1-alpine@sha256:ac81dafff928fdb4b3da88805534e67a4403b17a3d6eabeda5bc501b0e7a501e
   args: ["-t", "stdio"]
   transport: stdio
   groupRef:
