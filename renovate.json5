@@ -193,7 +193,8 @@
       automerge: false,
       separateMinorPatch: false,
       separateMultipleMajor: false,
-      commitMessageExtra: "({{#each upgrades}}{{#if currentVersion}}{{#unless @first}}, {{/unless}}{{{currentVersion}}} ➔ {{{newVersion}}}{{/if}}{{/each}})",
+      versioning: "loose",
+      // commitMessageExtra: "({{#each upgrades}}{{#if currentVersion}}{{#unless @first}}, {{/unless}}{{{currentVersion}}} ➔ {{{newVersion}}}{{/if}}{{/each}})",
       // pinDigests: false,
     },
     // In package rules, we also add non matched packages source url
