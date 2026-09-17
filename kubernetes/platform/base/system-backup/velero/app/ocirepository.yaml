@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 12.1.0
-    digest: sha256:c1ba5267dc85b7f6bba4d836c87d31500a1b9aee1cef1cf3eaa4229b251d86d7
+    tag: 12.2.0
+    digest: sha256:8dd8ecee7ae3ba10101e8b0b5b3bd3fd917efd938d449ffeebec81799c02e46c
   url: oci://ghcr.io/vmware-tanzu/charts/velero
