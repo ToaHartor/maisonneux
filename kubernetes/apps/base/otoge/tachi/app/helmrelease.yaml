@@ -37,7 +37,7 @@ spec:
             image: &tachiImage
               repository: ghcr.io/zkldi/tachi
               # renovate: datasource=docker depName=ghcr.io/zkldi/tachi versioning=loose
-              tag: 20260717-39bf4dd
+              tag: 20260916-bc9d278
             # From https://github.com/zkldi/Tachi/blob/d14a21df888d9ec845885e00481b3f1714b2df14/.just/db.just#L39
             command:
               - /bin/sh
