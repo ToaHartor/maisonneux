@@ -326,9 +326,9 @@ spec:
         containers:
           client:
             image:
-              # renovate: datasource=local
               repository: localhost:32000/tachi-client # Client
               # Should be in sync with the server and the image built in pipeline
+              # renovate gitref: depName=https://github.com/zkldi/Tachi gitRef=main
               tag: 233bc992f74cd314c8ef9bc2730d714904838dfc
               pullPolicy: Always
             # env:

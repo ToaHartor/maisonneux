@@ -193,9 +193,9 @@
       automerge: false,
       separateMinorPatch: false,
       separateMultipleMajor: false,
+      pinDigests: false, // Otherwise it will not update client ref in tachi helmrelease
       versioning: "loose",
       // commitMessageExtra: "({{#each upgrades}}{{#if currentVersion}}{{#unless @first}}, {{/unless}}{{{currentVersion}}} ➔ {{{newVersion}}}{{/if}}{{/each}})",
-      // pinDigests: false,
     },
     // In package rules, we also add non matched packages source url
     // Use opentofu registry as we use it instead of terraform
