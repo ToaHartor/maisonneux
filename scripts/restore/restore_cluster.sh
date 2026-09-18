@@ -9,16 +9,17 @@ VELERO_NAMESPACE="system-backup"
 DEPLOYMENTS=(
   # When an annotation is added to a pvc that should be backed up, add an entry to the following array
   # Format : "deployment, namespace, pvc1|pvc2, appname"
-  "suwayomi, media, suwayomi, suwayomi"
-  "kavita, media, kavita, kavita"
-  "opencloud, services, opencloud, opencloud"
-  "qbittorrent, media, qbittorrent, qbittorrent"
-  "jellyfin, media, jellyfin-config|jellyfin-data, jellyfin"
-  "forgejo, services, forgejo-git, forgejo"
-  "hermes, ai, hermes-data, hermes"
-  "karakeep, services, karakeep, karakeep"
-  "papra, services, papra, papra"
-  "obsidian-couchdb, services, obsidian-couchdb, obsidian-livesync"
+  "deployment/suwayomi, media, suwayomi, suwayomi"
+  "deployment/kavita, media, kavita, kavita"
+  "deployment/opencloud, services, opencloud, opencloud"
+  "deployment/qbittorrent, media, qbittorrent, qbittorrent"
+  "deployment/jellyfin, media, jellyfin-config|jellyfin-data, jellyfin"
+  "deployment/forgejo, services, forgejo-git, forgejo"
+  "deployment/hermes, ai, hermes-data, hermes"
+  "deployment/karakeep, services, karakeep, karakeep"
+  "deployment/papra, services, papra, papra"
+  "deployment/obsidian-couchdb, services, obsidian-couchdb, obsidian-livesync"
+  # "statefulset/garage-gateway-gateway, operators, metadata-garage-gateway-gateway-0, garage" # TODO
   # "jellyseerr, media, jellyseerr-config, jellyseerr"
 )
 
@@ -57,7 +58,7 @@ function pre_restore_deploy() {
   namespace="$2"
   pvc="$3"
   # Scale down deployment to zero
-  kubectl scale --replicas=0 "deployment/$deploy" -n "$namespace"
+  kubectl scale --replicas=0 "$deploy" -n "$namespace"
 
   IFS='|' read -r -a pvcarray <<< "$pvc"
 
@@ -68,7 +69,7 @@ function pre_restore_deploy() {
   done
 
   # Scale up again directly after, it will wait for the pvc to be released by the restore job and available
-  kubectl scale --replicas=1 "deployment/$deploy" -n "$namespace"
+  kubectl scale --replicas=1 "$deploy" -n "$namespace"
 
 }
 

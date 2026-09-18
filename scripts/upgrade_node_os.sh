@@ -12,10 +12,10 @@ function upgrade_node() {
 
         schematic=$SCHEMATIC_ID
         # Check if node has nvidia drivers on it
-        if talosctl get extensions --nodes "$node_ip" | grep -qc nvidia; then
-            echo "Adding NVIDIA extensions to the upgrade"
-            schematic=$SCHEMATIC_NVIDIA_ID
-        fi
+        # if talosctl get extensions --nodes "$node_ip" | grep -qc nvidia; then
+        #     echo "Adding NVIDIA extensions to the upgrade"
+        #     schematic=$SCHEMATIC_NVIDIA_ID
+        # fi
 
         # Still ask if same version, as we use upgrades to also update system extensions and kernel args
 
