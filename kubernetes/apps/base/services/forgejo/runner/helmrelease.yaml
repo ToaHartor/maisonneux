@@ -11,6 +11,7 @@ spec:
     name: *app
   interval: 30m
   # From https://git.erwanleboucher.dev/eleboucher/homelab/src/branch/main/kubernetes/apps/forgejo/forgejo-runner/app/helmrelease.yaml
+  # https://git.erwanleboucher.dev/eleboucher/runner-k8s-plugin/src/branch/main/charts/forgejo-runner/values.yaml
   values:
     forgejo:
       url: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}

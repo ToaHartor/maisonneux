@@ -341,13 +341,16 @@ spec:
 
     codeInterpreter:
       enabled: true
+
+    # Subchart code-interpreter
+    code-interpreter:
       resources:
         requests:
           cpu: 100m
-          memory: 128Mi
+          memory: 512Mi
         limits:
           # cpu: 1000m
-          memory: 512Mi
+          memory: 1Gi
 
     auth:
       postgresql:
