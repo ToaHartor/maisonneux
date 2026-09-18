@@ -71,17 +71,17 @@ resource "proxmox_virtual_environment_vm" "k8s-worker" {
 
   dynamic "hostpci" {
     # Add GPU binding if defined in node config
-    for_each = local.worker_nodes[count.index].config.gpu != null ? [1] : []
+    for_each = local.worker_nodes[count.index].config.gpu
 
     content {
-      device  = "hostpci0"
-      id      = local.worker_nodes[count.index].config.gpu.id # "0000:08:00"
+      device  = "hostpci${index(local.worker_nodes[count.index].config.gpu, hostpci.value)}"
+      id      = hostpci.value.id # "0000:08:00"
       mapping = null
       # mdev     = "nvidia-47"
       pcie     = true
       rom_file = null
       rombar   = true
-      xvga     = true
+      xvga     = index(local.worker_nodes[count.index].config.gpu, hostpci.value) == 0
     }
 
   }
@@ -136,7 +136,7 @@ resource "talos_machine_configuration_apply" "worker" {
         type = "worker"
         // Specify installer to ease automatic upgrades with tuppr
         install = {
-          image = "factory.talos.dev/nocloud-installer/${jsondecode(local.worker_nodes[count.index].config.gpu != null ? data.http.talos_factory_nvidia_schematic_id.response_body : data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
+          image = "factory.talos.dev/nocloud-installer/${jsondecode(length(local.worker_nodes[count.index].config.gpu) > 0 ? data.http.talos_factory_nvidia_schematic_id.response_body : data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
         }
         kubelet = {
           nodeIP = {
@@ -177,7 +177,7 @@ resource "talos_machine_configuration_apply" "worker" {
     # Add mount for linstor
     local.worker_nodes[count.index].config.storage.datastore != null ? [yamlencode(local.linstor_mount_config)] : [],
     # Add nvidia config on target GPU node
-    local.worker_nodes[count.index].config.gpu != null ? [yamlencode(local.nvidia_gpu_config)] : []
+    length(local.worker_nodes[count.index].config.gpu) > 0 ? [yamlencode(local.nvidia_gpu_config)] : []
   )
   depends_on = [
     proxmox_virtual_environment_vm.k8s-worker,

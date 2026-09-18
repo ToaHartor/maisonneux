@@ -87,9 +87,9 @@ variable "node_distribution" {
         }), null)
       })
 
-      gpu = optional(object({
+      gpu = optional(list(object({
         id = string
-      }), null)
+      })), [])
     }))
   })
   description = "A collection of node definitions to define which node is created on which proxmox node. A cluster should have at least one controller and one worker. In our current setup, the first controller must be placed on the same node as the OPNsense VM for the cluster init to work."
