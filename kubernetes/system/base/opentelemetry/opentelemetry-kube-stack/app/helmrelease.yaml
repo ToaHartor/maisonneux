@@ -32,7 +32,7 @@ spec:
       manager:
         collectorImage:
           repository: otel/opentelemetry-collector-contrib
-
+        ignoreMissingCollectorCRDs: true # As it is installed in the main chart
         resources:
           limits:
             cpu: 100m
