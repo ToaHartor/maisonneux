@@ -20,12 +20,13 @@ spec:
       vendor: nvidia
       count: 2
       layers: -1 # All
-      sharding:
-        strategy: layer # tensor results in row which is outdated
-        # layerSplit:
-        #   - 0-49
-        #   - 50-99
-      memory: 15Gi # Per GPU
+      # Add manually split-mode tensor in command arguments, which override the model parameters
+      # sharding:
+      # strategy: tensor
+      # layerSplit:
+      #   - 0-49
+      #   - 50-99
+      memory: 16Gi # Per GPU
     # memoryBudget: 14Gi
   resources:
     cpu: "6"
@@ -56,9 +57,11 @@ spec:
   evictionProtection: false
   contextSize: 131072 # 262144 # -c
   flashAttention: true # -fa
-  parallelSlots: 1 # -np
-  cacheTypeCustomK: kvarn4 # q5_0 # turbo4
-  cacheTypeCustomV: kvarn4 # q4_0 # turbo3_tcq
+  parallelSlots: 2 # -np
+  cacheTypeCustomK: q8_0
+  cacheTypeCustomV: q8_0
+  # cacheTypeCustomK: kvarn4 # q5_0 # turbo4
+  # cacheTypeCustomV: kvarn4 # q4_0 # turbo3_tcq
   batchSize: 1024 # -b
   uBatchSize: 512 # -ub
   # moeCPULayers: 17  # Too slow
@@ -94,6 +97,11 @@ spec:
     # - "Anbeeld/Qwen3.6-27B-DFlash-GGUF:IQ4_XS"
     - --spec-type
     - draft-mtp # ,ngram-mod
+    # Parameters appear after stock one so we can override default parameters
+    - --split-mode
+    - tensor
+    - --tensor-split
+    - 1,1
     # - dflash
     # - --spec-dflash-cross-ctx
     # - "512"
@@ -136,7 +144,7 @@ spec:
     - "1.0"
     - --fit
     - "on"
-    - --kv-unified
+    # - --kv-unified
     - --cache-ram
     - "0"
     - --no-mmproj-offload
