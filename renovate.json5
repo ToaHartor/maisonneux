@@ -261,6 +261,12 @@
       matchPackageNames: ["ghcr.io/anbeeld/beellama.cpp"],
       versioning: "regex:^server-(?<compatibility>[a-z0-9]+)-(?<preview>preview-)?v(?<version>(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+))$",
     },
+    {
+      description: "Date versioning format + hash for searxng",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/searxng/searxng"],
+      versioning: "regex:^(?<version>(?<patch>\\d+\\.\\d+\\.\\d+))-(?<hash>[a-f0-9]+)$",
+    },
     // Map sources
     {
       matchPackageNames: ["/papra-hq\/papra/"],
