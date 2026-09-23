@@ -148,10 +148,6 @@ spec:
                 - html
                 - json
               max_page: 0
-            engines:
-              - name: duckduckgo
-                network:
-                  impersonate: firefox
             ui:
               default_theme: simple
               static_use_hash: true
