@@ -17,13 +17,17 @@ spec:
       namespace: ai
   interval: 1h
   components:
-    - ../../../../../common/components/cnpg/db
     # relative to spec.path
+    - ../../../../../common/components/cnpg/db
+    - ../../../../../common/components/httproute/common
     - ../../../../../common/components/secret/key
   path: "./kubernetes/apps/base/ai/memini/app"
   postBuild:
     substitute:
       APP: memini
+      SUBDOMAIN: memini
+      DOMAIN: ${main_domain}
+      DOMAIN_WEBSECURE: ${main_domain_websecure}
       # Database settings
       PSQL_DB_USER: memini
       PSQL_DB_NAME: memini
@@ -35,6 +39,9 @@ spec:
       ## API key
       SECRET_KEY_NAME: memini-api-key
       SECRET_KEY_TYPE: 64hexa
+      # HTTPRoute
+      GATEWAY_SVC_NAME: memini
+      GATEWAY_SVC_PORT: "8080"
       # inherited variables
       psql_database_namespace: ${psql_database_namespace}
       psql_cluster_name: ${psql_cluster_name}
