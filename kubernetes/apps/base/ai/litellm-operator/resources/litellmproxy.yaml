@@ -10,6 +10,21 @@ spec:
   replicas: 1
   generalSettings:
     health_check_endpoint: /v1/health
+  ## Route : let the operator own the Gateway API HTTPRoute fronting the proxy
+  ## (a standalone manifest named after the proxy gets deleted by the operator)
+  route:
+    hostnames:
+      - ${SUBDOMAIN}.${DOMAIN}
+    parentRefs:
+      - name: traefik-gateway
+        namespace: ingress
+        sectionName: websecure
+    filters:
+      - type: ExtensionRef
+        extensionRef:
+          group: traefik.io
+          kind: Middleware
+          name: chain-default
   routerSettings:
     routing_strategy: simple-shuffle
     redis_host: os.environ/REDIS_HOST
