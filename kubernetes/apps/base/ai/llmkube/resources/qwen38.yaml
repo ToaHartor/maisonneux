@@ -55,14 +55,14 @@ spec:
     type: ClusterIP
   priority: high
   evictionProtection: false
-  contextSize: 131072 # 262144 # -c
+  contextSize: 262144 # -c
   flashAttention: true # -fa
-  parallelSlots: 2 # -np
-  cacheTypeCustomK: q8_0
-  cacheTypeCustomV: q8_0
-  # cacheTypeCustomK: kvarn4 # q5_0 # turbo4
-  # cacheTypeCustomV: kvarn4 # q4_0 # turbo3_tcq
-  batchSize: 1024 # -b
+  parallelSlots: 1 # -np
+  cacheTypeCustomK: kvarn5
+  cacheTypeCustomV: kvarn5
+  # cacheTypeCustomK: kvarn4 # q5_0
+  # cacheTypeCustomV: kvarn4 # q4_0
+  batchSize: 2048 # -b
   uBatchSize: 512 # -ub
   # moeCPULayers: 17  # Too slow
   # moeCPUOffload: true # Offload all expert layers to CPU
