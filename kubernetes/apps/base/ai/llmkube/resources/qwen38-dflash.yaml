@@ -1,31 +1,54 @@
-# Qwen 3.8 27B (HauhauCS Uncensored) with DFlash2 block-diffusion drafter
-# Replaces the built-in MTP draft from qwen38.yaml (do NOT run both at once -
-# they compete for the same 2x16Gi GPUs):
-#   - --spec-type draft-dflash with Anbeeld/Qwen3.8-27B-DFlash2-GGUF drafter
-#     (published acceptance ~0.91, ~2.5x no-spec baseline on beellama 0.4.4)
-#   - no --spec-draft-n-max: DFlash2 uses its fixed trained block limit
-#     (block 8, 7 draft tokens); an explicit 3 would cap the drafter
-#   - KVarN on the owned DFlash2 draft cache (consumed directly by CUDA
-#     non-causal block attention on SM120)
-#   - --kv-tail-tokens auto: 1024-token exact BF16 tail on the target kvarn5 cache
-#   - draft ubatch left at the default max(128, parallel*(n_max+1)); it is
-#     independent of the target -ub and saves VRAM vs the 512 target ubatch
-# Caveat: the DFlash2 drafter is trained against vanilla Qwen/Qwen3.8-27B,
-# so expect slightly lower acceptance than the published numbers on the
-# HauhauCS fine-tune.
+# Qwen 3.8 27B NVFP4 (vanilla base) with the EMBEDDED MTP head as drafter
+# Replaces qwen38.yaml (HauhauCS uncensored). Do NOT run both at once -
+# they compete for the same 2x16Gi GPUs:
+#   - NVFP4 vanilla target (cdiamond iMatrix, 17.1 GB, agentic iMatrix
+#     calibration, mixed precision keeping attention/GDN precise, MTP
+#     embedded in the GGUF, 256K ctx) - halved weight bandwidth vs Q5_K_P
+#   - --spec-type draft-mtp: the MTP head reads the target's FULL-context
+#     hidden state. DFlash2 was faster on short prompts (91% acceptance,
+#     ~108 t/s) but its drafter only sees a 2048-token sliding window of
+#     target hidden states, so acceptance collapses at long prompts
+#     (16K ctx: acc/pos 0.61->0.04, ~11 t/s) - wrong tool for agentic use
+#   - --spec-draft-n-max 3: A/B-confirmed. Tested nDraftMax 8 (the quant
+#     author's +14% point) but it regressed 66->46.6 t/s on the 5060 Ti
+#     pair: pos-1 acceptance is identical (0.74) but positions 4-8 accept at
+#     0.12->0.02, so 2.55x more draft tokens are generated to gain 5 accepted
+#     tokens - the 8-candidate verify cost dominates. The author's n=8 win is
+#     a hardware-bound batch/kernel shape (RTX PRO 4000, 432 GB/s) that does
+#     not transfer. Keep 3.
+#   - KVarN on the owned MTP draft cache (audited Qwen MTP allowlist)
+#   - --ctx-checkpoints 4: recurrent (DeltaNet) state checkpoints for spec
+#     rollback - the default 32 wastes VRAM; 4 is the useful minimum for
+#     this architecture (quant author's production profile)
+#   - ngram NOT combined with MTP: v0.4.7 spec dispatch is first-wins, not
+#     a merge (impls built in fixed order, the first impl that fills a
+#     draft takes the step) - with draft-mtp first, ngram never fires
+#     (verified live: 2110 calls, 0 gen drafts). The author's 180 t/s
+#     ngram+MTP number needs his private chained-MTP build, not stock flags
+#   - --spec-draft-p-min: A/B tested 0.75 (the NVFP4-MTP authors' value for
+#     the Flash-Next MoE head) but it regressed 61->38.7 t/s on this pair:
+#     it cut draft gen 517->278 yet per-token time went up 1.6x - the dense
+#     MTP head's confidence is not a "cheap verify" signal here. Back to 0.
+#   - --split-mode tensor: fine with MTP (it worked before); only DFlash
+#     misbehaves under tensor split across 2 GPUs (llama.cpp #27833)
+#   - --fit off: fit params is not implemented for SPLIT_MODE_TENSOR and
+#     explicit draft KVarN sizing is left to the operator (v0.4.7)
 ---
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: Model
 metadata:
   name: qwen38-dflash-27b
 spec:
-  source: hf://HauhauCS/Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-MTP-GGUF
+  # https://huggingface.co/cdiamond/Qwen3.8-27B-iMatrix-NVFP4-MTP-GGUF
+  # 17.1 GB mixed-precision NVFP4 GGUF of vanilla Qwen/Qwen3.8-27B,
+  # iMatrix-calibrated on an agentic set, MTP head embedded, 256K ctx
+  source: hf://cdiamond/Qwen3.8-27B-iMatrix-NVFP4-MTP-GGUF
   files:
-    - Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-Q5_K_P.gguf # Main model
-    - mmproj-Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-BF16.gguf
+    - Qwen3.8-27B-iMatrix-NVFP4-MTP.gguf # Main model
+    - mmproj-Qwen3.8-27B-F16.gguf
   format: gguf
-  quantization: Q5_K_P
-  mmproj: mmproj-Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-BF16.gguf
+  quantization: NVFP4
+  mmproj: mmproj-Qwen3.8-27B-F16.gguf
   sourceSecretRef:
     name: hf-token
   hardware:
@@ -37,6 +60,41 @@ spec:
       layers: -1 # All
       memory: 16Gi # Per GPU
     # memoryBudget: 14Gi
+  resources:
+    cpu: "6"
+    memory: 16Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen38-nvfp4-midhigh
+spec:
+  # https://huggingface.co/esatapedico/Qwen3.8-27B-NVFP4-MTP-GGUF
+  # A/B candidate vs cdiamond iMatrix: NATIVE NVFP4 (GGML type-40 preserved
+  # from the unsloth source, no iMatrix re-quant round trip), MTP head
+  # embedded (blk.64). MID-HIGH tier = NVFP4 448-tensor backbone + Q8_0
+  # LM head / token embd / MTP head (16.90 GB). Fastest split-mode decode
+  # in that family on a dual 16 GB Blackwell box (25.98 t/s @32K, MTP
+  # acc 0.771); community 5090 data shows LM-head precision dominates MTP
+  # verify cost. Revert to modelRef qwen38-dflash-27b if slower.
+  # sha256 79b032f7a118fb34f1445c4d7ae50bc7b304c74161035c3df8bd5526c12899b9f
+  source: hf://esatapedico/Qwen3.8-27B-NVFP4-MTP-GGUF
+  files:
+    - Qwen3.8-27B-NVFP4-MTP-MID-HIGH.gguf
+    - mmproj-BF16.gguf
+  format: gguf
+  quantization: NVFP4
+  mmproj: mmproj-BF16.gguf
+  sourceSecretRef:
+    name: hf-token
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 2
+      layers: -1 # All
+      memory: 16Gi # Per GPU
   resources:
     cpu: "6"
     memory: 16Gi
@@ -69,10 +127,16 @@ spec:
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: InferenceService
 metadata:
-  name: qwen38 # -dflash
+  name: qwen38
 spec:
   # Parameters from https://github.com/5p00kyy/club-5060ti/blob/main/docs/single-5060ti.md
-  modelRef: qwen38-dflash-27b
+  # A/B: esatapedico native NVFP4 MID-HIGH vs cdiamond iMatrix (kept as
+  # qwen38-dflash-27b for a one-line switch-back) - same embedded-MTP
+  # arch, different quant; all other flags identical.
+  # Same-prompt A/B: MID-HIGH +8-14% on short-context decode (68.1 vs
+  # 58.7-61.1 t/s, pos-1 acc 0.78 vs 0.70), tie at 59K ctx (53.7 vs
+  # 55.2-56.9, KV-bandwidth bound); prefill 1339 vs 1265 t/s
+  modelRef: qwen38-nvfp4-midhigh
   runtimeClassName: ${gpu_runtime_class}
   runtime: llamacpp
   # BeeLlama image https://github.com/Anbeeld/beellama.cpp
@@ -88,11 +152,11 @@ spec:
   contextSize: 262144 # -c
   flashAttention: true # -fa
   parallelSlots: 1 # -np
-  # DFlash2 drafter: the operator downloads/caches it like the target model
-  # and mounts it into the serving pod; -md gets the staged in-container path.
+  # MTP head is embedded in the target GGUF: no separate draft Model needed.
+  # (The qwen38-dflash2-draft Model CR is kept for quick A/B switch-back.)
   speculativeDecoding:
-    type: draft-dflash
-    draftModelRef: qwen38-dflash2-draft
+    type: draft-mtp
+    nDraftMax: 3
   cacheTypeCustomK: kvarn5
   cacheTypeCustomV: kvarn5
   batchSize: 2048 # -b
@@ -115,17 +179,17 @@ spec:
   extraArgs:
     # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
     - --alias
-    - qwen38_27B # _dflash
+    - qwen38_27B
     # Log level
     - -lv
     - "4"
-    # --spec-type and -md are emitted by the speculativeDecoding block above
-    # No --spec-draft-n-max: DFlash2 runs at its trained block limit (7)
-    # --spec-dm-controller: profit only adapts DFlash1; DFlash2 always uses
-    # its fixed trained block limit and selector confidence
+    # --spec-type and --spec-draft-n-max are emitted by the
+    # speculativeDecoding block above (draft-mtp, n-max 3)
+    # p-min 0: draft to full depth (n-max 3) every step - 0.75 tested and
+    # slower (see header), matches the operator's own default value
     - --spec-draft-p-min
     - "0"
-    # KVarN for the owned DFlash2 draft cache (independent of the target cache)
+    # KVarN for the owned MTP draft cache (independent of the target cache)
     - --spec-draft-type-k
     - kvarn4
     - --spec-draft-type-v
@@ -141,6 +205,10 @@ spec:
     # 1024-token exact BF16 tail on the quantized target KV cache
     - --kv-tail-tokens
     - auto
+    # Recurrent state checkpoints: default 32 wastes VRAM; 4 is enough
+    # for speculative-decoding rollback on the GDN layers
+    - --ctx-checkpoints
+    - "4"
     - --reasoning
     - "on"
     - --reasoning-effort
@@ -166,7 +234,7 @@ spec:
     - --repeat-penalty
     - "1.0"
     - --fit
-    - "on"
+    - "off" # "on"
     # - --kv-unified
     - --cache-ram
     - "0"
