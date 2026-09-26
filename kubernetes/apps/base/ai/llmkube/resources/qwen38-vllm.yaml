@@ -1,0 +1,242 @@
+# vLLM A/B candidate for the Qwen 3.8 27B agentic service.
+#
+# Recipe source: https://github.com/skrodahl/qwen38-27B-dual-rtx5060 - measured
+# on IDENTICAL hardware (2x RTX 5060 Ti 16 GB, TP2, stock vLLM 0.30.0):
+#   - prose decode 78.3 t/s (MTP k=4) vs 41.9 no-MTP, structured/JSON 124.9 t/s
+#     (acceptance 4.35 tokens/step vs 2.73 on prose)
+#   - full 262144 context fits (278,927-token fp8 KV pool at k=4)
+#   - depth analysis: tok/s = steps/s x acceptance; steps/s falls with context
+#     (KV re-read per step), prose peaks at k=4, structured still rising at k=7
+#   - prefix caching + chunked prefill for repeated agentic system prompts
+#
+# This file is the ENABLED primary Qwen 3.8 service (InferenceService name
+# `qwen38`) - it REPLACES the beellama qwen38 service in
+# resources/kustomization.yaml. The beellama version (qwen38-dflash.yaml)
+# is commented out so the two don't compete for the same 2x 16 Gi GPUs.
+# To revert to beellama: swap the two entries back in resources/kustomization.yaml
+# and update the Model health checks in ks.yaml (qwen38-vllm-nvfp4 ->
+# qwen38-dflash-27b).
+#
+# Wired as a drop-in for the existing clients (litellm + karaseek hit
+# qwen38.ai.svc.cluster.local:8080, model `qwen38_27B`, dummy key), so:
+#   - Service name is `qwen38` (operator names the Service after the
+#     InferenceService), port 8080
+#   - served-model-name is `qwen38_27B` (matches --alias on the beellama svc)
+#   - NO --api-key (beellama is keyless; litellm/karaseek send a dummy key)
+#
+# Checkpoint: gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090 pinned to commit
+# 0cc2795 (revision-pinned hf:// source - the operator stages that exact
+# commit; `main` is the last release WITHOUT the MTP head, which kills
+# speculative decoding and halves the decode ceiling to ~42 t/s).
+#
+# Quality caveat: third-party NVFP4 quant, NO published eval (the recipe
+# author reports 250K needle pass). The A/B must include a quality probe
+# (hard reasoning prompt + a JSON/tool-call generation, diff vs the beellama
+# service's answer) before considering this a primary replacement.
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen38-vllm-nvfp4
+spec:
+  # https://huggingface.co/gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090
+  # ~18.8 GB NVFP4 safetensors (17.91 GB weights + MTP head), pinned to the
+  # last commit that includes the MTP head.
+  # NOTE: revision-pinning is REQUIRED - later commits dropped the head.
+  source: hf://gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090@0cc27958cefbbe231782ec8511de8c4eb5233348
+  # Every file the recipe's download covers: config + quant config + shards +
+  # tokenizer + chat template. vLLM loads the staged directory, so the set
+  # must be complete (format != gguf -> the operator hands vLLM the directory).
+  files:
+    - config.json
+    - generation_config.json
+    - hf_quant_config.json
+    - model.safetensors.index.json
+    - model-00001-of-00003.safetensors
+    - model-00002-of-00003.safetensors
+    - model-00003-of-00003.safetensors
+    - tokenizer.json
+    - tokenizer_config.json
+    - vocab.json
+    - merges.txt
+    - chat_template.jinja
+    - preprocessor_config.json
+    - processor_config.json
+    - video_preprocessor_config.json
+  format: safetensors
+  quantization: NVFP4
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 2
+      layers: -1 # All
+      memory: 16Gi # Per GPU
+  resources:
+    cpu: "6"
+    memory: 16Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen38
+spec:
+  modelRef: qwen38-vllm-nvfp4
+  runtimeClassName: ${gpu_runtime_class}
+  runtime: vllm
+  # Stock image, no patches (the recipe's exact version; operator default is
+  # v0.25.1, which predates the sm_120 kernel fixes this recipe relies on)
+  # renovate container:
+  image: vllm/vllm-openai:v0.30.0
+  replicas: 1
+  endpoint:
+    # Port 8080 to match the beellama service + litellm/karaseek clients
+    # (qwen38.ai.svc.cluster.local:8080)
+    port: 8080
+    type: ClusterIP
+  priority: high
+  evictionProtection: false
+  # --max-num-seqs 2 (the recipe's value: OpenCode main agent + one
+  # background request)
+  parallelSlots: 2
+  vllmConfig:
+    tensorParallelSize: 2
+    # Full native context: the recipe measured 278,927-token KV pool at
+    # gpu-memory-utilization 0.95 + MTP k=4, so 262144 fits with 1.06x
+    # per-request headroom
+    maxModelLen: 262144
+    # Halves KV footprint (18.4 KiB/token/card) - the binding constraint
+    # that unlocks 262K on 2x 16 GB
+    kvCacheDtype: fp8_e4m3
+    # Repeated agentic system prompts: the big agentic win over the beellama
+    # service (which runs --cache-ram 0 and re-prefills every request)
+    enablePrefixCaching: true
+    enableChunkedPrefill: true
+    # 8192 measured: no speed gain and caps context at 200K
+    maxNumBatchedTokens: 4096
+    # Above 0.91 OOMs *if* batched tokens is raised to 8192
+    gpuMemoryUtilization: 0.95
+    # FlashInfer: the recipe measured TRITON_ATTN at -33% (32K ctx) / -64%
+    # (131K ctx) - the fused multi-step draft path is worth ~0.7%,
+    # FlashInfer's attention kernel is worth 2.8x at depth
+    attentionBackend: FLASHINFER
+    # Tokenizer follows the @revision of the Model source automatically
+    hfTokenSecretRef:
+      name: hf-token
+      key: HF_TOKEN
+  env:
+    - name: HF_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: hf-token
+          key: HF_TOKEN
+    # Expandable segments: avoids fragmentation OOM at high utilization
+    - name: PYTORCH_CUDA_ALLOC_CONF
+      value: "expandable_segments:True"
+    # Allow max-model-len 262144 past the model's native 262144 RoPE bound
+    # checks
+    - name: VLLM_ALLOW_LONG_MAX_MODEL_LEN
+      value: "1"
+    # Shrink the lazily-allocated FlashInfer attention workspace (64 MiB):
+    # the default 128 MiB is allocated OUTSIDE the gpu-memory-utilization
+    # budget on first request and OOMs at 0.95 (recipe's measured gotcha)
+    - name: VLLM_FLASHINFER_WORKSPACE_BUFFER_SIZE
+      value: "67108864"
+    # No P2P on GeForce: let NCCL do the all-reduce instead of the custom
+    # all-reduce backend (which dies with 'invalid argument' on this host
+    # class)
+    - name: NCCL_P2P_DISABLE
+      value: "1"
+  extraArgs:
+    # Embedded-head MTP speculative decoding, k=4. NOT expressible via
+    # vllmConfig.speculative (that field is the separate-draft-model form
+    # --speculative-model only): the draft head lives inside the checkpoint,
+    # so vLLM needs the method form.
+    # k=4 = measured peak for prose (78.3 t/s) and mixed prose+JSON (81.6
+    # t/s); structured output would prefer k=7 (138 t/s) at the cost of
+    # prose. Step time = 25.4 ms + 2.37 ms per draft position.
+    - --speculative-config
+    - '{"method": "mtp", "num_speculative_tokens": 4}'
+    # PIECEWISE, not FULL_AND_PIECEWISE: full graphs measured +2.4% steps/s
+    # but NO tok/s gain for 3,197 tokens of pool. Draft steps get no graphs
+    # under PIECEWISE; upstream fused-draft PRs (vllm #55292/#57443) may
+    # change this - re-measure on image bumps.
+    - --compilation-config
+    - '{"cudagraph_mode": "PIECEWISE"}'
+    # FlashInfer autotune OOMs on vLLM > 0.28.0; disabling it also frees the
+    # headroom to run gpu-memory-utilization 0.95
+    - --no-enable-flashinfer-autotune
+    # GeForce P2P: NCCL all-reduce instead of the custom backend
+    - --disable_custom_all_reduce
+    # GDN recurrent (mamba) state at bf16 instead of the fp32 default:
+    # halves mamba pages (+22% KV pool), output bit-identical
+    - --mamba-cache-dtype
+    - bfloat16
+    - --mamba-ssm-cache-dtype
+    - bfloat16
+    # Load weights from the IPC-shared cache between TP workers
+    - --load-format
+    - ipc_cache
+    # Model name must match the beellama --alias (qwen38_27B) so litellm
+    # (model openai/qwen38_27B) and karaseek (INFERENCE_TEXT_MODEL) work
+    # unchanged
+    - --served-model-name
+    - qwen38_27B
+    # Qwen3 reasoning + tool-call parsing (the beellama service's equivalent
+    # is --reasoning on + --reasoning-effort; the A/B prompt should pin
+    # reasoning effort explicitly to keep both runs comparable)
+    - --reasoning-parser
+    - qwen3
+    - --tool-call-parser
+    - qwen3_xml
+    - --enable-auto-tool-choice
+    # Keep the thinking trace across turns (agentic context continuity),
+    # same intent as the beellama service's chat-template-kwargs
+    - --default-chat-template-kwargs
+    - '{"preserve_thinking": true}'
+    # Vision: keep the tower loaded (text deployment), disable video input;
+    # NOTE: do NOT set an "image" cap here - it caps images per
+    # CONVERSATION (clients resend history every turn) and a 3rd image 400s
+    - --limit-mm-per-prompt
+    - '{"video": 0}'
+    - --mm-processor-kwargs
+    - '{"max_pixels": 1000000}'
+    # Per-request observability:
+    # --enable-log-requests logs each request START (id + SamplingParams).
+    # There is NO per-request finish line in this build - completion/timing
+    # is Prometheus-only (request_* histograms, scraped by the
+    # llmkube-inference PodMonitor). The 10s engine stats lines stay the
+    # always-on rolling view.
+    # --per-request-spec-decode-metrics detailed is NOT a log flag either:
+    # it populates the vllm:spec_decode_num_accepted_tokens_per_pos_total
+    # Prometheus counter (per-position MTP acceptance) and attaches
+    # per-request stats to responses. 'detailed' is what unlocks the
+    # per-position series.
+    - --enable-log-requests
+    - --per-request-spec-decode-metrics
+    - detailed
+    # NOTE: no --api-key - the beellama service is keyless and litellm/karaseek
+    # send a dummy key; the Service is ClusterIP + SSO-fronted like beellama.
+  # --trust-remote-code deliberately omitted: vLLM deprecates it and Qwen3.8
+  # (qwen35 arch) is natively supported - vLLM only warns. Add it back as the
+  # first thing to try if the pod fails at boot with a model-architecture
+  # error.
+
+  # Increase /dev/shm size otherwise it is unable to deploy
+  extraVolumeMounts:
+    - name: &shm shm
+      mountPath: /dev/shm
+  extraVolumes:
+    - name: *shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 8Gi
+  resources:
+    gpu: 2
+    cpu: "4"
+    gpuMemory: 30Gi
+    hostMemory: 10Gi
+    memory: 12Gi
+  nodeSelector:
+    nvidia.com/gpu.present: "true"

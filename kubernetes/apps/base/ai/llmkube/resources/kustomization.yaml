@@ -5,5 +5,10 @@ kind: Kustomization
 resources:
   # - qwen36.yaml
   # - qwen38.yaml
-  - qwen38-dflash.yaml
+  # beellama qwen38 service - superseded by the vLLM qwen38 service
+  # (qwen38-vllm.yaml) which now carries the same InferenceService name;
+  # re-enable this and comment out qwen38-vllm.yaml (and swap the Model
+  # health checks in ks.yaml back) to fall back to beellama
+  # - qwen38-dflash.yaml
+  - qwen38-vllm.yaml
   - qwen3-embedding.yaml
