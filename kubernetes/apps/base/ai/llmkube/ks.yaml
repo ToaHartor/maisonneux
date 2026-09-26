@@ -57,6 +57,14 @@ spec:
       name: qwen38
       namespace: ai
     - apiVersion: inference.llmkube.dev/v1alpha1
+      kind: Model
+      name: qwen38-dflash-27b
+      namespace: ai
+    - apiVersion: inference.llmkube.dev/v1alpha1
+      kind: Model
+      name: qwen38-dflash2-draft
+      namespace: ai
+    - apiVersion: inference.llmkube.dev/v1alpha1
       kind: InferenceService
       name: qwen3-embedding
       namespace: ai

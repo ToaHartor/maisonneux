@@ -1,0 +1,184 @@
+# Qwen 3.8 27B (HauhauCS Uncensored) with DFlash2 block-diffusion drafter
+# Replaces the built-in MTP draft from qwen38.yaml (do NOT run both at once -
+# they compete for the same 2x16Gi GPUs):
+#   - --spec-type draft-dflash with Anbeeld/Qwen3.8-27B-DFlash2-GGUF drafter
+#     (published acceptance ~0.91, ~2.5x no-spec baseline on beellama 0.4.4)
+#   - no --spec-draft-n-max: DFlash2 uses its fixed trained block limit
+#     (block 8, 7 draft tokens); an explicit 3 would cap the drafter
+#   - KVarN on the owned DFlash2 draft cache (consumed directly by CUDA
+#     non-causal block attention on SM120)
+#   - --kv-tail-tokens auto: 1024-token exact BF16 tail on the target kvarn5 cache
+#   - draft ubatch left at the default max(128, parallel*(n_max+1)); it is
+#     independent of the target -ub and saves VRAM vs the 512 target ubatch
+# Caveat: the DFlash2 drafter is trained against vanilla Qwen/Qwen3.8-27B,
+# so expect slightly lower acceptance than the published numbers on the
+# HauhauCS fine-tune.
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen38-dflash-27b
+spec:
+  source: hf://HauhauCS/Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-MTP-GGUF
+  files:
+    - Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-Q5_K_P.gguf # Main model
+    - mmproj-Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-BF16.gguf
+  format: gguf
+  quantization: Q5_K_P
+  mmproj: mmproj-Qwen3.8-27B-Uncensored-HauhauCS-Aggressive-BF16.gguf
+  sourceSecretRef:
+    name: hf-token
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 2
+      layers: -1 # All
+      memory: 16Gi # Per GPU
+    # memoryBudget: 14Gi
+  resources:
+    cpu: "6"
+    memory: 16Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen38-dflash2-draft
+spec:
+  # https://huggingface.co/Anbeeld/Qwen3.8-27B-DFlash2-GGUF
+  # Quant ladder is flat (Q2_K 109.1 tok/s vs bf16 108.5), Q3_K_M for a
+  # small safety margin over Q2_K
+  source: hf://Anbeeld/Qwen3.8-27B-DFlash2-GGUF
+  files:
+    - Qwen3.8-27B-DFlash2-Q3_K_M.gguf
+  format: gguf
+  quantization: Q3_K_M
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 2
+      layers: -1 # All
+      memory: 4Gi # Per GPU, draft only
+  resources:
+    cpu: "2"
+    memory: 4Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen38 # -dflash
+spec:
+  # Parameters from https://github.com/5p00kyy/club-5060ti/blob/main/docs/single-5060ti.md
+  modelRef: qwen38-dflash-27b
+  runtimeClassName: ${gpu_runtime_class}
+  runtime: llamacpp
+  # BeeLlama image https://github.com/Anbeeld/beellama.cpp
+  # Stable v0.4.7 tag replaces the old preview-v0.4.7
+  # renovate container:
+  image: ghcr.io/anbeeld/beellama.cpp:server-cuda13-v0.4.7
+  replicas: 1
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  priority: high
+  evictionProtection: false
+  contextSize: 262144 # -c
+  flashAttention: true # -fa
+  parallelSlots: 1 # -np
+  # DFlash2 drafter: the operator downloads/caches it like the target model
+  # and mounts it into the serving pod; -md gets the staged in-container path.
+  speculativeDecoding:
+    type: draft-dflash
+    draftModelRef: qwen38-dflash2-draft
+  cacheTypeCustomK: kvarn5
+  cacheTypeCustomV: kvarn5
+  batchSize: 2048 # -b
+  uBatchSize: 512 # -ub
+  # noKvOffload: true # KV in RAM instead of VRAM if offload
+  reasoningBudget: 8096 # Necessary for models like Qwen
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  env:
+    - name: HF_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: hf-token
+          key: HF_TOKEN
+  podSecurityContext:
+    # runAsNonRoot: true
+    # runAsUser: 101 # curl_user
+    seccompProfile:
+      type: RuntimeDefault
+  extraArgs:
+    # https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+    - --alias
+    - qwen38_27B # _dflash
+    # Log level
+    - -lv
+    - "4"
+    # --spec-type and -md are emitted by the speculativeDecoding block above
+    # No --spec-draft-n-max: DFlash2 runs at its trained block limit (7)
+    # --spec-dm-controller: profit only adapts DFlash1; DFlash2 always uses
+    # its fixed trained block limit and selector confidence
+    - --spec-draft-p-min
+    - "0"
+    # KVarN for the owned DFlash2 draft cache (independent of the target cache)
+    - --spec-draft-type-k
+    - kvarn4
+    - --spec-draft-type-v
+    - kvarn4
+    - --split-mode
+    - tensor
+    - --tensor-split
+    - 1,1
+    - -ngl
+    - all
+    - --spec-draft-ngl
+    - all
+    # 1024-token exact BF16 tail on the quantized target KV cache
+    - --kv-tail-tokens
+    - auto
+    - --reasoning
+    - "on"
+    - --reasoning-effort
+    - "medium"
+    # - --reasoning-preserve
+    - --reasoning-format
+    - "deepseek"
+    - --jinja
+    # - --ctx-checkpoints
+    # - "128"
+    # - --threads
+    # - "6"
+    - --temp
+    - "1.0"
+    - --top-p
+    - "0.95"
+    - --min-p
+    - "0.00"
+    - --top-k
+    - "20"
+    - --presence-penalty
+    - "0.0"
+    - --repeat-penalty
+    - "1.0"
+    - --fit
+    - "on"
+    # - --kv-unified
+    - --cache-ram
+    - "0"
+    - --no-mmproj-offload
+    - --load-mode
+    - "none" # No mmap or mlock
+    - --chat-template-kwargs
+    - '{"preserve_thinking": true}'
+
+  resources:
+    gpu: 2
+    cpu: "4"
+    gpuMemory: 30Gi
+    hostMemory: 10Gi
+    memory: 12Gi
