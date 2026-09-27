@@ -23,9 +23,51 @@
 #   - DFlash2 SGLang variant (incoai/Qwen3.8-27B-DFlash2): 4.92 ms median
 #     TPOT @ 4.29 accept on RTX 5090
 #
-# == CURRENT STAGING: DSpark NVFP4 draft + fp8 KV ==
-# (NVFP4 KV was staged 2026-09-28 and reverted the same day: boot-tested
-# and blocked by upstream #36010 - see the VERDICT below)
+# == SHELVED 2026-09-28: SGLang + DSpark does not fit 2x16GB ==
+# (The NVFP4-KV VERDICT block further down still stands - it is the
+# primary REVISIT TRIGGER below. The flag staging under it is the
+# last attempt's config, kept verbatim so a re-test starts from the
+# known-most-bootable point.)
+#
+# OOM saga (user, 2026-09-27/28, 3 attempts):
+#   1. f=0.90 staged config: OOM at the prefill capture ladder (pool
+#      sizes to FILL the budget, leaving no capture headroom)
+#   2. f=0.98: WRONG DIRECTION - memFractionStatic is the ceiling, so
+#      the pool filled ~15.7 of the 15.48 GiB card; 20 MiB allocation
+#      died with 8 MiB free
+#   3. f=0.88 + --max-total-tokens 98304 + chunked 1024 (the #36010
+#      16GB-trap fix): the engine DOES start - max_total_num_tokens
+#      clamps to 90304, available_gpu_mem=0.65 GB, prefill CUDA graph
+#      AND DSpark draft graph auto-disabled - but every lazily
+#      compiled Triton kernel then device-loads into the remaining
+#      0.46-0.50 GB ("Pre-load it during engine init to avoid CUDA
+#      OOM"). Boots at ~0 GB headroom, the first real request OOMs -
+#      the #36010 16GB-card trap, exact card class. Never served a
+#      successful DSpark request; acceptance was never measured.
+#
+# WHY IT LOSES TO vLLM MTP HERE (user verdict, 2026-09-28, agreed):
+#   - Pool: ~90K vs vLLM's 278,927 measured (1/3). DSpark's separate
+#     draft runner + draft KV pool + verify graphs cost 2-4 GB/rank
+#     that vLLM's in-checkpoint MTP head does not pay. 90K < our
+#     59K x 2 concurrent agentic sessions. The adjustment ladder
+#     (mamba ratio 8, mrr 1, chunked 512) reclaims ~10-20K max -
+#     the pool ceiling is structural, not configurable away.
+#   - To boot at all we gave up prefill graphs, draft graphs, and
+#     serving headroom. With all three off, even a perfect DSpark
+#     accept rate cannot close the gap to a healthy vLLM MTP service
+#     (72 t/s short, 123 t/s structured, 4.1 s warm @59K, 87% prefix
+#     hits).
+#   - DSpark's 3.16x-over-AR figure is H200 single-GPU cookbook data;
+#     it was never measured on this box (both the vLLM and SGLang
+#     attempts failed to boot/serve the drafter).
+#
+# REVISIT TRIGGERS (re-enable when ANY lands):
+#   - #36010 fixed in an SGLang release -> NVFP4 KV (2x pool depth)
+#     unblocks spec decode on our cards; re-test this exact config
+#   - DSpark drafter memory shrinks upstream so the pool reaches
+#     ~150K+ at f=0.88
+#   - Bigger GPUs - this analysis is 16GB-per-rank specific
+#
 #
 # Verified against SGLang v0.5.20 source (not just the cookbook):
 #   - `--kv-cache-dtype nvfp4` ships NVFP4KVCacheMethod:
