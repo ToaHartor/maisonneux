@@ -43,6 +43,24 @@
 # Draft Q4_K_M ~1.05 GB total (~0.52 GB/rank) - the DFlash2 Q3_K_M draft of
 # the same size class booted fine on this box. If OOM: drop to Q3_K_M.
 #
+# TENSOR SPLIT CRASH (2026-09-28, first boot test): the pod booted fine
+# (draft loaded, prefill completed) but aborted on the FIRST spec step with
+#   ggml/src/ggml-backend-meta.cpp:621: GGML_ASSERT(ret.axis !=
+#   GGML_BACKEND_SPLIT_AXIS_UNKNOWN) failed
+# Known upstream bug class: the DFlash/DSpark draft graphs break the
+# tensor-split meta layer on 2-GPU CUDA. Evidence: llama.cpp #27819
+# (DFlash2 + tensor split, reproduced on exactly 2x RTX 5060 Ti 16 GB -
+# "It is working with --split-mode layer"), #27964 (Qwen3.8-Flash-Next
+# target-side tensor abort on 2x5090, open), #26339 (DSpark -sm tensor,
+# closed not_planned). Community fix PR #27858 (DFlash2 tensor assert +
+# VRAM footprint) is OPEN/unmerged; beellama v0.4.7 is still the newest
+# stable. Draft-KV cache type is NOT the cause: f16/q8_0/q4_0/kvarn4/
+# kvarn5 all crash identically. => this file now runs --split-mode layer
+# (the documented workaround); perf cost = per-layer-boundary allreduce on
+# PCIe vs tensor's split GEMMs - acceptable for a fallback-engine A/B.
+# Revisit trigger: #27858 merges + beellama ships it -> flip back to
+# --split-mode tensor + --tensor-split 1,1 and re-test.
+#
 # Revert: re-comment this file, re-uncomment qwen38-vllm.yaml (primary) or
 # qwen38-dflash.yaml (beellama MTP endgame).
 ---
@@ -164,21 +182,24 @@ spec:
     # Log level
     - -lv
     - "4"
-    # Draft KV: KVarN is runtime-qualified for non-MLA DSpark contexts; kvarn4
-    # matches the MTP draft-cache sizing from qwen38-dflash.yaml
-    # Not working with f16, q8_0, q4_0, kvarn4, kvarn5
-    # Maybe an incompatibility with split-mode tensor and speculative approaches like DSpark
+    # Draft KV: KVarN is runtime-qualified for non-MLA DSpark contexts.
+    # kvarn4 = the audited DSpark draft-cache width (matches the MTP
+    # draft-cache sizing from qwen38-dflash.yaml). f16/q8_0/q4_0/kvarn5
+    # were all tried during the tensor-split crash hunt and crash identically
+    # - the cache type is not the cause (see TENSOR SPLIT CRASH header).
     - --spec-draft-type-k
-    - f16
+    - kvarn4
     - --spec-draft-type-v
-    - f16
+    - kvarn4
     # Keep the drafter's five full-attention layers on the GPUs
     - --spec-draft-ngl
     - all
+    # LAYER split, not tensor: the DFlash/DSpark draft graphs abort under
+    # --split-mode tensor on 2-GPU CUDA (llama.cpp #27819 - reproduced on
+    # 2x 5060 Ti; layer mode is the documented workaround). Flip back to
+    # tensor + --tensor-split 1,1 when beellama ships the #27858 fix.
     - --split-mode
-    - tensor
-    - --tensor-split
-    - 1,1
+    - layer
     - -ngl
     - all
     # 1024-token exact BF16 tail on the quantized target KV cache
@@ -208,7 +229,8 @@ spec:
     - --repeat-penalty
     - "1.0"
     - --fit
-    - "off" # fit params is not implemented for SPLIT_MODE_TENSOR
+    - "off" # explicit pool sizing (fit params are not implemented for
+      # SPLIT_MODE_TENSOR anyway; we keep explicit ctx/batch sizing)
     # KV cache fully in VRAM (upstream --cache-ram: 0 disables the host-RAM
     # prompt cache) - vLLM-style hot pool: boot warms from the PVC-cached
     # weights + default --warmup, then the pool grows on demand. Note this
