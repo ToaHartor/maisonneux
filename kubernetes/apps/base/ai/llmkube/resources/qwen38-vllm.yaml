@@ -11,7 +11,7 @@
 #
 # This file is the ENABLED primary Qwen 3.8 service (InferenceService name
 # `qwen38`) - it REPLACES the beellama qwen38 service in
-# resources/kustomization.yaml. The beellama version (qwen38-dflash.yaml)
+# resources/kustomization.yaml. The beellama version (qwen38-bee-mtp.yaml)
 # is commented out so the two don't compete for the same 2x 16 Gi GPUs.
 # To revert to beellama: swap the two entries back in resources/kustomization.yaml
 # and update the Model health checks in ks.yaml (qwen38-vllm-nvfp4 ->

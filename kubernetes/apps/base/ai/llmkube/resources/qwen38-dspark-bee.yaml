@@ -1,10 +1,10 @@
 # Qwen 3.8 27B NVFP4 (esatapedico MID-HIGH) + DSPARK block-diffusion drafter
 # on beellama v0.4.7. CANDIDATE - commented out in kustomization.yaml.
 #
-# Mutually exclusive with qwen38-vllm.yaml (active primary), qwen38-dflash.yaml,
+# Mutually exclusive with qwen38-vllm.yaml (active primary), qwen38-bee-mtp.yaml,
 # qwen38-dspark.yaml (vLLM DSpark, boot-failed) and qwen38-sglang.yaml (shelved):
 # all define InferenceService qwen38; enable at most one. The target Model CR
-# name qwen38-nvfp4-midhigh intentionally matches qwen38-dflash.yaml's, so the
+# name qwen38-nvfp4-midhigh intentionally matches qwen38-bee-mtp.yaml's, so the
 # two files must never be active together (kustomize duplicate-resource error).
 #
 # Why this exists (2026-09-28): vLLM reached its endgame (b12x GEMM + MTP k=4 +
@@ -23,7 +23,7 @@
 #     Anbeeld/Qwen3.8-27B-DSpark-GGUF (Q2_K..Q8_0 + bf16 ladder)
 #   - the drafter (RadixArk/Qwen3.8-27B-DSpark) was co-trained and evaluated
 #     against NVFP4 targets (RadixArk/Qwen3.8-27B-NVFP4) - the MID-HIGH
-#     NVFP4 target is the intended pairing. (Baseline is qwen38-dflash.yaml,
+#     NVFP4 target is the intended pairing. (Baseline is qwen38-bee-mtp.yaml,
 #     the tuned beellama winner - NOT the legacy qwen38.yaml uncensored setup.)
 #
 # Drafter: 1.86B, five full-attention layers, VanillaMarkov head rank 256,
@@ -36,7 +36,7 @@
 #
 # Numbers to beat (same box, zero concurrency):
 #   - beellama MID-HIGH + MTP k=3: 68.1 t/s short, 53.7 t/s @59K (KV-bound),
-#     prefill 1339 t/s, pos-1 acc 0.78 (qwen38-dflash.yaml A/B)
+#     prefill 1339 t/s, pos-1 acc 0.78 (qwen38-bee-mtp.yaml A/B)
 #   - vLLM primary: ~72 t/s short, 59K cold 21s / warm 4.1s, structured 108 t/s
 # Risks: 3.16x is GB300/H200 data; per-draft-step cost on 2x5060Ti TP2 is
 # unknown; @59K we are KV-bandwidth-bound, so gains concentrate in decode.
@@ -81,7 +81,7 @@
 # --split-mode tensor + --tensor-split 1,1 and re-test (tensor decode is ~2x
 # faster and might turn the structured +11% over MTP into a real win).
 # Revert: re-comment this file, re-uncomment qwen38-vllm.yaml (primary) or
-# qwen38-dflash.yaml (beellama MTP endgame).
+# qwen38-bee-mtp.yaml (beellama MTP endgame).
 ---
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: Model
@@ -151,7 +151,7 @@ kind: InferenceService
 metadata:
   name: qwen38
 spec:
-  # Fork of qwen38-dflash.yaml (the tuned beellama MID-HIGH winner) with the
+  # Fork of qwen38-bee-mtp.yaml (the tuned beellama MID-HIGH winner) with the
   # speculation mechanism swapped: MTP k=3 -> DSpark block-diffusion drafter.
   # Everything else (target, KV, batch, split, ctx, sampling) is identical so
   # the A/B isolates the drafter.
@@ -203,7 +203,7 @@ spec:
     - "4"
     # Draft KV: KVarN is runtime-qualified for non-MLA DSpark contexts.
     # kvarn4 = the audited DSpark draft-cache width (matches the MTP
-    # draft-cache sizing from qwen38-dflash.yaml). f16/q8_0/q4_0/kvarn5
+    # draft-cache sizing from qwen38-bee-mtp.yaml). f16/q8_0/q4_0/kvarn5
     # were all tried during the tensor-split crash hunt and crash identically
     # - the cache type is not the cause (see TENSOR SPLIT CRASH header).
     - --spec-draft-type-k

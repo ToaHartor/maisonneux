@@ -7,10 +7,10 @@ resources:
   # - qwen38.yaml
   # beellama qwen38 service - superseded by the vLLM qwen38 service
   # (qwen38-vllm.yaml) which now carries the same InferenceService name;
-  # re-enable this and comment out qwen38-vllm.yaml (and swap the Model
-  # health checks in ks.yaml back) to fall back to beellama
-  # - qwen38-dflash.yaml
-  - qwen38-vllm.yaml # A/B test 2026-09-28 (attempt 2, layer split): DSpark-beellama active
+  # re-enable this and comment out qwen38-vllm.yaml to fall back to beellama
+  # (ks.yaml healthCheckExprs are generic across Model kinds - no swap)
+  # - qwen38-vllm.yaml # PRIMARY (b12x NVFP4 GEMM enabled 2026-09-28; revert to this after each beellama test)
+  - qwen38-bee-mtp.yaml # FINAL beellama test 2026-09-28: MTP k=3 + NVFP4 MID-HIGH (tensor split) - bench vs vLLM b12x then flip back
   # SGLang A/B candidate (same InferenceService name `qwen38` + same 2 GPUs,
   # so it is MUTUALLY EXCLUSIVE with qwen38-vllm.yaml). To test it: comment
   # out qwen38-vllm.yaml above, uncomment this line, and swap the Model
@@ -26,9 +26,9 @@ resources:
   # DSpark-on-beellama candidate (2026-09-28): beellama v0.4.7 implements the
   # DSpark draft family natively (typed speculativeDecoding.type: draft-dspark,
   # PVC-cached draft Model, Anbeeld's own Q4_K_M GGUF of the RadixArk drafter)
-  # on the same MID-HIGH NVFP4 target as qwen38-dflash.yaml. Same exclusivity
+  # on the same MID-HIGH NVFP4 target as qwen38-bee-mtp.yaml. Same exclusivity
   # as above (InferenceService qwen38); additionally must NOT be active together
-  # with qwen38-dflash.yaml (both define Model qwen38-nvfp4-midhigh). To test:
+  # with qwen38-bee-mtp.yaml (both define Model qwen38-nvfp4-midhigh). To test:
   # comment out qwen38-vllm.yaml, uncomment this line; revert = flip back.
   # - qwen38-dspark-bee.yaml
   - qwen3-embedding.yaml

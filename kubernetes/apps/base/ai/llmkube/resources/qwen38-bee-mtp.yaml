@@ -1,4 +1,8 @@
 # Qwen 3.8 27B NVFP4 (vanilla base) with the EMBEDDED MTP head as drafter
+# (renamed from qwen38-dflash.yaml 2026-09-28: the DFlash2 draft approach
+# was abandoned for embedded MTP, so the qwen38-dflash2-draft Model CR is
+# gone; the cdiamond iMatrix A/B target below keeps its legacy Model name
+# qwen38-dflash-27b so the PVC cache + Model CR stay addressable)
 # Replaces qwen38.yaml (HauhauCS uncensored). Do NOT run both at once -
 # they compete for the same 2x16Gi GPUs:
 #   - NVFP4 vanilla target (cdiamond iMatrix, 17.1 GB, agentic iMatrix
@@ -100,31 +104,6 @@ spec:
     memory: 16Gi
 ---
 apiVersion: inference.llmkube.dev/v1alpha1
-kind: Model
-metadata:
-  name: qwen38-dflash2-draft
-spec:
-  # https://huggingface.co/Anbeeld/Qwen3.8-27B-DFlash2-GGUF
-  # Quant ladder is flat (Q2_K 109.1 tok/s vs bf16 108.5), Q3_K_M for a
-  # small safety margin over Q2_K
-  source: hf://Anbeeld/Qwen3.8-27B-DFlash2-GGUF
-  files:
-    - Qwen3.8-27B-DFlash2-Q3_K_M.gguf
-  format: gguf
-  quantization: Q3_K_M
-  hardware:
-    accelerator: cuda
-    gpu:
-      enabled: true
-      vendor: nvidia
-      count: 2
-      layers: -1 # All
-      memory: 4Gi # Per GPU, draft only
-  resources:
-    cpu: "2"
-    memory: 4Gi
----
-apiVersion: inference.llmkube.dev/v1alpha1
 kind: InferenceService
 metadata:
   name: qwen38
@@ -153,7 +132,6 @@ spec:
   flashAttention: true # -fa
   parallelSlots: 1 # -np
   # MTP head is embedded in the target GGUF: no separate draft Model needed.
-  # (The qwen38-dflash2-draft Model CR is kept for quick A/B switch-back.)
   speculativeDecoding:
     type: draft-mtp
     nDraftMax: 3

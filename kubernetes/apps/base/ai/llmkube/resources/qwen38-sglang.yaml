@@ -125,7 +125,7 @@
 # does not cover - watch the boot log for TP2-specific failures.
 #
 # This file is an ALTERNATE for qwen38-vllm.yaml - only ONE of
-# {qwen38-vllm.yaml, qwen38-sglang.yaml, qwen38-dflash.yaml} may be
+# {qwen38-vllm.yaml, qwen38-sglang.yaml, qwen38-bee-mtp.yaml} may be
 # enabled in resources/kustomization.yaml at a time: they all declare
 # InferenceService `qwen38` and need the same 2 GPUs. The Model CR in
 # this file is byte-identical to the one in qwen38-vllm.yaml (kustomize
