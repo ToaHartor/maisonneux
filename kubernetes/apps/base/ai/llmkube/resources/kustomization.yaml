@@ -10,7 +10,7 @@ resources:
   # re-enable this and comment out qwen38-vllm.yaml (and swap the Model
   # health checks in ks.yaml back) to fall back to beellama
   # - qwen38-dflash.yaml
-  # - qwen38-vllm.yaml
+  - qwen38-vllm.yaml
   # SGLang A/B candidate (same InferenceService name `qwen38` + same 2 GPUs,
   # so it is MUTUALLY EXCLUSIVE with qwen38-vllm.yaml). To test it: comment
   # out qwen38-vllm.yaml above, uncomment this line, and swap the Model
@@ -22,5 +22,5 @@ resources:
   # FINAL headless NVFP4 build (MTP head out; ~260-265K token pool at 0.95,
   # the 262K ceiling should just hold). Same exclusivity: comment out
   # qwen38-vllm.yaml, uncomment this line. Revert = flip the toggle back.
-  - qwen38-dspark.yaml
+  # - qwen38-dspark.yaml
   - qwen3-embedding.yaml
