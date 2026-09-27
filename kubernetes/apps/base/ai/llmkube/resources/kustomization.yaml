@@ -10,7 +10,7 @@ resources:
   # re-enable this and comment out qwen38-vllm.yaml (and swap the Model
   # health checks in ks.yaml back) to fall back to beellama
   # - qwen38-dflash.yaml
-  - qwen38-vllm.yaml
+  # - qwen38-vllm.yaml # A/B test 2026-09-28: DSpark-beellama active instead
   # SGLang A/B candidate (same InferenceService name `qwen38` + same 2 GPUs,
   # so it is MUTUALLY EXCLUSIVE with qwen38-vllm.yaml). To test it: comment
   # out qwen38-vllm.yaml above, uncomment this line, and swap the Model
@@ -23,4 +23,12 @@ resources:
   # the 262K ceiling should just hold). Same exclusivity: comment out
   # qwen38-vllm.yaml, uncomment this line. Revert = flip the toggle back.
   # - qwen38-dspark.yaml
+  # DSpark-on-beellama candidate (2026-09-28): beellama v0.4.7 implements the
+  # DSpark draft family natively (typed speculativeDecoding.type: draft-dspark,
+  # PVC-cached draft Model, Anbeeld's own Q4_K_M GGUF of the RadixArk drafter)
+  # on the same MID-HIGH NVFP4 target as qwen38-dflash.yaml. Same exclusivity
+  # as above (InferenceService qwen38); additionally must NOT be active together
+  # with qwen38-dflash.yaml (both define Model qwen38-nvfp4-midhigh). To test:
+  # comment out qwen38-vllm.yaml, uncomment this line; revert = flip back.
+  - qwen38-dspark-bee.yaml
   - qwen3-embedding.yaml
