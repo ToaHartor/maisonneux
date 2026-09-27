@@ -70,10 +70,13 @@
 #      NVFP4 draft with TP2 - watch the pool line and the acceptance
 #      metrics (a silent accept-rate 0.00 like #36010's side-observation
 #      would be the tell-tale of a draft that loads but never wins).
-#   3. Pool pins (mamba-full-memory-ratio 11.93 bf16-state, mem-fraction
-#      0.88) are the cookbook's 32GB single-GPU DSpark measurements; the
-#      NVFP4 draft frees ~1.2 GB/rank vs the BF16 one, so expect
-#      headroom - bump memFractionStatic if the pool line clamps < 262K.
+#   3. Pool/OOM: first DSpark boot OOM'd at the capture ladder (0.98
+#      made it worse - that's the ceiling, not the floor). Now pinned at
+#      the cookbook's 0.88 + --max-total-tokens 98304 (the #36010 16GB
+#      trap fix for our card class); escalation ladder in the
+#      memFractionStatic comment. A full 262K pool does not fit under
+#      TP2 with the draft - expect a clamped pool, radix eviction covers
+#      our 59K workload.
 #
 # KNOWN UNKNOWN: the cookbook's matrix is single-GPU only (H200 / RTX PRO
 # 6000 / 5090 / DGX Spark). Our 2x 16 GB needs TP2, which the cookbook
@@ -169,15 +172,30 @@ spec:
     tensorParallelSize: 2
     # Full native context
     contextLength: 262144
-    # Cookbook's 32GB DSpark pin was 0.88 (bf16 state, BF16 3.7 GB draft,
-    # 5090 single-GPU). Our draft is 1.41 GB NVFP4 -> ~1.2 GB/rank free vs
-    # that pin, so start one notch up and let the boot pool line
-    # arbitrate: raise toward 0.95 if the pool clamps below 262K tokens,
-    # drop to 0.85 on OOM at graph capture.
-    memFractionStatic: 0.98
+    # POOL/OOM POSTMORTEM 2026-09-28: first DSpark boot OOM'd at the
+    # capture ladder; bumping to 0.98 made it WORSE - memFractionStatic
+    # is the engine's budget CEILING, SGLang sizes the KV pool to fill
+    # it, so 0.98 reserved ~15.7 of the 15.48 GiB card and left nothing
+    # for graph capture + GDN state + NCCL (the 20 MiB allocation died
+    # with 8 MiB free). This is the documented 16GB-card trap from
+    # #36010 (our exact card class): the prefill capture ladder needs
+    # headroom, so the pool MUST be capped with --max-total-tokens (in
+    # extraArgs below) and the fraction kept at the cookbook DSpark pin.
+    # Cookbook's 32GB DSpark pin was 0.88 (bf16 state, BF16 3.7 GB
+    # draft, 5090 single-GPU); our 1.41 GB NVFP4 draft frees ~1.2
+    # GB/rank vs that pin, so 0.88 is the safe start. Escalation
+    # ladder if the pool undershoots: 0.90 -> bump the max-total-tokens
+    # cap stepwise (98304 -> 131072 -> 196608); if capture still OOMs:
+    # drop --mamba-full-memory-ratio 11.93 -> 8 (smaller state pool,
+    # we only run 2 requests anyway) or last resort
+    # --disable-prefill-cuda-graph (sacrifices graph speed on prefill).
+    # NOTE: a full 262K fp8 pool (~4.4 GB/rank) does NOT fit under TP2
+    # with the draft - the pool clamps below contextLength; radix
+    # eviction handles the overflow exactly like vLLM's shared pool did.
+    memFractionStatic: 0.88
     # 8192 chunks stall GDN decode steps ~600 ms each (cookbook); 2048
     # keeps inter-token latency smooth under mixed agentic load
-    chunkedPrefillSize: 2048
+    chunkedPrefillSize: 1024 # 2048
     # KV cache: back to FP8 after the NVFP4 attempt (header VERDICT +
     # #36010). fp8 = ~16.6 KiB/token/rank - the binding constraint that
     # 262K runs on 2x 16 GB. The NVFP4 pin is kept commented for the
@@ -280,10 +298,19 @@ spec:
     # extra_buffer S=5, D=8): r = (S + D) x token_equiv / L. The NVFP4
     # draft frees ~1.2 GB/rank vs the BF16 draft the pin was measured on
     # - if the pool line shows headroom, the ratio can come down later.
-    - --mamba-full-memory-ratio
-    - "11.93"
-    - --mamba-radix-cache-strategy
-    - extra_buffer
+    # - --mamba-full-memory-ratio
+    # - "11.93"
+    # - --mamba-radix-cache-strategy
+    # - extra_buffer
+    # Cap the KV pool (16GB-card trap, #36010): the prefill CUDA-graph
+    # capture ladder walks 50 sizes and OOMs at ~0 GB headroom unless the
+    # pool is pinned. 98304 = 96K tokens ~ 1.6 GB/rank fp8: comfortably
+    # covers our 59K agentic context, leaves capture headroom. contextLength
+    # stays 262144 as the context CEILING - overflow is handled by radix
+    # eviction, exactly like vLLM's clamped pool behaved. Raise stepwise
+    # (131072 / 196608) only after a clean boot shows pool headroom.
+    - --max-total-tokens
+    - "98304"
     # Model name must match the vLLM/beellama alias so litellm
     # (model openai/qwen38_27B) and karaseek work unchanged
     - --served-model-name
@@ -314,6 +341,25 @@ spec:
     #   (keep the prefill/decode split: EAGLE's in-checkpoint draft shares
     #    the target's pools; only add --speculative-draft-attention-backend
     #    flashinfer if the draft's default backend resolution fails)
+    #
+    # ---- ADJUSTMENT LADDER (only if the staged boot OOMs again) ----
+    # Cheapest first; each reclaims VRAM for the pool / capture ladder:
+    #   1. ratio 8 instead of 11.93 (we run 2 requests - the 11.93 pin
+    #      was measured for a different concurrency regime):
+    - --mamba-full-memory-ratio
+    - "8"
+    #   2. S=4 state slots instead of S=5 (cookbook: "no accuracy cost"):
+    - --mamba-radix-cache-strategy
+    - extra_buffer_lazy
+    #   3. smaller prefill activations (cookbook's 32GB draft-cell pin):
+    - --chunked-prefill-size
+    - "1024" # + set sglangConfig.chunkedPrefillSize: 1024
+    #   4. last resort - capture headroom at the cost of graph speed on
+    #      prefill:
+    - --disable-prefill-cuda-graph
+    # Untyped levers that live in sglangConfig instead: memFractionStatic
+    # (keep 0.88; it is the CEILING, not a floor) and maxRunningRequests
+    # (2 -> 1 shrinks the state pool: pool = concurrency x S slots).
     #
     # ---- FALLBACK B: DSpark with the BF16 RadixArk draft ----
     # If the NVFP4 drafter fails to load in SGLang, the 3.7 GB BF16 draft
