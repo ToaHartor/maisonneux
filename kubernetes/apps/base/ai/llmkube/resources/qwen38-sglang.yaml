@@ -1,0 +1,260 @@
+# SGLang A/B candidate for the Qwen 3.8 27B agentic service.
+#
+# Recipe sources:
+#   - Official LMSYS cookbook: https://lmsysorg.mintlify.app/cookbook/autoregressive/Qwen/Qwen3.8-27B
+#     (all 202 config cells validated on v0.5.19: 5 checkpoints x spec
+#     options x tiers x GDN state dtypes, full 1319-q GSM8K per cell,
+#     93.18-95.15% - including SM120 re-measured on v0.5.19)
+#   - DSpark drafter card: https://huggingface.co/RadixArk/Qwen3.8-27B-DSpark
+#     (1.86B BF16 draft, gamma=7, verify 8; H200 c=1: AR 94 -> MTP 180
+#     (1.91x) -> DSpark v2 297 t/s (3.16x); acceptance-length RULER-8K
+#     6.30 = FLAT across context, the profile MTP does NOT have)
+#
+# What SGLang adds over our running vLLM service (the comparison targets):
+#   - DSpark parallel block drafting: no per-position cost (vLLM MTP k=4
+#     pays 2.37 ms/position); 3.16x over AR on H200, still leading at c=32
+#   - DFlash2 SGLang variant (incoai/Qwen3.8-27B-DFlash2): 4.92 ms median
+#     TPOT @ 4.29 accept on RTX 5090 - possibly a different drafter than
+#     the Anbeeld one that collapsed at 16K on llama.cpp (SWA window)
+#   - RadixAttention prefix caching (vs vLLM block cache) +
+#     structured-output-aware scheduling (xgrammar)
+#
+# KNOWN UNKNOWN: the cookbook's matrix is single-GPU only (H200 / RTX PRO
+# 6000 / 5090 / DGX Spark). Our 2x 16 GB needs TP2, which the cookbook
+# does not cover - watch the boot log for TP2-specific failures.
+#
+# Memory budget (2x 16 GB, TP2, fp8 KV = 32.8 KiB/token, mamba bf16):
+#   MTP stage: 18.8 weights + 8.6 KV(262K) + ~1 GDN + ~1 graphs = ~19.5
+#   of ~29.8 GiB budget -> fits with headroom
+#   DSpark stage: + 3.7 draft -> ~23 GB -> fits, tighter; pool-sizing
+#   pins (mamba-full-memory-ratio, max-running-requests) may need tuning
+#
+# This file is an ALTERNATE for qwen38-vllm.yaml - only ONE of
+# {qwen38-vllm.yaml, qwen38-sglang.yaml, qwen38-dflash.yaml} may be
+# enabled in resources/kustomization.yaml at a time: they all declare
+# InferenceService `qwen38` and need the same 2 GPUs. The Model CR in
+# this file is byte-identical to the one in qwen38-vllm.yaml (kustomize
+# dedupes identical resources when both files are enabled; it is present
+# here so the sglang file stands alone when the vllm file is off).
+#
+# Wired as a drop-in like the vLLM service: Service `qwen38` port 8080,
+# served-model-name `qwen38_27B`, NO --api-key (keyless, like beellama;
+# litellm/karaseek send a dummy key).
+#
+# Checkpoint: same gittensor NVFP4 Model CR as the vLLM service
+# (qwen38-vllm-nvfp4, revision-pinned for the MTP head). SGLang auto-
+# detects the modelopt FP4 quantization from the staged checkpoint
+# config; no --quantization flag needed (the typed field is left unset
+# on purpose).
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen38-vllm-nvfp4
+spec:
+  # https://huggingface.co/gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090
+  # ~18.8 GB NVFP4 safetensors (17.91 GB weights + MTP head), pinned to the
+  # last commit that includes the MTP head.
+  # NOTE: revision-pinning is REQUIRED - later commits dropped the head.
+  source: hf://gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090@0cc27958cefbbe231782ec8511de8c4eb5233348
+  # Every file the recipe's download covers: config + quant config + shards +
+  # tokenizer + chat template. vLLM loads the staged directory, so the set
+  # must be complete (format != gguf -> the operator hands vLLM the directory).
+  files:
+    - config.json
+    - generation_config.json
+    - hf_quant_config.json
+    - model.safetensors.index.json
+    - model-00001-of-00003.safetensors
+    - model-00002-of-00003.safetensors
+    - model-00003-of-00003.safetensors
+    - tokenizer.json
+    - tokenizer_config.json
+    - vocab.json
+    - merges.txt
+    - chat_template.jinja
+    - preprocessor_config.json
+    - processor_config.json
+    - video_preprocessor_config.json
+  format: safetensors
+  quantization: NVFP4
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 2
+      layers: -1 # All
+      memory: 16Gi # Per GPU
+  resources:
+    cpu: "6"
+    memory: 16Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen38
+spec:
+  modelRef: qwen38-vllm-nvfp4
+  runtimeClassName: ${gpu_runtime_class}
+  runtime: sglang
+  # v0.5.19-cu129 = the version the Qwen3.8 cookbook validated all 202 cells
+  # on (operator default is v0.5.15.post1-cu129, which predates Qwen3.8
+  # support). sm_120 needs cu129+ kernels.
+  # renovate container:
+  image: lmsysorg/sglang:v0.5.20-cu130
+  replicas: 1
+  endpoint:
+    # Port 8080 to match the vllm/beellama services + litellm/karaseek
+    # clients (qwen38.ai.svc.cluster.local:8080)
+    port: 8080
+    type: ClusterIP
+  priority: high
+  evictionProtection: false
+  # OpenCode main agent + one background request
+  parallelSlots: 2
+  sglangConfig:
+    # Auto-derived from gpuCount=2 anyway; explicit to stay readable
+    tensorParallelSize: 2
+    # Full native context
+    contextLength: 262144
+    # RTX 5090 cookbook pin for EAGLE + bfloat16 state was 0.93. Our cards
+    # have the same 32 GB aggregate; raise toward 0.95 if the KV pool
+    # undershoots, lower on OOM at graph capture.
+    memFractionStatic: 0.93
+    # 8192 chunks stall GDN decode steps ~600 ms each (cookbook); 2048
+    # keeps inter-token latency smooth under mixed agentic load
+    chunkedPrefillSize: 2048
+    # Halves the KV footprint (32.8 KiB/token) - the binding constraint
+    # that unlocks 262K on 2x 16 GB
+    kvCacheDtype: fp8_e4m3
+    # SM120/SM121 cookbook guidance: flashinfer (trtllm_mha is SM100-only).
+    # GOTCHA: MTP + FlashInfer needs a FlashInfer build whose prefill plan
+    # accepts uniform_q_len (> 0.6.15.post1); if the image's FlashInfer is
+    # older and MTP dies at boot, flip this to triton and re-test.
+    attentionBackend: flashinfer
+    # RadixAttention prefix caching - the agentic win (repeated system
+    # prompts + growing agent history)
+    # enablePrefixCaching: true # --enable-prefix-caching does not exist ?
+    # qwen3 reasoning parser (in the CRD enum). The tool-call parser is
+    # qwen3_coder (documented for this checkpoint) - NOT in the CRD enum
+    # (llama3/qwen3/qwen25/hermes/functionary/mistral), so it goes via
+    # extraArgs below where the last occurrence of a flag wins.
+    reasoningParser: qwen3
+    # The DSpark card's serve command carries it; keep it
+    trustRemoteCode: true
+    # Pin the GDN state pool to our concurrency target (the cookbook's
+    # mamba-ratio calculator: pool = concurrency x S slots, S=5 for
+    # extra_buffer radix strategy). Without this the engine auto-sizes
+    # the state pool for its default (much larger) concurrency and the
+    # KV pool shrinks below what 262K needs.
+    maxRunningRequests: 2
+    # NOTE: speculative is deliberately NOT set in the typed config:
+    # llmkube's typed form requires draftModelPath (separate-draft
+    # model) and silently skips when missing - it cannot express the
+    # in-checkpoint MTP head. MTP goes via extraArgs below (same
+    # pattern as the vLLM service).
+  env:
+    - name: HF_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: hf-token
+          key: HF_TOKEN
+    # Expandable segments: avoids fragmentation OOM at high utilization
+    # (cookbook's DSpark serve command carries it)
+    - name: PYTORCH_CUDA_ALLOC_CONF
+      value: "expandable_segments:True"
+    # No P2P on GeForce: NCCL all-reduce instead of the custom backend
+    # (same gotcha as the vLLM service)
+    - name: NCCL_P2P_DISABLE
+      value: "1"
+  extraArgs:
+    # ---- Stage 1: in-checkpoint MTP via EAGLE (cookbook's MTP row) ----
+    # Uses the MTP head packed in the gittensor checkpoint (that is why
+    # the Model source is revision-pinned). 3 steps / topk 1 / 4 draft
+    # tokens = the cookbook's recommended operating point.
+    # If MTP acceptance shows ~0 at boot, set env SGLANG_ENABLE_SPEC_V2=1
+    # (older SGLang silently converts NEXTN/EAGLE to the legacy path
+    # without it).
+    - --speculative-algorithm
+    - EAGLE
+    - --speculative-num-steps
+    - "3"
+    - --speculative-eagle-topk
+    - "1"
+    - --speculative-num-draft-tokens
+    - "4"
+    # GDN state pool at bf16 instead of the fp32 default: halves the
+    # 153.9 MB/slot state pool to 78.4 MB, the difference goes to KV
+    # (same reasoning as the vLLM service's mamba flags; cookbook:
+    # "bfloat16 remains the faster choice regardless")
+    - --mamba-ssm-dtype
+    - bfloat16
+    # Model name must match the vLLM/beellama alias so litellm
+    # (model openai/qwen38_27B) and karaseek work unchanged
+    - --served-model-name
+    - qwen38_27B
+    # Tool-call parser: qwen3_coder (the cookbook's parser for this
+    # checkpoint - its chat template nests <function>/<parameter> blocks
+    # inside tool_call, which qwen3_coder decodes). The typed field can't
+    # take it (not in the CRD enum); extraArgs last-occurrence wins over
+    # any typed emission.
+    - --tool-call-parser
+    - qwen3_coder
+    # NOTE: no --api-key - the service is keyless and litellm/karaseek
+    # send a dummy key; the Service is ClusterIP + SSO-fronted.
+    #
+    # ---- Stage 2: DSpark (the 3x bet) - swap the EAGLE block above for ----
+    # the following, add env SGLANG_RAGGED_VERIFY_MODE=static, drop
+    # --mamba-ssm-dtype to float32? NO - keep bf16 but the DSpark row's
+    # measured mamba-full-memory-ratio was 11.93 (bf16 state). The draft
+    # model is a public HF repo SGLang downloads at boot (no HF gate;
+    # the 306k-download card). GOTCHA: keep YaRN=0 / context 262144
+    # (a YaRN override leaks into the DSpark draft config and crashes
+    # at boot).
+    #
+    #   - --speculative-algorithm
+    #   - DSPARK
+    #   - --speculative-draft-model-path
+    #   - RadixArk/Qwen3.8-27B-DSpark
+    #   - --speculative-draft-model-quantization
+    #   - unquant
+    #   - --speculative-dspark-block-size
+    #   - "7"
+    #   - --speculative-num-steps
+    #   - "1"
+    #   - --mamba-full-memory-ratio
+    #   - "11.93"
+    #   - --mamba-radix-cache-strategy
+    #   - extra_buffer
+    #
+    # ---- Stage 3: DFlash2 SGLang variant (incoai, NOT the Anbeeld one) ----
+    # The llama.cpp DFlash2 collapse at 16K was a 2048-token SWA window;
+    # this is a different drafter (block diffusion, 8-token blocks)
+    # measured at 4.92 ms median TPOT / 4.29 accept on RTX 5090 -
+    # re-test long context to see if the window problem exists here.
+    #
+    #   - --speculative-algorithm
+    #   - DFLASH
+    #   - --speculative-draft-model-path
+    #   - incoai/Qwen3.8-27B-DFlash2
+    #   - --speculative-num-draft-tokens
+    #   - "8"
+  # Increase /dev/shm size otherwise it is unable to deploy (TP2 NCCL IPC,
+  # same requirement as the vLLM service)
+  extraVolumeMounts:
+    - name: &shm shm
+      mountPath: /dev/shm
+  extraVolumes:
+    - name: *shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 8Gi
+  resources:
+    gpu: 2
+    cpu: "4"
+    gpuMemory: 30Gi
+    hostMemory: 14Gi
+    memory: 14Gi
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
