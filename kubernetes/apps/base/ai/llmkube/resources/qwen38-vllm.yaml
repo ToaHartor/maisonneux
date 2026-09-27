@@ -236,7 +236,7 @@ spec:
     gpu: 2
     cpu: "4"
     gpuMemory: 30Gi
-    hostMemory: 10Gi
+    hostMemory: 12Gi
     memory: 12Gi
   nodeSelector:
     nvidia.com/gpu.present: "true"
