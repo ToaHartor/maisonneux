@@ -109,6 +109,16 @@ spec:
     # Halves KV footprint (18.4 KiB/token/card) - the binding constraint
     # that unlocks 262K on 2x 16 GB
     kvCacheDtype: fp8_e4m3
+    # MARK 2026-09-27: NVFP4 KV is one release away, WAITING ON UPSTREAM.
+    # SM120 support (FlashInfer FA2 paged NVFP4 reader + linear V scales,
+    # HND layout) exists only in open vLLM PRs #46329/#56550 - no merged
+    # release and no off-the-shelf image yet (checked; the co-l gist
+    # builds its patched image locally). When it lands in a stock image:
+    # bump image, set kvCacheDtype: nvfp4, add env
+    # VLLM_KV_CACHE_LAYOUT=HND, keep PIECEWISE. ~2x pool (~500K) at a
+    # decode-speed cost (dual-5060Ti datapoint: max tg 82 -> 65). Then
+    # re-investigate SGLang. Detail: docs/notes/llm-journey.md (Watch
+    # list, NVFP4 KV entry).
     # Repeated agentic system prompts: the big agentic win over the beellama
     # service (which runs --cache-ram 0 and re-prefills every request)
     enablePrefixCaching: true

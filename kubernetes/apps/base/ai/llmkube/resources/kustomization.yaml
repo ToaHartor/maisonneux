@@ -10,14 +10,14 @@ resources:
   # re-enable this and comment out qwen38-vllm.yaml (and swap the Model
   # health checks in ks.yaml back) to fall back to beellama
   # - qwen38-dflash.yaml
-  - qwen38-vllm.yaml
+  # - qwen38-vllm.yaml
   # SGLang A/B candidate (same InferenceService name `qwen38` + same 2 GPUs,
   # so it is MUTUALLY EXCLUSIVE with qwen38-vllm.yaml). To test it: comment
   # out qwen38-vllm.yaml above, uncomment this line, and swap the Model
   # health checks in ks.yaml to qwen38-vllm-nvfp4 (already the current value).
   # Stage 1 = in-checkpoint MTP/EAGLE (parity check vs the vLLM service's
   # 72/123/4.1s numbers); Stage 2 = DSpark (the 3x bet) via extraArgs.
-  # - qwen38-sglang.yaml
+  - qwen38-sglang.yaml
   # DSpark A/B candidate: vLLM 0.30.0 + gittensor DSpark v2 drafter on the
   # FINAL headless NVFP4 build (MTP head out; ~260-265K token pool at 0.95,
   # the 262K ceiling should just hold). Same exclusivity: comment out
