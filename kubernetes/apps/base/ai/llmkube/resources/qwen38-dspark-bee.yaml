@@ -61,6 +61,25 @@
 # Revisit trigger: #27858 merges + beellama ships it -> flip back to
 # --split-mode tensor + --tensor-split 1,1 and re-test.
 #
+# LAYER-MODE A/B RESULTS 2026-09-28 (2nd attempt, pod qwen38-596f5b69c8-6x5w6):
+# BOOT + FIRST SPEC STEP OK (the tensor-split assert is gone), but the numbers
+# are a loss across the board (scripts/llm_bench.py --port-forward):
+#   short prose    34.1 t/s (MTP-bee 68.1, vLLM b12x ~72) - LAYER split costs
+#                  ~2x decode: per-layer allreduce over PCIe (no P2P on 5060 Ti)
+#   structured     45.0-45.1 t/s x3 (no recorded MTP-bee number for this
+#                  prompt; vLLM b12x on it: 108 t/s) - halved by layer split
+#   long COLD 68.5K 82.51s (MTP-bee 21s) / WARM 4.80s (MTP-bee 4.1s, vLLM 4.1s)
+#   draft acceptance: mean len ~2.4 (rate 0.63/0.46/0.35) - BELOW the published
+#                  H200 3.43 and below our MTP k=4 vLLM (2.64); the
+#                  Q4_K_M draft on 5060 Ti underperforms the co-training eval
+#   quality: math 70336 PASS + get_weather tool PASS
+#   WARN in logs: 'target output is split across devices; using CPU draft
+#                  sampler' - the draft sampler runs on CPU under layer split
+# VERDICT: DSpark-on-beellama LAYER mode LOSES to both MTP-beellama (2x decode
+# penalty) and vLLM b12x (primary). Keep this file as the tensor-split
+# RETRY template: when #27858 lands in a beellama release, flip to
+# --split-mode tensor + --tensor-split 1,1 and re-test (tensor decode is ~2x
+# faster and might turn the structured +11% over MTP into a real win).
 # Revert: re-comment this file, re-uncomment qwen38-vllm.yaml (primary) or
 # qwen38-dflash.yaml (beellama MTP endgame).
 ---

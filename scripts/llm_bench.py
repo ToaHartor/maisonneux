@@ -158,8 +158,11 @@ def main():
             drafts = post[names[0]] - pre[names[0]]
             acc = post[names[1]] - pre[names[1]]
             ct = d["usage"]["completion_tokens"]
+            # beellama exposes no vllm:* spec metrics: accept_len from pod
+            # logs (grep 'draft acceptance' / 'mean acc len') instead
+            acc_s = f"{acc/drafts:.2f}" if drafts else "N/A (no spec metrics on this runtime)"
             print(f"json run{i+1}: {ct} tok in {t:.2f}s -> {ct/t:.1f} t/s "
-                  f"(finish={d['choices'][0]['finish_reason']}, accept_len={acc/drafts:.2f})")
+                  f"(finish={d['choices'][0]['finish_reason']}, accept_len={acc_s})")
 
         # 3. 59K cold/warm
         if not args.skip_long:
