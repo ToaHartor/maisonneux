@@ -1,0 +1,300 @@
+# DSpark A/B candidate: vLLM + gittensor's DSpark v2 drafter, on the
+# FINAL (headless) NVFP4 build of the target.
+#
+# The 3x bet that SGLang carried but couldn't run here (startup-probe
+# failure under llmkube). vLLM 0.30.0 turns out to have FIRST-CLASS DSpark
+# support natively:
+#   - speculative.py auto-detects method=dspark for a draft checkpoint;
+#     the v2 drafter's config already says architectures=["Qwen3DSparkModel"]
+#     -> loads through the built-in runner (models/qwen3_dspark.py,
+#     DSparkMarkovHead + DSparkConfidenceHead) with no arch rewrite and no
+#     trust-remote-code (the RadixArk stock drafter says DSparKDraftModel
+#     and gets rewritten to the same runner)
+#   - block_size (7), target_layer_ids, Markov head rank 256 and the
+#     mask-token bookkeeping are read from the draft's own config
+#   - enable_adaptive_verification (confidence-head-sized verify budgets,
+#     dspark-only) exists - left at its default (off) for parity with the
+#     card's benchmarked static 8-wide verify
+#
+# Recipe source: https://huggingface.co/gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090
+# The card's own pairing, both halves from gittensor-model-hub:
+#   TARGET  - the "final build" (main @ 5b7a687f): 17.92 GB / 2 shards,
+#     lm_head quantized to NVFP4 (-8.8% size, +8.4% decode, no accuracy
+#     cost), and the MTP head REMOVED - dead weight once you use a
+#     separate DSpark drafter. That is the change this file makes vs
+#     qwen38-vllm.yaml (which pins @0cc27958, the last commit that still
+#     carries the MTP head, because MTP spec needs it in-checkpoint).
+#   DRAFTER - Qwen3.8-27B-DSpark-NVFP4 "v2" (1.41 GB, NVFP4, trained
+#     against this exact build; target_layer_ids 4/16/28/40/52):
+#     161.7 tok/s on SGLang's server = 1.89x over its no-spec 85.8, and
+#     2.73x in SparkInfer's bench harness (264.8 overall, 420 on code).
+#     Half the size of the stock RadixArk drafter (3.7 GB BF16, 1.71x /
+#     139.35 t/s on this target - kept as the commented fallback).
+#   Acceptance is the point: DSpark's acceptance length stays FLAT across
+#   context (RULER-8K 6.3), the decay profile in-checkpoint MTP does not
+#   have (MTP acceptance fell to 0.47 at pos-3 by 59K).
+#
+# Why this file instead of SGLang: SGLang's DSpark path needs
+# SGLang-specific pool pins + the /health_generate startup probe that
+# failed under llmkube. vLLM's DSpark path reuses the EXACT serving
+# stack we already run (v0.30.0, TP2, FlashInfer, mamba bf16, prefix
+# cache) - only the drafter changes.
+#
+# COST - context ceiling: target shrinks 18.77 -> 17.92 GB (MTP head
+# out), drafter adds 1.41 GB -> net +~0.6 GB over the MTP service's
+# footprint, so the fp8 KV pool at 0.95 estimates ~260-265K tokens (vs
+# 278,927 measured for MTP). The 262,144 ceiling should JUST hold - the
+# boot log's pool line is the arbiter; if vLLM clamps it, bump
+# gpuMemoryUtilization to 0.97 (+~15-20K tokens) before giving up on
+# 262K.
+#
+# RISK (be honest with the boot log): the card's DSpark numbers are
+# single-GPU (RTX 5090 32 GB); TP2 of the GDN-hybrid target with a
+# separate drafter is uncharted on this hardware class - the SGLang
+# startup failure is a yellow flag, not proof. Known gotcha for THIS
+# exact combo (NVFP4 lm_head target + NVFP4 draft on vLLM 0.30.0):
+# the lm_head packing mismatch 'size of tensor a (128) must match
+# tensor b (256)' is documented against the NVFP4 drafter - if the pod
+# dies there, first try the commented RadixArk stock drafter (BF16,
+# 3.7 GB), then revert to MTP: comment this file in
+# resources/kustomization.yaml, uncomment qwen38-vllm.yaml (~2 min roll).
+# NOTE: the DSpark-NVFP4 draft ships its own hf_quant_config.json, so
+# vLLM auto-detects modelopt_fp4 for the draft (SGLang needed an
+# explicit --speculative-draft-model-quantization flag; vLLM has no
+# draft-quant flag - the repo's quant config is the mechanism).
+#
+# This file is an ALTERNATE for qwen38-vllm.yaml - only ONE of
+# {qwen38-vllm.yaml, qwen38-dspark.yaml} may be enabled at a time (same
+# InferenceService name `qwen38`, same 2 GPUs, and both carry a Model CR
+# named qwen38-vllm-nvfp4 - with DIFFERENT revisions: this file pins
+# the headless main build, the vllm file pins @0cc27958 with the MTP
+# head. The mutual exclusivity in kustomization.yaml is what keeps the
+# same-name Model CRs from colliding; do not enable both files).
+# The DSpark drafter itself is NOT a Model CR - vLLM downloads it from
+# HF at boot (1.41 GB, public repo, no gate; re-downloaded on every pod
+# restart, it is not PVC-cached).
+#
+# Drop-in surface like the vLLM service: Service `qwen38` port 8080,
+# served-model-name `qwen38_27B`, NO --api-key.
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen38-vllm-nvfp4
+spec:
+  # https://huggingface.co/gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090
+  # FINAL build (main @ 5b7a687f): 17.92 GB / 2 shards, lm_head NVFP4,
+  # MTP head REMOVED - the build gittensor ships for the DSpark pairing.
+  # qwen38-vllm.yaml pins the OLDER @0cc27958 instead: that one still
+  # carries the MTP head its in-checkpoint MTP spec needs.
+  source: hf://gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090@5b7a687fc8211a5d631c8ca6a593dd37eb26ce33
+  # The final build's complete file set (2 shards). vLLM loads the staged
+  # directory, so the set must be complete (format != gguf -> the
+  # operator hands vLLM the directory).
+  files:
+    - config.json
+    - generation_config.json
+    - hf_quant_config.json
+    - model.safetensors.index.json
+    - model-00001-of-00002.safetensors
+    - model-00002-of-00002.safetensors
+    - tokenizer.json
+    - tokenizer_config.json
+    - vocab.json
+    - merges.txt
+    - chat_template.jinja
+    - preprocessor_config.json
+    - processor_config.json
+    - video_preprocessor_config.json
+  format: safetensors
+  quantization: NVFP4
+  hardware:
+    accelerator: cuda
+    gpu:
+      enabled: true
+      vendor: nvidia
+      count: 2
+      layers: -1 # All
+      memory: 16Gi # Per GPU
+  resources:
+    cpu: "6"
+    memory: 16Gi
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen38
+spec:
+  modelRef: qwen38-vllm-nvfp4
+  runtimeClassName: ${gpu_runtime_class}
+  runtime: vllm
+  # Stock image, no patches (same as the MTP vLLM service; operator
+  # default is v0.25.1, which predates the sm_120 + dspark support)
+  # renovate container:
+  image: vllm/vllm-openai:v0.30.0
+  replicas: 1
+  endpoint:
+    # Port 8080 to match the vllm/beellama services + litellm/karaseek
+    # clients (qwen38.ai.svc.cluster.local:8080)
+    port: 8080
+    type: ClusterIP
+  priority: high
+  evictionProtection: false
+  # OpenCode main agent + one background request
+  parallelSlots: 2
+  vllmConfig:
+    tensorParallelSize: 2
+    # 262144 is the model's native context. With the final (headless)
+    # target + 1.41 GB DSpark v2 draft, the fp8 pool at 0.95 estimates
+    # ~260-265K tokens - the ceiling should just hold; the boot log's
+    # pool line is the arbiter (bump gpuMemoryUtilization to 0.97 if
+    # it clamps below 262144).
+    maxModelLen: 130000 # 262144
+    # Halves KV footprint - the binding constraint on 2x 16 GB
+    kvCacheDtype: fp8_e4m3
+    # Repeated agentic system prompts: the agentic win
+    enablePrefixCaching: true
+    enableChunkedPrefill: true
+    # 8192 measured: no speed gain and caps context at 200K
+    maxNumBatchedTokens: 4096
+    gpuMemoryUtilization: 0.95
+    # FlashInfer attention (same measured rationale as the MTP service)
+    attentionBackend: FLASHINFER
+    # NOTE: vllmConfig.speculative (the typed separate-draft form) is NOT
+    # used: on v0.9.29 the vLLM backend ignores the staged draft path and
+    # would emit the raw string, so the DSpark spec goes via extraArgs
+    # below (same pattern as the MTP service).
+    # Tokenizer follows the @revision of the Model source automatically
+    hfTokenSecretRef:
+      name: hf-token
+      key: HF_TOKEN
+  env:
+    - name: HF_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: hf-token
+          key: HF_TOKEN
+    # Expandable segments: avoids fragmentation OOM at high utilization
+    - name: PYTORCH_CUDA_ALLOC_CONF
+      value: "expandable_segments:True"
+    # Allow max-model-len 262144 past the model's native 262144 RoPE bound
+    # checks
+    - name: VLLM_ALLOW_LONG_MAX_MODEL_LEN
+      value: "1"
+    # Shrink the lazily-allocated FlashInfer attention workspace (64 MiB):
+    # the default 128 MiB is allocated OUTSIDE the gpu-memory-utilization
+    # budget on first request and OOMs at 0.95 (recipe's measured gotcha)
+    - name: VLLM_FLASHINFER_WORKSPACE_BUFFER_SIZE
+      value: "67108864"
+    # No P2P on GeForce: let NCCL do the all-reduce instead of the custom
+    # all-reduce backend (which dies with 'invalid argument' on this host
+    # class)
+    - name: NCCL_P2P_DISABLE
+      value: "1"
+  extraArgs:
+    # DSpark v2: gittensor's NVFP4 drafter, co-trained against the final
+    # build above. Config already says Qwen3DSparkModel (the built-in
+    # runner), block_size=7 -> verify width 7 + 1 bonus token = 8, hence
+    # num_speculative_tokens 8. Pinned to the 2026-08 commit; public,
+    # no gate, 1.41 GB. Ships its own hf_quant_config.json so vLLM
+    # auto-loads the draft as modelopt_fp4.
+    # REVERT TO MTP: delete the two speculative-config lines above,
+    # uncomment the MTP block below.
+    - --speculative-config
+    - '{"method": "dspark", "model": "gittensor-model-hub/Qwen3.8-27B-DSpark-NVFP4", "num_speculative_tokens": 8}'
+    # MTP k=4 fallback (the running qwen38-vllm.yaml configuration):
+    # - --speculative-config
+    # - '{"method": "mtp", "num_speculative_tokens": 4}'
+    # Fallback drafter: stock RadixArk DSpark (BF16, 3.7 GB; 1.71x / 139
+    # t/s on this target per the card - slower, but if the NVFP4 draft
+    # hits the 128-vs-256 lm_head packing bug on vLLM this is the first
+    # thing to try before reverting to MTP):
+    # - --speculative-config
+    # - '{"method": "dspark", "model": "RadixArk/Qwen3.8-27B-DSpark@b9a5dbdf03bc999c6c73c426b19c2d9041cea393", "num_speculative_tokens": 8}'
+    # Experimental knob (off by default, matches the card's static-verify
+    # benchmarks): confidence-head-sized verify budgets
+    # - --speculative-config
+    # - '{"method": "dspark", "model": "gittensor-model-hub/Qwen3.8-27B-DSpark-NVFP4@eba1ac5a66c74902eaa95a4000a7c5eda96d8e95", "num_speculative_tokens": 8, "enable_adaptive_verification": true}'
+    # PIECEWISE, not FULL_AND_PIECEWISE: full graphs measured +2.4% steps/s
+    # but NO tok/s gain for 3,197 tokens of pool. Draft steps get no graphs
+    # under PIECEWISE; upstream fused-draft PRs (vllm #55292/#57443) may
+    # change this - re-measure on image bumps.
+    - --compilation-config
+    - '{"cudagraph_mode": "PIECEWISE"}'
+    # FlashInfer autotune OOMs on vLLM > 0.28.0; disabling it also frees the
+    # headroom to run gpu-memory-utilization 0.95
+    - --no-enable-flashinfer-autotune
+    # GeForce P2P: NCCL all-reduce instead of the custom backend
+    - --disable_custom_all_reduce
+    # GDN recurrent (mamba) state at bf16 instead of the fp32 default:
+    # halves mamba pages (+22% KV pool), output bit-identical
+    - --mamba-cache-dtype
+    - bfloat16
+    - --mamba-ssm-cache-dtype
+    - bfloat16
+    # Load weights from the IPC-shared cache between TP workers
+    - --load-format
+    - ipc_cache
+    # Model name must match the beellama --alias (qwen38_27B) so litellm
+    # (model openai/qwen38_27B) and karaseek (INFERENCE_TEXT_MODEL) work
+    # unchanged
+    - --served-model-name
+    - qwen38_27B
+    # Qwen3 reasoning + tool-call parsing (the beellama service's equivalent
+    # is --reasoning on + --reasoning-effort; the A/B prompt should pin
+    # reasoning effort explicitly to keep both runs comparable)
+    - --reasoning-parser
+    - qwen3
+    - --tool-call-parser
+    - qwen3_xml
+    - --enable-auto-tool-choice
+    # Keep the thinking trace across turns (agentic context continuity),
+    # same intent as the beellama service's chat-template-kwargs
+    - --default-chat-template-kwargs
+    - '{"preserve_thinking": true}'
+    # Vision: keep the tower loaded (text deployment), disable video input;
+    # NOTE: do NOT set an "image" cap here - it caps images per
+    # CONVERSATION (clients resend history every turn) and a 3rd image 400s
+    - --limit-mm-per-prompt
+    - '{"video": 0}'
+    - --mm-processor-kwargs
+    - '{"max_pixels": 1000000}'
+    # Per-request observability:
+    # --enable-log-requests logs each request START (id + SamplingParams).
+    # There is NO per-request finish line in this build - completion/timing
+    # is Prometheus-only (request_* histograms, scraped by the
+    # llmkube-inference PodMonitor). The 10s engine stats lines stay the
+    # always-on rolling view.
+    # --per-request-spec-decode-metrics detailed is NOT a log flag either:
+    # it populates the vllm:spec_decode_num_accepted_tokens_per_pos_total
+    # Prometheus counter (per-position draft acceptance) and attaches
+    # per-request stats to responses. 'detailed' is what unlocks the
+    # per-position series - for DSpark expect ~8 positions.
+    - --enable-log-requests
+    - --per-request-spec-decode-metrics
+    - detailed
+    # NOTE: no --api-key - the beellama service is keyless and litellm/karaseek
+    # send a dummy key; the Service is ClusterIP + SSO-fronted like beellama.
+  # --trust-remote-code deliberately omitted: vLLM deprecates it and Qwen3.8
+  # (qwen35 arch) is natively supported - vLLM only warns. Add it back as the
+  # first thing to try if the pod fails at boot with a model-architecture
+  # error.
+
+  # Increase /dev/shm size otherwise it is unable to deploy (TP2 NCCL IPC,
+  # same requirement as the vLLM service)
+  extraVolumeMounts:
+    - name: &shm shm
+      mountPath: /dev/shm
+  extraVolumes:
+    - name: *shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 8Gi
+  resources:
+    gpu: 2
+    cpu: "4"
+    gpuMemory: 30Gi
+    hostMemory: 12Gi
+    memory: 12Gi
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
