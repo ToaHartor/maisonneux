@@ -37,6 +37,19 @@
 #     misbehaves under tensor split across 2 GPUs (llama.cpp #27833)
 #   - --fit off: fit params is not implemented for SPLIT_MODE_TENSOR and
 #     explicit draft KVarN sizing is left to the operator (v0.4.7)
+# FINAL A/B 2026-09-28 (pod qwen38-55d877785f-bt648, warm-state numbers):
+#   short prose 51.8-56.5 t/s (vLLM b12x ~72) | structured 85.0-85.3 t/s x3
+#   (vLLM b12x 108, DSpark-bee layer 45) | prefill 64.7K 1306 t/s (tie with
+#   the 1339 t/s baseline) | long WARM 3.25s (vLLM 3.15, DSpark-bee 4.80)
+#   MTP acceptance: mean len 2.92-2.95, pos rates 0.77/0.62/0.52 session-
+#   wide (fresh task: 3.27 mean, 0.88/0.74/0.65); pos-1 0.773-0.780 matches
+#   the 0.78 baseline. Quality: math + tool PASS. WARN 'backend offload
+#   failed for seq_id=0; using CPU sampler' = same condition as the
+#   baseline era. VERDICT: beellama endgame confirmed as the fallback
+#   (structured 85 t/s beats DSpark-bee's 45, prefill ties the MTP
+#   baseline), but vLLM b12x stays primary (short ~72, structured 108).
+#   This file = the beellama endgame to fall back to; vLLM re-enabled in
+#   kustomization after this test.
 ---
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: Model

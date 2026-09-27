@@ -164,14 +164,39 @@ spec:
     # --speculative-model only): the draft head lives inside the checkpoint,
     # so vLLM needs the method form.
     # k=4 = measured peak for prose (78.3 t/s) and mixed prose+JSON (81.6
-    # t/s); structured output would prefer k=7 (138 t/s) at the cost of
-    # prose. Step time = 25.4 ms + 2.37 ms per draft position.
+    # t/s). DEEP-K A/B HISTORY (same box, b12x, scripts/llm_bench.py,
+    # zero concurrency, pod qwen38-74685b859-2vgjk, 2026-09-28):
+    #   k=4: short prose 7.73 s (66.3 t/s) | structured 108.1 t/s, accept
+    #        2.64 | pool 279,726
+    #   k=6: short prose 8.68 s (59.0 t/s, -11%) | structured 84.4-85.4
+    #        t/s, accept 2.36 (-22%) | pool 273,333 (1.04x of 262K, still
+    #        fits) | 74.4K prefill 37.2 s = 2000 t/s (k=4: 2076 t/s -
+    #        prefill wash) | warm 3.62 s | quality math+tool PASS
+    #   per-pos acceptance k=6 (mixed traffic): 0.76/0.54/0.40/0.29/
+    #   0.23/0.18 - the curve is healthy, the per-STEP COST is not
+    #   (vLLM: MTP layer runs forward multiple times for k>1; FLASHINFER
+    #   rebuilds attention metadata between draft steps - both scale with
+    #   k). VERDICT: k=6 LOSES on both prose and structured -> k=4 stays.
+    #   The recipe's "structured still rising at k=7" (cutlass, their
+    #   hardware) did not transfer - same class as the beellama nDraftMax
+    #   8 non-transfer. RETRY trigger: FLASHINFER fused multi-step draft
+    #   (vLLM #55292/#57443) lands - it removes the per-draft-step
+    #   overhead that kills deep k; re-A/B k=6/8 then.
     - --speculative-config
     - '{"method": "mtp", "num_speculative_tokens": 4}'
-    # PIECEWISE, not FULL_AND_PIECEWISE: full graphs measured +2.4% steps/s
-    # but NO tok/s gain for 3,197 tokens of pool. Draft steps get no graphs
-    # under PIECEWISE; upstream fused-draft PRs (vllm #55292/#57443) may
-    # change this - re-measure on image bumps.
+    # A/B COMPLETE 2026-09-28: FULL_AND_PIECEWISE vs PIECEWISE (b12x + k=4,
+    # pod qwen38-7c5c564449-xn7kf). FULL: pool 276,529 (-3.2K) | prose
+    # 7.81 s (65.6 t/s vs 66.3) | structured 105.1-106.7 t/s, accept 2.51
+    # (vs 108.1, 2.64) | 64.7K COLD 30.23 s = 2141 t/s (vs 2075 -
+    # prefill +3.2%) | warm 2.97 s | quality PASS. The +2.4% steps/s did
+    # NOT convert to tok/s even under b12x - re-confirms the pre-b12x
+    # verdict (no decode gain, pool cost). REVERTED to PIECEWISE: the 3%
+    # prefill gain is not worth -3.2K pool + slightly softer decode (the
+    # cold-prefill time is dominated by the KV bandwidth wall either
+    # way). Caveat: the PIECEWISE comparison numbers are day-old
+    # recordings (GPU clock-state confound); a strict same-day
+    # re-baseline would need another round trip, and the re-confirming
+    # direction makes it unnecessary.
     - --compilation-config
     - '{"cudagraph_mode": "PIECEWISE"}'
     # ---- SM120 b12x NVFP4 GEMM (tested 2026-09-28, ENABLED) ----

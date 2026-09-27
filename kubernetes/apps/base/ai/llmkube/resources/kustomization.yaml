@@ -9,8 +9,8 @@ resources:
   # (qwen38-vllm.yaml) which now carries the same InferenceService name;
   # re-enable this and comment out qwen38-vllm.yaml to fall back to beellama
   # (ks.yaml healthCheckExprs are generic across Model kinds - no swap)
-  # - qwen38-vllm.yaml # PRIMARY (b12x NVFP4 GEMM enabled 2026-09-28; revert to this after each beellama test)
-  - qwen38-bee-mtp.yaml # FINAL beellama test 2026-09-28: MTP k=3 + NVFP4 MID-HIGH (tensor split) - bench vs vLLM b12x then flip back
+  - qwen38-vllm.yaml # PRIMARY (b12x NVFP4 GEMM enabled 2026-09-28)
+  # - qwen38-bee-mtp.yaml # beellama endgame (tested 2026-09-28: structured 85 t/s > DSpark-bee 45 t/s, short ~55 t/s < vLLM 72) - fallback only
   # SGLang A/B candidate (same InferenceService name `qwen38` + same 2 GPUs,
   # so it is MUTUALLY EXCLUSIVE with qwen38-vllm.yaml). To test it: comment
   # out qwen38-vllm.yaml above, uncomment this line, and swap the Model
