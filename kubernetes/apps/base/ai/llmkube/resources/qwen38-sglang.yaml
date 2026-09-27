@@ -13,15 +13,19 @@
 # What SGLang adds over our running vLLM service (the comparison targets):
 #   - DSpark parallel block drafting: no per-position cost (vLLM MTP k=4
 #     pays 2.37 ms/position); 3.16x over AR on H200, still leading at c=32
-#   - NVFP4 KV cache SHIPS IN SGLANG TODAY (v0.5.20 source-verified below)
-#     while the vLLM equivalent is still open upstream PRs (#46329/#56550)
-#     - that is why the NVFP4-KV experiment happens here, not in vLLM
+#   - NVFP4 KV cache SHIPS IN SGLANG (v0.5.20) but is dead WITH
+#     speculative decoding - #36010 (confirmed on 2x 5060 Ti TP2, our
+#     exact cards, on the official 0.5.20 wheel). Reverted to fp8 KV;
+#     watch item. The vLLM equivalent is still open upstream PRs
+#     (#46329/#56550)
 #   - RadixAttention prefix caching (on by default; --disable-radix-cache
 #     would turn it off - there is no opt-in flag)
 #   - DFlash2 SGLang variant (incoai/Qwen3.8-27B-DFlash2): 4.92 ms median
 #     TPOT @ 4.29 accept on RTX 5090
 #
-# == CURRENT STAGING: DSpark NVFP4 draft + NVFP4 KV cache ==
+# == CURRENT STAGING: DSpark NVFP4 draft + fp8 KV ==
+# (NVFP4 KV was staged 2026-09-28 and reverted the same day: boot-tested
+# and blocked by upstream #36010 - see the VERDICT below)
 #
 # Verified against SGLang v0.5.20 source (not just the cookbook):
 #   - `--kv-cache-dtype nvfp4` ships NVFP4KVCacheMethod:
@@ -40,6 +44,19 @@
 #     own hf_quant_config.json (modelopt NVFP4, attention/markov/
 #     confidence heads excluded) is what the loader consumes.
 #
+# VERDICT 2026-09-28 (boot-tested, user): NVFP4 KV + speculative decode is
+# BROKEN on v0.5.20 - upstream issue #36010: spec verify batches are
+# gpu-only, so FlashInfer's NVFP4 dequant-workspace prefill path sees
+# extend_prefix_lens_cpu = None and the scheduler dies. Second
+# confirmation was on 2x 5060 Ti TP2 (our exact hardware) running the
+# official 0.5.20 wheel. External drafts are doubly dead:
+# --speculative-draft-attention-backend takes ONE value for both draft
+# prefill and decode, but the NVFP4 pool wants flashinfer (extend) +
+# trtllm_mha (decode) - no single value works. Reverted to fp8 KV.
+# The NVFP4-KV experiment resumes when #36010 is fixed (candidates in
+# the issue: CPU-mirror population - graphs-off only; #36045 graph-safe
+# workspace prep; #23354 fused NVFP4 extend kernel).
+#
 # RISK ledger (the boot log is the arbiter - capture the full traceback
 # on any failure; the previous EAGLE attempt died with an unexplained
 # 128/256 tensor mismatch whose location - target load vs EAGLE draft
@@ -48,9 +65,11 @@
 #      attention map is NOT in the cookbook's validated set - its NVFP4
 #      exports have FP8 attention projections), DSpark inherits the
 #      failure; if it was in the EAGLE draft path, DSpark sidesteps it.
-#   2. NVFP4-KV + DSpark + SM120 is unmeasured anywhere: the cookbook
-#      ran NVFP4 targets on the 5090 with fp8 KV and the BF16 DSpark
-#      draft. The native-FP4 XQA decode kernel is claimed, not proven.
+#   2. DSpark + fp8 KV on SM120/TP2 is unmeasured anywhere: the cookbook
+#      ran DSpark on 5090 single-GPU with the BF16 draft; we pair the
+#      NVFP4 draft with TP2 - watch the pool line and the acceptance
+#      metrics (a silent accept-rate 0.00 like #36010's side-observation
+#      would be the tell-tale of a draft that loads but never wins).
 #   3. Pool pins (mamba-full-memory-ratio 11.93 bf16-state, mem-fraction
 #      0.88) are the cookbook's 32GB single-GPU DSpark measurements; the
 #      NVFP4 draft frees ~1.2 GB/rank vs the BF16 one, so expect
@@ -152,30 +171,35 @@ spec:
     contextLength: 262144
     # Cookbook's 32GB DSpark pin was 0.88 (bf16 state, BF16 3.7 GB draft,
     # 5090 single-GPU). Our draft is 1.41 GB NVFP4 -> ~1.2 GB/rank free vs
-    # that pin; NVFP4 KV halves the per-token bytes too. Start one notch up
-    # and let the boot pool line arbitrate: raise toward 0.95 if the pool
-    # clamps below 262K tokens, drop to 0.85 on OOM at graph capture.
-    memFractionStatic: 0.90
+    # that pin, so start one notch up and let the boot pool line
+    # arbitrate: raise toward 0.95 if the pool clamps below 262K tokens,
+    # drop to 0.85 on OOM at graph capture.
+    memFractionStatic: 0.98
     # 8192 chunks stall GDN decode steps ~600 ms each (cookbook); 2048
     # keeps inter-token latency smooth under mixed agentic load
     chunkedPrefillSize: 2048
-    # NVFP4 KV cache: 'nvfp4' is NOT in the CRD's kvCacheDtype enum
-    # (auto/fp8_e5m2/fp8_e4m3) - kvCacheCustomDtype is the operator's
-    # escape hatch (unvalidated string, maps to --kv-cache-dtype and takes
-    # precedence over kvCacheDtype). ~10 KiB/token/rank (fp4 data + group
-    # scales) vs ~16.6 fp8: the pool gets ~1.6x deeper for the same money,
-    # at a small decode-speed cost. Datapoint on OUR cards (dual 5060 Ti,
-    # #50288 thread, per llm-journey.md NVFP4-KV watch item): max tg
-    # 82 (fp8 KV) -> 65 (nvfp4 KV).
-    # (The old fp8 pin, for reference when swapping back:)
-    # kvCacheDtype: fp8_e4m3
-    kvCacheCustomDtype: nvfp4
-    # Prefill backend: flashinfer reads the NVFP4 pool through its FP8
-    # dequant workspace. The DECODE backend is overridden in extraArgs to
-    # trtllm_mha (NATIVE_FP4 XQA decode) - the CRD's attentionBackend enum
-    # (flashinfer/flash_attn/torch_native) has no decode-only variant, and
-    # trtllm_mha is only legal here because of the SM120 hybrid-GDN gate.*
-    # flashinfer does not work with NVFP4
+    # KV cache: back to FP8 after the NVFP4 attempt (header VERDICT +
+    # #36010). fp8 = ~16.6 KiB/token/rank - the binding constraint that
+    # 262K runs on 2x 16 GB. The NVFP4 pin is kept commented for the
+    # re-test once #36010 ships: 'nvfp4' is NOT in the CRD's kvCacheDtype
+    # enum (auto/fp8_e5m2/fp8_e4m3), so it goes via the operator's
+    # escape-hatch string field kvCacheCustomDtype (unvalidated, takes
+    # precedence over kvCacheDtype). If that path is ever tried on the
+    # no-spec variant, #36010's 16GB trap also applies: pin
+    # --max-total-tokens or the prefill graph-capture ladder OOMs at
+    # ~0 GB headroom.
+    kvCacheDtype: fp8_e4m3
+    # kvCacheCustomDtype: nvfp4 # parked - only legal with spec OFF, and
+    # even then the 16GB capture-ladder pin is needed (see above)
+    # Backend split lives in extraArgs (--prefill-attention-backend
+    # flashinfer + --decode-attention-backend trtllm_mha; both are legal
+    # on the SM120 hybrid-GDN gate {triton, trtllm_mha, flashinfer} -
+    # trtllm_mha decode = XQA on SM120). The typed attentionBackend field
+    # stays OFF so the extraArgs split is the single source of truth.
+    # All-flashinfer (the cookbook's SM120 default) is the clean fallback
+    # if the trtllm_mha decode misbehaves at boot - on fp8 KV the
+    # NVFP4-only constraint that forced the split (nvfp4 decode is
+    # trtllm_mha-only) no longer applies.
     # attentionBackend: flashinfer
     # RadixAttention prefix caching is ON BY DEFAULT in SGLang (the flag is
     # --disable-radix-cache; there is no opt-in flag to set). The typed
@@ -216,14 +240,14 @@ spec:
     - name: SGLANG_RAGGED_VERIFY_MODE
       value: "static"
   extraArgs:
-    # Fix for flashinfer not working with nvfp4
-    - --decode-attention-backend
-    - trtllm_mha
-    # trtllm_mha can't be used as prefill attention backend
-    # ref -> https://docs.sglang.io/docs/advanced_features/attention_backend#hybrid-attention-different-backends-for-prefill-vs-decode-experimental
+    # Backend split (kept from the NVFP4-KV attempt; legal on fp8 KV too
+    # - see the sglangConfig note; all-flashinfer is the cookbook default
+    # and the clean fallback):
     - --prefill-attention-backend
     - flashinfer
-    # ---- STAGED: DSpark NVFP4 draft + NVFP4 KV cache ----
+    - --decode-attention-backend
+    - trtllm_mha
+    # ---- STAGED: DSpark NVFP4 draft + fp8 KV ----
     - --speculative-algorithm
     - DSPARK
     # gittensor's NVFP4 v2 drafter (1.41 GB): downloaded from HF at boot
@@ -247,11 +271,6 @@ spec:
     # One draft round of the gamma block per verify step
     - --speculative-num-steps
     - "1"
-    # NVFP4 KV decode half: trtllm_mha NATIVE_FP4 XQA decode (XQA is
-    # enabled for SM120). Prefill stays flashinfer (typed
-    # attentionBackend) reading the FP8 dequant workspace.
-    - --decode-attention-backend
-    - trtllm_mha
     # GDN state pool at bf16 instead of the fp32 default: halves the
     # 153.9 MB/slot state pool to 78.4 MB, the difference goes to KV
     # (cookbook: "bfloat16 remains the faster choice regardless")
@@ -292,10 +311,9 @@ spec:
     #   - "1"
     #   - --speculative-num-draft-tokens
     #   - "4"
-    #   (no --decode-attention-backend: EAGLE drafts run on the target's
-    #    flashinfer backend and read the FP8 dequant workspace fine; drop
-    #    trtllm_mha for EAGLE + NVFP4 KV only if the draft KV pool wants
-    #    its own dtype via --speculative-draft-kv-cache-dtype)
+    #   (keep the prefill/decode split: EAGLE's in-checkpoint draft shares
+    #    the target's pools; only add --speculative-draft-attention-backend
+    #    flashinfer if the draft's default backend resolution fails)
     #
     # ---- FALLBACK B: DSpark with the BF16 RadixArk draft ----
     # If the NVFP4 drafter fails to load in SGLang, the 3.7 GB BF16 draft
