@@ -32,6 +32,7 @@ spec:
       GARAGE_REGION: garage # Same as the secret
       # inherited variables
       environment: ${environment}
+      fastdata_storage: ${fastdata_storage}
       minio_url: ${minio_url}
   prune: true
   sourceRef:
