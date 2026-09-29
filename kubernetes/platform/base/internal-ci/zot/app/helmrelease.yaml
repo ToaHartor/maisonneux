@@ -68,7 +68,7 @@ spec:
           "distSpecVersion": "1.1.0",
           "storage": {
             "rootDirectory": "/tmp/zot/s3",
-            "dedupe": true,
+            "dedupe": false,
             "remoteCache": false,
             "gc": true,
             "gcDelay": "2h",
