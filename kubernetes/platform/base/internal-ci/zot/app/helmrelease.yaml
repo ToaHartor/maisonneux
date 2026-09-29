@@ -48,7 +48,7 @@ spec:
     resources:
       limits:
         cpu: 2
-        memory: 1Gi
+        memory: 4Gi # GC/dedupe-restore sweeps over the 136-repo catalog need >1Gi or the pod OOMKills in a restart loop
       requests:
         cpu: 100m
         memory: 100Mi
