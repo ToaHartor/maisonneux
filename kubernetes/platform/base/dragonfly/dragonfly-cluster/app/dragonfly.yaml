@@ -6,7 +6,6 @@ spec:
   args:
     - "--default_lua_flags=allow-undeclared-keys"
   priorityClassName: services-critical
-  networkPolicyEnabled: false
   replicas: 3
   resources:
     requests:
