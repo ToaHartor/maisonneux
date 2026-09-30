@@ -343,7 +343,11 @@ spec:
       enabled: true
 
     # Subchart code-interpreter
+    # https://github.com/onyx-dot-app/python-sandbox/blob/main/kubernetes/code-interpreter/values.yaml
     code-interpreter:
+      readinessProbe:
+        httpGet:
+          path: /health # Workaround until /ready no longer answers 404
       resources:
         requests:
           cpu: 100m
