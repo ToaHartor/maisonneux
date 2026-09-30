@@ -179,6 +179,10 @@ spec:
               API_SERVER_CORS_ORIGINS: "*"
               HERMES_UID: 1024
               HERMES_GID: 1024
+              HERMES_DASHBOARD_SESSION_TOKEN:
+                secretKeyRef:
+                  name: ${SECRET2_KEY_NAME}
+                  key: secretKey
               HERMES_DASHBOARD: true
               HERMES_DASHBOARD_HOST: 0.0.0.0
               HERMES_DASHBOARD_PORT: &dashboardPort 9119
@@ -540,15 +544,15 @@ spec:
               base_url: http://litellm.ai.svc.cluster.local:4000/v1
               key_env: LITELLM_API_KEY
               models:
-                local/qwen-3.6-27B:
-                  context_length: 65535
+                local/qwen-3.8-27B:
+                  context_length: 262144
             model:
-              default: local/qwen-3.6-27B
+              default: local/qwen-3.8-27B
               provider: custom:litellm
-              context_length: 65535
+              context_length: 262144
             model_aliases:
               qwen:
-                model: local/qwen-3.6-27B
+                model: local/qwen-3.8-27B
                 provider: custom:litellm
             memory:
               provider: memini

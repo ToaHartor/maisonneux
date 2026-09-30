@@ -22,6 +22,7 @@ spec:
     - ../../../../../common/components/oidc-application
     # - ../../../../../common/components/httproute/local # common
     - ../../../../../common/components/secret/key
+    - ../../../../../common/components/secret/key2
   path: "./kubernetes/apps/base/ai/hermes/app"
   postBuild:
     substitute:
@@ -43,6 +44,10 @@ spec:
       ## API key
       SECRET_KEY_NAME: hermes-api-key
       SECRET_KEY_TYPE: 64hexa
+      ## Desktop secret key
+      SECRET2_KEY_NAME: hermes-session-token
+      SECRET2_KEY_TYPE: 64hexa
+
       # inherited variables
       auth_subdomain: ${auth_subdomain}
       main_domain: ${main_domain}
