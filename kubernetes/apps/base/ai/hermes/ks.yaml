@@ -28,16 +28,17 @@ spec:
     substitute:
       APP: hermes
       SUBDOMAIN: hermes
+      WEBUI_SUBDOMAIN: hermes-webui
       DOMAIN: ${main_domain}
       DOMAIN_WEBSECURE: ${main_domain_websecure}
       GROUP: Services
       DESCRIPTION: AI Agent manager
-      REDIRECT_URL: https://hermes.${main_domain_websecure}/api/auth/oidc/callback
-      # Dashboard OIDC
-      DASHBOARD_SUBDOMAIN: hermes-dashboard
+      REDIRECT_URL: https://hermes-webui.${main_domain_websecure}/api/auth/oidc/callback
+      # Dashboard OIDC (shares the hermes subdomain)
+      DASHBOARD_SUBDOMAIN: hermes
       DASHBOARD_GROUP: Services
       DASHBOARD_DESCRIPTION: Hermes agent dashboard
-      DASHBOARD_REDIRECT_URL: https://hermes-dashboard.${main_domain_websecure}/auth/callback
+      DASHBOARD_REDIRECT_URL: https://hermes.${main_domain_websecure}/auth/callback
       ## Gateway
       # GATEWAY_SVC_NAME: hermes
       # GATEWAY_SVC_PORT: "9119"

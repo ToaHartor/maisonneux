@@ -186,7 +186,7 @@ spec:
               HERMES_DASHBOARD: true
               HERMES_DASHBOARD_HOST: 0.0.0.0
               HERMES_DASHBOARD_PORT: &dashboardPort 9119
-              HERMES_DASHBOARD_PUBLIC_URL: https://${DASHBOARD_SUBDOMAIN}.${DOMAIN_WEBSECURE}
+              HERMES_DASHBOARD_PUBLIC_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
               # OIDC
               HERMES_DASHBOARD_OIDC_CLIENT_ID:
                 secretKeyRef:
@@ -425,31 +425,18 @@ spec:
         hostnames:
           - ${SUBDOMAIN}.${DOMAIN}
         rules:
+          # OpenAI-compatible agent API: the API server (8642) serves /v1/... at the
+          # root (no API_SERVER_PREFIX knob), so /v1 maps straight through. The
+          # dashboard has no /v1 routes, so this shadows nothing. Auth is Bearer
+          # API_SERVER_KEY on the server itself.
           - matches:
               - path:
                   type: PathPrefix
-                  value: /
-            backendRefs:
-              - name: hermes
-                port: *webuiPort
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: /gateway
+                  value: /v1
             backendRefs:
               - name: hermes
                 port: *apiPort
-
-      dashboard:
-        enabled: true
-        parentRefs:
-          - kind: Gateway
-            name: traefik-gateway
-            namespace: ingress
-            sectionName: websecure
-        hostnames:
-          - ${DASHBOARD_SUBDOMAIN}.${DOMAIN}
-        rules:
+          # Everything else -> the stock dashboard (9119): SPA, /api/*, /auth/*.
           - matches:
               - path:
                   type: PathPrefix
@@ -463,6 +450,26 @@ spec:
                   group: traefik.io
                   kind: Middleware
                   name: chain-local
+
+      webui:
+        enabled: true
+        parentRefs:
+          - kind: Gateway
+            name: traefik-gateway
+            namespace: ingress
+            sectionName: websecure
+        hostnames:
+          - ${WEBUI_SUBDOMAIN}.${DOMAIN}
+        rules:
+          # The external webui (8787): SPA, its /api/* surface (sessions, chat, share,
+          # /api/auth/oidc/callback), /health probe, and its OIDC login flow.
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+            backendRefs:
+              - name: hermes
+                port: *webuiPort
 
     persistence:
       agent-source:
