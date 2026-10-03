@@ -176,7 +176,7 @@ locals {
 // https://github.com/controlplaneio-fluxcd/terraform-kubernetes-flux-operator-bootstrap/tree/main#inputs
 module "flux_operator_bootstrap" {
   source  = "controlplaneio-fluxcd/flux-operator-bootstrap/kubernetes"
-  version = "0.8.0"
+  version = "0.9.0"
 
   # depends_on = [kubernetes_secret_v1.flux_git_credentials]
 
