@@ -131,7 +131,7 @@ spec:
   # Stock image, no patches (same as the MTP vLLM service; operator
   # default is v0.25.1, which predates the sm_120 + dspark support)
   # renovate container:
-  image: vllm/vllm-openai:v0.30.0
+  image: vllm/vllm-openai:v0.31.0
   replicas: 1
   endpoint:
     # Port 8080 to match the vllm/beellama services + litellm/karaseek
