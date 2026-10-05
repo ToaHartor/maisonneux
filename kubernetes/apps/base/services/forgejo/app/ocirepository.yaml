@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 17.1.7
-    digest: sha256:f5044e73361f5991978f1bc281a570bf893fd0f468e7d76274a7853eb27428cf
+    tag: 17.2.0
+    digest: sha256:391648fe566fac5eabf4bbde9faa7af7949aee6169060d34c03e0fdbd49d6fe8
   url: oci://code.forgejo.org/forgejo-helm/forgejo
