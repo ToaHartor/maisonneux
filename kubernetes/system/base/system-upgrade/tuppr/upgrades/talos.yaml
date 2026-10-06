@@ -6,7 +6,7 @@ metadata:
 spec:
   talos:
     # renovate: datasource=github-releases depName=siderolabs/talos extractVersion=^(?<version>.+)$
-    version: v1.13.10
+    version: v1.13.11
     prePull: true
   policy:
     rebootMode: powercycle # default
