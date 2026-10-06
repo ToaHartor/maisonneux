@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: zot
-      version: "0.1.127"
+      version: "0.1.128"
       sourceRef:
         kind: HelmRepository
         name: zot
