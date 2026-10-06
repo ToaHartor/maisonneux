@@ -341,6 +341,7 @@
       separateMajorMinor: true,
       separateMinorPatch: true,
       groupName: "Talos Linux",
+      branchTopic: "{{{newVersion}}}",
       // Override datasource to take main repository into account to be able to apply minimumReleaseAge
       // overrideDatasource: "github-releases",
       // overridePackageName: "siderolabs/talos",
