@@ -10,8 +10,8 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.36.0
-    digest: sha256:b1f1d872bf64ebf88437467f4a2217bd08cf0e3cd07861e281f20b7b578d5c18
+    tag: 0.37.0
+    digest: sha256:6b8dbb8247bdc3b244e997768b0a3002b72e897b3f759dda7ce488de7181478f
   url: oci://ghcr.io/home-operations/charts-mirror/descheduler
   verify:
     provider: cosign
