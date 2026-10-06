@@ -77,6 +77,16 @@ spec:
         secretKey: clientSecret
         fetchUserInfoGroups: true
 
+    # v6 authorization model: a job with no access rules and no operator-wide
+    # defaults is hidden from every user. Grant full access to the authentik
+    # group created by the oidc-application component (slug
+    # "app: renovate-operator", parent "authentik Admins"), which
+    # fetchUserInfoGroups surfaces to the operator.
+    authorization:
+      defaults:
+        adminGroups:
+          - "app: renovate-operator"
+
     rbac:
       ownNamespaceOnly: false # If own namespace, it creates a serviceAccount which does not have the permission to patch jobs
 

@@ -109,7 +109,8 @@ provenance = "minisign"
 
 [tools.mc."platforms.linux-x64"]
 checksum = "sha256:01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891"
-url = "https://dl.min.io/client/mc/release/linux-amd64/archive/mc.RELEASE.2025-08-13T08-35-41Z"
+url = "https://github.com/minio/mc/releases/download/RELEASE.2025-08-13T08-35-41Z/mc.linux-amd64.RELEASE.2025-08-13T08-35-41Z"
+url_api = "https://api.github.com/repos/minio/mc/releases/assets/401741332"
 provenance = "minisign"
 
 [tools.mc."platforms.linux-x64-musl"]
@@ -154,8 +155,8 @@ version = "3.13.14"
 backend = "core:python"
 
 [tools.python."platforms.linux-x64"]
-checksum = "sha256:459ed79967acc207bef2ff5124dac35d74d5108528e37b15395d14e2922f2c92"
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260623/cpython-3.13.14+20260623-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+checksum = "sha256:39e82d05926bdcd206732026bcd878d9f00e288cd227d91c1fabf379b6ea4fa5"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260805/cpython-3.13.14+20260805-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [[tools.ruff]]
@@ -163,19 +164,19 @@ version = "0.15.21"
 backend = "aqua:astral-sh/ruff"
 
 [tools.ruff."platforms.linux-x64"]
-checksum = "sha256:7e157ff9a2e13676118c587e6db0ec02d040e415b21014346d230e64789c0e78"
-url = "https://github.com/astral-sh/ruff/releases/download/0.15.21/ruff-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/ruff/releases/assets/471700081"
+checksum = "sha256:7ddba1886f39ba918587f9ca37de9651008726834811c19ee83991705bd3e56b"
+url = "https://github.com/astral-sh/ruff/releases/download/0.15.21/ruff-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/ruff/releases/assets/471700076"
 provenance = "github-attestations"
 
 [[tools.talosctl]]
-version = "1.14.0"
+version = "1.13.10"
 backend = "aqua:siderolabs/talos"
 
 [tools.talosctl."platforms.linux-x64"]
-checksum = "sha256:2c147c4a99d124c95bd5c190fe054e0b3c93495f2243fd652ebd423adb8377c7"
-url = "https://github.com/siderolabs/talos/releases/download/v1.14.0/talosctl-linux-amd64"
-url_api = "https://api.github.com/repos/siderolabs/talos/releases/assets/542359015"
+checksum = "sha256:28e9ccd9aebd690fa03d8cf2582221d87ea38b2a1704f411d75a03589c58f2aa"
+url = "https://github.com/siderolabs/talos/releases/download/v1.13.10/talosctl-linux-amd64"
+url_api = "https://api.github.com/repos/siderolabs/talos/releases/assets/543177968"
 provenance = "cosign"
 
 [[tools.tekton-cli]]
@@ -192,9 +193,9 @@ version = "0.11.28"
 backend = "aqua:astral-sh/uv"
 
 [tools.uv."platforms.linux-x64"]
-checksum = "sha256:f02146b371c35c287d860f003ece7345c86e358a3fd70a9b63700cd141ee7fb4"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.28/uv-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/469655835"
+checksum = "sha256:e490a6464492183c5d4534a5527fb4440f7f2bb2f228162ad7e4afe076dc0224"
+url = "https://github.com/astral-sh/uv/releases/download/0.11.28/uv-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/469655822"
 provenance = "github-attestations"
 
 [[tools.velero]]

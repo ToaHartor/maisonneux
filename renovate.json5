@@ -337,6 +337,9 @@
     // Match OS and kubernetes versions
     {
       matchPackageNames: ["siderolabs/talos", "*/siderolabs/installer"],
+      matchDatasources: ["github-releases"],
+      separateMajorMinor: true,
+      separateMinorPatch: true,
       groupName: "Talos Linux",
       // Override datasource to take main repository into account to be able to apply minimumReleaseAge
       // overrideDatasource: "github-releases",
