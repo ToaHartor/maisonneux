@@ -337,7 +337,7 @@
     // Match OS and kubernetes versions
     {
       matchPackageNames: ["siderolabs/talos", "*/siderolabs/installer"],
-      matchDatasources: ["github-releases"],
+      matchDatasources: ["github-releases", "docker"],
       separateMajorMinor: true,
       separateMinorPatch: true,
       groupName: "Talos Linux",

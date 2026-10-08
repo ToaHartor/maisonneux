@@ -5,7 +5,7 @@ metadata:
   name: talos
 spec:
   talos:
-    # renovate: datasource=github-releases depName=siderolabs/talos extractVersion=^(?<version>.+)$
+    # renovate: datasource=docker depName=ghcr.io/siderolabs/talos
     version: v1.14.2
     prePull: true
   policy:
