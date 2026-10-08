@@ -4,3 +4,7 @@ nameservers:
   - address: ${node_gateway}
   - address: "1.1.1.1"
   - address: "8.8.8.8"
+hostDNS:
+  enabled: true
+  forwardKubeDNSToHost: false # Disable it as it conflicts with cilium's bpf.masquerade option https://github.com/cilium/cilium/issues/36761
+  resolveMemberNames: true

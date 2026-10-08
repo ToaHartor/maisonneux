@@ -1,0 +1,14 @@
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+# The installer describes the source of the installation.
+installer:
+  image: ${installer_image}
+# The provisioning describes how the installation disk should be provisioned.
+provisioning:
+  diskSelector:
+    # the main disk (PVE scsi0) is always /dev/sda in these VMs
+    match: disk.dev_path == "/dev/sda"
+  # in-place install/upgrade : reuse the existing installation so that
+  # state/ephemeral partitions are preserved (same as the legacy
+  # machine.install config : wipe: false, nocloud-installer image)
+  wipe: false

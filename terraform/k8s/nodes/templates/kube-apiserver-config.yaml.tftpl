@@ -1,0 +1,6 @@
+apiVersion: v1alpha1
+kind: KubeAPIServerConfig
+# User namespace feature
+extraArgs:
+  # feature-gates: "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
+  feature-gates: "ImageVolume=true"

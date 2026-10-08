@@ -1,0 +1,5 @@
+apiVersion: v1alpha1
+kind: KubeNetworkConfig
+dnsDomain: cluster.local # The domain used by Kubernetes DNS.
+podSubnets:
+  - ${pod_subnet}

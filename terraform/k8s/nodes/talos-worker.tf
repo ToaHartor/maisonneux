@@ -131,20 +131,30 @@ resource "talos_machine_configuration_apply" "worker" {
     templatefile("${path.module}/templates/hostname-config.yaml.tftpl", { hostname = local.worker_nodes[count.index].name }),
     templatefile("${path.module}/templates/resolver-config.yaml.tftpl", { node_gateway = var.cluster_node_network_gateway }),
     templatefile("${path.module}/templates/link-config.yaml.tftpl", { ip_address = "${local.worker_nodes[count.index].address}/${var.cluster_subnet}", node_gateway = var.cluster_node_network_gateway }),
+    templatefile("${path.module}/templates/kube-node-config.yaml.tftpl", {
+      cluster_node_network = var.cluster_node_network,
+      labels = concat(
+        ["topology.kubernetes.io/region: ${var.proxmox_cluster_name}", "topology.kubernetes.io/zone: ${local.worker_nodes[count.index].config.node}"],
+        local.worker_nodes[count.index].config.storage.datastore != null ? local.linstor_mount_labels : [],
+        length(local.worker_nodes[count.index].config.gpu) > 0 ? local.nvidia_config_labels : []
+      )
+      }
+    ),
+    templatefile("${path.module}/templates/install-config.yaml.tftpl", { installer_image = "factory.talos.dev/nocloud-installer/${jsondecode(length(local.worker_nodes[count.index].config.gpu) > 0 ? data.http.talos_factory_nvidia_schematic_id.response_body : data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}" }),
     yamlencode({
       machine = {
         type = "worker"
         // Specify installer to ease automatic upgrades with tuppr
-        install = {
-          image = "factory.talos.dev/nocloud-installer/${jsondecode(length(local.worker_nodes[count.index].config.gpu) > 0 ? data.http.talos_factory_nvidia_schematic_id.response_body : data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
-        }
-        kubelet = {
-          nodeIP = {
-            validSubnets = [
-              var.cluster_node_network
-            ]
-          }
-        }
+        # install = {
+        #   image = "factory.talos.dev/nocloud-installer/${jsondecode(length(local.worker_nodes[count.index].config.gpu) > 0 ? data.http.talos_factory_nvidia_schematic_id.response_body : data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
+        # }
+        # kubelet = {
+        #   nodeIP = {
+        #     validSubnets = [
+        #       var.cluster_node_network
+        #     ]
+        #   }
+        # }
         # network = {
         #   # hostname = local.worker_nodes[count.index].name
         #   interfaces = [
@@ -167,17 +177,23 @@ resource "talos_machine_configuration_apply" "worker" {
         #   # ]
         # }
         # Labels to identify proxmox nodes
-        nodeLabels = {
-          "topology.kubernetes.io/region" = var.proxmox_cluster_name
-          "topology.kubernetes.io/zone"   = local.worker_nodes[count.index].config.node
-        }
+        # nodeLabels = {
+        #   "topology.kubernetes.io/region" = var.proxmox_cluster_name
+        #   "topology.kubernetes.io/zone"   = local.worker_nodes[count.index].config.node
+        # }
       }
     })
     ],
     # Add mount for linstor
-    local.worker_nodes[count.index].config.storage.datastore != null ? [yamlencode(local.linstor_mount_config)] : [],
+    # -> label is added to the mount config
+    # local.worker_nodes[count.index].config.storage.datastore != null ? [yamlencode(local.linstor_mount_config)] : [],
     # Add nvidia config on target GPU node
-    length(local.worker_nodes[count.index].config.gpu) > 0 ? [yamlencode(local.nvidia_gpu_config)] : []
+    # length(local.worker_nodes[count.index].config.gpu) > 0 ? [yamlencode(local.nvidia_gpu_config)] : []
+    length(local.worker_nodes[count.index].config.gpu) > 0 ? flatten([
+      local.nvidia_gpu_config_tpls,
+      // sysctl config : add gpu node config if required
+      templatefile("${path.module}/templates/sysctl-config.yaml.tftpl", { sysctl_param = local.nvidia_sysctl_params })
+    ]) : []
   )
   depends_on = [
     proxmox_virtual_environment_vm.k8s-worker,

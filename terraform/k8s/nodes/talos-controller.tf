@@ -174,6 +174,11 @@ data "talos_machine_configuration" "controller" {
     [for c in local.common_machine_configs_tpls : c],
     [for c in local.common_machine_configs : yamlencode(c)],
     [
+      // API server config
+      templatefile("${path.module}/templates/kube-apiserver-config.yaml.tftpl", {}),
+      templatefile("${path.module}/templates/podsecurity-admission.yaml.tftpl", {}),
+      templatefile("${path.module}/templates/kube-proxy-config.yaml.tftpl", {}),
+
       // see https://docs.siderolabs.com/talos/v1.12/networking/advanced/vip
       // see https://docs.siderolabs.com/talos/v1.12/reference/configuration/network/layer2vipconfig
       yamlencode({
@@ -182,34 +187,46 @@ data "talos_machine_configuration" "controller" {
         link       = "eth0"
         name       = var.cluster_vip
       }),
-      yamlencode({
-        machine = {
-          # network = {
-          #   interfaces = [
-          #     # see https://www.talos.dev/v1.7/talos-guides/network/vip/
-          #     {
-          #       interface = "eth0"
-          #       vip = {
-          #         ip = var.cluster_vip
-          #       }
-          #     }
-          #   ]
-          # }
-          features = {
-            # Enable Talos CCM (reader)
-            # Allow API access for tuppr for automated system upgrades https://github.com/home-operations/tuppr/tree/main?tab=readme-ov-file#installation
-            kubernetesTalosAPIAccess = {
-              enabled                     = true
-              allowedRoles                = ["os:reader", "os:admin"]
-              allowedKubernetesNamespaces = ["kube-system", "system-upgrade"]
-            }
-          }
-        }
-      }),
+      templatefile("${path.module}/templates/kube-talos-api-access.yaml.tftpl", {}),
+
+      # yamlencode({
+      #   machine = {
+      #     # network = {
+      #     #   interfaces = [
+      #     #     # see https://www.talos.dev/v1.7/talos-guides/network/vip/
+      #     #     {
+      #     #       interface = "eth0"
+      #     #       vip = {
+      #     #         ip = var.cluster_vip
+      #     #       }
+      #     #     }
+      #     #   ]
+      #     # }
+      #     features = {
+      #       # Enable Talos CCM (reader)
+      #       # Allow API access for tuppr for automated system upgrades https://github.com/home-operations/tuppr/tree/main?tab=readme-ov-file#installation
+      #       kubernetesTalosAPIAccess = {
+      #         enabled                     = true
+      #         allowedRoles                = ["os:reader", "os:admin"]
+      #         allowedKubernetesNamespaces = ["kube-system", "system-upgrade"]
+      #       }
+      #     }
+      #   }
+      # }),
+      templatefile("${path.module}/templates/kube-cluster-config.yaml.tftpl", { cluster_name = var.cluster_name }),
+      templatefile("${path.module}/templates/inline-manifest-priorityclasses.yaml.tftpl", {}),
+
       yamlencode({
         cluster = {
-          clusterName                    = var.cluster_name
-          allowSchedulingOnControlPlanes = var.schedule_pods_on_control_plane_nodes
+          # NB: Talos 1.14+ moved control plane scheduling to KubeNodeConfig : the
+          #     NoSchedule taint on control plane nodes is now generated explicitly
+          #     in the base config (default : pods are NOT scheduled on control
+          #     planes, which is what var.schedule_pods_on_control_plane_nodes =
+          #     false asks for). Setting the deprecated
+          #     `allowSchedulingOnControlPlanes` field here makes the KubeNodeConfig
+          #     document fail validation ("already set in v1alpha1 config").
+          #     To allow scheduling on control planes, the taint has to be removed
+          #     via KubeNodeConfig instead.
           // solves https://github.com/siderolabs/talos/issues/9980 for k8s 1.32+
           # apiServer = {
           #   extraArgs = {
@@ -224,76 +241,76 @@ data "talos_machine_configuration" "controller" {
               "https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/main/docs/deploy/cloud-controller-manager-daemonset.yml"
             ]
           }
-          inlineManifests = [
-            {
-              name     = "priorityClasses"
-              contents = <<-EOF
-                ---
-                apiVersion: scheduling.k8s.io/v1
-                kind: PriorityClass
-                metadata:
-                  name: operators
-                description: Used for operators managing system components
-                preemptionPolicy: PreemptLowerPriority
-                value: 100005000
-                ---
-                apiVersion: scheduling.k8s.io/v1
-                kind: PriorityClass
-                metadata:
-                  name: services-critical
-                description: Used for pods that are critical to other services
-                preemptionPolicy: PreemptLowerPriority
-                value: 100004000
-                ---
-                apiVersion: scheduling.k8s.io/v1
-                kind: PriorityClass
-                metadata:
-                  name: monitoring
-                description: Used for pods that are critical to other services
-                preemptionPolicy: PreemptLowerPriority
-                value: 100003000
-                ---
-                apiVersion: scheduling.k8s.io/v1
-                kind: PriorityClass
-                metadata:
-                  name: services-important
-                description: Used for pods that are critical to other services
-                preemptionPolicy: PreemptLowerPriority
-                value: 100002000
-                EOF
-            }
-            # {
-            #   name = "democratic-csi-truenas-iscsi"
-            #   contents = join("---\n", [
-            #     data.helm_template.democratic_csi_truenas_iscsi.manifest,
-            #   ])
-            # },
-            # {
-            #   name = "democratic-csi-truenas-nfs"
-            #   contents = join("---\n", [
-            #     data.helm_template.democratic_csi_truenas_nfs.manifest,
-            #   ])
-            # },
-            # {
-            #   name = "csi-s3"
-            #   contents = join("---\n", [
-            #     data.helm_template.csi_s3.manifest,
-            #   ])
-            # },
-            # {
-            #   name = "cilium"
-            #   contents = join("---\n", [
-            #     data.helm_template.cilium.manifest,
-            #     "# Source cilium.tf\n${local.cilium_external_lb_manifest}",
-            #   ])
-            # },
-            # {
-            #   name = "nvidia-device-plugin"
-            #   contents = join("---\n", [yamlencode(local.nvidia_runtime_resource),
-            #     data.helm_template.nvidia_device_plugin.manifest,
-            #   ])
-            # },
-          ],
+          # inlineManifests = [
+          #   {
+          #     name     = "priorityClasses"
+          #     contents = <<-EOF
+          #       ---
+          #       apiVersion: scheduling.k8s.io/v1
+          #       kind: PriorityClass
+          #       metadata:
+          #         name: operators
+          #       description: Used for operators managing system components
+          #       preemptionPolicy: PreemptLowerPriority
+          #       value: 100005000
+          #       ---
+          #       apiVersion: scheduling.k8s.io/v1
+          #       kind: PriorityClass
+          #       metadata:
+          #         name: services-critical
+          #       description: Used for pods that are critical to other services
+          #       preemptionPolicy: PreemptLowerPriority
+          #       value: 100004000
+          #       ---
+          #       apiVersion: scheduling.k8s.io/v1
+          #       kind: PriorityClass
+          #       metadata:
+          #         name: monitoring
+          #       description: Used for pods that are critical to other services
+          #       preemptionPolicy: PreemptLowerPriority
+          #       value: 100003000
+          #       ---
+          #       apiVersion: scheduling.k8s.io/v1
+          #       kind: PriorityClass
+          #       metadata:
+          #         name: services-important
+          #       description: Used for pods that are critical to other services
+          #       preemptionPolicy: PreemptLowerPriority
+          #       value: 100002000
+          #       EOF
+          #   }
+          # {
+          #   name = "democratic-csi-truenas-iscsi"
+          #   contents = join("---\n", [
+          #     data.helm_template.democratic_csi_truenas_iscsi.manifest,
+          #   ])
+          # },
+          # {
+          #   name = "democratic-csi-truenas-nfs"
+          #   contents = join("---\n", [
+          #     data.helm_template.democratic_csi_truenas_nfs.manifest,
+          #   ])
+          # },
+          # {
+          #   name = "csi-s3"
+          #   contents = join("---\n", [
+          #     data.helm_template.csi_s3.manifest,
+          #   ])
+          # },
+          # {
+          #   name = "cilium"
+          #   contents = join("---\n", [
+          #     data.helm_template.cilium.manifest,
+          #     "# Source cilium.tf\n${local.cilium_external_lb_manifest}",
+          #   ])
+          # },
+          # {
+          #   name = "nvidia-device-plugin"
+          #   contents = join("---\n", [yamlencode(local.nvidia_runtime_resource),
+          #     data.helm_template.nvidia_device_plugin.manifest,
+          #   ])
+          # },
+          # ],
         },
       }),
   ])
@@ -320,20 +337,31 @@ resource "talos_machine_configuration_apply" "controller" {
     templatefile("${path.module}/templates/hostname-config.yaml.tftpl", { hostname = local.controller_nodes[count.index].name }),
     templatefile("${path.module}/templates/resolver-config.yaml.tftpl", { node_gateway = var.cluster_node_network_gateway }),
     templatefile("${path.module}/templates/link-config.yaml.tftpl", { ip_address = "${local.controller_nodes[count.index].address}/${var.cluster_subnet}", node_gateway = var.cluster_node_network_gateway }),
+    templatefile("${path.module}/templates/kube-node-config.yaml.tftpl", {
+      cluster_node_network = var.cluster_node_network,
+      labels = concat(
+        ["topology.kubernetes.io/region: ${var.proxmox_cluster_name}", "topology.kubernetes.io/zone: ${local.controller_nodes[count.index].config.node}"],
+        local.controller_nodes[count.index].config.storage.datastore != null ? local.linstor_mount_labels : [],
+
+      )
+      }
+    ),
+    templatefile("${path.module}/templates/install-config.yaml.tftpl", { installer_image = "factory.talos.dev/nocloud-installer/${jsondecode(data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}" }),
+
     yamlencode({
       machine = {
         type = "controlplane"
         // Specify installer to ease automatic upgrades with tuppr
-        install = {
-          image = "factory.talos.dev/installer/${jsondecode(data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
-        }
-        kubelet = {
-          nodeIP = {
-            validSubnets = [
-              var.cluster_node_network
-            ]
-          }
-        }
+        # install = {
+        #   image = "factory.talos.dev/nocloud-installer/${jsondecode(data.http.talos_factory_schematic_id.response_body).id}:v${var.talos_version}"
+        # }
+        # kubelet = {
+        #   nodeIP = {
+        #     validSubnets = [
+        #       var.cluster_node_network
+        #     ]
+        #   }
+        # }
         # network = {
         #   # hostname = local.controller_nodes[count.index].name
         #   interfaces = [
@@ -356,15 +384,15 @@ resource "talos_machine_configuration_apply" "controller" {
         #   # ]
         # }
         # Labels for csi-proxmox-driver
-        nodeLabels = {
-          "topology.kubernetes.io/region" = var.proxmox_cluster_name
-          "topology.kubernetes.io/zone"   = local.controller_nodes[count.index].config.node
-        }
+        # nodeLabels = {
+        #   "topology.kubernetes.io/region" = var.proxmox_cluster_name
+        #   "topology.kubernetes.io/zone"   = local.controller_nodes[count.index].config.node
+        # }
       }
     })
     ],
     # Add mount for linstor
-    local.controller_nodes[count.index].config.storage.datastore != null ? [yamlencode(local.linstor_mount_config)] : []
+    # local.controller_nodes[count.index].config.storage.datastore != null ? [yamlencode(local.linstor_mount_config)] : []
   )
   depends_on = [
     proxmox_virtual_environment_vm.k8s-controller,

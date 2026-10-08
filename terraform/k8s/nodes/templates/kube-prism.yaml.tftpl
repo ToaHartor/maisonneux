@@ -1,0 +1,5 @@
+# NB if you use a non-default CNI, you must configure it to use the
+#    https://localhost:7445 kube-apiserver endpoint.
+apiVersion: v1alpha1
+kind: KubePrismConfig
+port: ${kubeprism_port}

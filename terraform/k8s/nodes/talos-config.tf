@@ -22,11 +22,32 @@ locals {
     )
   )
   registry_mirrors = ["docker.io", "gcr.io", "ghcr.io", "nvcr.io", "registry.k8s.io", "quay.io", "registry.gitlab.com"]
+  kernel_modules = [
+    ["drbd", ["usermode_helper=disabled"]],
+    ["drbd_transport_tcp", []],
+    ["dm-thin-pool", []]
+  ]
   common_machine_configs_tpls = concat(
     // Registries
     var.registry_mirror_url != "" ? [for r in local.registry_mirrors :
       templatefile("${path.module}/templates/registry-mirror-config.yaml.tftpl", { registry = r, mirror_url = var.registry_mirror_url })
-    ] : []
+    ] : [],
+    // Files
+    [templatefile("${path.module}/templates/cri-customization-config.yaml.tftpl", {})],
+    // Features (hostDNS moved to resolver-config)
+    [templatefile("${path.module}/templates/kube-prism.yaml.tftpl", { kubeprism_port = local.kubeprism_port })],
+    // Kernel modules
+    [for m in local.kernel_modules :
+      templatefile("${path.module}/templates/kernel-module.yaml.tftpl", { name = m[0], parameters = m[1] })
+    ],
+    // Kubelet config
+    [templatefile("${path.module}/templates/kubelet-config.yaml.tftpl", {})],
+    // Member discovery disabled if no DiscoveryServiceConfig is defined
+    // Network
+    [templatefile("${path.module}/templates/kube-network-config.yaml.tftpl", { pod_subnet = var.cluster_pod_cidr }),
+      templatefile("${path.module}/templates/kube-flannel-config.yaml.tftpl", {}),
+    ],
+    // API server config moves to controller only
   )
   common_machine_configs = concat(
     [
@@ -82,39 +103,35 @@ locals {
           #   }
           # } : {}
 
-          files = [
-            {
-              op      = "create"
-              path    = "/etc/cri/conf.d/20-customization.part"
-              content = <<-EOT
-          [plugins]
-            [plugins."io.containerd.grpc.v1.cri"]
-              enable_unprivileged_ports = true
-              enable_unprivileged_icmp = true
-          [plugins."io.containerd.cri.v1.images"]
-            discard_unpacked_layers = false
-          [plugins."io.containerd.cri.v1.runtime"]
-            cdi_spec_dirs = ["/var/cdi/static", "/var/cdi/dynamic"]
-            device_ownership_from_security_context = true
-          EOT
-            }
-          ]
+          # files = [
+          #   {
+          #     op      = "create"
+          #     path    = "/etc/cri/conf.d/20-customization.part"
+          #     content = <<-EOT
+          # [plugins]
+          #   [plugins."io.containerd.grpc.v1.cri"]
+          #     enable_unprivileged_ports = true
+          #     enable_unprivileged_icmp = true
+          # [plugins."io.containerd.cri.v1.images"]
+          #   discard_unpacked_layers = false
+          # [plugins."io.containerd.cri.v1.runtime"]
+          #   cdi_spec_dirs = ["/var/cdi/static", "/var/cdi/dynamic"]
+          #   device_ownership_from_security_context = true
+          # EOT
+          #   }
+          # ]
 
-          features = {
-            # see https://www.talos.dev/v1.7/kubernetes-guides/configuration/kubeprism/
-            # see talosctl -n $c0 read /etc/kubernetes/kubeconfig-kubelet | yq .clusters[].cluster.server
-            # NB if you use a non-default CNI, you must configure it to use the
-            #    https://localhost:7445 kube-apiserver endpoint.
-            kubePrism = {
-              enabled = true
-              port    = local.kubeprism_port
-            }
-            hostDNS = {
-              enabled              = true
-              forwardKubeDNSToHost = false # Disable it as it conflicts with cilium's bpf.masquerade option https://github.com/cilium/cilium/issues/36761
-              resolveMemberNames   = true
-            }
-          }
+          # features = {
+          #   # kubePrism = {
+          #   #   enabled = true
+          #   #   port    = local.kubeprism_port
+          #   # }
+          #   hostDNS = {
+          #     enabled              = true
+          #     forwardKubeDNSToHost = false # Disable it as it conflicts with cilium's bpf.masquerade option https://github.com/cilium/cilium/issues/36761
+          #     resolveMemberNames   = true
+          #   }
+          # }
 
           logging = {
             destinations = [
@@ -125,35 +142,35 @@ locals {
             ]
           }
 
-          kernel = {
-            modules = [
-              # DRBD module for linstor and piraeus operator
-              {
-                name = "drbd"
-                parameters = [
-                  "usermode_helper=disabled"
-                ]
-              },
-              {
-                name = "drbd_transport_tcp"
-              },
-              {
-                name = "dm-thin-pool"
-              }
-            ]
-          }
-          # For metrics server
-          kubelet = {
-            extraArgs = {
-              cloud-provider             = "external"
-              rotate-server-certificates = true
-              # To solve "failed to create pod sandbox : no space left on device"
-              # https://serverfault.com/questions/1189137/talos-os-and-truecharts-failed-to-create-network-namespace-for-sandbox-error
-              # feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
-              # For CNPG extensions
-              feature-gates = "ImageVolume=true"
-            }
-          }
+          # kernel = {
+          #   modules = [
+          #     # DRBD module for linstor and piraeus operator
+          #     {
+          #       name = "drbd"
+          #       parameters = [
+          #         "usermode_helper=disabled"
+          #       ]
+          #     },
+          #     {
+          #       name = "drbd_transport_tcp"
+          #     },
+          #     {
+          #       name = "dm-thin-pool"
+          #     }
+          #   ]
+          # }
+
+          # kubelet = {
+          #   extraArgs = {
+          #     cloud-provider             = "external"
+          #     rotate-server-certificates = true
+          #     # To solve "failed to create pod sandbox : no space left on device"
+          #     # https://serverfault.com/questions/1189137/talos-os-and-truecharts-failed-to-create-network-namespace-for-sandbox-error
+          #     # feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
+          #     # For CNPG extensions
+          #     feature-gates = "ImageVolume=true"
+          #   }
+          # }
           # sysctls = {
           #   "user.max_user_namespaces" = "11255"
           # }
@@ -161,59 +178,62 @@ locals {
           #   "node.cilium.io/agent-not-ready" = "true:NoSchedule" # Taint nodes for cilium to check if it controls the node
           # }
         }
-        cluster = {
-          # see https://www.talos.dev/v1.7/talos-guides/discovery/
-          # see https://www.talos.dev/v1.7/reference/configuration/#clusterdiscoveryconfig
-          discovery = {
-            enabled = false
-            registries = {
-              kubernetes = {
-                # Deprecated as of k8s 1.32+
-                disabled = true
-              }
-              service = {
-                disabled = true
-              }
-            }
-          }
-          network = {
-            cni = {
-              name = "none" # As we install Cilium after
-            }
-            dnsDomain  = "cluster.local"
-            podSubnets = [var.cluster_pod_cidr]
-          }
-          # Disable because of cilium
-          proxy = {
-            disabled = true
-          }
-          # Allow cert manager csi driver
-          # Base from https://www.talos.dev/v1.7/reference/configuration/v1alpha1/config/#Config.cluster.apiServer.admissionControl.
-          apiServer = {
-            # User namespace feature
-            extraArgs = {
-              # feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
-              feature-gates = "ImageVolume=true"
-            }
-            admissionControl = [
-              {
-                name = "PodSecurity"
-                configuration = {
-                  exemptions = {
-                    namespaces = ["cert-manager", "flux-system", "piraeus-datastore", "opentelemetry", "system-backup", "system-utils", "ingress"]
-                  }
-                }
-              }
-            ]
-          }
-        }
+        # cluster = {
+        # see https://www.talos.dev/v1.7/talos-guides/discovery/
+        # see https://www.talos.dev/v1.7/reference/configuration/#clusterdiscoveryconfig
+        # discovery = {
+        #   enabled = false
+        #   registries = {
+        #     kubernetes = {
+        #       # Deprecated as of k8s 1.32+
+        #       disabled = true
+        #     }
+        #     service = {
+        #       disabled = true
+        #     }
+        #   }
+        # }
+        # network = {
+        #   cni = {
+        #     name = "none" # As we install Cilium after
+        #   }
+        #   dnsDomain  = "cluster.local"
+        #   podSubnets = [var.cluster_pod_cidr]
+        # }
+        # Disable because of cilium
+        # proxy = {
+        #   disabled = true
+        # }
+        # Allow cert manager csi driver
+        # Base from https://www.talos.dev/v1.7/reference/configuration/v1alpha1/config/#Config.cluster.apiServer.admissionControl.
+        # apiServer = {
+        #   # User namespace feature
+        #   # extraArgs = {
+        #   #   # feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
+        #   #   feature-gates = "ImageVolume=true"
+        #   # }
+        #   admissionControl = [
+        #     {
+        #       name = "PodSecurity"
+        #       configuration = {
+        #         exemptions = {
+        #           namespaces = ["cert-manager", "flux-system", "piraeus-datastore", "opentelemetry", "system-backup", "system-utils", "ingress"]
+        #         }
+        #       }
+        #     }
+        #   ]
+        # }
+        # }
       }
   ])
+  linstor_mount_labels = [
+    "homelab/linstor-enabled: \"true\""
+  ]
   linstor_mount_config = {
     machine = {
-      nodeLabels = {
-        "homelab/linstor-enabled" = "true"
-      }
+      # nodeLabels = {
+      #   "homelab/linstor-enabled" = "true"
+      # }
       # If using fileStorage in nodes
       # kubelet = {
       #   extraMounts = [
@@ -237,30 +257,44 @@ locals {
       # ]
     }
   }
+  nvidia_gpu_modules = [
+    "nvidia", "nvidia_uvm", "nvidia_drm", "nvidia_modeset"
+  ]
+  nvidia_sysctl_params = [
+    "net.core.bpf_jit_harden: \"1\""
+  ]
+  nvidia_config_labels = [
+    "nvidia.com/gpu.present: \"true\""
+  ]
+  nvidia_gpu_config_tpls = concat([
+    [for m in local.nvidia_gpu_modules :
+      templatefile("${path.module}/templates/kernel-module.yaml.tftpl", { name = m, parameters = [] })
+    ]
+  ])
   nvidia_gpu_config = {
     machine = {
-      kernel = {
-        modules = [
-          {
-            name = "nvidia"
-          },
-          {
-            name = "nvidia_uvm"
-          },
-          {
-            name = "nvidia_drm"
-          },
-          {
-            name = "nvidia_modeset"
-          }
-        ]
-      },
-      sysctls = {
-        "net.core.bpf_jit_harden" = 1
-      }
-      nodeLabels = {
-        "nvidia.com/gpu.present" = "true"
-      }
+      # kernel = {
+      #   modules = [
+      #     {
+      #       name = "nvidia"
+      #     },
+      #     {
+      #       name = "nvidia_uvm"
+      #     },
+      #     {
+      #       name = "nvidia_drm"
+      #     },
+      #     {
+      #       name = "nvidia_modeset"
+      #     }
+      #   ]
+      # },
+      # sysctls = {
+      #   "net.core.bpf_jit_harden" = 1
+      # }
+      # nodeLabels = {
+      #   "nvidia.com/gpu.present" = "true"
+      # }
     }
   }
 }

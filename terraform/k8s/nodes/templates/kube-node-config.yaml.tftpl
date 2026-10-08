@@ -1,0 +1,9 @@
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+nodeIP:
+  validSubnets:
+    - ${cluster_node_network}
+labels:
+%{ for label in labels ~}
+  ${label}
+%{ endfor ~}

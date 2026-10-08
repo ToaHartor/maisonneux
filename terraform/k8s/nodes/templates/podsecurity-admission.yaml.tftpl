@@ -1,0 +1,13 @@
+apiVersion: v1alpha1
+kind: KubeAdmissionControlConfig
+name: PodSecurity # Admission control plugin name, should be a valid Kubernetes admission control plugin name.
+configuration:
+  exemptions:
+    namespaces:
+      - cert-manager
+      - flux-system
+      - piraeus-datastore
+      - opentelemetry
+      - system-backup
+      - system-utils
+      - ingress

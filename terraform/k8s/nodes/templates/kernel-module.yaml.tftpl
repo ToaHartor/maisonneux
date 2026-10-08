@@ -1,0 +1,9 @@
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: ${name}
+%{ if length(parameters) > 0 ~}
+parameters:
+%{ for p in parameters ~}
+  - ${p}
+%{ endfor ~}
+%{ endif ~}
