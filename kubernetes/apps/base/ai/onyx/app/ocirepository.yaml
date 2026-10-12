@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.9.3
-    digest: sha256:30bbc78fd4e882dffd1c25e02d3542da8f2ce1053c4a61961459413b526f8912
+    tag: 0.9.12
+    digest: sha256:35924d3e24151f4a4d45d0d87e2dfcebecf04291923c8228e49268358c574f1a
   url: oci://ghcr.io/onyx-dot-app/charts/onyx
