@@ -23,3 +23,33 @@ spec:
       output_cost_per_token: 0.000000207
       cache_creation_input_token_cost: 0.0
       cache_read_input_token_cost: 0.0
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmodel_v1alpha1.json
+# Model used for non-reasoning tasks (such as coding review)
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: local-qwen-3-8-noreason
+spec:
+  modelName: local/qwen-3.8-27B-noreason
+  params:
+    model: openai/qwen38_27B # model api format / alias in llama.cpp
+    apiBase: http://qwen38.ai.svc.cluster.local:8080/v1
+    apiKey: sk-no-key-required # Dummy key to bypass OpenAI client validation
+    dropParams: true
+    additional:
+      chat_template_kwargs:
+        enable_thinking: false
+  info:
+    maxInputTokens: 262144
+    maxOutputTokens: 262144
+    supportsFunctionCalling: true
+    supportsPromptCaching: true
+    supportsVision: true
+    extra:
+      supports_reasoning: false
+      # See docs/notes/llm-setup.md for calculation
+      input_cost_per_token: 0.000000007
+      output_cost_per_token: 0.000000207
+      cache_creation_input_token_cost: 0.0
+      cache_read_input_token_cost: 0.0
