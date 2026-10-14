@@ -33,6 +33,16 @@ spec:
         collectorImage:
           repository: otel/opentelemetry-collector-contrib
         ignoreMissingCollectorCRDs: true # As it is installed in the main chart
+        # Explicitly disable the network policy feature gates. In operator
+        # v0.158.0-v0.159.x they are enabled by default, and the generated
+        # NetworkPolicy only allows egress to the control-plane node IPs on
+        # 6443, which blocks the operator's own API access via the
+        # kubernetes ClusterIP service (10.96.0.1:443) and permanently
+        # stalls leader election. Upstream disabled the defaults in v0.160.0.
+        # https://github.com/open-telemetry/opentelemetry-operator/issues/4411
+        featureGatesMap:
+          operator.networkpolicy: false
+          operand.networkpolicy: false
         resources:
           limits:
             cpu: 100m
