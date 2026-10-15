@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 41.7.1
-    digest: sha256:ce4608f8ad8fff14b6e335f525b1f430798c91c0b74fe0751d8e3f00c97671f0
+    tag: 42.0.0
+    digest: sha256:779f04f7aa930daddba2aacf0f4a75c8d83cac477c00996372680b61fdf423aa
   url: oci://ghcr.io/traefik/helm/traefik
