@@ -45,3 +45,5 @@ spec:
           secretKeyRef:
             name: grafana-mcp-token
             key: token
+      - name: GRAFANA_ORG_ID
+        value: "1"
