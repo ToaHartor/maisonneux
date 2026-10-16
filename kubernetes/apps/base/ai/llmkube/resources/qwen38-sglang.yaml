@@ -198,7 +198,7 @@ spec:
   # (nvfp4/fp4_mx_block16 in --kv-cache-dtype). Operator default is
   # v0.5.15.post1-cu129, which predates Qwen3.8 support.
   # renovate container:
-  image: lmsysorg/sglang:v0.5.21-cu130
+  image: lmsysorg/sglang:v0.5.22-cu130
   replicas: 1
   endpoint:
     # Port 8080 to match the vllm/beellama services + litellm/karaseek
