@@ -43,7 +43,7 @@ spec:
     # Without this the pod re-scans the whole S3 bucket on every restart.
     persistence: true
     pvc:
-      storage: 2Gi
+      storage: 10Gi
       storageClassName: ${fastdata_storage}
     resources:
       limits:
