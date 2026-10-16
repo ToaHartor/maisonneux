@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: v1.7.0
-    digest: sha256:090edee24f59cdbe4b5b4ad24f3bdf687ff83c47ad8d5099c7d6bcadafbde609
+    tag: v1.7.1
+    digest: sha256:334cdd6cd58e08e77289b87ec8756b9f65fd085929ac8bb31e8b847981023376
   url: oci://ghcr.io/dragonflydb/dragonfly-operator/helm/dragonfly-operator
