@@ -110,6 +110,14 @@ spec:
               inputName: DS_PROMETHEUS
     telemetry:
       enabled: true
-      endpoint: "opentelemetry-kube-stack-daemon-collector.opentelemetry.svc.cluster.local:4317"
+      # Scheme-prefixed endpoint: for OTLP/gRPC the SDK derives TLS from the
+      # scheme (http = plaintext), which also keeps the endpoint parseable as a
+      # URL. A bare host:port breaks the otlploggrpc exporter, which resolves
+      # the target via url.Parse().Host and ends up dialing an empty address
+      # ("delegating_resolver: invalid target address \"\"").
+      endpoint: "http://opentelemetry-kube-stack-daemon-collector.opentelemetry.svc.cluster.local:4317"
       protocol: grpc
       forwardToJobs: true
+      # Jobs use Renovate's OTLP/HTTP exporter, which needs the collector's HTTP
+      # receiver (4318) — not the gRPC host:port endpoint above.
+      jobEndpoint: "http://opentelemetry-kube-stack-daemon-collector.opentelemetry.svc.cluster.local:4318"
