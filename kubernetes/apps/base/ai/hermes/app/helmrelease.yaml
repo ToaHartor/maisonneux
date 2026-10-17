@@ -206,7 +206,7 @@ spec:
                   name: litellm-master-key
                   key: secretKey
               MEMINI_BASE_URL: http://memini.ai.svc.cluster.local:8080
-              MEMINI_NAMESPACE: hermes
+              MEMINI_NAMESPACE: shared/hermes
               MEMINI_API_KEY:
                 valueFrom:
                   secretKeyRef:
