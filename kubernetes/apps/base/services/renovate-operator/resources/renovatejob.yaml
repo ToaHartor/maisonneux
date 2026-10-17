@@ -6,7 +6,7 @@ metadata:
   name: maisonneux
 spec:
   # renovate container:
-  image: ghcr.io/renovatebot/renovate:44.149.3@sha256:11431b10c52c306bb280171f80d409e1fb482e5a61a845cfef93f34b4d649d5d
+  image: ghcr.io/renovatebot/renovate:44.166.0@sha256:510b885a90cd70437816c5c2da1d0c3beff513d3979497b2db1d37c84adfbc2b
   parallelism: 1 # Otherwise it will saturate the API
   discoverTopics: [renovate] # Repository should have the topic "renovate"
   provider:
