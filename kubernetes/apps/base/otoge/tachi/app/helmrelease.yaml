@@ -37,7 +37,7 @@ spec:
             image: &tachiImage
               repository: ghcr.io/zkldi/tachi
               # renovate: datasource=docker depName=ghcr.io/zkldi/tachi versioning=loose
-              tag: 20261008-e6b34a1
+              tag: 20261017-1d7678d
             # From https://github.com/zkldi/Tachi/blob/d14a21df888d9ec845885e00481b3f1714b2df14/.just/db.just#L39
             command:
               - /bin/sh
@@ -329,7 +329,7 @@ spec:
               repository: localhost:32000/tachi-client # Client
               # Should be in sync with the server and the image built in pipeline
               # renovate gitref: depName=https://github.com/zkldi/Tachi gitRef=main
-              tag: e6b34a13d2dd551db0f6de27a59e36bd2ffb531a
+              tag: 1d7678ddc9327abb87d55fd32121bae4afaf0b18
               pullPolicy: Always
             # env:
             ports:
