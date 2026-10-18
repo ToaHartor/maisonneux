@@ -106,19 +106,36 @@ spec:
     # gpu-memory-utilization 0.95 + MTP k=4, so 262144 fits with 1.06x
     # per-request headroom
     maxModelLen: 262144
-    # Halves KV footprint (18.4 KiB/token/card) - the binding constraint
-    # that unlocks 262K on 2x 16 GB
-    kvCacheDtype: fp8_e4m3
-    # MARK 2026-09-27: NVFP4 KV is one release away, WAITING ON UPSTREAM.
-    # SM120 support (FlashInfer FA2 paged NVFP4 reader + linear V scales,
-    # HND layout) exists only in open vLLM PRs #46329/#56550 - no merged
-    # release and no off-the-shelf image yet (checked; the co-l gist
-    # builds its patched image locally). When it lands in a stock image:
-    # bump image, set kvCacheDtype: nvfp4, add env
-    # VLLM_KV_CACHE_LAYOUT=HND, keep PIECEWISE. ~2x pool (~500K) at a
-    # decode-speed cost (dual-5060Ti datapoint: max tg 82 -> 65). Then
-    # re-investigate SGLang. Detail: docs/notes/llm-journey.md (Watch
-    # list, NVFP4 KV entry).
+    # NVFP4 KV: 4-bit data + E4M3 scale groups - ~1.6x pool over fp8,
+    # halves the attention KV re-read per step at depth.
+    # Goes through llmkube's unvalidated custom escape hatch (the standard
+    # kvCacheDtype field's CRD enum is auto;fp8_e5m2;fp8_e4m3 - nvfp4 is
+    # rejected at apply time): kvCacheCustomDtype maps to --kv-cache-dtype
+    # and takes precedence over kvCacheDtype, which is left unset (its
+    # injected default "auto" is not emitted, so no flag clash).
+    kvCacheCustomDtype: nvfp4
+    # TRIGGER FIRED 2026-10-19 (was MARK 2026-09-27 "WAITING ON
+    # UPSTREAM"): SM120 NVFP4 KV cache shipped in v0.32.0 (the image
+    # Renovate bumped 2026-10-18):
+    #   - vLLM #46963 (merged 2026-10-07): FlashInfer paged slot-mapping
+    #     NVFP4 writer + native FA2 prefill for SM8x/SM12x
+    #   - vLLM #60452 (merged 2026-10-10): XQA decode for NVFP4 on
+    #     SM12x + MTP verify steps count as decodes again under
+    #     UNIFORM_BATCH cudagraphs. Pre-#60452, MTP + NVFP4 on SM120
+    #     TP2 collapsed to ~15 tok/s; #60452's field validation is our
+    #     exact setup (SM120 TP2, Qwen3.8-27B, MTP): GSM8K 0.962 nvfp4
+    #     = 0.962 fp8, no invalid responses.
+    # The old marker's VLLM_KV_CACHE_LAYOUT=HND env is OBSOLETE: HND was
+    # a requirement of jethac's UNMERGED #46329 line; the merged line is
+    # validated on the default NHD layout (head_dim 256, GQA 6, K/V
+    # scales strided). Keep PIECEWISE (safe mode for XQA decode).
+    # Expect ~1.6x pool over the 0.32.0 fp8 287,719 (~450K+) at a
+    # decode-speed cost (dual-5060Ti datapoint: max tg 82 -> 65).
+    # Residual caveats: split-KV disabled for NVFP4 prefill, KV writer
+    # per-append host sync (flashinfer#6204 pending), head_size 64 /
+    # attention-sink models refused (n/a for this model). REVERT = drop
+    # kvCacheCustomDtype + restore kvCacheDtype: fp8_e4m3. Detail:
+    # docs/notes/llm-journey.md (Watch list, NVFP4 KV entry).
     # Repeated agentic system prompts: the big agentic win over the beellama
     # service (which runs --cache-ram 0 and re-prefills every request)
     enablePrefixCaching: true
