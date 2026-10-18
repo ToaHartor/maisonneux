@@ -323,6 +323,10 @@ spec:
         # annotations:
         #   # Reload pod on secret/cm change. As we use external secrets with valuesfrom (so not mounted in the deployment), we need to tell which resources to watch
         #   secret.reloader.stakater.com/reload: "${PSQL_DB_USER}-db-creds,${S3_USER}-garage,${SECRET_KEY_NAME}"
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
         containers:
           client:
             image:
