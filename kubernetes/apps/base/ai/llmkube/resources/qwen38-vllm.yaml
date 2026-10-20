@@ -138,9 +138,14 @@ spec:
     # 262K (+75% over fp8) | short prose 53.7 t/s (-19% vs 66.3) |
     # structured 75.1-77.9 t/s, acc 2.08 (-28 to -30% vs 108.1/2.64)
     # | long COLD 31.58s @68.6K (prefill 2,171 t/s, +4.6%) | warm 3.34s
-    # (vs 3.16s, wash) | quality math+tool PASS. CONFOUND: no 0.32.0+fp8
-    # paired baseline, so the t/s delta includes the 0.30->0.32 engine
-    # bump - the revert re-bench closes that. Detail:
+    # (vs 3.16s, wash) | quality math+tool PASS. REVERTED same day
+    # (t/s priority). ISOLATION (post-revert fp8@0.32.0 bench, same
+    # day): prose 60.8 t/s | structured 98.4-99.8 t/s, acc 2.39 | COLD
+    # 29.11s @65.7K (2,257 t/s) | warm 2.20s | quality PASS. Pure
+    # NVFP4 delta: -12% prose / -23% structured (acc 2.39 -> 2.08),
+    # warm +52%, prefill wash - of the -19%/-30% vs the 0.30.0 record,
+    # ~8% is the 0.30->0.32 bump, the rest is the NVFP4 tax. New fp8
+    # baseline: 60.8/99.3 t/s, pool 287,719. Detail:
     # docs/notes/llm-journey.md (NVFP4-KV A/B section + Watch list).
     # Repeated agentic system prompts: the big agentic win over the beellama
     # service (which runs --cache-ram 0 and re-prefills every request)

@@ -60,9 +60,7 @@ and in the `qwen38-vllm.yaml` header):
 - Hardware-bound numbers from recipe cards (H200/GB300, 5090) don't
   transfer to 5060 Ti - always re-measure.
 
-**Open items, each with its trigger:** post-revert 0.32.0+fp8 bench
--> new baseline + pins the pure NVFP4 t/s delta (the 10-19 run is
-confounded by the 0.30->0.32 engine bump) · FLASHINFER fused multi-step
+**Open items, each with its trigger:** FLASHINFER fused multi-step
 draft
 (#55292/#57443/#54369) -> re-A/B k=6/8 · llama.cpp #27858 merged into a
 beellama release -> DSpark-bee tensor-split retry (template ready) ·
@@ -336,7 +334,7 @@ scheduler-execution overlap is already inside all recorded numbers.
 Verified 2026-09-28 against the installed v0.30.0 source in
 qwen38-7c5c564449-xn7kf.
 
-## NVFP4-KV A/B (2026-10-19) - pool +75% at -19%/-30% t/s; KEPT, isolation pending
+## NVFP4-KV A/B (2026-10-19) - pool +75% at -19%/-30% t/s; reverted same day, tax confirmed -12%/-23%
 
 The upstream trigger fired: SM120 NVFP4 KV cache shipped in v0.32.0
 (#46963 paged slot-mapping writer + FA2 prefill; #60452 XQA decode +
@@ -380,10 +378,25 @@ Reads:
   NVFP4 decode ~22% FASTER than FP8 - opposite of our drop. Our -19%/
   -30% is the MTP acceptance tax (2.64 -> 2.08) + the un-isolated 0.30
   -> 0.32 engine bump, not the #50416 prefill kernel.
-- CONFOUND: the 0.30.0 -> 0.32.0 engine bump (XQA decode is new in
-  0.32 even for fp8) is NOT isolated - no fp8@0.32 paired baseline
-  (skipped, user call), so the t/s deltas are an upper bound on the
-  NVFP4 cost, not its exact size. Also cross-week (clock drift).
+- CONFOUND CLOSED (evening of 10-19, post-revert fp8@0.32.0 bench,
+  same day, zero concurrency): short prose 8.43 s (60.8 t/s) |
+  structured x3 98.4-99.8 t/s (acc 2.39) | long COLD 29.11 s @65.7K
+  (2,257 t/s) | warm 2.20 s | math+tool PASS. PURE NVFP4 DELTA
+  (paired, same image):
+
+| Probe          | 0.32.0 fp8  | 0.32.0 NVFP4 | NVFP4 delta |
+| -------------- | ----------- | ------------ | ----------- |
+| Short prose    | 60.8 t/s    | 53.7 t/s     | -12%        |
+| Structured x3  | 99.3 t/s    | 76.4 t/s     | -23%        |
+| MTP acceptance | 2.39        | 2.08         | -0.31       |
+| Long WARM wall | 2.20 s      | 3.34 s       | +52%        |
+| Prefill t/s    | 2,257 @65.7K| 2,171 @68.6K | wash        |
+
+So of the -19%/-30% vs the 0.30.0 record: ~8% is the 0.30->0.32
+engine bump (itself not separable from cross-week clock drift),
+-12%/-23% is the NVFP4 tax itself - matching the dual-5060Ti datapoint
+(~21% at depth). The 0.32.0 fp8 numbers (60.8/99.3 t/s, pool
+287,719) are the new baseline for the settled config.
 
 VERDICT: REVERTED SAME DAY. The A/B confirmed the predicted tradeoff
 (pool 1.87x at the expected decode tax, quality PASS), and the user
@@ -391,7 +404,8 @@ prioritized t/s over pool "for now" - so the service went back to
 `kvCacheDtype: fp8_e4m3` on 0.32.0 (pool 287,719 = 1.10x of 262K: one
 full session still fits; the parallelSlots:2-at-depth headroom is what
 fp8 gives up until the re-flip). The post-revert fp8@0.32.0 bench
-closes the confound and is the new baseline. NVFP4 re-flip trigger:
+closed the confound the same evening (isolation table above) and is
+the new baseline. NVFP4 re-flip trigger:
 pool becomes the binding constraint again, or a vLLM image ships
 FlashInfer >=0.7.1 with FI #5239 (SM120 repack) + #4993 (split-KV
 fix) - per the vllm-project/vllm#50416 thread, NVFP4 prefill is then
@@ -452,13 +466,14 @@ on par with FP8; the decode tax stays (acceptance-driven).
 this box, then REVERTED the same day - the user prioritized decode
 t/s over pool "for now" (see the NVFP4-KV A/B section: pool +75% at
 -19%/-30% t/s, quality PASS, no HND env needed, llmkube custom-field
-escape hatch). Residual watch: post-revert fp8@0.32.0 bench (pending)
--> new baseline + pure NVFP4 delta; NVFP4 re-flip trigger (pool-bound
+escape hatch). Residual watch: NVFP4 re-flip trigger (pool-bound
 again, or FI >=0.7.1 with #5239/#4993 in a vLLM image - the #50416
 thread); #36010 (fix candidates in-thread: CPU-mirror population -
 graphs-off only; #36045 graph-safe workspace prep; #23354 fused NVFP4
 extend kernel) -> SGLang NVFP4-KV + DSpark re-test when it lands in a
-release.
+release. Closed 10-19: fp8@0.32.0 post-revert bench -> pure NVFP4
+tax pinned at -12% prose / -23% structured (new fp8 baseline
+60.8/99.3 t/s).
 - **SGLang + DSpark on 2×16GB: SHELVED 2026-09-28 (user decision,**
   **agreed)**. Three boot attempts: (1) f=0.90 → OOM at the prefill
   capture ladder; (2) f=0.98 → worse (memFractionStatic is the
