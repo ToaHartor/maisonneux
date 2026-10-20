@@ -131,11 +131,19 @@ spec:
     # scales strided). Keep PIECEWISE (safe mode for XQA decode).
     # Expect ~1.6x pool over the 0.32.0 fp8 287,719 (~450K+) at a
     # decode-speed cost (dual-5060Ti datapoint: max tg 82 -> 65).
+    # A/B RESULT 2026-10-19 (zero concurrency, pod qwen38-7ccfb97d,
+    # vs recorded 0.30.0 fp8 b12x baseline): pool 488,973 tok = 1.87x
+    # of 262K (+75% over fp8) | short prose 53.7 t/s (-19% vs 66.3) |
+    # structured 75.1-77.9 t/s, acc 2.08 (-28 to -30% vs 108.1/2.64)
+    # | long COLD 31.58s @68.6K (prefill 2,171 t/s, +4.6%) | warm
+    # 3.34s (vs 3.16s, wash) | quality math+tool PASS. KEPT - the pool
+    # win is the goal. CONFOUND: no 0.32.0+fp8 paired baseline, so the
+    # t/s delta includes the 0.30->0.32 engine bump (XQA decode).
     # Residual caveats: split-KV disabled for NVFP4 prefill, KV writer
     # per-append host sync (flashinfer#6204 pending), head_size 64 /
     # attention-sink models refused (n/a for this model). REVERT = drop
     # kvCacheCustomDtype + restore kvCacheDtype: fp8_e4m3. Detail:
-    # docs/notes/llm-journey.md (Watch list, NVFP4 KV entry).
+    # docs/notes/llm-journey.md (NVFP4-KV A/B section + Watch list).
     # Repeated agentic system prompts: the big agentic win over the beellama
     # service (which runs --cache-ram 0 and re-prefills every request)
     enablePrefixCaching: true

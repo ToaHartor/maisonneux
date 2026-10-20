@@ -2,17 +2,22 @@
 
 (Revision with Qwen 3.8 27B)
 
+> Decision record: `docs/decisions/2026-09-28-llm-journey.md` (ADR). This log keeps the
+> full A/B evidence trail behind that decision.
+
 The full optimization journey for the agentic LLM service: DFlash2 drafter
 (✗ long context) → embedded MTP head → rejected tuning levers → quant A/B
 (esatapedico MID-HIGH) → and the 2026-09-26 decision to move off llama.cpp
 entirely.
 
-## End state & conclusion (2026-09-28, after the final A/B suite)
+## End state & conclusion (2026-09-28, after the final A/B suite; 2026-10-19:
+vLLM 0.32.0 + NVFP4 KV live)
 
-The `qwen38` InferenceService runs **vLLM 0.30.0 (b12x NVFP4 GEMM) + embedded
-MTP k=4 + FP8 KV** on the revision-pinned gittensor NVFP4 checkpoint, TP2
-over the two RTX 5060 Ti 16 GB. Beellama MTP (MID-HIGH NVFP4) is the kept
-fallback; everything else is shelved or parked.
+The `qwen38` InferenceService runs **vLLM 0.32.0 (b12x NVFP4 GEMM + XQA
+decode) + embedded MTP k=4 + NVFP4 KV** on the revision-pinned gittensor
+NVFP4 checkpoint, TP2 over the two RTX 5060 Ti 16 GB. Beellama MTP
+(MID-HIGH NVFP4) is the kept fallback; everything else is shelved or
+parked.
 
 **Settled config** (all A/B'd on this box, verdicts in the sections below
 and in the `qwen38-vllm.yaml` header):
@@ -22,11 +27,11 @@ and in the `qwen38-vllm.yaml` header):
 | Kernel           | `flashinfer_b12x`    | +15% structured vs cutlass (accept 2.64 vs 2.32), ties elsewhere     |
 | Spec decode      | MTP k=4              | k=6 tested & loses (per-draft-step cost > acceptance gain)           |
 | Cudagraphs       | `PIECEWISE`          | FULL_AND_PIECEWISE re-tested, no t/s conversion, -3.2K pool          |
-| KV cache         | `fp8_e4m3`           | halves KV footprint; NVFP4 KV = upstream-gated (~2x pool)            |
+| KV cache         | `nvfp4`              | A/B'd 10-19: 1.87x pool at -19%/-30% t/s, quality PASS       |
 | Prefill          | chunked, 4096 chunks | 8192 measured: no gain, caps ctx at 200K                             |
 | GPU mem util     | 0.95                 | measured safe limit; 0.97 = crash margin for +5K tokens we don't use |
 | Async scheduling | ON (auto)            | verified default in v0.30.0 for MTP; no flag in this build           |
-| Pool             | 279,726 tok          | 1.07x of the 262,144 requirement                                     |
+| Pool             | 488,973 tok          | 1.87x of the 262,144 requirement (was 279,726 / 1.07x on fp8)        |
 
 **Final ranking on this box (same-day paired benches, zero concurrency):**
 
@@ -54,14 +59,16 @@ and in the `qwen38-vllm.yaml` header):
 - Hardware-bound numbers from recipe cards (H200/GB300, 5090) don't
   transfer to 5060 Ti - always re-measure.
 
-**Open items, each with its trigger:** NVFP4 KV upstream (#46329/#56550)
-→ ~2x pool, then SGLang re-visit · FLASHINFER fused multi-step draft
-(#55292/#57443/#54369) → re-A/B k=6/8 · llama.cpp #27858 merged into a
-beellama release → DSpark-bee tensor-split retry (template ready) ·
-vLLM image bumps → re-verify b12x + k. Marginal contingency levers:
+**Open items, each with its trigger:** 0.32.0+fp8 isolation bench ->
+pin the NVFP4-specific t/s delta (the 10-19 run is confounded by the
+0.30->0.32 engine bump) · FLASHINFER fused multi-step draft
+(#55292/#57443/#54369) -> re-A/B k=6/8 · llama.cpp #27858 merged into a
+beellama release -> DSpark-bee tensor-split retry (template ready) ·
+vLLM image bumps -> re-verify b12x + k. Marginal contingency levers:
 gpuMemUtil 0.97 (only when a test becomes pool-bound), node-level GPU
 clock lock (consistency). The hard ceiling is KV bandwidth at depth -
-nothing in the flag space moves it; NVFP4 KV is the next real step.
+NVFP4 KV (landed + kept 10-19) bought the pool; the at-depth decay is
+now the thing to watch on real traffic.
 
 ## Why vLLM won
 
@@ -327,6 +334,52 @@ scheduler-execution overlap is already inside all recorded numbers.
 Verified 2026-09-28 against the installed v0.30.0 source in
 qwen38-7c5c564449-xn7kf.
 
+## NVFP4-KV A/B (2026-10-19) - pool +75% at -19%/-30% t/s; KEPT, isolation pending
+
+The upstream trigger fired: SM120 NVFP4 KV cache shipped in v0.32.0
+(#46963 paged slot-mapping writer + FA2 prefill; #60452 XQA decode +
+MTP UNIFORM_BATCH cudagraphs - the pre-#60452 "MTP collapses to ~15
+tok/s" trap is NOT present in this image: spec-decode counters were
+healthy from the first request). Flipped via `kvCacheCustomDtype:
+nvfp4` (the standard `kvCacheDtype` CRD enum stops at fp8_e4m3 and
+rejects nvfp4 at apply time; the custom field is unvalidated and maps
+to --kv-cache-dtype). No `VLLM_KV_CACHE_LAYOUT=HND` env needed - the
+merged line validates on the default NHD layout; HND was a requirement
+of jethac's UNMERGED #46329 line. Zero-concurrency `scripts/llm_bench.py`,
+pod qwen38-7ccfb97d, vs the recorded 0.30.0 fp8 b12x baseline (09-28):
+
+| Probe (pinned content)         | 0.30.0 fp8 (recorded)      | 0.32.0 NVFP4 (this run)   | delta               |
+| ------------------------------ | -------------------------- | ------------------------- | ------------------- |
+| KV pool                        | 279,726 tok (1.06x of 262K)| **488,973 tok (1.87x)**   | **+75% pool**       |
+| Short prose, 512 tok @ temp 1  | 7.73 s (66.3 t/s)          | 9.53 s (53.7 t/s)         | -19%                |
+| Structured JSON x3             | 108.1 t/s, acc 2.64        | 75.1-77.9 t/s, acc 2.08   | -28 to -30%         |
+| Long COLD prefill              | 31.66 s @65.7K (2,075 t/s) | 31.58 s @68.6K (2,171)    | prefill +4.6% t/s   |
+| Long WARM wall                 | 3.16 s @68.6K              | 3.34 s @68.6K             | +0.18 s (wash)      |
+| Quality (math + tool)          | PASS                       | PASS                      | preserved           |
+
+Reads:
+
+- The POOL is the win: 1.87x of the 262,144 requirement (was 1.06x) -
+  two concurrent ~244K agentic sessions now fit, which is exactly the
+  `parallelSlots: 2` intent.
+- The acceptance drop (2.64 -> 2.08 accepted/step on the pinned JSON
+  prompt) is the NVFP4-precision tax on draft->target agreement - the
+  b12x A/B established that acceptance drives structured t/s, and the
+  4-bit KV readout degrades it. Prose -19% matches the dual-5060Ti
+  datapoint ("max tg 82 (fp8) -> 65 (nvfp4)") almost exactly.
+- Prefill is unchanged (FA2 NVFP4 prefill path), warm wall is a wash.
+- CONFOUND: the 0.30.0 -> 0.32.0 engine bump (XQA decode is new in
+  0.32 even for fp8) is NOT isolated - no fp8@0.32 paired baseline
+  (skipped, user call), so the t/s deltas are an upper bound on the
+  NVFP4 cost, not its exact size. Also cross-week (clock drift).
+
+VERDICT: KEPT. The trigger was the pool (262K was the binding
+constraint), and it delivered 1.87x at the predicted decode tax with
+quality probes PASS. FOLLOW-UP: flip to `kvCacheDtype: fp8_e4m3` on
+0.32.0 and re-run the same bench to isolate the pure NVFP4 delta
+(one-line revert + ~10 min); if the user prioritizes t/s over pool,
+that number decides the revert.
+
 ## Watch list
 
 - **DSpark drafter** (upstream Qwen moved the MTP head to a separate 1.4 GB
@@ -377,13 +430,15 @@ qwen38-7c5c564449-xn7kf.
   prefill graph-capture ladder OOMs at ~0 GB headroom). Evidence on our
   exact cards (dual 5060 Ti, #50288 thread): "nvfp4 working perfectly,
   no hallucinations; max tg 82 (fp8) → 65 (nvfp4) with MTP" — ~1.6×
-  pool (scale groups cost bytes) at a decode-speed cost. Watch items:
-  #36010 (fix candidates in-thread: CPU-mirror population - graphs-off
-  only; #36045 graph-safe workspace prep; #23354 fused NVFP4 extend
-  kernel) -> re-test NVFP4-KV + DSpark when it lands in a release. When
-  the vLLM PRs ship: bump the stock image, `kvCacheDtype: nvfp4` + env
-  `VLLM_KV_CACHE_LAYOUT=HND` (marker comment in qwen38-vllm.yaml), keep
-  PIECEWISE, and A/B against the SGLang numbers.
+  pool (scale groups cost bytes) at a decode-speed cost. TRIGGER FIRED
+2026-10-19: the vLLM PRs shipped in v0.32.0 (#46963/#60452); A/B'd on
+this box and KEPT - see the NVFP4-KV A/B section above (pool +75% at
+-19%/-30% t/s, quality PASS, no HND env needed, llmkube custom-field
+escape hatch). Residual watch: #36010 (fix candidates in-thread:
+CPU-mirror population - graphs-off only; #36045 graph-safe workspace
+prep; #23354 fused NVFP4 extend kernel) -> SGLang NVFP4-KV + DSpark
+re-test when it lands in a release; fp8@0.32.0 isolation bench
+(pending) to pin the pure NVFP4 t/s delta.
 - **SGLang + DSpark on 2×16GB: SHELVED 2026-09-28 (user decision,**
   **agreed)**. Three boot attempts: (1) f=0.90 → OOM at the prefill
   capture ladder; (2) f=0.98 → worse (memFractionStatic is the
