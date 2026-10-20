@@ -106,43 +106,41 @@ spec:
     # gpu-memory-utilization 0.95 + MTP k=4, so 262144 fits with 1.06x
     # per-request headroom
     maxModelLen: 262144
-    # NVFP4 KV: 4-bit data + E4M3 scale groups - ~1.6x pool over fp8,
-    # halves the attention KV re-read per step at depth.
-    # Goes through llmkube's unvalidated custom escape hatch (the standard
-    # kvCacheDtype field's CRD enum is auto;fp8_e5m2;fp8_e4m3 - nvfp4 is
-    # rejected at apply time): kvCacheCustomDtype maps to --kv-cache-dtype
-    # and takes precedence over kvCacheDtype, which is left unset (its
-    # injected default "auto" is not emitted, so no flag clash).
-    kvCacheCustomDtype: nvfp4
-    # TRIGGER FIRED 2026-10-19 (was MARK 2026-09-27 "WAITING ON
-    # UPSTREAM"): SM120 NVFP4 KV cache shipped in v0.32.0 (the image
-    # Renovate bumped 2026-10-18):
-    #   - vLLM #46963 (merged 2026-10-07): FlashInfer paged slot-mapping
-    #     NVFP4 writer + native FA2 prefill for SM8x/SM12x
-    #   - vLLM #60452 (merged 2026-10-10): XQA decode for NVFP4 on
-    #     SM12x + MTP verify steps count as decodes again under
-    #     UNIFORM_BATCH cudagraphs. Pre-#60452, MTP + NVFP4 on SM120
-    #     TP2 collapsed to ~15 tok/s; #60452's field validation is our
-    #     exact setup (SM120 TP2, Qwen3.8-27B, MTP): GSM8K 0.962 nvfp4
-    #     = 0.962 fp8, no invalid responses.
-    # The old marker's VLLM_KV_CACHE_LAYOUT=HND env is OBSOLETE: HND was
-    # a requirement of jethac's UNMERGED #46329 line; the merged line is
-    # validated on the default NHD layout (head_dim 256, GQA 6, K/V
-    # scales strided). Keep PIECEWISE (safe mode for XQA decode).
-    # Expect ~1.6x pool over the 0.32.0 fp8 287,719 (~450K+) at a
-    # decode-speed cost (dual-5060Ti datapoint: max tg 82 -> 65).
-    # A/B RESULT 2026-10-19 (zero concurrency, pod qwen38-7ccfb97d,
-    # vs recorded 0.30.0 fp8 b12x baseline): pool 488,973 tok = 1.87x
-    # of 262K (+75% over fp8) | short prose 53.7 t/s (-19% vs 66.3) |
+    # FP8 KV (restored 2026-10-19, same day as the NVFP4 flip): the
+    # user prioritizes decode t/s over pool "for now" - the NVFP4 A/B
+    # cost -19% prose / -30% structured (accept 2.64 -> 2.08) is not
+    # paying for the +75% pool on the current single-stream traffic.
+    # NVFP4 KV stays PARKED, re-flip = set kvCacheCustomDtype: nvfp4
+    # (the standard kvCacheDtype field's CRD enum stops at fp8_e4m3 and
+    # rejects nvfp4 at apply time; the custom field is unvalidated and
+    # maps to --kv-cache-dtype) + restore the upstream context below.
+    # Re-flip TRIGGER: pool becomes the binding constraint again
+    # (parallelSlots: 2 at full depth needs ~480K), or a vLLM image
+    # ships FlashInfer >=0.7.1 with FI #4993 in - the vllm-project/
+    # vllm#50416 thread (SM120 NVFP4-KV perf tracking issue) shows
+    # NVFP4 prefill on par with FP8 on every measured shape at 0.7.1
+    # (FI #5239 SM120 tile repack) + #4993 (split-KV short-query fix);
+    # our v0.32.0 pins flashinfer-python==0.7.0.post1, i.e. BEFORE
+    # both. The decode tax stays regardless - it is MTP-acceptance-
+    # driven, not the #50416 prefill kernel.
+    kvCacheDtype: fp8_e4m3
+    # UPSTREAM CONTEXT (why NVFP4 was flippable at all, 2026-10-19):
+    # SM120 NVFP4 KV cache shipped in v0.32.0 (Renovate bump 2026-10-18):
+    # vLLM #46963 (FlashInfer paged slot-mapping NVFP4 writer + native FA2
+    # prefill) + #60452 (XQA decode for NVFP4 on SM12x + MTP verify steps
+    # count as decodes under UNIFORM_BATCH cudagraphs; pre-#60452 this exact
+    # setup collapsed to ~15 tok/s; #60452's validation ran our model:
+    # GSM8K 0.962 nvfp4 = fp8). No VLLM_KV_CACHE_LAYOUT=HND env - HND was
+    # a requirement of jethac's UNMERGED #46329 line; the merged line
+    # validates on the default NHD layout. Keep PIECEWISE (XQA safe mode).
+    # A/B RESULT 2026-10-19 (zero concurrency, pod qwen38-7ccfb97d, vs
+    # recorded 0.30.0 fp8 b12x baseline): pool 488,973 tok = 1.87x of
+    # 262K (+75% over fp8) | short prose 53.7 t/s (-19% vs 66.3) |
     # structured 75.1-77.9 t/s, acc 2.08 (-28 to -30% vs 108.1/2.64)
-    # | long COLD 31.58s @68.6K (prefill 2,171 t/s, +4.6%) | warm
-    # 3.34s (vs 3.16s, wash) | quality math+tool PASS. KEPT - the pool
-    # win is the goal. CONFOUND: no 0.32.0+fp8 paired baseline, so the
-    # t/s delta includes the 0.30->0.32 engine bump (XQA decode).
-    # Residual caveats: split-KV disabled for NVFP4 prefill, KV writer
-    # per-append host sync (flashinfer#6204 pending), head_size 64 /
-    # attention-sink models refused (n/a for this model). REVERT = drop
-    # kvCacheCustomDtype + restore kvCacheDtype: fp8_e4m3. Detail:
+    # | long COLD 31.58s @68.6K (prefill 2,171 t/s, +4.6%) | warm 3.34s
+    # (vs 3.16s, wash) | quality math+tool PASS. CONFOUND: no 0.32.0+fp8
+    # paired baseline, so the t/s delta includes the 0.30->0.32 engine
+    # bump - the revert re-bench closes that. Detail:
     # docs/notes/llm-journey.md (NVFP4-KV A/B section + Watch list).
     # Repeated agentic system prompts: the big agentic win over the beellama
     # service (which runs --cache-ram 0 and re-prefills every request)
