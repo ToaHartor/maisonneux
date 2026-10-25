@@ -5,4 +5,4 @@ mariadb:
   enableAntiAffinity: true
   image:
     repository: docker-registry3.mariadb.com/mariadb-operator/mariadb-operator
-    tag: 26.10.1@sha256:37714fb240a53b2a496fd77d784879961b098bdbe0ef344ac7ba703ee3632017
+    tag: 26.10.2@sha256:f4b1f260a85f52ba54e537eb18ec9f7502aaa5d3234ce84f07cc43481d6a3076
