@@ -463,5 +463,3 @@ spec:
       # Undocumented env variables in values
       # ENABLE_OPENSEARCH_INDEXING_FOR_ONYX: "true" # Added automatically
       # DISABLE_MODEL_SERVER: "true"
-      ENABLE_PAID_ENTERPRISE_EDITION_FEATURES: "true"
-      LICENSE_ENFORCEMENT_ENABLED: "false"
