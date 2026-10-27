@@ -15,7 +15,7 @@ spec:
         name: {{ .Values.s3.secretName }}
         key: secretKey
     wal:
-      compression: bzip2
+      compression: zstd
       maxParallel: 8
       # encryption: AES256
     data:

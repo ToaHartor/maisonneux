@@ -39,8 +39,7 @@ spec:
       dataDurability: required
       failoverQuorum: true
     parameters:
-      wal_keep_size: "128MB"
-      max_slot_wal_keep_size: "128MB"
+      max_slot_wal_keep_size: "1024MB" # handle at least 64 segments of 16MB each, to avoid resyncing when timeouts exceed few minutes
       max_connections: "250"
       shared_buffers: "128MB"
       hot_standby_feedback: "on"
