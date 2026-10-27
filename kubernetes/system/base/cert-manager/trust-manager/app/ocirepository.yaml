@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: v0.25.0
-    digest: sha256:ef4540d4c3b7eb8cd498e3420aa5171ccc7434b7fa5e3168f1218d22906dbecb
+    tag: v0.26.0
+    digest: sha256:946c6e52f0a6e251c81102de83ffc6e0b11446193bed8670d4cdbfd3cecbc2e8
   url: oci://quay.io/jetstack/charts/trust-manager
