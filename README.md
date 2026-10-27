@@ -17,7 +17,7 @@ The main operations (cluster and VM provisioning) are performed using `mise`.
 - `docker-compose/` contains the former stacks I used to manage my microservices. See [this page](docker-compose/README.md) for to see the list of microservices deployed.
 - `helm/` contains the Helm charts used to deploy some microservices in K8s
 - `scripts/` contains scripts used to setup environment, check health of services or build images
-- `terraform/` contains a multi-environment . Static environment deploys static VMs and LXCs (such as the storage VM), and K8s environment deploys a Kubernetes cluster. See [this page](terraform/README.md) for more informations.
+- `terraform/` contains the multi-environment OpenTofu workspaces. The static environment deploys static VMs and LXCs (such as the storage VM), and the K8s environment deploys a Kubernetes cluster. See [this page](terraform/README.md) for more information.
 - `kubernetes/` contains the deployment manifests for apps in kubernetes
 
 ### Cluster directories

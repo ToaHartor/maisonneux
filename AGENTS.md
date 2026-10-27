@@ -2,15 +2,44 @@
 
 This is a **Home Kubernetes cluster monorepo** managed with GitOps (Flux, Renovate, Forgejo Actions).
 
+## Project Context
+
+- `project:` value for frontmatter: `maisonneux`
+- `_agent-references.md` path: `06 - Projects/maisonneux/_agent-references.md`
+- Related human notes: `06 - Projects/maisonneux/Hardware.md`,
+  `06 - Projects/maisonneux/Backup restore.md`
+
+## Services in scope
+
+- TrueNAS (NAS, iSCSI)
+- Proxmox / Terraform (virtualization)
+- Kubernetes / Talos Linux (OS / container orchestrator)
+
+## Conventions
+
+- Component READMEs stay with components (e.g., `kubernetes/apps/base/cilium/README.md`)
+- Secrets from outside the platform are created in the Terraform Flux bootstrap (`terraform/fluxcd/secrets.tf`) and referenced via `external-secrets`
+- Apps use `HelmRelease` via Flux, rarely raw manifests
+- Clusters are mostly identical except for app selections and sizing, difference is made in `kubernetes/${stage}/${cluster}` `kustomization.yaml`
+- **AI instructions**: `.agents/instructions/pr-review.instructions.md` is the live system prompt for the AI PR reviewer.
+
+### Notes
+
+- All incident notes must include the affected VM / service name
+  in the `service:` frontmatter field.
+- Runbooks go in `04 - Agents/runbooks/` with the service name
+  as the filename prefix (e.g., `truenas-kernel-update.md`).
+
 ## Repository Structure
 
 ```text
 maisonneux/
-├── .agents/                          # AI instructions & skills
+├── .agents/                          # AI instructions
 │   └── instructions/                 # PR review system prompt, YAML sorting rules
 ├── .forgejo/                         # Forgejo Actions workflows & evidence providers
 ├── ansible/                          # Ansible playbooks (BGP peers setup)
 ├── dev/                              # Development stack (local development)
+├── docker-compose/                   # Legacy Docker Compose stacks (pre-k8s era)
 ├── docs/                             # Documentation
 ├── helm/                             # Custom helm charts deploying specific apps
 │   ├── apps/                         # Custom helm charts deployed in the Application stage
@@ -35,21 +64,27 @@ maisonneux/
 │   └── system/                       # System apps configs
 ├── scripts/                          # Various shell scripts
 │   ├── backup/                       # Cluster backup scripts
-│   ├── make/                         # Terraform scripts used in mise
-│   └── restore/                      # Restore scripts
-└── terraform/                        # OpenTofu/Terraform IaC (cloud infra) (see terraform/README.md)
-    ├── fluxcd/                       # FluxCD in-cluster bootstrap
-    ├── k8s/                          # Talos VM cluster deployment on proxmox
-    └── static/                       # Static VMs providing services (TrueNAS, OPNSense, legacy VM...)
+│   ├── debug/                        # Ad-hoc debugging scripts
+│   ├── make/                         # Terraform scripts used in mise tasks
+│   ├── restore/                      # Restore scripts
+│   └── utils/                        # Shared helpers used by make/ and CI scripts
+├── terraform/                        # OpenTofu/Terraform IaC (cloud infra) (see terraform/README.md)
+│   ├── fluxcd/                       # FluxCD in-cluster bootstrap
+│   ├── k8s/                          # Talos VM cluster deployment on proxmox
+│   └── static/                       # Static VMs providing services (TrueNAS, OPNSense, legacy VM...)
+├── Makefile                          # Legacy make entrypoints for the same scripts the mise tasks run
+├── renovate.json5                    # Renovate configuration
+└── LICENSE
 
 ```
 
 ## Cluster Architecture
 
-Proxmox cluster of two nodes :
+Proxmox cluster of three nodes :
 
-- **datacenter** - Ryzen 7 5700X, RTX 5060Ti 16GB VRAM, 64GB RAM, 1.5TB NVME, 1.5TB SSD, 2.5GbE, hosts a TrueNAS VM (10TB mirror, 52TB raw)
-- **cthugha** - 1x MS-A2 (Ryzen 9 7945HX, 64GB RAM, 1TB NVME, 10Gb SFP+)
+- **datacenter** - Ryzen 7 5700X, 64GB RAM DDR4, 1.5TB NVME, 1.5TB SSD, 2.5GbE, hosts a TrueNAS VM (10TB mirror, 52TB raw)
+- **cthugha** - 1x MS-A2 (Ryzen 9 7945HX, 64GB RAM DDR5, 1TB NVME, 10Gb SFP+)
+- **cyaegha** - Ryzen 5 9600X, RTX 5060Ti 16GB VRAM x 2 (PCIe5 8x2), 32GB RAM DDR5, 1TB NVME, 10Gb Ethernet
 
 Nodes are connected to a **MikroTik CRS305-1G-4S** with 4x10Gb SFP+ ports.
 
@@ -75,7 +110,7 @@ Nodes are connected to a **MikroTik CRS305-1G-4S** with 4x10Gb SFP+ ports.
 
 ### App structure
 
-Each app usually have those files :
+Each app usually has these files :
 
 - `kustomization.yaml` - Kustomize config
 - `ks.yaml` - Flux Kustomization CRD
@@ -109,15 +144,9 @@ Components are reusable Kustomize configurations in `kubernetes/common/component
 ### Template Variables
 
 - HelmRelease values use `${VAR}` syntax for dynamic injection (e.g., `${APP}`, `${DOMAIN_WEBSECURE}`).
-- Two categories of variables : app-level defined in `ks.yaml` in uppercase, and cluster-level defined in `kubernetes/clusters/${cluster}` FluxCD Kustomization in lowercase. Full variable list is defined in the `general-config` ConfigMap created by Terraform FluxCD bootstrap in `terraform/fluxcd/configmaps.tf`.
-
-## Conventions
-
-- Component READMEs stay with components (e.g., `kubernetes/apps/base/cilium/README.md`)
-- Secrets from outside the platform are created , referenced via `external-secrets`
-- Apps use `HelmRelease` via Flux, rarely raw manifests
-- Clusters are mostly identical except for app selections and sizing, difference is made in `kubernetes/${stage}/${cluster}` `kustomization.yaml`
-- **AI instructions**: `.agents/instructions/pr-review.instructions.md` is the live system prompt for the AI PR reviewer.
+- Two categories of variables : app-level defined in `ks.yaml` in uppercase, and cluster-level defined in `kubernetes/clusters/${cluster}` FluxCD Kustomization in lowercase. Full variable list is defined in the `general-config` ConfigMap created by Terraform FluxCD bootstrap in `terraform/fluxcd/configmaps.tf` (mirrored for flate rendering in `kubernetes/clusters/test/config/config.yaml`).
+- Substitution happens in two passes : the app's `ks.yaml` `postBuild.substitute` (kustomize) first, then the stage Kustomization's `postBuild.substituteFrom` on the `general-config` ConfigMap (Flux). An app that consumes a cluster-level variable must declare it in its `ks.yaml` `postBuild.substitute` as `VAR: ${VAR}` under the `# inherited variables` comment (e.g., `environment: ${environment}`, `minio_url: ${minio_url}`, `fastdata_storage: ${fastdata_storage}`), so its placeholder survives pass 1 and is resolved in pass 2.
+- `fastdata_storage` holds the cluster's fast/durable StorageClass (`linstor-datastore`). Use `${fastdata_storage}` (or `${fastdata_storage}-ha` for high-availability PVCs) in `storageClass`/`storageClassName` values instead of hard-coding a storage class.
 
 ## Common Operations
 
@@ -126,15 +155,17 @@ Components are reusable Kustomize configurations in `kubernetes/common/component
 - **Troubleshoot**: Check `flux get all -n <namespace>`, `kubectl get events --sort-by=.lastTimestamp`
 - **Scripts**: `scripts/` contains operational scripts. See `scripts/README.md` for the full list and usage.
 - **Task operations**: The repo is driven by mise. Run `mise tasks` to see all commands. Common tasks:
-  - `mise run context <cluster>` — switch Kubernetes context
-  - `mise run backup <cluster>` — backup a target cluster
-  - `mise run restore <cluster>` — restore a target cluster
-  - `mise run upgrade providers production` — upgrade Terraform providers
-  - `mise run upgrade k8s <cluster>` — upgrade Kubernetes version
-  - `mise run upgrade talos <cluster>` — upgrade Talos version
-  - `mise run krr` — run Kubernetes Resource Recommendations on current cluster
-  - `mise run renovate` — run Renovate on local git repository
-  - `mise run generate-uuid` — generate a UUIDv4 for authentik groups with python
+  - `mise run venv` — install Python dependencies (alias `v`)
+  - `mise run context <environment>` — switch Kubernetes context (alias `ctx`; `staging` or `production`)
+  - `mise run backup <environment>` — backup a target cluster
+  - `mise run restore <environment>` — restore a target cluster
+  - `mise run terraform <action> <workspace>` — Terraform actions (`init`, `plan`, `apply`, `deploy`, `destroy`, `output`) on a workspace (`static`, `k8s-production`, `k8s-staging`, `fluxcd-production`, `fluxcd-staging`)
+  - `mise run upgrade providers production` — upgrade Terraform providers (upgrades all workspaces; the environment argument is unused for this target)
+  - `mise run upgrade k8s <environment>` — upgrade Kubernetes version
+  - `mise run upgrade talos <environment>` — upgrade Talos version
+  - `mise run krr <environment>` — run Kubernetes Resource Recommendations on a target cluster
+  - `mise run renovate` — run Renovate on local git repository (`--dry` flag previews without creating PRs)
+  - `mise run generate-uuid` — generate a UUIDv4 for authentik groups with python (alias `uuid`)
   - `mise run devenv start / mise run devenv stop` — start/stop the development stack (local forgejo, zot...)
 - **Tool management**: `mise.toml` manages required tools (e.g. `flate`, `talosctl`). Run `mise install` to set up the environment.
 - **Validate locally**: Run `flate` before pushing GitOps changes:
@@ -151,13 +182,18 @@ Components are reusable Kustomize configurations in `kubernetes/common/component
   git worktree remove ./tmp/baseline --force
   ```
 
+- Kubernetes access: kubectl is routed via host-IPC. Available read verbs:
+  get, describe, logs. Mutating verbs require explicit approval.
+
 ## Documentation
 
-- Main docs: `docs/`
+- `docs/` — main docs, indexed by `docs/README.md` (per-folder and per-file details)
+- Snippets: reusable YAML examples in `docs/snippets/`
 - Component docs: README files co-located with components
 - Terraform docs: `terraform/README.md`
+- Scripts docs: `scripts/README.md`
 - Personal notes: `docs/notes/`
-- Decisions docs: `docs/decisions/`
+- Decisions docs: `docs/decisions/` (decision records, named `YYYY-MM-DD-<topic>.md`, e.g. `2026-09-28-llm-journey.md`)
 
 ## Adding Documentation
 
@@ -186,7 +222,7 @@ When reviewing Renovate PRs, enforce these criteria. Reviews may include konflat
 
 - `metadata.namespace` is **never** set inline on `HelmRelease` or `Kustomization` resources — this is intentional, not a violation
 - The namespace is injected at build time by kustomize's `namespace:` directive in the per-app `kustomization.yaml` (e.g., `namespace: llm`)
-- For Flux `Kustomization` resources, `spec.targetNamespace` is propagated automatically via the replacement component at `kubernetes/components/replacements/ks.yaml`
+- For Flux `Kustomization` resources, `spec.targetNamespace` is propagated automatically via the replacement transformer at `kubernetes/common/transformers/namespacetransformer.yaml`
 - Reviewers MUST NOT flag missing `metadata.namespace` on these resources as an issue
 
 ### Secret Management Rules
