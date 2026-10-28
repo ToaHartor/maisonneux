@@ -40,8 +40,11 @@ spec:
   values:
     # see https://github.com/tektoncd/operator/blob/main/charts/tekton-operator/values.yaml
     installCRDs: true
-    # tektonconfig,tektonpipeline,tektontrigger,tektonhub,tektonchain,tektonresult,tektondashboard,manualapprovalgate
-    controllers: "tektonconfig,tektonpipeline,tektontrigger,tektonhub,tektonchain,tektondashboard,manualapprovalgate"
+    # supported controller names (v0.81.2): tektonconfig,tektonpipeline,tektontrigger,tektonchain,
+    # tektonresult,tektonpruner,tektondashboard,manualapprovalgate,tektoninstallerset,
+    # openshiftpipelinesascode,tektonscheduler,tektonmulticlusterproxyaae
+    # (tektonhub was removed upstream in 0.81.x — its TektonHub CRD is dropped with it)
+    controllers: "tektonconfig,tektonpipeline,tektontrigger,tektonchain,tektondashboard,manualapprovalgate"
     operator:
       defaultTargetNamespace: internal-ci
 
