@@ -1,0 +1,110 @@
+---
+# TektonConfig is the operator-managed config CR (the operator only creates it when absent,
+# and version upgrades just bump the release-version label — user spec is respected).
+#
+# Tekton operator v0.81.0+ creates default-deny NetworkPolicies for component workloads
+# (https://github.com/tektoncd/operator/blob/main/docs/NetworkPolicy.md).
+# Opt out via networkPolicy.disabled: the operator removes all managed policies on the
+# next reconcile. TektonConfig is the source of truth for this field — edits on the
+# per-component CRs (TektonPipeline, TektonTrigger, ...) are overwritten on the next
+# config reconcile.
+#
+# The spec below mirrors the operator-created defaults from the live v0.79.1 install so
+# the upgrade is behavior-preserving apart from the network policy opt-out:
+# - pruner (job based) stays enabled, tektonpruner (event based) stays disabled —
+#   enabling both is rejected by the operator ("Invalid Pruner Configuration").
+# - networkPolicy is a new field in the v0.81.x CRD; if it is written while the old
+#   CRD is still in place, the API server prunes it and it lands on the next Kustomization
+#   re-sync after the CRD upgrade.
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  profile: all
+  targetNamespace: internal-ci
+  networkPolicy:
+    disabled: true
+  addon: {}
+  chain:
+    "artifacts.oci.format": simplesigning
+    "artifacts.oci.storage": oci
+    "artifacts.pipelinerun.format": in-toto
+    "artifacts.pipelinerun.storage": oci
+    "artifacts.taskrun.format": in-toto
+    "artifacts.taskrun.storage": oci
+    disabled: false
+    options: {}
+    performance:
+      "disable-ha": false
+  config: {}
+  dashboard:
+    options: {}
+    readonly: false
+  hub:
+    options: {}
+  multiclusterProxyAAE:
+    options: {}
+  pipeline:
+    "await-sidecar-readiness": true
+    coschedule: workspaces
+    "disable-creds-init": false
+    "enable-api-fields": beta
+    "enable-bundles-resolver": true
+    "enable-cel-in-whenexpression": false
+    "enable-cluster-resolver": true
+    "enable-custom-tasks": true
+    "enable-git-resolver": true
+    "enable-hub-resolver": true
+    "enable-param-enum": false
+    "enable-provenance-in-status": true
+    "enable-step-actions": true
+    "enforce-nonfalsifiability": none
+    "keep-pod-on-cancel": false
+    "max-result-size": 4096
+    "metrics.count.enable-reason": false
+    "metrics.pipelinerun.duration-type": histogram
+    "metrics.pipelinerun.level": pipeline
+    "metrics.taskrun.duration-type": histogram
+    "metrics.taskrun.level": task
+    options: {}
+    performance:
+      "disable-ha": false
+    "require-git-ssh-secret-known-hosts": false
+    "results-from": termination-message
+    "running-in-environment-with-injected-sidecars": true
+    "send-cloudevents-for-runs": false
+    "set-security-context": false
+    "trusted-resources-verification-no-match-policy": ignore
+  platforms:
+    openshift: {}
+  pruner:
+    disabled: false
+    keep: 100
+    resources:
+      - pipelinerun
+    schedule: "0 8 * * *"
+  result:
+    disabled: false
+    "is_external_db": false
+    options: {}
+    performance:
+      "disable-ha": false
+    route_enabled: false
+    route_tls_termination: edge
+  scheduler:
+    "config.yaml":
+      cel: {}
+    "multi-cluster-disabled": false
+    "multi-cluster-role": ""
+    options: {}
+  tektonpruner:
+    disabled: true
+    global-config:
+      enforcedConfigLevel: global
+      historyLimit: 100
+    options: {}
+  trigger:
+    disabled: false
+    "enable-api-fields": stable
+    options: {}
