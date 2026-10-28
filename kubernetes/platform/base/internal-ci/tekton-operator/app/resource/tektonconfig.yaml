@@ -9,13 +9,12 @@
 # per-component CRs (TektonPipeline, TektonTrigger, ...) are overwritten on the next
 # config reconcile.
 #
-# Two-step rollout: the v0.79.1 operator's admission webhook rejects the new
-# networkPolicy field ("unknown field"), and the failed Kustomization blocks the very
-# upgrade that would deploy the 0.81.2 webhook — a chicken-and-egg. So this object
-# first lands WITHOUT networkPolicy (byte-identical to the live operator-created spec,
-# accepted by the v0.79.1 webhook), letting the operator upgrade to 0.81.2 (new CRDs +
-# webhook). A follow-up commit then adds `networkPolicy: {disabled: true}`, which the
-# 0.81.2 webhook accepts and the operator acts on by removing the managed policies.
+# Two-step rollout (why): the v0.79.1 operator's admission webhook rejected the new
+# networkPolicy field ("unknown field"), and the failed Kustomization blocked the very
+# upgrade that deploys the 0.81.2 webhook — a chicken-and-egg. So this object first
+# landed WITHOUT networkPolicy (byte-identical to the live v0.79.1 spec), letting the
+# operator upgrade; this follow-up commit enables the opt-out, which the 0.81.2
+# webhook accepts and the operator acts on by removing the managed policies.
 apiVersion: operator.tekton.dev/v1alpha1
 kind: TektonConfig
 metadata:
@@ -23,8 +22,10 @@ metadata:
 spec:
   profile: all
   targetNamespace: internal-ci
-  # networkPolicy: {disabled: true} — step 2 of the rollout: add this once the
-  # operator is at v0.81.2 (its webhook + CRD know the field).
+  # v0.81.0+ creates default-deny NetworkPolicies by default; opt out of the
+  # operator-managed policies (see docs/NetworkPolicy.md in tektoncd/operator).
+  networkPolicy:
+    disabled: true
   addon: {}
   chain:
     "artifacts.oci.format": simplesigning
