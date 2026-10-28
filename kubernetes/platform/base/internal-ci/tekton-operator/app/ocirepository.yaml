@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/ocirepository-source-v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: tekton-operator
+spec:
+  interval: 10m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 0.81.2
+    digest: sha256:96bc03b597cf9bdd4ea68beaac7f1425c53c764afdaa93ee03da4a6dc2d05ad5
+  url: oci://ghcr.io/tektoncd/operator/charts/tekton-operator

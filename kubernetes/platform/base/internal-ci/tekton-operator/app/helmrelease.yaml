@@ -6,14 +6,9 @@ metadata:
   name: tekton-operator
 spec:
   releaseName: tekton-operator
-  chart:
-    spec:
-      chart: charts/tekton-operator
-      interval: 12h
-      sourceRef:
-        kind: GitRepository
-        name: tekton-operator
-      reconcileStrategy: Revision
+  chartRef:
+    kind: OCIRepository
+    name: tekton-operator
   interval: 50m
   install:
     createNamespace: true
@@ -29,18 +24,17 @@ spec:
   postRenderers:
     - kustomize:
         patches:
-          # Modify default observability configmap following these settings
-          # https://tekton.dev/docs/pipelines/metrics/#configuring-metrics-using-config-observability-configmap
+          # Set the OpenTelemetry metrics protocol (operator v0.80.0+ migrated from
+          # OpenCensus; metrics.backend-destination was replaced by metrics-protocol,
+          # which defaults to "none" and would stop operator metrics export)
+          # https://tekton.dev/docs/pipelines/metrics-migration-otel/
           - target:
               version: v1
               kind: ConfigMap
               name: tekton-operator-observability
             patch: |
               - op: add
-                path: /data/metrics.backend-destination
-                value: prometheus
-              - op: add
-                path: /data/metrics.request-metrics-backend-destination
+                path: /data/metrics-protocol
                 value: prometheus
 
   values:
