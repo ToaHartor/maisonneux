@@ -4,3 +4,24 @@ kind: KubeAPIServerConfig
 extraArgs:
   # feature-gates: "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
   feature-gates: "ImageVolume=true"
+# Cap the kube-apiserver memory footprint on the 7.9 GiB control-plane nodes
+# (2026-10-29 CP incident + chronic c1 apiserver OOM).
+#
+# Talos auto-injects GOMEMLIMIT = 95% of resources.limits.memory into the
+# kube-apiserver static pod (control-plane static-pod controller, see upstream
+# siderolabs/talos#7875). This caps the Go heap so idle memory is returned to
+# the OS instead of RSS climbing toward ~4.5 GiB over days. The memory limit is
+# ALSO the cgroup backstop: a runaway apiserver is OOM-killed and restarted by
+# the kubelet (pod level) instead of triggering the node-level OOM-killer that
+# took the control plane down on 2026-10-29.
+#
+# 3.5 GiB -> auto GOMEMLIMIT ~3.3 Gi, ~34% headroom over the ~2.5 GiB live set
+# (avoids GC thrash; see Go GC guide + k3s GOMEMLIMIT-thrash reports). Still caps
+# well under the ~3.4 GiB non-apiserver node baseline + 7.9 GiB node total.
+# No CPU limit, per cluster convention.
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    memory: 3.5Gi
