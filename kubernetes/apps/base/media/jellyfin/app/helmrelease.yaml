@@ -73,7 +73,7 @@ spec:
           jellyfin:
             image:
               repository: ghcr.io/jellyfin/jellyfin
-              tag: 10.11.11@sha256:45f648c382a0c8b552582fcea40e95cb17c5d475473a891cba0eb7523fb92112
+              tag: 12.4@sha256:fea863d0cd9ec445985d9c75fc6ed64e38a1d2766cf0c250a33d553f4fc1b771
             env:
               TZ: Europe/Paris
               JELLYFIN_AutoDiscovery: "false"
@@ -119,7 +119,7 @@ spec:
           vue:
             image:
               repository: ghcr.io/jellyfin/jellyfin-vue
-              tag: unstable.2026-07-03.23ed388@sha256:88cdf369c8ee9dc5c2f462e3d032e3a94f7b80cac42cf4a585136fd78b68d444
+              tag: unstable.2026-11-01.dd1f8c2@sha256:01e70a74549b33c382923e6cf88da2a94d2cbb5ff88f168e261b86a291d1614e
             command: ["nginx"]
             args: ["-g", "daemon off;"]
             env:
