@@ -50,7 +50,7 @@ spec:
     tachi:
       repository:
         # renovate gitref: depName=https://github.com/zkldi/Tachi gitRef=main
-        branch: 1d7678ddc9327abb87d55fd32121bae4afaf0b18
+        branch: d34d7d45788df97cfa83cfbbb90e7b9899fc4ef1
       parameters:
         serverUrl: https://xn--sck3h9451a.${second_domain}
         # https://garage.${second_domain}/tachi-${environment}
