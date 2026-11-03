@@ -11,9 +11,10 @@ The full optimization journey for the agentic LLM service: DFlash2 drafter
 entirely.
 
 ## End state & conclusion (2026-09-28, after the final A/B suite; 2026-10-19:
-vLLM 0.32.0 + FP8 KV live, NVFP4 KV A/B'd + parked)
+vLLM 0.32.0 + FP8 KV live, NVFP4 KV A/B'd + parked; 2026-11-03:
+re-baselined on vLLM 0.33.0 + FP8 KV, NVFP4 still parked)
 
-The `qwen38` InferenceService runs **vLLM 0.32.0 (b12x NVFP4 GEMM + XQA
+The `qwen38` InferenceService runs **vLLM 0.33.0 (b12x NVFP4 GEMM + XQA
 decode) + embedded MTP k=4 + FP8 KV** on the revision-pinned gittensor
 NVFP4 checkpoint, TP2 over the two RTX 5060 Ti 16 GB. NVFP4 KV was
 A/B'd live on 10-19 and parked the same day (t/s priority); Beellama
@@ -30,9 +31,9 @@ and in the `qwen38-vllm.yaml` header):
 | Cudagraphs       | `PIECEWISE`          | FULL_AND_PIECEWISE re-tested, no t/s conversion, -3.2K pool          |
 | KV cache         | `fp8_e4m3`           | NVFP4 A/B'd 10-19: 1.87x pool at -19%/-30% t/s; user prioritized t/s -> fp8 restored |
 | Prefill          | chunked, 4096 chunks | 8192 measured: no gain, caps ctx at 200K                             |
-| GPU mem util     | 0.95                 | measured safe limit; 0.97 = crash margin for +5K tokens we don't use |
+| GPU mem util     | 0.94 (0.33 era)      | 0.95 OOMs on 0.33 (MTP draft-prefill allocs outside budget, 2026-11-03 incident); settled 0.94 |
 | Async scheduling | ON (auto)            | verified default in v0.30.0 for MTP; no flag in this build           |
-| Pool             | 287,719 tok          | 1.10x of the 262,144 requirement (0.32.0 fp8; nvfp4 measured 488,973 / 1.87x) |
+| Pool             | 278,006 tok @0.33/0.94 | 1.06x of the 262,144 requirement (was 287,719 @0.32/0.95; nvfp4 measured 488,973 / 1.87x) |
 
 **Final ranking on this box (same-day paired benches, zero concurrency):**
 
@@ -46,6 +47,11 @@ and in the `qwen38-vllm.yaml` header):
 | DSpark-beellama (tensor split) | —            | —                           | upstream crash (#27819 class, #27858 open) |
 | SGLang MTP/EAGLE               | —            | pool clamps ~90K            | SHELVED (#36010)                           |
 | DSpark drafter on vLLM         | —            | pool -113K, draft load fail | parked                                     |
+
+- **vLLM 0.33.0 re-baseline (2026-11-03):** decode UP (+5.1% prose / +13.7%
+  structured, MTP acceptance 2.39 -> 2.71), prefill wash, quality PASS -
+  see the dedicated section below. New fp8 baseline: 63.9/113.0 t/s,
+  pool 278,006 @0.94.
 
 **What the week of tests taught (reusable):**
 
@@ -64,7 +70,9 @@ and in the `qwen38-vllm.yaml` header):
 draft
 (#55292/#57443/#54369) -> re-A/B k=6/8 · llama.cpp #27858 merged into a
 beellama release -> DSpark-bee tensor-split retry (template ready) ·
-vLLM image bumps -> re-verify b12x + k. Marginal contingency levers:
+vLLM image bumps -> re-verify b12x + k (**DONE 11-03 on 0.33.0:** b12x
+active, k=4 holds, no config change needed beyond the 0.94 gpu-mem
+settlement). Marginal contingency levers:
 gpuMemUtil 0.97 (only when a test becomes pool-bound), node-level GPU
 clock lock (consistency). The hard ceiling is KV bandwidth at depth -
 NVFP4 KV (tested 10-19, parked for t/s) bought the pool; the at-depth
@@ -410,6 +418,64 @@ pool becomes the binding constraint again, or a vLLM image ships
 FlashInfer >=0.7.1 with FI #5239 (SM120 repack) + #4993 (split-KV
 fix) - per the vllm-project/vllm#50416 thread, NVFP4 prefill is then
 on par with FP8; the decode tax stays (acceptance-driven).
+
+## vLLM 0.33.0 re-baseline (2026-11-03) - decode UP, pool slightly down; b12x + k=4 re-verified
+
+The watch item "vLLM image bumps -> re-verify b12x + k" fired on the
+Renovate bump to `vllm/vllm-openai:v0.33.0`. The 0.33 boot saga (the
+2026-11-03 OOM incident, `qwen38-vllm.yaml` gpu-mem comment) settled on
+gpu-memory-utilization 0.94: 0.33's AOT-compiled MTP speculator lazily
+allocates ~64 MiB draft-prefill activation buffers OUTSIDE the gpu-mem
+budget, which OOMs at 0.95 (and, unexplained, at 0.92 too). The settled
+config (b12x + MTP k=4 + fp8 KV + PIECEWISE) was then re-run through
+`scripts/llm_bench.py --port-forward` on pod qwen38-6f74b9bdc5-hjbvp,
+zero concurrency verified in the pod stats lines: the whole bench window
+(14:52:08-14:54:20, all requests via the port-forward, 127.0.0.1) shows
+`Running: 1` on every 10 s stat line; `Running: 2` appears only in the
+litellm-traffic windows before (14:46-14:51) and after (15:01-15:02).
+vs the fp8@0.32.0 baseline (recorded 10-19):
+
+| Probe (pinned content)          | fp8@0.32.0 (recorded)      | fp8@0.33.0 (this run)         | delta                    |
+| ------------------------------- | -------------------------- | ----------------------------- | ------------------------ |
+| KV pool                         | 287,719 tok @0.95 (1.10x)  | 278,006 tok @0.94 (1.06x)     | -9.7K (the 0.94 settlement, not the engine) |
+| Short prose, 512 tok @ temp 1.0 | 8.43 s (60.8 t/s)          | 8.01 s (63.9 t/s)             | +5.1%                    |
+| Structured JSON x3              | 98.4-99.8 t/s, acc 2.39    | 112.8-113.1 t/s, acc 2.71     | +13.7%, acc +0.32        |
+| Long COLD prefill               | 29.11 s @65.7K (2,257 t/s) | 35.28 s @75,341 (2,135 t/s)   | -5.4% t/s (different salted token count + cross-day drift) |
+| Long WARM wall                  | 2.20 s @68.6K              | 1.76 s @75,351                | -0.44 s at +6.7K tokens  |
+| Quality (math + tool)           | PASS                       | PASS                          | preserved                |
+
+All three JSON runs measured accept_len 2.71 (26.53/26.61/26.55 s - the
+x3 stability check is within 0.3%, as designed). Pod-log corroboration:
+`FlashInferB12xNvFp4LinearKernel` still selected on 0.33.0 (the opt-in
+`--kernel-config` survived the engine bump); new 0.33 lines:
+`GDN spec decode kernel: cuda`, spec-decode XQA JIT modules
+(`use_spec_dec_True_spec_q_seq_len_4/5`), and the known "FLASHINFER
+cannot update draft decode metadata in place; falling back to rebuilding
+attention metadata eagerly" warning (the #54369 rebuild-fallback class -
+no measurable cost here).
+
+Reads:
+
+- The 0.33 engine bump is a real DECODE win on the settled config: the
+  structured +13.7% is mechanistically explained by the MTP acceptance
+  jump 2.39 -> 2.71 accepted/step (the b12x A/B established acceptance
+  drives structured t/s), and the +5.1% prose tracks the same direction.
+  The acceptance jump, not clock drift, is the signal - drift cannot move
+  a per-step acceptance ratio by +0.32.
+- Prefill -5.4% t/s (2,257 -> 2,135) is inside the cross-day GPU-clock
+  confound band and comes with a different (salted) filler token count;
+  warm wall time IMPROVED on top of that. No prefill regression to act
+  on.
+- Pool 278,006 = 1.06x of 262K: one full agentic session still fits;
+  the -9.7K vs the 0.32.0 record is the 0.94 gpu-mem settlement from the
+  OOM saga, not the 0.33 engine. If the upstream MTP-alloc fix or
+  maxNumBatchedTokens 2048 lands, 0.95 restores ~9.7K.
+
+**New baseline: fp8@0.33.0 - prose 63.9 t/s | structured 113.0 t/s acc
+2.71 | COLD 35.28 s @75.3K (2,135 t/s) | warm 1.76 s | pool 278,006
+@0.94.** b12x + k=4 re-verified; no config change needed for the bump
+beyond the 0.94 gpu-mem already in the tree. NVFP4 re-flip watch items
+unchanged (parked for t/s).
 
 ## Watch list
 

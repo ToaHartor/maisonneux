@@ -147,6 +147,8 @@ spec:
     # ~8% is the 0.30->0.32 bump, the rest is the NVFP4 tax. New fp8
     # baseline: 60.8/99.3 t/s, pool 287,719. Detail:
     # docs/notes/llm-journey.md (NVFP4-KV A/B section + Watch list).
+    # Re-baselined 2026-11-03 on 0.33.0 (prose 63.9 / structured
+    # 113.0 t/s, acc 2.71, pool 278,006 @0.94 - see llm-journey.md).
     # Repeated agentic system prompts: the big agentic win over the beellama
     # service (which runs --cache-ram 0 and re-prefills every request)
     enablePrefixCaching: true
@@ -154,7 +156,17 @@ spec:
     # 8192 measured: no speed gain and caps context at 200K
     maxNumBatchedTokens: 4096
     # Above 0.91 OOMs *if* batched tokens is raised to 8192
-    gpuMemoryUtilization: 0.95
+    # 0.33 MTP-OOM saga (2026-11-03, incident 2026-11-03-vllm-033-mtp-oom-crash):
+    # 0.33's AOT-compiled MTP speculator lazily allocates ~64 MiB draft-prefill
+    # activation buffers OUTSIDE the gpu-mem budget (spec decode "no longer
+    # reserves draft slots"); at 0.95 the first ~3840-token draft prefill OOMed
+    # the engine (Worker_TP1, 64 MiB alloc at 15.44/15.48 GiB in use).
+    # 0.92 also OOMed (unexplained - it has MORE headroom than 0.95; crash log
+    # lost with the pod, presumably a larger/different allocation). Settled on
+    # 0.94: ~0.9 GiB headroom, KV pool ~274-277K tok (est., still > 262144
+    # maxModelLen). If it OOMs at 0.94: next steps = maxNumBatchedTokens 2048
+    # (caps the draft-prefill buffer ~34 MiB) or file upstream on the 0.33 MTP.
+    gpuMemoryUtilization: 0.94
     # FlashInfer: the recipe measured TRITON_ATTN at -33% (32K ctx) / -64%
     # (131K ctx) - the fused multi-step draft path is worth ~0.7%,
     # FlashInfer's attention kernel is worth 2.8x at depth
@@ -256,6 +268,11 @@ spec:
     # 2026-09-28 (uncommented below). To keep the cutlass baseline
     # instead: re-comment the 2 lines. Full history:
     # docs/notes/llm-journey.md (b12x section).
+    # RE-VERIFIED 2026-11-03 on v0.33.0 (Renovate bump + 0.94 gpu-mem
+    # settlement, incident 2026-11-03-vllm-033-mtp-oom-crash): the pod
+    # log still selects FlashInferB12xNvFp4LinearKernel; full bench
+    # re-baseline in docs/notes/llm-journey.md (decode +5.1% prose /
+    # +13.7% structured vs the fp8@0.32.0 baseline, acc 2.39 -> 2.71).
     # SM120 b12x CuTe-DSL warp-level MMA NVFP4 GEMM - the SM120-specific
     # kernel; auto ranks CUTLASS above it, this opts in.
     - --kernel-config
