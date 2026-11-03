@@ -153,10 +153,10 @@ spec:
             #   capabilities: { drop: ["ALL"] }
             resources:
               limits:
-                memory: 1Gi
+                memory: 4Gi
               requests:
                 cpu: 100m
-                memory: 300Mi
+                memory: 512Mi
 
       machine-learning:
         strategy: Recreate
@@ -190,6 +190,9 @@ spec:
               MACHINE_LEARNING_CACHE_FOLDER: "/cache"
               TRANSFORMERS_CACHE: "/cache"
               IMMICH_MEDIA_LOCATION: *mediaLocation
+              # Don't preload all models into RAM at boot (the CLIP ViT-SO400M + faces + OCR
+              # load spike OOMKills the container); models load on demand, unload when idle.
+              MACHINE_LEARNING_EAGER_STARTUP: "false"
               # GPU support
               NVIDIA_VISIBLE_DEVICES: "all"
               NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
@@ -227,7 +230,7 @@ spec:
               capabilities: { drop: ["ALL"] }
             resources:
               limits:
-                memory: 600Mi
+                memory: 6Gi
                 nvidia.com/gpu: 1
               requests:
                 cpu: 100m
@@ -351,15 +354,15 @@ spec:
 
             job:
               backgroundTask: { concurrency: 5 }
-              faceDetection: { concurrency: 4 }
+              faceDetection: { concurrency: 2 }
               library: { concurrency: 5 }
               metadataExtraction: { concurrency: 5 }
               migration: { concurrency: 10 }
               notifications: { concurrency: 5 }
-              ocr: { concurrency: 3 }
+              ocr: { concurrency: 2 }
               search: { concurrency: 10 }
               sidecar: { concurrency: 5 }
-              smartSearch: { concurrency: 4 }
+              smartSearch: { concurrency: 2 }
               thumbnailGeneration: { concurrency: 6 }
               videoConversion: { concurrency: 3 }
 
