@@ -228,3 +228,24 @@ data:
           stage: !KeyOf default-invitation-stage
           target: !Find [authentik_flows.flow, [slug, default-enrollment-flow]]
         model: authentik_flows.flowstagebinding
+
+  # authentik 2026.x default: session_duration=0 => the session cookie expires when the
+  # browser closes, forcing a full re-login on every fresh browser session. Set a real
+  # lifetime here; remember_me_offset>0 also enables the "remember me" checkbox.
+  login_session_lifetime.yaml: |
+    version: 1
+    metadata:
+      name: login-session-lifetime-blueprint
+      labels:
+        blueprints.goauthentik.io/description: |
+          This blueprint extends the default login session so the authentik
+          session cookie survives browser restarts instead of expiring when
+          the browser closes.
+    entries:
+      - model: authentik_stages_user_login.userloginstage
+        identifiers:
+          name: default-authentication-login
+        state: present
+        attrs:
+          session_duration: days=30
+          remember_me_offset: days=30

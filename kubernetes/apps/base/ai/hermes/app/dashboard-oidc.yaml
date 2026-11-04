@@ -39,6 +39,11 @@ spec:
             - name: "authentik default OAuth Mapping: OpenID 'openid'"
             - name: "authentik default OAuth Mapping: OpenID 'email'"
             - name: "authentik default OAuth Mapping: OpenID 'profile'"
+            # Grants a 30d sliding refresh token (requires the offline_access scope in the
+            # client's requested scopes, see HERMES_DASHBOARD_OIDC_SCOPES) so the dashboard
+            # session outlives the short access token. Without it the provider never issues
+            # a refresh token and the dashboard re-logs-in after the access token expires.
+            - name: "authentik default OAuth Mapping: OpenID 'offline_access'"
             # Add scopes via
             # - name:
             #   scope_name:

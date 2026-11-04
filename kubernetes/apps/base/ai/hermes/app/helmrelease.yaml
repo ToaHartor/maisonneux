@@ -201,7 +201,11 @@ spec:
                 secretKeyRef:
                   name: ${APP}-dashboard-oidc-authentik-application
                   key: clientSecret
-              HERMES_DASHBOARD_OIDC_SCOPES: openid profile email
+              # offline_access: makes authentik issue a refresh token (the hermes-dashboard
+              # provider links the offline_access scope mapping, see dashboard-oidc.yaml);
+              # the dashboard rotates it automatically, so the session lasts ~30 days
+              # instead of the 5-minute access token TTL.
+              HERMES_DASHBOARD_OIDC_SCOPES: openid profile email offline_access
               HERMES_DASHBOARD_OIDC_ISSUER:
                 secretKeyRef:
                   name: ${APP}-dashboard-oidc-authentik-application
