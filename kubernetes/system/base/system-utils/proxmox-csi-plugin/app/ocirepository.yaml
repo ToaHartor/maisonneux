@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.5.13
-    digest: sha256:575e6d4ccce99d25c49cfc530d3df7cb18765925c432e0f2d6fcdf5366cfc034
+    tag: 0.5.15
+    digest: sha256:d5125be66d23c3380f3ccadc26018d21f0a44e203d93998a9e80ef82eaa2dc59
   url: oci://ghcr.io/sergelogvinov/charts/proxmox-csi-plugin
