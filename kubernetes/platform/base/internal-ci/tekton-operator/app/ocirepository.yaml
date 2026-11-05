@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.81.2
-    digest: sha256:96bc03b597cf9bdd4ea68beaac7f1425c53c764afdaa93ee03da4a6dc2d05ad5
+    tag: 0.81.3
+    digest: sha256:f1558aa35e82c8fc045784cfbf7cb96e3719a3979a7130488c9abad039b5ab7f
   url: oci://ghcr.io/tektoncd/operator/charts/tekton-operator
