@@ -72,6 +72,11 @@ spec:
             image:
               repository: docker.io/library/alpine
               tag: "3.24"
+            env:
+              LITELLM_API_KEY:
+                secretKeyRef:
+                  name: litellm-master-key
+                  key: secretKey
             command:
               - sh
               - -c
@@ -84,8 +89,18 @@ spec:
                 cp /run/config/AGENTS.md /opt/data/workspace/AGENTS.md
                 chown 1024:1024 /opt/data/workspace/AGENTS.md
 
-                # cp /run/config/env /opt/data/.env
-                # chmod 600 /opt/data/.env
+                # Seed the default profile's .env with the litellm master key.
+                # The gateway multiplexes profiles (default + operator) in one process,
+                # and in that mode hermes resolves $${VAR} references in config.yaml
+                # (mcp_servers headers, providers key_env) from the profile's .env
+                # secret scope instead of the container environment. Without this the
+                # default profile sends the literal "Bearer $${LITELLM_API_KEY}" and the
+                # litellm /mcp endpoint answers 401 authentication_required, parking
+                # the MCP server. Idempotent append: user-managed .env entries survive.
+                if [ -n "$${LITELLM_API_KEY:-}" ] && ! grep -qs '^LITELLM_API_KEY=' /opt/data/.env; then
+                  printf 'LITELLM_API_KEY=%s\n' "$LITELLM_API_KEY" >> /opt/data/.env
+                  chmod 600 /opt/data/.env
+                fi
 
                 # https://github.com/LukeEvansTech/talos-cluster/blob/fa46c31b2363b272019510be81fea9c883036760/kubernetes/apps/ai/hermes/app/helmrelease.yaml#L36
                 # Install the memini memory-provider plugin from the upstream
