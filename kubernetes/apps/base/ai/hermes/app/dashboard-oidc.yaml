@@ -32,7 +32,13 @@ spec:
           # clientID:
           # clientSecret:
           redirectURL:
+            # Both public hosts complete the OAuth callback on the dashboard:
+            # hermes-dash is served by the dashboard listener (9119); hermes is the
+            # same listener today, but will use the webapp listener (9120) once the
+            # webapp is enabled, which reconstructs the redirect_uri from the
+            # request Host — so both must be registered.
             - "${DASHBOARD_REDIRECT_URL}"
+            - "https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}/auth/callback"
           tokenDuration: "minutes=5"
           signingKey: "namespace_authentik.secret_authentik-cert-tls.tls"
           scopes:

@@ -28,17 +28,16 @@ spec:
     substitute:
       APP: hermes
       SUBDOMAIN: hermes
-      WEBUI_SUBDOMAIN: hermes-webui
       DOMAIN: ${main_domain}
       DOMAIN_WEBSECURE: ${main_domain_websecure}
       GROUP: Services
-      DESCRIPTION: AI Agent manager
-      REDIRECT_URL: https://hermes-webui.${main_domain_websecure}/api/auth/oidc/callback
+      DESCRIPTION: Hermes agent
+      REDIRECT_URL: "" # https://hermes.${main_domain_websecure}/auth/callback
       # Dashboard OIDC (shares the hermes subdomain)
-      DASHBOARD_SUBDOMAIN: hermes
-      DASHBOARD_GROUP: Services
-      DASHBOARD_DESCRIPTION: Hermes agent dashboard
-      DASHBOARD_REDIRECT_URL: https://hermes.${main_domain_websecure}/auth/callback
+      DASHBOARD_SUBDOMAIN: hermes-dash
+      # DASHBOARD_GROUP: Services
+      # DASHBOARD_DESCRIPTION: Hermes agent dashboard
+      # DASHBOARD_REDIRECT_URL: https://hermes-dash.${main_domain_websecure}/auth/callback
       ## Gateway
       # GATEWAY_SVC_NAME: hermes
       # GATEWAY_SVC_PORT: "9119"
@@ -73,9 +72,9 @@ spec:
             scope_name: "groups"
             expression: |
               return [group.name for group in user.ak_groups.all()]
-        # - op: replace
-        #   path: '/spec/values/blueprint/provider/oidc/redirectURL'
-        #   value: ["https://hermes.${main_domain_websecure}/auth/callback", "https://hermes.${main_domain_websecure}/api/auth/oidc/callback"]
+        - op: replace
+          path: '/spec/values/blueprint/provider/oidc/redirectURL'
+          value: ["https://hermes.${main_domain_websecure}/auth/callback", "https://hermes-dash.${main_domain_websecure}/auth/callback"]
     - target:
         kind: HelmRelease
         # match with label since name has variable in it

@@ -17,3 +17,4 @@ transformers:
   - ./transformers
 components:
   - ../../../common/components/traefik-middlewares
+  - ../../../common/components/clustersecretstore

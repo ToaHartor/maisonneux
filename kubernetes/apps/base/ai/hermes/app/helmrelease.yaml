@@ -37,6 +37,7 @@ spec:
         fsGroup: 1024
         fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 1024
+        # runAsNonRoot: true
         runAsUser: 1024
         seccompProfile:
           type: RuntimeDefault
@@ -50,7 +51,11 @@ spec:
           copy-agent-source:
             image: &hermesImage
               repository: docker.io/nousresearch/hermes-agent
-              tag: v2026.9.24@sha256:fca358f12efd65bfaaca05884166f15c0e2788375ca30d77061ac1ebc96452b7
+              # v0.22.x stream: ships the prebuilt
+              # Webapp, new providers: config schema, s6 profile reconciler and the
+              # /etc/hermes machine-level config path. We keep our 1024
+              # convention via the root + HERMES_UID remap (see app container below).
+              tag: v0.22.7@sha256:e6d81ae52ebf6a43efa529701405509f20054ba818f179ddd748bed4f8af584c
             command:
               - /bin/sh
               - -c
@@ -61,6 +66,11 @@ spec:
                 cp -r /opt/hermes/. /agent-src/ 2>/tmp/cp.err || true
                 if grep -v 'Permission denied' /tmp/cp.err; then exit 1; fi
                 test -e /agent-src/.venv
+                # Run config migration before s6 start
+                [ ! -f /opt/data/config.yaml ] ||
+                exec /opt/hermes/.venv/bin/python /opt/hermes/scripts/docker_config_migrate.py
+            env:
+              HOME: /opt/data
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -72,11 +82,6 @@ spec:
             image:
               repository: docker.io/library/alpine
               tag: "3.24"
-            env:
-              LITELLM_API_KEY:
-                secretKeyRef:
-                  name: litellm-master-key
-                  key: secretKey
             command:
               - sh
               - -c
@@ -89,18 +94,38 @@ spec:
                 cp /run/config/AGENTS.md /opt/data/workspace/AGENTS.md
                 chown 1024:1024 /opt/data/workspace/AGENTS.md
 
-                # Seed the default profile's .env with the litellm master key.
-                # The gateway multiplexes profiles (default + operator) in one process,
-                # and in that mode hermes resolves $${VAR} references in config.yaml
-                # (mcp_servers headers, providers key_env) from the profile's .env
-                # secret scope instead of the container environment. Without this the
-                # default profile sends the literal "Bearer $${LITELLM_API_KEY}" and the
-                # litellm /mcp endpoint answers 401 authentication_required, parking
-                # the MCP server. Idempotent append: user-managed .env entries survive.
-                if [ -n "$${LITELLM_API_KEY:-}" ] && ! grep -qs '^LITELLM_API_KEY=' /opt/data/.env; then
-                  printf 'LITELLM_API_KEY=%s\n' "$LITELLM_API_KEY" >> /opt/data/.env
-                  chmod 600 /opt/data/.env
-                fi
+                # Upsert the managed .env keys into the profiles' .env files.
+                # The keys live in the hermes-dotenv secret (owned by the
+                # hermes-dotenv ExternalSecret, sourced from the litellm
+                # master key; see externalsecret.yaml) and are mounted read-only
+                # at /run/dotenv. The gateway multiplexes profiles (default +
+                # operator) in one process, and in that mode hermes resolves
+                # $${VAR} references in config.yaml (mcp_servers headers,
+                # providers key_env) from the profile's .env secret scope
+                # instead of the container environment — without LITELLM_API_KEY
+                # there the profile sends the literal "Bearer $${LITELLM_API_KEY}"
+                # and litellm answers 401, parking the MCP server. The upsert
+                # replaces a managed key's line or appends it; user-managed
+                # .env lines survive. Profile directories are never created here
+                # (a deleted profile must not be resurrected by its .env).
+                for dotkey in /run/dotenv/*; do
+                  [ -f "$dotkey" ] || continue
+                  key=$(basename "$dotkey")
+                  val=$(cat "$dotkey")
+                  [ -n "$val" ] || continue
+                  for envfile in /opt/data/.env /opt/data/profiles/operator/.env; do
+                    [ -d "$(dirname "$envfile")" ] || continue
+                    tmp="$envfile.new"
+                    if [ -e "$envfile" ]; then
+                      grep -v "^$key=" "$envfile" > "$tmp" || true
+                    else
+                      : > "$tmp"
+                    fi
+                    printf '%s=%s\n' "$key" "$val" >> "$tmp"
+                    chmod 600 "$tmp"
+                    mv "$tmp" "$envfile"
+                  done
+                done
 
                 # https://github.com/LukeEvansTech/talos-cluster/blob/fa46c31b2363b272019510be81fea9c883036760/kubernetes/apps/ai/hermes/app/helmrelease.yaml#L36
                 # Install the memini memory-provider plugin from the upstream
@@ -181,24 +206,42 @@ spec:
             args:
               - gateway
               - run
-              - --no-supervise
+              # - --no-supervise
             env:
               # Some settings can be overriden by env variables :
               # https://github.com/NousResearch/hermes-agent/blob/main/cli-config.yaml.example
               # https://github.com/nousresearch/hermes-agent/blob/main/website/docs/reference/environment-variables.md
               TZ: Europe/Paris
+              S6_YES_I_WANT_A_WORLD_WRITABLE_RUN_BECAUSE_KUBERNETES: "1"
               HERMES_HOME: /opt/data
               HERMES_CRON_TIMEOUT: 0
-              HOME: /opt/data
-              API_SERVER_ENABLED: true
-              API_SERVER_HOST: 0.0.0.0
-              API_SERVER_KEY:
-                secretKeyRef:
-                  name: ${SECRET_KEY_NAME}
-                  key: secretKey
-              API_SERVER_CORS_ORIGINS: "*"
+              # The hermes-agent entrypoint refuses an arbitrary non-hermes UID:
+              # the container starts as root and passes HERMES_UID/GID; the image
+              # remaps its hermes user to 1024:1024 at boot and chowns the data
+              # volume so files land owned by our uid/gid (== the --user outcome,
+              # without breaking the s6 supervision tree).
               HERMES_UID: 1024
               HERMES_GID: 1024
+              HOME: /opt/data
+              GIT_CONFIG_GLOBAL: /opt/data/shared/gitconfig
+              PATH: /opt/data/shared/bin:/opt/data/.local/bin:/opt/data/.local/share/mise/shims:/opt/mise:/opt/hermes/.venv/bin:/opt/hermes/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              # Terminal HOME moves into each named profile; mise stays on the shared PVC.
+              MISE_CACHE_DIR: /opt/data/.cache/mise
+              MISE_CONFIG_DIR: /opt/data/.config/mise
+              MISE_DATA_DIR: /opt/data/.local/share/mise
+              MISE_STATE_DIR: /opt/data/.local/state/mise
+              # The profile HOME changes in terminal sessions; use one shared
+              # mise config and tool installation for every profile.
+              MISE_CONFIG_FILE: /opt/data/shared/mise.toml
+              # API server
+              # API_SERVER_ENABLED: true
+              # API_SERVER_HOST: 0.0.0.0
+              # API_SERVER_KEY:
+              #   secretKeyRef:
+              #     name: ${SECRET_KEY_NAME}
+              #     key: secretKey
+              # API_SERVER_CORS_ORIGINS: "*"
+              # Dashboard
               HERMES_DASHBOARD_SESSION_TOKEN:
                 secretKeyRef:
                   name: ${SECRET2_KEY_NAME}
@@ -206,15 +249,15 @@ spec:
               HERMES_DASHBOARD: true
               HERMES_DASHBOARD_HOST: 0.0.0.0
               HERMES_DASHBOARD_PORT: &dashboardPort 9119
-              HERMES_DASHBOARD_PUBLIC_URL: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+              HERMES_DASHBOARD_PUBLIC_URL: https://${DASHBOARD_SUBDOMAIN}.${DOMAIN_WEBSECURE}
               # OIDC
               HERMES_DASHBOARD_OIDC_CLIENT_ID:
                 secretKeyRef:
-                  name: ${APP}-dashboard-oidc-authentik-application
+                  name: ${APP}-oidc-authentik-application
                   key: clientID
               HERMES_DASHBOARD_OIDC_CLIENT_SECRET:
                 secretKeyRef:
-                  name: ${APP}-dashboard-oidc-authentik-application
+                  name: ${APP}-oidc-authentik-application
                   key: clientSecret
               # offline_access: makes authentik issue a refresh token (the hermes-dashboard
               # provider links the offline_access scope mapping, see dashboard-oidc.yaml);
@@ -223,12 +266,9 @@ spec:
               HERMES_DASHBOARD_OIDC_SCOPES: openid profile email offline_access
               HERMES_DASHBOARD_OIDC_ISSUER:
                 secretKeyRef:
-                  name: ${APP}-dashboard-oidc-authentik-application
+                  name: ${APP}-oidc-authentik-application
                   key: issuerURL
-              LITELLM_API_KEY:
-                secretKeyRef:
-                  name: litellm-master-key
-                  key: secretKey
+              # Additional services
               MEMINI_BASE_URL: http://memini.ai.svc.cluster.local:8080
               MEMINI_NAMESPACE: shared/hermes
               MEMINI_API_KEY:
@@ -242,45 +282,94 @@ spec:
                   secretKeyRef:
                     name: firecrawl-api-key
                     key: secretKey
+            envFrom:
+              # .env API keys (hermes-dotenv, owned by the hermes-dotenv
+              # ExternalSecret — externalsecret.yaml). Currently LITELLM_API_KEY;
+              # every key added to that ExternalSecret lands in the container
+              # environment too. The init container upserts the same keys into
+              # the profiles' .env files for config-level $${VAR} resolution.
+              - secretRef:
+                  name: hermes-dotenv
             ports:
-              - containerPort: &apiPort 8642
-                name: api
-                protocol: TCP
+              # - containerPort: &apiPort 8642
+              #   name: api
+              #   protocol: TCP
               - containerPort: *dashboardPort
                 name: dashboard
                 protocol: TCP
+              - containerPort: &webuiPort 9120
+                name: webui
+                protocol: TCP
             probes:
-              startup:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet: &httpGet
-                    path: /api/status
-                    port: *dashboardPort
-                  initialDelaySeconds: 10
-                  periodSeconds: 5
-                  timeoutSeconds: 5
-                  failureThreshold: 30
+              # A fresh cron ticker heartbeat (written every 60s by the gateway) is required.
               liveness:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet: *httpGet
+                  exec:
+                    command: &healthcheck
+                      - /bin/sh
+                      - -c
+                      - >-
+                        hb=$(cut -d. -f1 /opt/data/cron/ticker_heartbeat) &&
+                        [ $(( $(date +%s) - hb )) -lt 300 ]
+                  failureThreshold: 3
                   periodSeconds: 30
                   timeoutSeconds: 5
               readiness:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet: *httpGet
+                  failureThreshold: 3
+                  exec:
+                    command: *healthcheck
+                  periodSeconds: 10
                   timeoutSeconds: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: *healthcheck
+                  failureThreshold: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+              # startup:
+              #   enabled: true
+              #   custom: true
+              #   spec:
+              #     httpGet: &httpGet
+              #       path: /api/status
+              #       port: *dashboardPort
+              #     initialDelaySeconds: 10
+              #     periodSeconds: 5
+              #     timeoutSeconds: 5
+              #     failureThreshold: 30
+              # liveness:
+              #   enabled: true
+              #   custom: true
+              #   spec:
+              #     httpGet: *httpGet
+              #     periodSeconds: 30
+              #     timeoutSeconds: 5
+              # readiness:
+              #   enabled: true
+              #   custom: true
+              #   spec:
+              #     httpGet: *httpGet
+              #     timeoutSeconds: 5
             resources:
               requests:
-                cpu: 50m
-                memory: 512Mi
+                cpu: 100m
+                memory: 1Gi
               limits:
                 memory: 4Gi
             securityContext:
+              # allowPrivilegeEscalation: false
+              # readOnlyRootFilesystem: true
+              # capabilities:
+              #   drop:
+              #     - ALL
               allowPrivilegeEscalation: false
               capabilities:
                 add:
@@ -296,151 +385,19 @@ spec:
               runAsGroup: 0
               runAsNonRoot: false
               runAsUser: 0
-          webui:
-            image:
-              repository: ghcr.io/nesquena/hermes-webui
-              tag: 0.52.547@sha256:2e8c675804bf31d89a3b69231e70e311f0b8001e3f8438a200ef1e2bcf1312ba
-            # From https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all/blob/main/deploy/k3s/manifests/06-hermes.yaml
-            # command: [sh, -c]
-            # args:
-            #   - |
-            #     mkdir -p /home/hermeswebui/.hermes
-            #     # echo "LITELLM_API_KEY=$${LITELLM_API_KEY}" > /home/hermeswebui/.hermes/.env
-            #     # chmod 644 /home/hermeswebui/.hermes/.env
-
-            #     for i in $(seq 1 90); do
-            #       HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8642/ 2>/dev/null)
-            #       [ "$HTTP" = "200" ] || [ "$HTTP" = "404" ] && break
-            #       sleep 2
-            #     done
-
-            #     (while true; do
-            #       NOW=$(python3 -c "from datetime import datetime,timezone;print(datetime.now(timezone.utc).isoformat())")
-            #       printf '{"gateway_state":"running","updated_at":"%s","pid":1,"platform":"hermes-agent","version":"0.13.0"}\n' "$NOW" > /home/hermeswebui/.hermes/gateway_state.json 2>/dev/null
-            #       sleep 25
-            #     done) &
-
-            #     rm -f /home/hermeswebui/.hermes/.skills_prompt_snapshot.json 2>/dev/null
-
-            #     if [ -f /hermeswebui_init.bash ]; then
-            #       sed -i 's/chmod 700 "$itdir"/chmod 755 "$itdir"/' /hermeswebui_init.bash 2>/dev/null
-            #       # sed -i '/cd \/app; python server.py/i test -f /home/hermeswebui/.hermes/replace_icons.sh \&\& sh /home/hermeswebui/.hermes/replace_icons.sh 2>/dev/null || true' /hermeswebui_init.bash 2>/dev/null
-            #       exec /hermeswebui_init.bash
-            #     else
-            #       echo "WebUI init script not found, sleeping..."
-            #       sleep infinity
-            #     fi
-            env:
-              # PLAYWRIGHT_BROWSERS_PATH: /opt/data/playwright-browsers
-              # LD_LIBRARY_PATH: /opt/shared-tools/lib
-              # PATH: "/opt/shared-tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-              WANTED_UID: 1024
-              WANTED_GID: 1024
-              GATEWAY_HEALTH_URL: http://localhost:8642
-              HERMES_HOME: /home/hermeswebui/.hermes
-              HERMES_WEBUI_AGENT_DIR: /home/hermeswebui/.hermes/hermes-agent
-              HERMES_WEBUI_STATE_DIR: /home/hermeswebui/.hermes/webui
-              HERMES_WEBUI_DEFAULT_WORKSPACE: /home/hermeswebui/.hermes/workspace
-              HERMES_WEBUI_HOST: 0.0.0.0
-              HERMES_WEBUI_PORT: &webuiPort 8787
-              HERMES_WEBUI_CHAT_BACKEND: gateway
-              HERMES_WEBUI_GATEWAY_BASE_URL: http://hermes.ai.svc.cluster.local:8642
-              HERMES_WEBUI_GATEWAY_USE_RUNS_API: "true"
-              HERMES_WEBUI_GATEWAY_API_KEY:
-                secretKeyRef:
-                  name: hermes-api-key
-                  key: secretKey
-              # HERMES_WEBUI_PASSWORD:
-              # OIDC config
-              # https://github.com/nesquena/hermes-webui/blob/704e19adfe74e4fa4dd0067c390c21f74d786779/api/auth_oidc.py#L172
-              HERMES_WEBUI_OIDC_ISSUER:
-                secretKeyRef:
-                  name: ${APP}-oidc-authentik-application
-                  key: issuerURL
-              HERMES_WEBUI_OIDC_CLIENT_ID:
-                secretKeyRef:
-                  name: ${APP}-oidc-authentik-application
-                  key: clientID
-              HERMES_WEBUI_OIDC_CLIENT_SECRET:
-                secretKeyRef:
-                  name: ${APP}-oidc-authentik-application
-                  key: clientSecret
-              HERMES_WEBUI_OIDC_REDIRECT_URI:
-                secretKeyRef:
-                  name: ${APP}-oidc-authentik-application
-                  key: redirectURL
-              HERMES_WEBUI_OIDC_SCOPES: openid profile email groups
-              HERMES_WEBUI_OIDC_ALLOW_CLAIM: groups
-              HERMES_WEBUI_OIDC_ALLOW_VALUES: "app: hermes" # Group to allow, should correspond to the property mapping patch
-              # test
-              # HERMES_SKIP_CHMOD: 1
-            ports:
-              - containerPort: *webuiPort
-                name: http
-                protocol: TCP
-            probes:
-              # The WebUI serves an unauthenticated GET /health on :8787.
-              liveness: &probe
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /health
-                    port: *webuiPort
-                  initialDelaySeconds: 0
-                  periodSeconds: 30
-                  timeoutSeconds: 5
-                  failureThreshold: 3
-              readiness: *probe
-              # First boot (and every pod start — the venv lives on the ephemeral
-              # image layer, not the PVC) builds a Python venv via `uv pip install`
-              # before /health answers, so gate liveness/readiness on a generous
-              # startup probe (~5 min) instead of a long initialDelaySeconds.
-              startup:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /health
-                    port: *webuiPort
-                  periodSeconds: 10
-                  failureThreshold: 30
-            securityContext:
-              allowPrivilegeEscalation: false
-              # The entrypoint seeds /app and builds the venv on the writable
-              # image layer, so the root FS cannot be read-only.
-              readOnlyRootFilesystem: false
-              capabilities:
-                drop:
-                  - ALL
-              # runAsGroup: 0
-              runAsNonRoot: false
-              # runAsUser: 0
-              runAsGroup: 1024
-              runAsUser: 1024
-              seccompProfile:
-                type: RuntimeDefault
-
-            resources:
-              requests:
-                cpu: 50m
-                memory: 256Mi
-              limits:
-                memory: 512Mi
     service:
       app:
         controller: *app
         ports:
-          gateway:
-            port: *apiPort
+          # gateway:
+          #   port: *apiPort
           dashboard:
             port: *dashboardPort
           webui:
-            port: *webuiPort
+            port: *webuiPort # webapp listener (off by default); re-add when webapp is enabled and the hermes host is routed back to it
 
     route:
-      app:
-        enabled: true
+      webui:
         parentRefs:
           - kind: Gateway
             name: traefik-gateway
@@ -453,47 +410,45 @@ spec:
           # root (no API_SERVER_PREFIX knob), so /v1 maps straight through. The
           # dashboard has no /v1 routes, so this shadows nothing. Auth is Bearer
           # API_SERVER_KEY on the server itself.
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: /v1
-            backendRefs:
-              - name: hermes
-                port: *apiPort
-          # Everything else -> the stock dashboard (9119): SPA, /api/*, /auth/*.
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: /
-            backendRefs:
-              - name: hermes
-                port: *dashboardPort
+          # - matches:
+          #     - path:
+          #         type: PathPrefix
+          #         value: /v1
+          #   backendRefs:
+          #     - name: hermes
+          #       port: *apiPort
+          # Everything else -> the dashboard listener (9119): SPA, /api/*, /auth/*.
+          # Deliberately the dashboard port, not the webapp port (9120): the webapp
+          # listener's empty public_url short-circuits HERMES_DASHBOARD_PUBLIC_URL, so
+          # a request on that listener reconstructs the OAuth redirect_uri from the
+          # request Host — unregistered in authentik for this host.
+          - backendRefs:
+              - identifier: app
+                port: webui
             filters:
               - type: ExtensionRef
                 extensionRef:
                   group: traefik.io
                   kind: Middleware
                   name: chain-local
-
-      webui:
-        enabled: true
+      dashboard:
         parentRefs:
           - kind: Gateway
             name: traefik-gateway
             namespace: ingress
             sectionName: websecure
         hostnames:
-          - ${WEBUI_SUBDOMAIN}.${DOMAIN}
+          - ${DASHBOARD_SUBDOMAIN}.${DOMAIN}
         rules:
-          # The external webui (8787): SPA, its /api/* surface (sessions, chat, share,
-          # /api/auth/oidc/callback), /health probe, and its OIDC login flow.
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: /
-            backendRefs:
-              - name: hermes
-                port: *webuiPort
+          - backendRefs:
+              - identifier: app
+                port: dashboard
+            filters:
+              - type: ExtensionRef
+                extensionRef:
+                  group: traefik.io
+                  kind: Middleware
+                  name: chain-local
 
     persistence:
       agent-source:
@@ -506,8 +461,8 @@ spec:
               - path: /opt/hermes
             app:
               - path: /opt/hermes
-            webui:
-              - path: /home/hermeswebui/.hermes/hermes-agent
+            # webui:
+            #   - path: /home/hermeswebui/.hermes/hermes-agent
       data:
         forceRename: hermes-data
         labels:
@@ -526,19 +481,8 @@ spec:
               - path: /opt/data
             app:
               - path: /opt/data
-            webui:
-              - path: /home/hermeswebui/.hermes
-      webui-data:
-        # forceRename: hermes-webui
-        type: emptyDir
-        # storageClass: ${fastdata_storage}-ha
-        # type: persistentVolumeClaim
-        # accessMode: ReadWriteOnce
-        # size: 2Gi
-        advancedMounts:
-          hermes:
-            webui:
-              - path: /app # Execution directory, where webui source is copied to on startup
+            # webui:
+            #   - path: /home/hermeswebui/.hermes
 
       config:
         type: configMap
@@ -551,6 +495,19 @@ spec:
                 subPath: config.yaml
               - path: /run/config/AGENTS.md
                 subPath: AGENTS.md
+      dotenv:
+        # Managed .env keys, owned by the hermes-dotenv ExternalSecret
+        # (externalsecret.yaml). Mounted into the init container only;
+        # it upserts the keys into the profiles' .env files on every
+        # pod start. 0o444: the init container runs as uid 1024 (no
+        # fsGroup), so the files must be world-readable.
+        type: secret
+        name: hermes-dotenv
+        defaultMode: 0o444
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/dotenv
       run:
         type: emptyDir
         advancedMounts:
@@ -564,6 +521,16 @@ spec:
         globalMounts:
           - path: /tmp
             subPath: tmp
+      # Tools as image
+      mise:
+        type: image
+        image: ghcr.io/jdx/mise:2026.11.2
+        advancedMounts:
+          hermes:
+            app:
+              - path: /opt/mise
+                subPath: usr/local/bin
+                readOnly: true
 
     configMaps:
       config:
@@ -716,21 +683,23 @@ spec:
           config.yaml: |-
             dashboard:
               theme: "mono"
-            custom_providers:
-            - name: litellm
-              base_url: http://litellm.ai.svc.cluster.local:4000/v1
-              key_env: LITELLM_API_KEY
-              models:
-                local/qwen-3.8-27B:
-                  context_length: 262144
-            model:
-              default: local/qwen-3.8-27B
-              provider: custom:litellm
-              context_length: 262144
-            model_aliases:
-              qwen:
-                model: local/qwen-3.8-27B
-                provider: custom:litellm
+            providers:
+              litellm:
+                api: http://litellm.ai.svc.cluster.local:4000/v1
+                discover_models: true
+                key_env: LITELLM_API_KEY
+                name: LiteLLM
+                transport: chat_completions
+            # model:
+            #   default: local/qwen-3.8-27B
+            #   provider: custom:litellm
+            #   context_length: 262144
+            # model_aliases:
+            #   qwen:
+            #     model: local/qwen-3.8-27B
+            #     provider: custom:litellm
+            gateway:
+              multiplex_profiles: true
             memory:
               provider: memini
             plugins:
@@ -763,3 +732,13 @@ spec:
               backend: firecrawl
             security:
               redact_secrets: true
+            telemetry:
+              shared_metrics:
+                enabled: false
+                send: false
+            webapp:
+              enabled: true
+              host: 0.0.0.0
+              port: 9120
+              public_url: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+
