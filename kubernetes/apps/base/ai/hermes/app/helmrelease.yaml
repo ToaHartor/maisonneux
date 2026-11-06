@@ -259,10 +259,11 @@ spec:
                 secretKeyRef:
                   name: ${APP}-oidc-authentik-application
                   key: clientSecret
-              # offline_access: makes authentik issue a refresh token (the hermes-dashboard
-              # provider links the offline_access scope mapping, see dashboard-oidc.yaml);
-              # the dashboard rotates it automatically, so the session lasts ~30 days
-              # instead of the 5-minute access token TTL.
+              # offline_access: makes authentik issue a refresh token (the hermes
+              # provider links the offline_access scope mapping via the ks.yaml
+              # patch on homelab/auth-component=true); the dashboard rotates it
+              # automatically, so the session lasts ~30 days instead of the
+              # 5-minute access token TTL.
               HERMES_DASHBOARD_OIDC_SCOPES: openid profile email offline_access
               HERMES_DASHBOARD_OIDC_ISSUER:
                 secretKeyRef:
@@ -426,12 +427,12 @@ spec:
           - backendRefs:
               - identifier: app
                 port: webui
-            filters:
-              - type: ExtensionRef
-                extensionRef:
-                  group: traefik.io
-                  kind: Middleware
-                  name: chain-local
+            # filters:
+            #   - type: ExtensionRef
+            #     extensionRef:
+            #       group: traefik.io
+            #       kind: Middleware
+            #       name: chain-local
       dashboard:
         parentRefs:
           - kind: Gateway
@@ -691,10 +692,10 @@ spec:
                 key_env: LITELLM_API_KEY
                 name: LiteLLM
                 transport: chat_completions
-            # model:
-            #   default: local/qwen-3.8-27B
-            #   provider: custom:litellm
-            #   context_length: 262144
+            model:
+              default: local/qwen-3.8-27B
+              provider: litellm
+              context_length: 262144
             # model_aliases:
             #   qwen:
             #     model: local/qwen-3.8-27B
