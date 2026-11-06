@@ -37,7 +37,7 @@ patches:
         value: false
       - op: remove
         path: /spec/values/topologySpreadConstraints
-      
+
       - op: replace
         path: /spec/values/extraObjects/0/spec/vmstorage/replicaCount
         value: 1
@@ -130,7 +130,7 @@ patches:
       - op: replace
         path: /spec/values/database/enableAntiAffinity
         value: false
-  
+
   - target:
       kind: HelmRelease
       name: mariadb-cluster

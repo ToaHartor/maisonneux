@@ -394,7 +394,8 @@ spec:
           dashboard:
             port: *dashboardPort
           webui:
-            port: *webuiPort # webapp listener (off by default); re-add when webapp is enabled and the hermes host is routed back to it
+            # webapp listener (off by default); re-add when webapp is enabled and the hermes host is routed back to it
+            port: *webuiPort
 
     route:
       webui:
@@ -741,4 +742,3 @@ spec:
               host: 0.0.0.0
               port: 9120
               public_url: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
-

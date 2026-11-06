@@ -31,7 +31,6 @@ spec:
   highAvailabilityController:
     enabled: true
 
-
 # Disable node connection on nodes that do not have linstor enabled
 # https://piraeus.io/docs/v2.9.0/reference/linstornodeconnection/
 ---

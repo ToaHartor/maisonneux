@@ -48,7 +48,12 @@ spec:
               repository: ghcr.io/home-operations/busybox
               tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
               pullPolicy: IfNotPresent
-            command: ["sh", "-c", 'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;']
+            command:
+              [
+                "sh",
+                "-c",
+                'until nc -vz $${POD_NAME}.$${POD_NAMESPACE}.svc.cluster.local 5432; do echo "Waiting for postgres..."; sleep 3; done;',
+              ]
             env:
               POD_NAME: postgres-db-rw # service name for psql rw operations
               POD_NAMESPACE: ${psql_database_namespace}

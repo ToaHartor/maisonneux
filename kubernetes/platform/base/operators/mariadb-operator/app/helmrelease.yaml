@@ -27,7 +27,7 @@ spec:
     ha:
       enabled: true
       replicas: 2
-    
+
     resources:
       limits:
         cpu: 100m
@@ -35,7 +35,7 @@ spec:
       requests:
         cpu: 100m
         memory: 100Mi
-    
+
     metrics:
       enabled: true
 
@@ -70,23 +70,23 @@ spec:
         requests:
           cpu: 10m
           memory: 32Mi
-      
+
       topologySpreadConstraints:
-      # Maximum 1 pod per Proxmox hypervisor
-      - maxSkew: 1
-        topologyKey: topology.kubernetes.io/zone
-        whenUnsatisfiable: ScheduleAnyway
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: mariadb-operator-webhook
-      # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: DoNotSchedule
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: mariadb-operator-webhook
-    
+        # Maximum 1 pod per Proxmox hypervisor
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: mariadb-operator-webhook
+        # Maximum 1 pod per node. If only one worker remains, then only one replica is enough
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: mariadb-operator-webhook
+
     pdb:
       enabled: true
       minAvailable: 1

@@ -78,7 +78,6 @@ spec:
   database:
     engine: sqlite # From recommended gateway configuration https://deepwiki.com/rajsinghtech/garage-operator/3.1.5-database-and-block-storage#low-resource-gateway-cluster
 
-
   # storage:
   #   replicas: 0
   #   metadata:

@@ -29,4 +29,3 @@ spec:
       image:
         # renovate: datasource=helm depName=mariadb-operator registryUrl=https://helm.mariadb.com/mariadb-operator
         tag: 26.10.2
-    
