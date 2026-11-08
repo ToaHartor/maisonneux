@@ -120,7 +120,8 @@ as every other app in `kubernetes/apps/base`):
       marker — offline on normal restarts).
 3. **install-tools** (hermes image — the alpine init can't run the
    scripts: uid 1024 means no `apk` and no python; install-tools
-   itself overrides to `runAsUser: 0` — see step 4):
+   overrides to `runAsUser: 0` **and** re-adds the app container's
+   capability set — see step 4):
    1. runs `mise install` with the CM-pinned tool manifest
       (`MISE_CONFIG_FILE=/run/profile-config/mise.toml`, binary from
       the jdx/mise image mount `/opt/mise`; `XDG_CACHE_HOME` pins the
@@ -174,6 +175,15 @@ as every other app in `kubernetes/apps/base`):
       converges the files the steps above just wrote as root.
       Idempotent (fully-1024 volume = no-op), non-fatal (WARN +
       continue).
+      **Capability requirement:** `runAsUser: 0` alone is not
+      enough. The pod-level securityContext drops *all* capabilities,
+      so a bare uid 0 is subject to normal DAC — it cannot read the
+      1024-owned `0600` files (`.env`, `config.yaml`) and cannot
+      `chown` them back. install-tools therefore re-adds the same
+      `capabilities.add` set as the app container (`CHOWN,
+      DAC_OVERRIDE, FOWNER, FSETID, SETGID, SETUID`; `CAP_DAC_OVERRIDE`
+      covers read/traverse, `CAP_FOWNER`/`CAP_CHOWN` cover chown),
+      on top of `drop: [ALL]`.
 
 ## Tool pinning (mise)
 

@@ -208,18 +208,6 @@ spec:
                 # "Permission denied"; persisting it on the PVC also
                 # makes later boots' verification cheaper. No `$` in
                 # this whole block: env-var *prefix* assignments only.
-                # --- Diagnostics (temporary; remove once ownership is stable) ---
-                # Report the effective uid and pre-convergence ownership so a
-                # failed boot is diagnosable from the init log without exec.
-                echo "install-tools uid check:"
-                id 2>&1 || true
-                echo "--- /opt/data (pre-convergence) ---"
-                ls -lan /opt/data 2>/dev/null | head -25 || true
-                echo "--- /opt/data/profiles (pre-convergence) ---"
-                ls -lan /opt/data/profiles 2>/dev/null | head -20 || true
-                echo "--- /opt/data/.local/share/mise (pre-convergence) ---"
-                ls -lan /opt/data/.local/share/mise 2>/dev/null | head -10 || true
-                # --- End diagnostics ---
                 mkdir -p /opt/data/.cache
                 if ! XDG_CACHE_HOME=/opt/data/.cache MISE_CONFIG_FILE=/run/profile-config/mise.toml /opt/mise/mise install; then
                   echo "WARN: mise install failed; profile-fragment merge will be skipped this boot"
@@ -308,7 +296,22 @@ spec:
                 echo "Installation complete"
             securityContext:
               allowPrivilegeEscalation: false
+              # runAsUser 0 alone is NOT enough: the pod-level securityContext
+              # drops ALL capabilities, and without them uid 0 is subject to
+              # normal DAC — it cannot read the 1024-owned 0600 files (.env,
+              # config.yaml) and cannot chown them back to 1024. Re-add the
+              # same capability set the app container uses so the upsert/merge
+              # + find-chown convergence steps can actually operate on the
+              # shared PVC. (CAP_DAC_OVERRIDE/READ_SEARCH = read/traverse;
+              # CAP_FOWNER/CHOWN = chown back to 1024.)
               capabilities:
+                add:
+                  - CHOWN
+                  - DAC_OVERRIDE
+                  - FOWNER
+                  - FSETID
+                  - SETGID
+                  - SETUID
                 drop:
                   - ALL
               # Container-level override of the pod-level runAsUser 1024:
