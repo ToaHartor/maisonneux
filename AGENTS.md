@@ -29,6 +29,11 @@ This is a **Home Kubernetes cluster monorepo** managed with GitOps (Flux, Renova
   in the `service:` frontmatter field.
 - Runbooks go in `04 - Agents/runbooks/` with the service name
   as the filename prefix (e.g., `truenas-kernel-update.md`).
+- Scratch / investigation artifacts (upstream source checkouts,
+  tarballs, one-off scripts, rendered baselines) go in the repo's
+  gitignored `tmp/` folder (e.g. `tmp/investigation/`, `tmp/baseline`),
+  never in `.tmp-*` folders at the repo root — `.gitignore` only
+  covers `tmp/*`, so `.tmp-*` dirs pollute the git tree.
 
 ## Repository Structure
 

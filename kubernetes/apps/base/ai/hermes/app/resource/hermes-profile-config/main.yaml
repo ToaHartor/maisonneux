@@ -1,0 +1,10 @@
+# main profile — the general-purpose home agent (created
+# by cloning the default profile, then Git-managed from
+# here). Full tool surface; machine values (providers,
+# model, mcp_servers, terminal) stay pinned by the
+# /etc/hermes overlay — only per-profile divergent keys
+# belong in this fragment.
+approvals:
+  mode: smart
+  timeout: 60
+  cron_mode: deny

@@ -83,12 +83,12 @@ url = "https://github.com/derailed/k9s/releases/download/v0.51.0/k9s_Linux_amd64
 url_api = "https://api.github.com/repos/derailed/k9s/releases/assets/440224321"
 
 [[tools.kubectl]]
-version = "1.36.2"
+version = "1.37.1"
 backend = "aqua:kubernetes/kubernetes/kubectl"
 
 [tools.kubectl."platforms.linux-x64"]
-checksum = "sha256:1e9045ec32bea85da43de85f0065358529ea7c7a152eca78154fba5b58c27d82"
-url = "https://dl.k8s.io/v1.36.2/bin/linux/amd64/kubectl"
+checksum = "sha256:65691ff77eb6fa44c908b77a1082c9f092c3b9733b5cefabec0d1104890e21a8"
+url = "https://dl.k8s.io/v1.37.1/bin/linux/amd64/kubectl"
 
 [[tools.mc]]
 version = "RELEASE.2025-08-13T08-35-41Z"

@@ -94,38 +94,11 @@ spec:
                 cp /run/config/AGENTS.md /opt/data/workspace/AGENTS.md
                 chown 1024:1024 /opt/data/workspace/AGENTS.md
 
-                # Upsert the managed .env keys into the profiles' .env files.
-                # The keys live in the hermes-dotenv secret (owned by the
-                # hermes-dotenv ExternalSecret, sourced from the litellm
-                # master key; see externalsecret.yaml) and are mounted read-only
-                # at /run/dotenv. The gateway multiplexes profiles (default +
-                # operator) in one process, and in that mode hermes resolves
-                # $${VAR} references in config.yaml (mcp_servers headers,
-                # providers key_env) from the profile's .env secret scope
-                # instead of the container environment — without LITELLM_API_KEY
-                # there the profile sends the literal "Bearer $${LITELLM_API_KEY}"
-                # and litellm answers 401, parking the MCP server. The upsert
-                # replaces a managed key's line or appends it; user-managed
-                # .env lines survive. Profile directories are never created here
-                # (a deleted profile must not be resurrected by its .env).
-                for dotkey in /run/dotenv/*; do
-                  [ -f "$dotkey" ] || continue
-                  key=$(basename "$dotkey")
-                  val=$(cat "$dotkey")
-                  [ -n "$val" ] || continue
-                  for envfile in /opt/data/.env /opt/data/profiles/operator/.env; do
-                    [ -d "$(dirname "$envfile")" ] || continue
-                    tmp="$envfile.new"
-                    if [ -e "$envfile" ]; then
-                      grep -v "^$key=" "$envfile" > "$tmp" || true
-                    else
-                      : > "$tmp"
-                    fi
-                    printf '%s=%s\n' "$key" "$val" >> "$tmp"
-                    chmod 600 "$tmp"
-                    mv "$tmp" "$envfile"
-                  done
-                done
+                # The managed .env upsert (upsert.py) and the per-profile
+                # fragment merge (apply-profiles.py via the mise-installed
+                # yq shim) run in the install-tools init container instead: the alpine image
+                # runs as uid 1024, so it cannot apk-install python. See
+                # the install-tools command below for the full rationale.
 
                 # https://github.com/LukeEvansTech/talos-cluster/blob/fa46c31b2363b272019510be81fea9c883036760/kubernetes/apps/ai/hermes/app/helmrelease.yaml#L36
                 # Install the memini memory-provider plugin from the upstream
@@ -162,6 +135,24 @@ spec:
 
           install-tools:
             image: *hermesImage
+            env:
+              # Same mise layout as the app container, so tools installed
+              # at boot land in the shared PVC (persistent, and on the
+              # agent's PATH via the shims directory) instead of the
+              # container's ephemeral filesystem.
+              - name: MISE_CACHE_DIR
+                value: /opt/data/.cache/mise
+              - name: MISE_CONFIG_DIR
+                value: /opt/data/.config/mise
+              - name: MISE_DATA_DIR
+                value: /opt/data/.local/share/mise
+              - name: MISE_STATE_DIR
+                value: /opt/data/.local/state/mise
+              # Shared sigstore/cosign TUF trust-root cache on the PVC
+              # ($HOME is not writable by uid 1024; see the install-tools
+              # mise install step for the full rationale).
+              - name: XDG_CACHE_HOME
+                value: /opt/data/.cache
             command:
               - /bin/sh
               - -c
@@ -192,12 +183,126 @@ spec:
                 #   mkdir -p $HOMEBREW_PREFIX
                 #   git clone --depth 1 https://github.com/Homebrew/brew $HOMEBREW_PREFIX
                 # fi
+
+                # Boot-time tool install via mise. The jdx/mise image
+                # mount (/opt/mise) provides the mise binary; the tool
+                # pins live in the hermes-profile-config ConfigMap
+                # (mise.toml, mounted at /run/profile-config). Tools
+                # land in the shared PVC (MISE_DATA_DIR) with shims in
+                # /opt/data/.local/share/mise/shims — already on the
+                # agent's PATH, so the agents pick these tools up for
+                # free too. First boot downloads from GitHub; later
+                # boots are offline (PVC-cached, and mise skips tools
+                # whose installed version already matches the pin).
+                # Bump a tool = edit the CM's mise.toml key, no HR edit.
+                # Non-fatal by design: a failed download only skips the
+                # profile-fragment merge this boot (apply-profiles.py
+                # detects the missing yq shim and logs a WARN), and the
+                # next boot retries.
+                #
+                # XDG_CACHE_HOME pins the sigstore TUF trust-root cache
+                # (created during cosign release-signature verification)
+                # to the shared PVC: the hermes image's $HOME is not
+                # writable by uid 1024, so the default
+                # $HOME/.cache/sigstore-rust path would fail with
+                # "Permission denied"; persisting it on the PVC also
+                # makes later boots' verification cheaper. No `$` in
+                # this whole block: env-var *prefix* assignments only.
+                mkdir -p /opt/data/.cache
+                if ! XDG_CACHE_HOME=/opt/data/.cache MISE_CONFIG_FILE=/run/profile-config/mise.toml /opt/mise/mise install; then
+                  echo "WARN: mise install failed; profile-fragment merge will be skipped this boot"
+                fi
+
+                # Managed .env upsert. The alpine init container cannot run
+                # this (uid 1024: no apk, no python), so it runs here on the
+                # hermes image, whose .venv ships python.
+                #
+                # Upserts the managed .env keys into the launch-scope .env
+                # file and every existing profile's .env.
+                # The keys live in the hermes-dotenv secret (owned by the
+                # hermes-dotenv ExternalSecret, sourced from the litellm
+                # master key; see externalsecret.yaml) and are mounted read-only
+                # at /run/dotenv, one file per key (filename = key, content =
+                # value). The gateway multiplexes all profiles in one
+                # process, and hermes resolves variable references in
+                # config.yaml (mcp_servers headers, providers key_env) from
+                # the profile's .env secret scope instead of the container
+                # environment — without LITELLM_API_KEY there the profile
+                # sends the literal Bearer placeholder and litellm answers
+                # 401, parking the MCP server. The upsert replaces a
+                # managed key's line or appends it; user-managed .env lines
+                # survive. The target list is the launch-scope /opt/data/.env
+                # plus the .env of every existing profile directory, so new
+                # profiles pick the keys up automatically on the next start.
+                # Profile directories are never created here (a deleted
+                # profile must not be resurrected by its .env).
+                # Rationale + logic live in the upsert.py header
+                # (hermes-profile-config ConfigMap, mounted at
+                # /run/profile-config).
+                /opt/hermes/.venv/bin/python /run/profile-config/upsert.py
+
+                # Merge the Git-managed per-profile fragments
+                # (hermes-profile-config ConfigMap, mounted at
+                # /run/profile-config: one <name>.yaml fragment per
+                # profile, merged by the mise-installed yq shim — see
+                # the mise install step above — driven by
+                # apply-profiles.py)
+                # into each profile's config.yaml. Hermes has no
+                # native profile config inheritance and the /etc/hermes
+                # machine overlay is shared by every profile, so
+                # per-profile values (toolset trims, approvals policy)
+                # are managed here instead. Deep merge, fragment wins
+                # per leaf (lists replaced, not concatenated); yq's
+                # round-trip emitter keeps the user's comments/quotes
+                # and untouched scalars (YAML 1.1 booleans survive
+                # verbatim). The merge result is re-parsed before the
+                # atomic write — hermes reads every profile's
+                # config.yaml, and a parse failure would poison the
+                # next image bump.
+                # Only the config.yaml file is touched: profile
+                # directories are never created or removed here —
+                # profile create/clone and parking stay deliberate
+                # hermes profile CLI / dashboard operations, and a
+                # fragment whose profile directory does not exist yet
+                # is skipped with a warning.
+                /opt/hermes/.venv/bin/python /run/profile-config/apply-profiles.py
+
+                # Converge ownership on the data volume. The hermes
+                # image's s6 root layer (stage2 hook, terminal
+                # service slots) and the 10000-era hermes user can
+                # both leave files under /opt/data owned by a uid
+                # other than the 1024 convention (e.g.
+                # profiles/main/.env, state.db, the mise shims
+                # directory) that the uid-1024 supervised gateway
+                # (s6-setuidgid + HERMES_UID drop) cannot read or
+                # write. The stage2 volume chown only fixes the
+                # top-level directory when its owner differs, so
+                # non-1024 files inside profiles/ are never
+                # corrected by the image — this step is. Running as
+                # root (container-level override, see
+                # securityContext below) it can chown anything back.
+                # Metadata-only walk, idempotent: a fully-1024
+                # volume is a no-op. Runs LAST so it also converges
+                # the files the upsert/merge steps above just wrote
+                # as root.
+                if ! find /opt/data ! -user 1024 -exec chown 1024:1024 {} +; then
+                  echo "WARN: ownership convergence failed"
+                fi
+
                 echo "Installation complete"
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
                 drop:
                   - ALL
+              # Container-level override of the pod-level runAsUser 1024:
+              # the hermes image's s6 root layer leaves files on the
+              # shared data PVC owned by uids other than 1024 (root,
+              # or the 10000 build user); only root can chown them
+              # back (final find-chown step in the command). The app
+              # container already runs as root by image design, so no
+              # new exposure class; this is a short-lived init.
+              runAsUser: 0
               runAsGroup: 1024
 
         containers:
@@ -230,6 +335,10 @@ spec:
               MISE_CONFIG_DIR: /opt/data/.config/mise
               MISE_DATA_DIR: /opt/data/.local/share/mise
               MISE_STATE_DIR: /opt/data/.local/state/mise
+              # Shared sigstore/cosign TUF trust-root cache on the PVC
+              # (see the install-tools comment; $HOME is unwritable by
+              # uid 1024, so the default $HOME/.cache path fails).
+              XDG_CACHE_HOME: /opt/data/.cache
               # The profile HOME changes in terminal sessions; use one shared
               # mise config and tool installation for every profile.
               MISE_CONFIG_FILE: /opt/data/shared/mise.toml
@@ -488,7 +597,7 @@ spec:
 
       config:
         type: configMap
-        name: &configmap hermes-configmap
+        name: hermes-base-config
         defaultMode: 0o755
         advancedMounts:
           hermes:
@@ -499,17 +608,58 @@ spec:
                 subPath: AGENTS.md
       dotenv:
         # Managed .env keys, owned by the hermes-dotenv ExternalSecret
-        # (externalsecret.yaml). Mounted into the init container only;
-        # it upserts the keys into the profiles' .env files on every
-        # pod start. 0o444: the init container runs as uid 1024 (no
-        # fsGroup), so the files must be world-readable.
+        # (externalsecret.yaml). Mounted into the install-tools init
+        # container only; it upserts the keys into the profiles' .env
+        # files on every pod start. 0o444: the container runs as uid
+        # 1024, so the files must be world-readable.
         type: secret
         name: hermes-dotenv
         defaultMode: 0o444
         advancedMounts:
           hermes:
-            init:
+            install-tools:
               - path: /run/dotenv
+      machine-config:
+        # Machine-level managed config (hermes v0.22+ managed scope):
+        # mounted read-only at /etc/hermes on the gateway container
+        # only. The gateway deep-merges it on top of every profile's
+        # config.yaml (per-leaf; managed values win), and ${VAR} refs
+        # expand against the process env (LITELLM_API_KEY via the
+        # hermes-dotenv envFrom), so users cannot shadow managed
+        # values. A malformed file is logged loudly and fails open
+        # (no policy applied, startup is never blocked).
+        # subPath mount: the image bakes other files into /etc/hermes
+        # (chromium-executable-path, read by hermes_cli/browser_runtime.py
+        # to locate the staged chromium binary) — a whole-directory
+        # mount would hide them and break the browser toolset's probe.
+        type: configMap
+        name: hermes-machine-config
+        defaultMode: 0o444
+        advancedMounts:
+          hermes:
+            app:
+              - path: /etc/hermes/config.yaml
+                subPath: config.yaml
+      profile-config:
+        # Per-profile config fragments (<name>.yaml, one per profile)
+        # + the merge driver (apply-profiles.py, which uses the mise-
+        # installed yq shim) for the profiles' config.yaml files,
+        # + the boot-time tool pins (mise.toml, installed by the same
+        # container via the jdx/mise image),
+        # consumed by the install-tools init container. Hermes
+        # has no native
+        # profile config inheritance and the /etc/hermes overlay is
+        # machine-wide, so profile-differentiating keys are managed
+        # here. The apply-profiles driver skips fragments whose profile directory
+        # does not exist yet (profile creation stays a deliberate
+        # hermes profile CLI / dashboard operation).
+        type: configMap
+        name: hermes-profile-config
+        defaultMode: 0o444
+        advancedMounts:
+          hermes:
+            install-tools:
+              - path: /run/profile-config
       run:
         type: emptyDir
         advancedMounts:
@@ -533,213 +683,7 @@ spec:
               - path: /opt/mise
                 subPath: usr/local/bin
                 readOnly: true
-
-    configMaps:
-      config:
-        forceRename: *configmap
-        data:
-          AGENTS.md: |-
-            # AGENTS.md — Hermes
-
-            ## 0 · Identity
-            You are Hermes, a general-purpose agent.
-            Rules in this file apply to every session.
-            Do not re-derive the plan from compressed context — if a long task is ongoing,
-            progress lives in `04 - Agents/hermes/notes/`.
-
-            ## 1 · This file (and its siblings) are IMMUTABLE — managed by Git in Kubernetes
-            - `/opt/data/workspace/AGENTS.md` (and siblings `/opt/data/config.yaml`, `/opt/data/.env`)
-              are read-only to me. I do NOT create, edit, append to, or delete them.
-            - They are not written at runtime. They are deployed from a Git repo into
-              Kubernetes; I only ever see a new version after: Git commit → K8s resync
-              (ConfigMap file propagation, or pod restart if mounted as env vars).
-            - Consequence: even if the container filesystem happens to be writable, I do
-              NOT write these files. A local edit is lost on the next rollout and diverges
-              from Git, which is the single source of truth.
-            - If I believe a rule in this file is wrong, stale, or missing, I do NOT change
-              the file. Instead:
-              1. record a `procedural` memini fact —
-                "AGENTS.md §<n>: rule should be <X> because <why> (proposed change)"
-              2. add a one-liner to the daily log (§6 ③)
-              3. tell the human
-            - The human applies the change in the config repo; it reaches me on the next
-              resync. Until then I follow this file exactly as written.
-
-            ## 2 · The knowledge model (3 layers)
-            - **Content (shared):** the Obsidian vault — plain markdown, synced via obsidian-sync.
-            - **Retrieval (per-agent):** obsidian-sync-mcp (keyword/file search) + memini recall.
-              Semantic RAG is OFF; only enable it if structured + keyword search demonstrably fail.
-            - **Lifecycle (shared, durable):** memini — 4 tiers (working → episodic → semantic →
-              procedural), TTL + decay, namespaces with automatic durable-only ancestor cascade.
-
-            ## 3 · Vault access (via obsidian-sync-mcp)
-            Vault root = `$OBSIDIAN_VAULT` (currently `~/vault`). All paths are relative to it.
-            Tools: `obsidian_search(keyword)` and `obsidian_read_file(path)`.
-
-            HUMAN-OWNED — READ ONLY, NEVER write:
-              00 - Inbox/ · 02 - Notes/ · 03 - Areas/ · 98 - System/
-
-            SHARED READ:
-              01 - Knowledge/ · 05 - Work/ · 06 - Projects/ · 04 - Agents/
-
-            AGENT-WRITABLE — the only paths I write to:
-              04 - Agents/{incidents,decisions,specs,runbooks}/YYYY-MM/*.md
-              04 - Agents/hermes/{daily,notes}/
-              04 - Agents/INCIDENTS.md · DECISIONS.md · CONVENTIONS.md  (append-only, 1 line)
-              06 - Projects/<name>/_agent-references.md  (append-only, 1 line)
-
-            DO NOT WRITE:
-              00, 02, 03, 98 (human folders)
-              04 - Agents/pi/ (Pi's private folder)
-              04 - Agents/_meta/ (shared schema, conflict-policy, changelog — Pi owns)
-              anything else in 06 - Projects/ (only the _agent-references.md append line)
-
-            ## 4 · Search priority (cheapest first — stop at the first hit)
-            1. `memory_recall` — "did we ever record X / what's the standing rule?"
-              (structured, cross-agent, cross-session; the only way to reach Pi's facts)
-            2. `obsidian_search(keyword)` — literal mentions anywhere in the vault
-            3. Read the index files by path — `obsidian_read_file("04 - Agents/INCIDENTS.md")`,
-              `DECISIONS.md`, `CONVENTIONS.md`, `06 - Projects/<name>/_agent-references.md`
-              (by-title / recent / per-project; I can't grep frontmatter, so structured
-              lookups go through index files + note frontmatter, not keyword search)
-            4. `obsidian_read_file` on a specific note once located
-            5. Semantic RAG — **off by default**; only when 1-4 demonstrably fail
-
-            ## 5 · memini (durable memory)
-            - My namespace: `shared/hermes` (set via `MEMINI_NAMESPACE=shared/hermes` in `.env` —
-              full-path override, because I connect over stdio MCP with no handshake).
-            - Namespaces are IMPLICIT: they "exist" on first write. There are no create/link
-              commands. Verify setup with `memini doctor`.
-            - Sharing: the `shared` ancestor. Durable facts I mark `visibility: "shared"` route
-              up to `shared` and become readable by Pi (and any other agent under `shared`)
-              via the automatic durable-only cascade (semantic + procedural tiers only).
-            - `working` / `episodic` tiers are clamped to `shared/hermes` — they never reach
-              `shared`. Never store a shared fact in a private tier.
-
-            ## 6 · Write workflow — one event, two artifacts (identical to Pi)
-            When an incident or decision happens:
-
-            ① memini fact — IMMEDIATE, before anything else.
-              1-3 lines, atomic. `memory_remember(...)`:
-              durable + needed by other agents → tier `semantic`/`procedural`,
-              `visibility: "shared"`
-              session-level → `working`/`episodic`, no visibility
-
-            ② Vault note — AT RESOLUTION.
-              Create `04 - Agents/incidents/YYYY-MM/<slug>.md` (or `decisions/`) from the
-              template in `98 - System/Templates/agent-incident.md` (or `agent-decision.md`).
-              Rich narrative: timeline, root cause, follow-ups.
-              Frontmatter MUST include `memini_fact:` = the exact text from ① (the bridge),
-              plus `type, date, project (if applicable), service, status, severity, tags`.
-
-            ③ Daily log — APPEND one bullet.
-              `04 - Agents/hermes/daily/YYYY-MM-DD.md`
-
-            ④ Index — APPEND one line to `04 - Agents/INCIDENTS.md` or `DECISIONS.md`.
-              ④b. If ② set `project:`, also append one line to
-              `06 - Projects/<name>/_agent-references.md`
-              (wiki-link to the note + one-line summary). Nothing else in that folder.
-
-            ⑤ Runbook — only if a new convention emerged.
-              Create/update `04 - Agents/runbooks/<topic>.md` + append to `CONVENTIONS.md`.
-
-            Invariants:
-            - ① always before ② — an interrupted session must still leave the durable fact.
-            - ①② are knowledge; ③④ are pointers. An index line without its note is useless.
-
-            ## 7 · Plan-first (non-trivial work)
-            Before code on any substantial change: brainstorm → write the plan → implement → verify.
-            At plan clearance, log it as ①-④ with `type: decision`.
-            The plan document goes in `04 - Agents/specs/<feature>/` if it needs a home.
-            No code before the plan is agreed.
-
-            ## 8 · Loop prevention (behavioral — the only loop protection I have)
-            - Before retrying a failed approach, state in one line WHY it failed and what is
-              DIFFERENT. If I can't, stop and report the blocker instead of retrying.
-            - 3 failed attempts on the same problem = stop, summarize what I tried and learned,
-              and ask. Never silently attempt a 4th variation.
-            - Verify before acting: "file/config doesn't exist" → confirm with one read first.
-            - Long multi-step work: keep progress in `04 - Agents/hermes/notes/`,
-              not in re-derived context.
-
-            ## 9 · Prohibitions
-            - Never write to the DO-NOT-WRITE paths in §3.
-            - Never create new subfolders outside `04 - Agents/hermes/{daily,notes}/`.
-              Project linkage is the `project:` frontmatter + the index line, not a new folder.
-            - Index files (`INCIDENTS.md`, `DECISIONS.md`, `CONVENTIONS.md`) are APPEND-ONLY —
-              never edit or rewrite past entries.
-            - Never store secrets/credentials in the vault (it's synced).
-              Secrets stay in `.env` / key files.
-            - Don't dump large logs or transcripts into memini — facts are 1-3 lines;
-              narratives go to the vault.
-            - Don't use `working`/`episodic` tiers as a shared store.
-            - On an obsidian-sync conflict: follow `04 - Agents/_meta/conflict-policy.md`,
-              then record the merge in `04 - Agents/_meta/changelog.md`.
-              Never silently discard a side.
-
-            ## 10 · Runtime events worth logging
-            If a command was held/blocked, a plan was rejected, or I repeated a mistake
-            across sessions: append a one-liner to the daily log (§6 ③).
-            If it's a repeated pattern: promote to a memini fact (`procedural`,
-            `visibility: "shared"` when relevant to Pi) + a vault note + a runbook candidate.
-          config.yaml: |-
-            dashboard:
-              theme: "mono"
-            providers:
-              litellm:
-                api: http://litellm.ai.svc.cluster.local:4000/v1
-                discover_models: true
-                key_env: LITELLM_API_KEY
-                name: LiteLLM
-                transport: chat_completions
-            model:
-              default: local/qwen-3.8-27B
-              provider: litellm
-              context_length: 262144
-            # model_aliases:
-            #   qwen:
-            #     model: local/qwen-3.8-27B
-            #     provider: custom:litellm
-            gateway:
-              multiplex_profiles: true
-            memory:
-              provider: memini
-            plugins:
-              enabled:
-                - memini
-            terminal:
-              backend: local
-              cwd: /opt/data/workspace
-              timeout: 900
-              lifetime_seconds: 1800
-              persistent_shell: true
-            approvals:
-              mode: smart
-              timeout: 60
-              cron_mode: deny
-            mcp_servers:
-              homelab:
-                url: http://litellm.ai:4000/mcp
-                headers:
-                  Authorization: "Bearer $${LITELLM_API_KEY}"
-            compression:
-              enabled: true
-              protect_last_n: 20
-              threshold: 0.5
-            streaming:
-              enabled: true
-            privacy:
-              redact_pii: true
-            web:
-              backend: firecrawl
-            security:
-              redact_secrets: true
-            telemetry:
-              shared_metrics:
-                enabled: false
-                send: false
-            webapp:
-              enabled: true
-              host: 0.0.0.0
-              port: 9120
-              public_url: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}
+            install-tools:
+              - path: /opt/mise
+                subPath: usr/local/bin
+                readOnly: true

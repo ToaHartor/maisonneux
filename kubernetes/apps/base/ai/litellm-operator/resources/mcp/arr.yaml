@@ -38,6 +38,64 @@ metadata:
   name: arr
 spec:
   alias: arr
+  # Read-only tool surface: the litellm allowed_tools filter is applied
+  # per-server at the litellm gateway (tool names are matched with the
+  # server prefix stripped), upstream of hermes's process-global MCP
+  # registry, so it trims the tool surface for every profile/client
+  # connected to the /mcp endpoint. Keeps the mcp-arr:1.7.3 read tools
+  # (https://github.com/aplaceforallmystuff/mcp-arr) and blocks the
+  # library-mutating writes:
+  #   lidarr_add_artist, sonarr_add_series, radarr_add_movie,
+  #   radarr_update_movie, radarr_delete_queue_item
+  # Non-mutating rescans/diagnostics stay (radarr_refresh_movie,
+  # sonarr_refresh_series, prowlarr_test_indexers). Allowlist
+  # semantics: if mcp-arr drifts its tool names on upgrade, new tools
+  # stay blocked until added here — review the changelog on bump.
+  params:
+    allowed_tools:
+      - arr_search_all
+      - arr_status
+      - fetch
+      - lidarr_get_albums
+      - lidarr_get_artists
+      - lidarr_get_calendar
+      - lidarr_get_metadata_profiles
+      - lidarr_get_quality_profiles
+      - lidarr_get_queue
+      - lidarr_get_root_folders
+      - lidarr_search
+      - lidarr_search_album
+      - lidarr_search_missing
+      - prowlarr_get_indexers
+      - prowlarr_get_stats
+      - prowlarr_search
+      - prowlarr_test_indexers
+      - radarr_get_calendar
+      - radarr_get_movies
+      - radarr_get_quality_profiles
+      - radarr_get_queue
+      - radarr_get_root_folders
+      - radarr_refresh_movie
+      - radarr_search
+      - radarr_search_movie
+      - radarr_search_movies
+      - sonarr_get_calendar
+      - sonarr_get_episodes
+      - sonarr_get_quality_profiles
+      - sonarr_get_queue
+      - sonarr_get_root_folders
+      - sonarr_get_series
+      - sonarr_refresh_series
+      - sonarr_search
+      - sonarr_search_episode
+      - sonarr_search_missing
+      - trash_compare_naming
+      - trash_compare_profile
+      - trash_get_naming
+      - trash_get_profile
+      - trash_get_quality_sizes
+      - trash_list_custom_formats
+      - trash_list_profiles
   transport: http
   workload:
     # renovate container

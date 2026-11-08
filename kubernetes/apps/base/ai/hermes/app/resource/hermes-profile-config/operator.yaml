@@ -1,0 +1,29 @@
+# operator profile — monitoring-only tool surface.
+# Merged by the init container into
+# /opt/data/profiles/operator/config.yaml.
+agent:
+  # Remove the built-in toolsets the operator never needs.
+  # Applies after per-platform tool config, so a listed
+  # toolset is always removed even if a platform's saved
+  # config still lists it.
+  disabled_toolsets:
+    - browser
+    - web
+    - image_gen
+    - tts
+approvals:
+  # Monitoring-only posture: unattended runs stay hard-blocked; attended
+  # writes go through the smart guardian instead of a blanket deny, so
+  # the operator can evolve its own SOUL.md (routine, low-risk →
+  # auto-approved) while media/system mutations still get judged.
+  mode: smart
+  timeout: 60
+  cron_mode: deny
+  # Extra rule appended to the smart-approval guardian's SYSTEM prompt
+  # (config key approvals.smart_policy): keeps the monitoring-only
+  # posture — routine own-home edits pass, anything mutative escalates.
+  smart_policy: >
+    Monitoring-only profile. ESCALATE terminal commands that mutate media
+    libraries (sonarr/radarr/lidarr/prowlarr), system state, or write
+    outside the profile home and /opt/data/workspace. Routine edits to
+    the profile's own SOUL.md and home files are safe.

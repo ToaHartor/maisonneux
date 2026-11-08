@@ -6,3 +6,35 @@ resources:
   - externalsecret.yaml
   - ocirepository.yaml
   - helmrelease.yaml
+configMapGenerator:
+  # Profile base config + AGENTS.md: the init container copies them to
+  # /opt/data/config.yaml and /opt/data/workspace/AGENTS.md
+  # (per-profile base; machine-level values are pinned in
+  # hermes-machine-config below).
+  - name: hermes-base-config
+    files:
+      - resource/hermes-base-config/config.yaml
+      - resource/hermes-base-config/AGENTS.md
+  # Machine-level managed overlay (hermes v0.22+ managed scope): mounted
+  # read-only at /etc/hermes on the gateway container only. The gateway
+  # deep-merges it on top of every profile's config.yaml (managed values
+  # win), and ${VAR} refs expand against the process env
+  # (LITELLM_API_KEY via the hermes-dotenv envFrom), so users cannot
+  # shadow machine values. A malformed file is logged and fails open.
+  - name: hermes-machine-config
+    files:
+      - resource/hermes-machine-config/config.yaml
+  # Per-profile config fragments (<name>.yaml) + merge script for the
+  # profiles' config.yaml files: the init container deep-merges each
+  # fragment into /opt/data/profiles/<name>/config.yaml (fragment wins
+  # per leaf), skipping profiles that do not exist yet (profile creation
+  # stays a deliberate hermes profile CLI/dashboard operation).
+  - name: hermes-profile-config
+    files:
+      - resource/hermes-profile-config/mise.toml
+      - resource/hermes-profile-config/upsert.py
+      - resource/hermes-profile-config/apply-profiles.py
+      - resource/hermes-profile-config/operator.yaml
+      - resource/hermes-profile-config/main.yaml
+generatorOptions:
+  disableNameSuffixHash: true

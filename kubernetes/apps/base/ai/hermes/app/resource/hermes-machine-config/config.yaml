@@ -1,0 +1,54 @@
+providers:
+  litellm:
+    api: http://litellm.ai.svc.cluster.local:4000/v1
+    discover_models: true
+    key_env: LITELLM_API_KEY
+    name: LiteLLM
+    transport: chat_completions
+model:
+  default: local/qwen-3.8-27B
+  provider: litellm
+  context_length: 262144
+# model_aliases:
+#   qwen:
+#     model: local/qwen-3.8-27B
+#     provider: custom:litellm
+gateway:
+  multiplex_profiles: true
+memory:
+  provider: memini
+plugins:
+  enabled:
+    - memini
+terminal:
+  backend: local
+  cwd: /opt/data/workspace
+  timeout: 900
+  lifetime_seconds: 1800
+  persistent_shell: true
+mcp_servers:
+  homelab:
+    url: http://litellm.ai:4000/mcp
+    headers:
+      Authorization: "Bearer $${LITELLM_API_KEY}"
+compression:
+  enabled: true
+  protect_last_n: 20
+  threshold: 0.5
+streaming:
+  enabled: true
+privacy:
+  redact_pii: true
+web:
+  backend: firecrawl
+security:
+  redact_secrets: true
+telemetry:
+  shared_metrics:
+    enabled: false
+    send: false
+webapp:
+  enabled: true
+  host: 0.0.0.0
+  port: 9120
+  public_url: https://${SUBDOMAIN}.${DOMAIN_WEBSECURE}

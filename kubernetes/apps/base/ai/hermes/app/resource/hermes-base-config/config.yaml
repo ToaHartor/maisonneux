@@ -1,0 +1,15 @@
+# Profile base config (copied to /opt/data/config.yaml on
+# every pod start): per-profile values only. Machine-level
+# managed values live in hermes-machine-config (mounted
+# read-only at /etc/hermes and deep-merged on top of every
+# profile's config.yaml per leaf — managed values win).
+# Per-profile divergent keys (secrets.command,
+# skills.external_dirs, toolset trims, approvals policy)
+# stay in the profile's own config.yaml, because the
+# managed overlay cannot hold them.
+dashboard:
+  theme: "mono"
+approvals:
+  mode: smart
+  timeout: 60
+  cron_mode: deny

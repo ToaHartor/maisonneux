@@ -1,0 +1,16 @@
+# Boot-time tool pins for the hermes pod.
+#
+# Installed by the install-tools init container through the jdx/mise
+# image mount (/opt/mise/mise), with this file as the config:
+#   MISE_CONFIG_FILE=/run/profile-config/mise.toml /opt/mise/mise install
+#
+# Tools land in the shared PVC (MISE_DATA_DIR=/opt/data/.local/share/mise)
+# with shims in /opt/data/.local/share/mise/shims, which is already on
+# the agent's PATH — so the agents pick these tools up for free too.
+#
+# To bump a version (or add a tool): edit this file only. The next boot
+# re-downloads just the changed tools (the rest stay PVC-cached and
+# normal restarts are offline). No HelmRelease edit needed.
+
+[tools]
+yq = "4.54.2"
