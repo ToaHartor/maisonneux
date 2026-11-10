@@ -57,9 +57,10 @@ spec:
         acmeServerUrl: ${acme_server_url} # Inserted by FluxCD Terraform
         create: true
         kind: ClusterIssuer
-        # Completed in valuesFrom
-        # email: admin@example.com
-        # ovhEndpointName: ovh-eu
+        # Completed in valuesFrom (the Secret overrides these fallbacks in-cluster;
+        # inline defaults keep the offline flate render schema-valid)
+        email: admin@example.com
+        ovhEndpointName: ovh-eu
         ovhAuthenticationMethod: application
         ovhAuthenticationRef:
           applicationKeyRef:
