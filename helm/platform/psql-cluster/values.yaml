@@ -6,7 +6,11 @@ s3:
 
 storage:
   size: 1Gi
+  # was a default exported by the common library chart (inlined)
+  persistentClassName: default
 database:
   enableAntiAffinity: true
-  # postgres:
-  #   clusterName: # Defined in common
+  postgres:
+    # were defaults exported by the common library chart (inlined)
+    clusterName: psql-cluster
+    clusterSecretName: postgres-secrets
