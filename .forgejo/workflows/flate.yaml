@@ -2,8 +2,12 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Flate
 
-# TODO : CI is currently broken on OIDC applications, flate may bring additional corrections for that
-# We still run the job but if it fails because of OCIRepository for oidc application we skip
+# Strategy: full-tree flate validation (see the `base: ""` input on the flate action).
+# `flate test` renders the entire production tree instead of a changed-only keep-set,
+# which eliminates the psql-cluster dependsOn not-found block on fresh app PRs.
+# Cost: every kubernetes/** PR gates on the whole tree being green (the psql-cluster
+# chart is kept self-contained and cert-manager-webhook-ovh carries schema fallbacks
+# for that reason).
 
 on:
   workflow_dispatch:
@@ -65,24 +69,19 @@ jobs:
           # rejects (401). flate's release is public, so force the unauthenticated path.
           token: ""
           cache: false
+          # Full-tree mode: empty base keeps FLATE_BASE unset, so `flate test`
+          # renders the whole tree instead of a changed-only keep-set.
+          base: ""
 
       - name: Run flate test
         run: |-
-          flate test all --log-level "debug"
+          # --allow-missing-kinds: tolerate the runtime-created CRDs (absent from the
+          # offline tree) that the flux-system flux-operator ResourceSet depends on
+          flate test all --log-level "debug" --allow-missing-kinds CustomResourceDefinition
 
-      - name: Run flate diff
-        id: diff
-        run: |-
-          out=$(flate diff all --output gitea)
-          echo "Changes:"
-          echo "${out}"
-          {
-            echo 'diff<<EOF'
-            if [[ -n "$out" ]]; then
-              echo "$out"
-            fi
-            echo 'EOF'
-          } >> "${FORGEJO_OUTPUT}"
+      # The flate diff step was dropped with the full-tree switch: flate diff
+      # requires a baseline (FLATE_BASE / --path-orig), and konflate already
+      # posts a rendered-diff summary to the PR.
 
       # ! No longer needs to add a comment since konflate already posts the summary
 
