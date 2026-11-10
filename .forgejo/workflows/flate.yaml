@@ -68,12 +68,12 @@ jobs:
 
       - name: Run flate test
         run: |-
-          flate test all --allow-missing-secrets --log-level "debug"
+          flate test all --log-level "debug"
 
       - name: Run flate diff
         id: diff
         run: |-
-          out=$(flate diff all --allow-missing-secrets --output gitea)
+          out=$(flate diff all --output gitea)
           echo "Changes:"
           echo "${out}"
           {
