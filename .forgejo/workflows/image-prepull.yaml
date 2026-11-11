@@ -5,8 +5,9 @@ name: Image Pre-pull
 # Strategy: warm the shared zot cache before Flux rolls out new images.
 # On pull_request (pre-merge, also validates that new refs are pullable) and
 # on push to localdev (the window between a merge and its reconciliation),
-# diff the rendered container images against the baseline with
-# `flate diff images`, then pull each new image through the cluster zot
+# diff the rendered container images against the baseline with two
+# full-tree `flate get images` renders (same full-tree strategy as the
+# flate CI gate), then pull each new image through the cluster zot
 # registry. Zot's on-demand sync caches the image (S3-backed, shared by all
 # nodes) so the Flux rollout no longer depends on a cold upstream fetch —
 # which is what causes the ErrImagePull / ImagePullBackOff windows seen on
@@ -91,10 +92,19 @@ jobs:
         run: |-
           set -euo pipefail
           OUT="${FORGEJO_OUTPUT:-$GITHUB_OUTPUT}"
+
+          # Same flate strategy as the flate CI gate (.forgejo/workflows/
+          # flate.yaml): two independent FULL-TREE renders (current tree and
+          # baseline tree) diffed as plain lists — deliberately not
+          # `flate diff images`: diff keep-set mode prunes unchanged subtrees
+          # and blocks on the psql-cluster dependsOn edge when that folder is
+          # unchanged, which is why the flate gate uses full-tree mode.
+          # `flate get images` exits non-zero while some resources are blocked
+          # (e.g. the runtime-created flux-operator CRDs), so a non-zero exit
+          # with a non-empty image list is fine; an empty list is not.
           if [ "${{ forgejo.event_name }}" == "pull_request" ]; then
             # Render the PR head tree and diff against the PR base
             base="${{ forgejo.event.pull_request.base.sha }}"
-            flate diff images -p ./kubernetes/clusters/test --base "$base" -o json > images.json
           elif [ "${{ forgejo.event_name }}" == "push" ]; then
             # Merge / direct push into localdev: diff against the previous tip
             before="${{ forgejo.event.before }}"
@@ -104,12 +114,43 @@ jobs:
             else
               base="$before"
             fi
-            flate diff images -p ./kubernetes/clusters/test --base "$base" -o json > images.json
           else
             # workflow_dispatch: no baseline to diff against; the push event
             # already covers merges
             echo '[]' > images.json
+            echo "Changed images:"
+            cat images.json
+            echo "images<<EOF" >> "$OUT"
+            cat images.json >> "$OUT"
+            echo "EOF" >> "$OUT"
+            exit 0
           fi
+
+          # Materialize the baseline tree from the full-history checkout
+          # (fetch-depth: 0 above) and render each tree in full
+          mkdir -p .flate-base
+          git archive "$base" | tar -x -C .flate-base
+          if ! flate get images -p ./kubernetes/clusters/test | sort -u > current.images; then
+            echo "::warning::current tree: flate get exited non-zero (blocked resources); continuing with the image list"
+          fi
+          if ! flate get images -p .flate-base/kubernetes/clusters/test | sort -u > base.images; then
+            echo "::warning::baseline tree: flate get exited non-zero (blocked resources); continuing with the image list"
+          fi
+          [ -s current.images ] || { echo "current tree rendered no images — refusing to pull"; exit 1; }
+          [ -s base.images ] || { echo "baseline tree rendered no images — refusing to pull"; exit 1; }
+          comm -13 base.images current.images > new.images
+          rm -rf .flate-base
+
+          # Build the JSON array output (no jq in the runner pod)
+          json="["
+          first=true
+          while IFS= read -r img; do
+            [ -n "$img" ] || continue
+            if $first; then first=false; else json+="", ; fi
+            json="$json\"$img\""
+          done < new.images
+          json="$json]"
+          echo "$json" > images.json
           echo "Changed images:"
           cat images.json
           echo "images<<EOF" >> "$OUT"
