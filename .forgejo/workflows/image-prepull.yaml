@@ -12,8 +12,10 @@ name: Image Pre-pull
 # which is what causes the ErrImagePull / ImagePullBackOff windows seen on
 # digest-bump merges. Pattern follows the home-ops image pre-pull
 # (onedr0p/home-ops ci.yaml image-pull-extract / image-pull jobs); here the
-# fan-out happens through zot instead of spegel P2P, and the pull target is
-# the zot service instead of talosctl (in-cluster runner, no talosconfig).
+# fan-out happens through zot instead of spegel P2P: each new image is
+# first pulled through a node's containerd with talosctl (which warms the
+# shared zot cache via the node mirror chain), falling back to a direct
+# pull through the zot service when the talosconfig mount is not available.
 
 on:
   pull_request:
@@ -152,20 +154,16 @@ jobs:
         # Best path (the home-ops pre-pull pattern): pull through the node's
         # containerd — which goes through the node's registry mirror chain,
         # so zot is warmed for every node too — and unpack into the node's
-        # image store so the rollout there is a pure no-op. TALOSCONFIG_B64
-        # is a repo-level Forgejo secret (base64 of the production
-        # talosconfig, `base64 -w0 tmp/talosconfig-production.yaml` from the
-        # k8s terraform workspace output). Missing secret or unreachable
-        # node → continue-on-error, the zot-only path below still runs.
+        # image store so the rollout there is a pure no-op. The talosconfig
+        # is mounted into the job pod at /var/run/secrets/talosconfig
+        # (TALOSCONFIG env in the runner podspec, from the talosconfig
+        # secret in services). Until the external-talosconfig bootstrap
+        # secret exists the mount is empty, this step errors and the
+        # zot-only fallback below still warms the cache.
         continue-on-error: true
         run: |-
           set -euo pipefail
-          if [ -z "${TALOSCONFIG_B64:-}" ]; then
-            echo "TALOSCONFIG_B64 is not set — skipping node pre-unpack"
-            exit 0
-          fi
-          echo "${TALOSCONFIG_B64}" | base64 -d > talosconfig.yaml
-          TALOSCONFIG="$(pwd)/talosconfig.yaml" ./talosctl image pull "${{ matrix.image }}"
+          ./talosctl image pull "${{ matrix.image }}"
 
       - name: Warm zot cache
         # Fallback when the node pre-unpack was not possible: warm the
