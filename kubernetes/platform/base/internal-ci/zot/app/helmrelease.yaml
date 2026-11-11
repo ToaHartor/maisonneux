@@ -81,6 +81,18 @@ spec:
             "gc": true,
             "gcDelay": "2h",
             "gcInterval": "24h",
+            "retention": {
+              "policies": [
+                {
+                  "repositories": ["**"],
+                  "keepUntagged": {
+                    "mostRecentlyPulledCount": 500,
+                    "pulledWithin": "168h",
+                    "pushedWithin": "168h"
+                  }
+                }
+              ]
+            },
             "storageDriver": {
               "name": "s3",
               "region": "${GARAGE_REGION}",
