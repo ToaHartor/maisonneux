@@ -23,6 +23,12 @@ spec:
 
   values:
     # https://github.com/traefik/traefik-helm-chart/blob/master/traefik/values.yaml
+    # official GHCR publication; avoids Docker Hub per-IP throttling on
+    # zot pull-through cache misses
+    image:
+      registry: ghcr.io
+      repository: traefik/traefik
+
     deployment:
       kind: DaemonSet
 

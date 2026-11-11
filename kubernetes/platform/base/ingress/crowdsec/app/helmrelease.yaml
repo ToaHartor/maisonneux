@@ -21,6 +21,12 @@ spec:
 
   values:
     # https://github.com/crowdsecurity/helm-charts/blob/main/charts/crowdsec/values.yaml
+    # GHCR publication of the agent image; avoids Docker Hub per-IP
+    # throttling on zot pull-through cache misses (the chart has no
+    # image.registry value, so the registry goes into the repository)
+    image:
+      repository: ghcr.io/crowdsecurity/crowdsec
+
     container_runtime: containerd
 
     tls:
