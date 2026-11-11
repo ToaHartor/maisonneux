@@ -3,9 +3,12 @@
 existing profile's .env.
 
 The keys live in the hermes-dotenv secret (owned by the hermes-dotenv
-ExternalSecret, sourced from the litellm master key; see
+ExternalSecret, sourced from ai-namespace k8s secrets; see
 externalsecret.yaml) and are mounted read-only at /run/dotenv: one file
-per key, filename = key, content = value. The gateway multiplexes all
+per key, filename = key, content = value. Today: LITELLM_API_KEY (profile
+$${VAR} resolution for the litellm MCP gateway) and API_SERVER_KEY
+(per-profile API server auth for the multiplexed gateway's /v1 and
+/p/<profile>/v1 prefixes). The gateway multiplexes all
 profiles in one process, and hermes resolves variable references in
 config.yaml (mcp_servers headers, providers key_env) from the profile's
 .env secret scope instead of the container environment — without
