@@ -183,3 +183,29 @@ resource "kubernetes_secret_v1" "external_sources_secrets" {
     dockerhub_token    = var.external_sources_tokens.dockerhub_token
   }
 }
+
+# CI talosctl node pre-unpack: read the talosconfig rendered to the
+# gitignored tmp/ folder by the k8s terraform apply (scripts/make/
+# tf-apply.sh writes tmp/talosconfig-<env>.yaml, same artifact as
+# 'tofu output -raw talosconfig') — a required input, always rendered
+# before the fluxcd bootstrap. The file name follows terraform.workspace,
+# so the production fluxcd workspace reads the production talosconfig
+# and the staging workspace the staging one. No variable, nothing to
+# paste; a k8s apply that rotates the node CA/credentials re-renders
+# the file and the secret follows on the next fluxcd apply.
+locals {
+  talosconfig = file("../../tmp/talosconfig-${terraform.workspace}.yaml")
+}
+
+resource "kubernetes_secret_v1" "external_talosconfig" {
+
+  metadata {
+    name      = "external-talosconfig"
+    namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+  }
+  type = "Opaque"
+
+  data = {
+    talosconfig = local.talosconfig
+  }
+}
