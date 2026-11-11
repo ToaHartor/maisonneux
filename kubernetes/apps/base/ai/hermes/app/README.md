@@ -27,6 +27,7 @@ kubernetes/apps/base/ai/hermes/
             ├── mise.toml           # boot-time tool pins (mise install, jdx/mise image)
             ├── apply-profiles.py   # driver: merges every <name>.yaml fragment via the mise-installed yq
             ├── upsert.py           # driver: upserts /run/dotenv keys into the .env files
+            ├── seed-plugins.py     # driver: seeds the root-managed plugins into each profile's plugins dir
             ├── operator.yaml       # fragment for the operator profile
             └── main.yaml          # fragment for the main profile
 ```
@@ -116,12 +117,16 @@ as every other app in `kubernetes/apps/base`):
    1. copies `/run/config/config.yaml` → `/opt/data/config.yaml` and
       `AGENTS.md` → `/opt/data/workspace/AGENTS.md` (the default
       profile's Git-pinned base);
-   2. fetches the pinned memini plugin release (guarded by a `.ref`
-      marker — offline on normal restarts).
+   2. fetches the pinned memini plugin release into the **root**
+      `/opt/data/plugins/` (guarded by a `.ref` marker — offline on
+      normal restarts). Hermes resolves user plugins per-home
+      (`$HERMES_HOME/plugins/`), so this root copy only serves the
+      default profile; named profiles get their own copy in the
+      install-tools `seed-plugins` step below.
 3. **install-tools** (hermes image — the alpine init can't run the
    scripts: uid 1024 means no `apk` and no python; install-tools
    overrides to `runAsUser: 0` **and** re-adds the app container's
-   capability set — see step 4):
+   capability set — see step 5):
    1. runs `mise install` with the CM-pinned tool manifest
       (`MISE_CONFIG_FILE=/run/profile-config/mise.toml`, binary from
       the jdx/mise image mount `/opt/mise`; `XDG_CACHE_HOME` pins the
@@ -163,7 +168,25 @@ as every other app in `kubernetes/apps/base`):
       rule (an env-var *prefix* assignment, no shell variables at
       all). The find-chown step is shell-free as well: a bare
       `find`/`chown` with no `$`-references anywhere.
-   4. converges ownership: `find /opt/data ! -user 1024 -exec
+   4. runs `seed-plugins.py`: seeds the root-managed plugins into each
+      named profile's own user plugin dir. Hermes resolves user
+      plugins per-home (`$HERMES_HOME/plugins/`), and a named profile
+      re-homes `HERMES_HOME` to `/opt/data/profiles/<name>/`, so the
+      memini plugin the alpine init seeds only at the root
+      `/opt/data/plugins/` is invisible to named profiles — their
+      machine-configured `memory.provider` (set by
+      `hermes-machine-config`) would fail with "configured but not
+      installed and not in the plugin catalog". For every healthy root
+      plugin dir (one that holds an `__init__.py`) it copies the
+      tree into `/opt/data/profiles/<name>/plugins/<p>/` when the
+      copy is missing or its `.ref` marker lags the root's (a pin
+      bump propagates on the next boot; an unchanged pin is a
+      no-op). Runs as root *before* the convergence below, so it
+      also seeds a brand-new (still root-owned) profile in the same
+      boot; the find-chown step then chowns the seeded tree to 1024
+      (as it does for the upsert/merge output). Non-fatal: a
+      failure skips the seed this boot and the next boot retries.
+   5. converges ownership: `find /opt/data ! -user 1024 -exec
       chown 1024:1024 {} +` — the hermes image's s6 root layer
       (stage2 hook, root terminal service slots) and the 10000-era
       hermes user leave files under /opt/data owned by uids other

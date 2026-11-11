@@ -271,6 +271,27 @@ spec:
                   echo "WARN: apply-profiles.py failed this boot (profile fragments not merged)"
                 fi
 
+                # Seed the root-managed plugins into every named profile's
+                # own user plugin dir (before the ownership convergence
+                # below, which chowns what this step writes, exactly as it
+                # does for the upsert/merge steps above). Hermes resolves
+                # user plugins per-home ($HERMES_HOME/plugins/), and a
+                # named profile re-homes HERMES_HOME to
+                # /opt/data/profiles/<name>/, so the memini plugin the
+                # alpine init seeds only at the root /opt/data/plugins/ is
+                # invisible to named profiles and their machine-configured
+                # memory.provider fails with "configured but not installed
+                # and not in the plugin catalog". Runs as root, so it also
+                # seeds a brand-new (still root-owned) profile in the same
+                # boot; the convergence below chowns the seeded tree to
+                # 1024. Copies are .ref-guarded (a pin bump propagates on
+                # the next boot; an unchanged pin is a no-op). Non-fatal:
+                # a failure just skips the seed this boot and the next
+                # boot retries.
+                if ! /opt/hermes/.venv/bin/python /run/profile-config/seed-plugins.py; then
+                  echo "WARN: seed-plugins.py failed this boot (root plugins not seeded into profiles)"
+                fi
+
                 # Converge ownership on the data volume. The hermes
                 # image's s6 root layer (stage2 hook, terminal
                 # service slots) and the 10000-era hermes user can

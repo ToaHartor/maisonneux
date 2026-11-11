@@ -34,6 +34,7 @@ configMapGenerator:
       - resource/hermes-profile-config/mise.toml
       - resource/hermes-profile-config/upsert.py
       - resource/hermes-profile-config/apply-profiles.py
+      - resource/hermes-profile-config/seed-plugins.py
       - resource/hermes-profile-config/operator.yaml
       - resource/hermes-profile-config/main.yaml
 generatorOptions:
