@@ -26,7 +26,7 @@ spec:
   transport: http
   workload:
     # renovate container:
-    image: docker.io/grafana/mcp-grafana:2.1.1-alpine@sha256:cedf44d53a6aa809d68fa3704ec68ce87cc40c52326c087f8b2c6601fd6ed99f
+    image: docker.io/grafana/mcp-grafana:2.3.0-alpine@sha256:2483fbc37154988cedda2893abc7d005b9b428147047c8a8e60b8d92d1d0227b
     port: 8000
     args:
       [
