@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flux-operator-mcp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: flux-operator-mcp-readonly
+rules:
+  # The MCP server runs with --read-only; grant cluster-wide read of every
+  # resource (incl. subresources like pods/log) and non-resource URLs so its
+  # query tools work against Flux objects and the workloads they manage.
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["*"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flux-operator-mcp-readonly
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: flux-operator-mcp-readonly
+subjects:
+  - kind: ServiceAccount
+    name: flux-operator-mcp
+    namespace: mcp
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: flux-operator
+spec:
+  alias: flux_operator
+  transport: http
+  workload:
+    # renovate container:
+    image: ghcr.io/controlplaneio-fluxcd/flux-operator-mcp:v0.62.1@sha256:0b4181bc9ada80eedf3e9df3355153abc9c3e6d8b913bddebe0b12908309bff6
+    port: 8086
+    args:
+      - serve
+      - --transport=http
+      - --port=8086
+      - --read-only
+    # env:
+    serviceAccountName: flux-operator-mcp
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities: { drop: ["ALL"] }
+    resources:
+      limits:
+        memory: "512Mi"
+      requests:
+        cpu: 50m
+        memory: "128Mi"

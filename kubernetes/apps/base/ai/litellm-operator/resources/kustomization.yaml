@@ -6,6 +6,7 @@ resources:
   - mcp/obsidian.yaml
   - mcp/grafana.yaml
   - mcp/arr.yaml
+  - mcp/flux-operator.yaml
   - litellmmodels.yaml
   - litellmproxy.yaml
   - servicemonitor.yaml
