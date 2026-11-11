@@ -136,13 +136,42 @@ jobs:
       ZOT_URL: http://zot.internal-ci.svc.cluster.local:5000
       # renovate: datasource=github-releases depName=google/go-containerregistry
       CRANE_VERSION: "0.22.1"
+      # Pinned to the deployed Talos (terraform/k8s/nodes/variables.tf);
+      # both live in the "Talos Linux" renovate group
+      # renovate: datasource=github-releases depName=siderolabs/talos
+      TALOS_VERSION: "1.14.2"
     steps:
-      - name: Install crane
+      - name: Install pull tools
         run: |-
           curl -fsSL -o gcr.tar.gz "https://github.com/google/go-containerregistry/releases/download/v${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz"
           tar -xzf gcr.tar.gz crane
+          curl -fsSL -o talosctl "https://github.com/siderolabs/talos/releases/download/v${TALOS_VERSION}/talosctl-linux-amd64"
+          chmod +x talosctl
+
+      - name: Pre-unpack on node via talosctl
+        # Best path (the home-ops pre-pull pattern): pull through the node's
+        # containerd — which goes through the node's registry mirror chain,
+        # so zot is warmed for every node too — and unpack into the node's
+        # image store so the rollout there is a pure no-op. TALOSCONFIG_B64
+        # is a repo-level Forgejo secret (base64 of the production
+        # talosconfig, `base64 -w0 tmp/talosconfig-production.yaml` from the
+        # k8s terraform workspace output). Missing secret or unreachable
+        # node → continue-on-error, the zot-only path below still runs.
+        continue-on-error: true
+        run: |-
+          set -euo pipefail
+          if [ -z "${TALOSCONFIG_B64:-}" ]; then
+            echo "TALOSCONFIG_B64 is not set — skipping node pre-unpack"
+            exit 0
+          fi
+          echo "${TALOSCONFIG_B64}" | base64 -d > talosconfig.yaml
+          TALOSCONFIG="$(pwd)/talosconfig.yaml" ./talosctl image pull "${{ matrix.image }}"
 
       - name: Warm zot cache
+        # Fallback when the node pre-unpack was not possible: warm the
+        # shared zot cache directly, so the rollout still pulls from the
+        # LAN instead of a cold upstream fetch
+        if: ${{ failure() }}
         run: |-
           set -euo pipefail
           image="${{ matrix.image }}"
