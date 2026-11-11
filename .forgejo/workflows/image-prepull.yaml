@@ -1,0 +1,185 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Image Pre-pull
+
+# Strategy: warm the shared zot cache before Flux rolls out new images.
+# On pull_request (pre-merge, also validates that new refs are pullable) and
+# on push to localdev (the window between a merge and its reconciliation),
+# diff the rendered container images against the baseline with
+# `flate diff images`, then pull each new image through the cluster zot
+# registry. Zot's on-demand sync caches the image (S3-backed, shared by all
+# nodes) so the Flux rollout no longer depends on a cold upstream fetch —
+# which is what causes the ErrImagePull / ImagePullBackOff windows seen on
+# digest-bump merges. Pattern follows the home-ops image pre-pull
+# (onedr0p/home-ops ci.yaml image-pull-extract / image-pull jobs); here the
+# fan-out happens through zot instead of spegel P2P, and the pull target is
+# the zot service instead of talosctl (in-cluster runner, no talosconfig).
+
+on:
+  pull_request:
+    branches:
+      - localdev
+  push:
+    branches:
+      - localdev
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
+  # PR runs may be superseded by newer commits; push runs are the merge path
+  # and must queue instead of cancelling each other
+  cancel-in-progress: ${{ forgejo.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  filter:
+    name: Image Pre-pull - Filter
+    # Push events always extract (the merge path); PRs are gated on changed
+    # files so docs/infra-only PRs do not pay for two full-tree renders
+    if: ${{ forgejo.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed-files: ${{ steps.changed-files.outputs.changed_files }}
+    steps:
+      - name: Get Changed Files
+        id: changed-files
+        uses: https://github.com/bjw-s-labs/action-changed-files@147be9638332cf68fd60714a610509d7a9360d60 # v0.7.0
+        with:
+          patterns: |
+            kubernetes/**/*
+            helm/**/*
+            .forgejo/workflows/image-prepull.yaml
+
+  extract:
+    name: Image Pre-pull - Extract
+    if: ${{ forgejo.event_name != 'pull_request' || needs.filter.outputs.changed-files != '[]' }}
+    needs: filter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      images: ${{ steps.extract.outputs.images }}
+    steps:
+      - name: Checkout
+        uses: https://github.com/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # flate materializes the baseline tree from git history
+          fetch-depth: 0
+          ref: ${{ forgejo.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Install flate
+        uses: https://github.com/home-operations/flate/action@bbb6ebc344da051752dbdb1b413860ceffcfb63d # v0.7.3
+        with:
+          # We point to the fake-secrets Kustomization that renders the
+          # production stack (kubernetes/clusters/test)
+          # FLATE_PATH: ./kubernetes/clusters/test
+          # Forgejo-issued tokens are rejected by github.com (401) for
+          # release downloads; flate is public, so force the unauthenticated
+          # path.
+          token: ""
+          cache: false
+
+      - name: Extract Changed Images
+        id: extract
+        run: |-
+          set -euo pipefail
+          OUT="${FORGEJO_OUTPUT:-$GITHUB_OUTPUT}"
+          if [ "${{ forgejo.event_name }}" == "pull_request" ]; then
+            # Render the PR head tree and diff against the PR base
+            base="${{ forgejo.event.pull_request.base.sha }}"
+            flate diff images -p ./kubernetes/clusters/test --base "$base" -o json > images.json
+          elif [ "${{ forgejo.event_name }}" == "push" ]; then
+            # Merge / direct push into localdev: diff against the previous tip
+            before="${{ forgejo.event.before }}"
+            if [[ "$before" =~ ^0+$ ]]; then
+              # First push to a new branch: fall back to the parent commit
+              base="$(git rev-parse HEAD~1)"
+            else
+              base="$before"
+            fi
+            flate diff images -p ./kubernetes/clusters/test --base "$base" -o json > images.json
+          else
+            # workflow_dispatch: no baseline to diff against; the push event
+            # already covers merges
+            echo '[]' > images.json
+          fi
+          echo "Changed images:"
+          cat images.json
+          echo "images<<EOF" >> "$OUT"
+          cat images.json >> "$OUT"
+          echo "EOF" >> "$OUT"
+
+  pull:
+    name: Image Pre-pull - Pull
+    # Only run when the extract job actually produced a list (skipped
+    # extract leaves the output empty, which must not trigger a pull)
+    if: ${{ needs.extract.result == 'success' && needs.extract.outputs.images != '[]' }}
+    needs: extract
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        image: ${{ fromJSON(needs.extract.outputs.images) }}
+      # Bound concurrent zot on-demand sync fetches; one flaky image must
+      # not sink the rest
+      max-parallel: 4
+      fail-fast: false
+    env:
+      # In-cluster zot service (same reference as tekton-pipelines); the
+      # runner pods run in the services namespace
+      ZOT_URL: http://zot.internal-ci.svc.cluster.local:5000
+      # renovate: datasource=github-releases depName=google/go-containerregistry
+      CRANE_VERSION: "0.22.1"
+    steps:
+      - name: Install crane
+        run: |-
+          curl -fsSL -o gcr.tar.gz "https://github.com/google/go-containerregistry/releases/download/v${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz"
+          tar -xzf gcr.tar.gz crane
+
+      - name: Warm zot cache
+        run: |-
+          set -euo pipefail
+          image="${{ matrix.image }}"
+          # No registry host prefix means docker.io
+          registry="${image%%/*}"
+          if [[ ! "$registry" =~ [\.:] ]]; then
+            image="docker.io/${image}"
+            registry="docker.io"
+          fi
+          # Only registries zot mirrors can be warmed through zot; anything
+          # else (self-hosted registries) is pulled directly by the nodes
+          case "$registry" in
+            docker.io|ghcr.io|quay.io|gcr.io|registry.k8s.io|nvcr.io|registry.gitlab.com) ;;
+            *)
+              echo "skipping ${image}: ${registry} is not mirrored by zot"
+              exit 0
+              ;;
+          esac
+          rest="${image#"$registry"/}"
+          name="${rest%%[:@]*}"
+          ref="${rest#"$name"}"
+          echo "warming zot cache: ${image}"
+          crane --insecure pull "${ZOT_URL}/${registry}/${name}${ref}"
+
+  success:
+    if: ${{ !cancelled() }}
+    needs:
+      - filter
+      - extract
+      - pull
+    name: Image Pre-pull - Success
+    runs-on: ubuntu-latest
+    steps:
+      - name: Any jobs failed?
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: exit 1
+
+      - name: All jobs passed or skipped?
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: echo "All jobs passed or skipped" && echo "${{ toJSON(needs.*.result) }}"
