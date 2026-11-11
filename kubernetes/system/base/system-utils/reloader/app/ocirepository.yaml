@@ -10,8 +10,8 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 2.2.19
-    digest: sha256:dfa9fd167fc7ea3a2542de23f8d23c961d79407929f38c985d5cecfa74316142
+    tag: 2.2.20
+    digest: sha256:065ab124e7e704a43465fad9b71363563157312e8ee410db30c4da83c5ac131b
   url: oci://ghcr.io/stakater/charts/reloader
   verify:
     provider: cosign
