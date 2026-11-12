@@ -78,14 +78,20 @@ jobs:
       - name: Install flate
         uses: https://github.com/home-operations/flate/action@bbb6ebc344da051752dbdb1b413860ceffcfb63d # v0.7.3
         with:
-          # We point to the fake-secrets Kustomization that renders the
-          # production stack (kubernetes/clusters/test)
-          # FLATE_PATH: ./kubernetes/clusters/test
           # Forgejo-issued tokens are rejected by github.com (401) for
           # release downloads; flate is public, so force the unauthenticated
           # path.
           token: ""
           cache: false
+          # Full-tree mode: empty base keeps FLATE_BASE unset, so `flate get`
+          # renders the whole tree. The action's default is the repository
+          # default branch (localdev): with FLATE_BASE set, every flate call
+          # in the job silently runs in changed-only keep-set mode and
+          # prunes unchanged subtrees (the psql-cluster dependsOn
+          # not-found failure), and any -p into the .flate-base extract
+          # directory gets cross-matched against it. Same settings as the
+          # flate CI gate (.forgejo/workflows/flate.yaml).
+          base: ""
 
       - name: Extract Changed Images
         id: extract
@@ -99,9 +105,11 @@ jobs:
           # `flate diff images`: diff keep-set mode prunes unchanged subtrees
           # and blocks on the psql-cluster dependsOn edge when that folder is
           # unchanged, which is why the flate gate uses full-tree mode.
-          # `flate get images` exits non-zero while some resources are blocked
-          # (e.g. the runtime-created flux-operator CRDs), so a non-zero exit
-          # with a non-empty image list is fine; an empty list is not.
+          # --allow-missing-kinds tolerates the runtime-created CRDs (absent
+          # from the offline tree) that the flux-system flux-operator
+          # ResourceSet depends on, keeping both renders green. If a render
+          # still exits non-zero, a non-empty image list is fine; an empty
+          # one is not.
           if [ "${{ forgejo.event_name }}" == "pull_request" ]; then
             # Render the PR head tree and diff against the PR base
             base="${{ forgejo.event.pull_request.base.sha }}"
@@ -130,10 +138,15 @@ jobs:
           # (fetch-depth: 0 above) and render each tree in full
           mkdir -p .flate-base
           git archive "$base" | tar -x -C .flate-base
-          if ! flate get images -p ./kubernetes/clusters/test | sort -u > current.images; then
+          # Anchor flate's source-root discovery to the extracted tree:
+          # without a local .git, the walk reaches the workdir's repo and
+          # the test cluster's relative Kustomization paths leak into the
+          # main tree ("conflicting entry coordinates")
+          git init -q .flate-base
+          if ! flate get images -p ./kubernetes/clusters/test --allow-missing-kinds CustomResourceDefinition | sort -u > current.images; then
             echo "::warning::current tree: flate get exited non-zero (blocked resources); continuing with the image list"
           fi
-          if ! flate get images -p .flate-base/kubernetes/clusters/test | sort -u > base.images; then
+          if ! flate get images -p .flate-base/kubernetes/clusters/test --allow-missing-kinds CustomResourceDefinition | sort -u > base.images; then
             echo "::warning::baseline tree: flate get exited non-zero (blocked resources); continuing with the image list"
           fi
           [ -s current.images ] || { echo "current tree rendered no images — refusing to pull"; exit 1; }
@@ -146,7 +159,11 @@ jobs:
           first=true
           while IFS= read -r img; do
             [ -n "$img" ] || continue
-            if $first; then first=false; else json+="", ; fi
+            if $first; then
+              first=false
+            else
+              json="$json, "
+            fi
             json="$json\"$img\""
           done < new.images
           json="$json]"
