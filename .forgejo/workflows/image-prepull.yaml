@@ -201,27 +201,35 @@ jobs:
       # renovate: datasource=github-releases depName=siderolabs/talos
       TALOS_VERSION: "1.14.2"
     steps:
-      - name: Install pull tools
+      - name: Setup Mise
+        # talosctl is provided by mise (the home-ops pre-pull pattern); the
+        # talosctl backend accepts the bare version (no v prefix)
+        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          cache: false
+          install: false
+
+      - name: Install crane
         run: |-
           curl -fsSL -o gcr.tar.gz "https://github.com/google/go-containerregistry/releases/download/v${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz"
           tar -xzf gcr.tar.gz crane
-          curl -fsSL -o talosctl "https://github.com/siderolabs/talos/releases/download/v${TALOS_VERSION}/talosctl-linux-amd64"
-          chmod +x talosctl
 
       - name: Pre-unpack on node via talosctl
         # Best path (the home-ops pre-pull pattern): pull through the node's
         # containerd — which goes through the node's registry mirror chain,
         # so zot is warmed for every node too — and unpack into the node's
-        # image store so the rollout there is a pure no-op. The talosconfig
-        # is mounted into the job pod at /var/run/secrets/talosconfig
-        # (TALOSCONFIG env in the runner podspec, from the talosconfig
-        # secret in services). Until the external-talosconfig bootstrap
-        # secret exists the mount is empty, this step errors and the
-        # zot-only fallback below still warms the cache.
+        # image store so the rollout there is a pure no-op. talosctl comes
+        # from mise; --nodes targets the node the job pod runs on ($NODE,
+        # downward API in the runner podspec) and the talosconfig mounted
+        # at /var/run/secrets/talosconfig (TALOSCONFIG env in the runner
+        # podspec, from the talosconfig secret in services) supplies the
+        # credentials. Until the external-talosconfig bootstrap secret
+        # exists the mount is empty, this step errors and the zot-only
+        # fallback below still warms the cache.
         continue-on-error: true
         run: |-
           set -euo pipefail
-          ./talosctl image pull "${{ matrix.image }}"
+          mise exec "talosctl@${TALOS_VERSION}" -- talosctl --nodes "$NODE" image pull "${{ matrix.image }}"
 
       - name: Warm zot cache
         # Fallback when the node pre-unpack was not possible: warm the

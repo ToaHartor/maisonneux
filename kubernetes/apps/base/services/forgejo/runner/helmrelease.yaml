@@ -74,6 +74,13 @@ spec:
           - env:
               - name: DEBIAN_FRONTEND
                 value: noninteractive
+              # Node the job pod runs on (host IP), used by the
+              # image-prepull workflow: talosctl --nodes "$NODE" targets the
+              # local Talos node for the image pre-unpack
+              - name: NODE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.hostIP
               # talosctl config for the image-prepull workflow: the
               # talosconfig secret in services, mounted as the
               # /var/run/secrets/talosconfig single-file volume; optional,
