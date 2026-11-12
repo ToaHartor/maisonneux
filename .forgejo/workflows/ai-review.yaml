@@ -4,12 +4,30 @@ name: AI PR Review
 # Entirely from https://github.com/joryirving/home-ops/blob/main/.github/workflows/ai-pr-review.yaml
 
 on:
-  pull_request:
-    branches: ["localdev"]
-    # `labeled` enables the one-click re-review: add the `ai-review` label to
-    # force a fresh review (only write/triage can label — self-authorizing).
-    # Currently has troubles to function, disabling
-    types: [opened, reopened, synchronize, ready_for_review] # , labeled
+  # The review runs only after the other CI has settled: 'completed' fires
+  # when the image-prepull workflow finishes (success, failure or
+  # cancellation alike), and by that point the trivy scan report is
+  # already posted on the PR (image-prepull's scan-summary job), so the
+  # reviewer analyzes it as evidence. The flate gate is deliberately not
+  # a trigger: its rendered diff is what konflate fetches on demand, and
+  # the reviewer's ci_status_check polls whatever checks are still
+  # running.
+  # zizmor flags workflow_run as a dangerous trigger (it grants the full
+  # repo token even when the originating run came from an untrusted PR).
+  # Accepted here: the review action is privileged by design — it reads
+  # attacker-influenced PR content and needs pull-requests:write to
+  # publish, and the job is gated to PR-originated prepull runs, so the
+  # trigger does not widen what the action already does
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows:
+      - Image Pre-pull
+    types:
+      - completed
+  # `labeled` re-review (add the `ai-review` label) is handled natively
+  # by the action when a trigger exists for it — currently disabled
+  # because label events are unreliable on this instance. A manual
+  # re-review can instead push a commit (the prepull re-run settles
+  # first, then triggers this workflow).
   # workflow_dispatch:
   #   inputs:
   #     pr_number:
@@ -22,6 +40,10 @@ concurrency:
   # (Renovate adds several at creation), and with a shared group +
   # cancel-in-progress those label runs would cancel the real opened review.
   # group: ${{ forgejo.workflow }}-${{ forgejo.event.pull_request.number || inputs.pr_number || forgejo.ref }}${{ forgejo.event.action == 'labeled' && format('-label-{0}', forgejo.run_id) || '' }}
+  # Gitea can occasionally fire the same workflow_run 'completed' event
+  # twice (go-gitea/gitea#37539): the two runs queue (no cancellation) and
+  # the second is a cheap no-op — with force_review off the action skips a
+  # commit that already has a review
   group: ai-pr-review
   cancel-in-progress: false
 
@@ -32,11 +54,12 @@ permissions:
 jobs:
   review-pr:
     name: AI PR Review
-    # pull_request is the normal path; adding the `ai-review` label is the
-    # normal re-review trigger (handled natively by the action). workflow_dispatch
-    # remains as a manual force-review path.
-    # also exclude automatic reviews when change is only a digest
-    if: ${{ (forgejo.event_name == 'pull_request' && !forgejo.event.pull_request.draft && !contains(forgejo.event.label.*.name, 'type:digest')) || forgejo.event_name == 'workflow_dispatch' || forgejo.event.action == 'labeled' && forgejo.event.label.name == 'ai-review' }}
+    # Triggered by the image-prepull workflow's completion, and only when
+    # that run was itself a PR run (dispatch-triggered prepull runs have
+    # event = workflow_dispatch and no PR to review). Draft and digest-only
+    # PRs are filtered in the Resolve PR step — the workflow_run event has
+    # no pull_request context to read those from
+    if: ${{ forgejo.event_name == 'workflow_run' && forgejo.workflow_run.event == 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -44,24 +67,55 @@ jobs:
     timeout-minutes: 35
 
     steps:
-      # - name: Resolve PR head for re-review
-      #   id: prctx
-      #   if: forgejo.event_name == 'workflow_dispatch'
-      #   env:
-      #     GH_TOKEN: ${{ forgejo.token }}
-      #     PR_NUMBER: ${{ inputs.pr_number }}
-      #   run: |
-      #     PR_DATA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-      #       "$FORGEJO_API_URL/repos/$FORGEJO_REPOSITORY/pulls/${PR_NUMBER}")
-      #     echo "head_sha=$(echo "$PR_DATA" | python3 -c 'import sys,json; print(json.load(sys.stdin)["head"]["sha"])')" >> $FORGEJO_OUTPUT
+      - name: Resolve PR
+        # The workflow_run event carries no pull_request context: the
+        # prepull run that triggered us ran on the PR's head branch, so
+        # look the open PR up by that head ref. This yields the PR
+        # number, the exact head SHA to check out, and the draft /
+        # digest-only state in one API call
+        id: prctx
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_URL: http://forgejo-http.services.svc.cluster.local:3000/
+          REPO: ${{ forgejo.repository }}
+          HEAD_BRANCH: ${{ forgejo.workflow_run.head_branch }}
+        run: |-
+          set -uo pipefail
+          python3 - "$HEAD_BRANCH" "$API_URL" "$REPO" "$GH_TOKEN" >> "$GITHUB_OUTPUT" 2> prctx.err <<'PY'
+          import json, sys, urllib.request
+          head, api, repo, token = sys.argv[1:5]
+          req = urllib.request.Request(
+              f"{api}repos/{repo}/pulls?state=open&head={repo}:{head}",
+              headers={"Authorization": f"token {token}"},
+          )
+          try:
+              prs = json.load(urllib.request.urlopen(req))
+          except Exception:
+              prs = []
+          matches = [p for p in prs if p["head"]["ref"] == head]
+          if not matches:
+              print("pr_number=0")
+              print("proceed=false")
+              sys.exit(0)
+          p = matches[0]
+          labels = [l["name"] for l in p.get("labels", [])]
+          proceed = (not p["draft"]) and ("type:digest" not in labels)
+          print(f"pr_number={p['number']}")
+          print(f"head_sha={p['head']['sha']}")
+          print(f"proceed={'true' if proceed else 'false'}")
+          PY
+          if [ -s prctx.err ]; then cat prctx.err; fi
+          grep -q '^proceed=true' "$GITHUB_OUTPUT" || echo "skipping review (no open PR for this head, or draft / digest-only)"
 
       - name: Checkout
+        if: ${{ steps.prctx.outputs.proceed == 'true' }}
         uses: https://github.com/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: ${{ forgejo.event.pull_request.head.sha }} #  || steps.prctx.outputs.head_sha
+          ref: ${{ steps.prctx.outputs.head_sha }}
 
       - name: Install gh CLI
+        if: ${{ steps.prctx.outputs.proceed == 'true' }}
         run: |
           curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
           chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
@@ -71,6 +125,7 @@ jobs:
 
       - name: Analyze PR with reusable AI reviewer
         id: analyze
+        if: ${{ steps.prctx.outputs.proceed == 'true' }}
         #  TODO : Pin to 2.1.6 until token permission issue with forgejois resolved
         # ref : https://github.com/misospace/pr-reviewer-action/commit/1b4bc2e47513c5842893836ff4d43075b744a948
         uses: https://github.com/misospace/pr-reviewer-action@2f3713c246216f5d1a4fc5c3d944932d5567b4b5 # v2.1.6
@@ -83,7 +138,7 @@ jobs:
           platform: forgejo
           forgejo_api_url: http://forgejo-http.services.svc.cluster.local:3000/
           forgejo_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ forgejo.event.pull_request.number || inputs.pr_number }}
+          pr_number: ${{ steps.prctx.outputs.pr_number }}
           force_review: ${{ forgejo.event_name == 'workflow_dispatch' && 'true' || 'false' }}
           ai_primary_retries: "3"
           ai_primary_retry_delay_sec: "15"
