@@ -170,11 +170,71 @@ jobs:
           set -uo pipefail
           mise exec "zizmor@${ZIZMOR_VERSION}" -- zizmor --format=github --no-online-audits --min-severity=low -- .forgejo/workflows/*.yaml
 
+  actions-lint:
+    # Server-side syntax gate — the GitLab-pipeline-lint equivalent for
+    # Forgejo: Gitea's CI lint API (Gitea/Forgejo ≥ 1.22) validates a
+    # workflow file with the exact server-side parser that rejects a
+    # file as 'invalid workflow file' at commit time. Offline linters
+    # (zizmor, actionlint) cannot know Gitea-specific rejections — e.g.
+    # the `|| ['literal-array']` matrix expression — so this job is the
+    # only check that can. It POSTs every .forgejo/workflows/*.yaml to
+    # the instance's own endpoint from inside the cluster (same API +
+    # token as the trivy PR comments). If this Forgejo predates the
+    # lint API the endpoint 404s: the job then warns and skips instead
+    # of breaking the gate.
+    name: Flate - Actions Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      API_URL: http://forgejo-http.services.svc.cluster.local:3000/
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ forgejo.repository }}
+    steps:
+      - name: Checkout
+        uses: https://github.com/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lint workflow files against the instance validator
+        run: |-
+          set -uo pipefail
+          endpoint="${API_URL}api/v1/repos/${REPO}/actions/lint"
+          # Probe first: a 404 means this Forgejo build has no lint API.
+          # Probe with a hardcoded minimal-valid workflow (JSON string,
+          # no file read).
+          probe_body='{"content":"name: p\non:\n  push:\njobs:\n  j:\n    runs-on: x\n    steps:\n      - run: echo p\n"}'
+          probe=$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+            -H "Authorization: token ${TOKEN}" -H "Content-Type: application/json" \
+            -d "$probe_body" "$endpoint" || echo "000")
+          if [ "$probe" = "404" ]; then
+            echo "::warning::${REPO} has no /actions/lint endpoint (needs Gitea/Forgejo ≥ 1.22); skipping the server-side workflow lint"
+            exit 0
+          fi
+          failed=0
+          for f in .forgejo/workflows/*.yaml; do
+            # --rawfile keeps the content exactly as on disk
+            payload=$(jq -n --rawfile content "$f" '{content: $content}')
+            resp=$(curl -sS -w '\n%{http_code}' -X POST \
+              -H "Authorization: token ${TOKEN}" -H "Content-Type: application/json" \
+              -d "$payload" "$endpoint") || { echo "::error::lint request failed for ${f}"; failed=1; continue; }
+            code=$(printf '%s' "$resp" | tail -n1)
+            body=$(printf '%s' "$resp" | sed '$d')
+            if [ "$code" = "200" ]; then
+              echo "${f}: ok"
+            else
+              echo "::error::${f} rejected by the instance validator (HTTP ${code}): ${body}"
+              failed=1
+            fi
+          done
+          exit "$failed"
+
   success:
     if: ${{ !cancelled() }}
     needs:
       - flate
       - zizmor
+      - actions-lint
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
