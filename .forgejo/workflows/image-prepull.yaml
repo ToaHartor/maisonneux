@@ -398,16 +398,19 @@ jobs:
                   echo "_(+ $((total - 15)) more findings — full list in the trivy JSON of the scan job)"
                 fi
               fi
-            } > "report-$(printf '%s' "$image" | tr '/:@' '---' | cut -c1-80).md"
+            } > scan-section.md
             echo "section written"
           else
             echo "::warning::trivy scan failed for ${scan_ref}; listed in the report as a scan error"
             {
               echo "### ${image}"
               echo "- trivy scan failed (see the scan job log)"
-            } > "report-$(printf '%s' "$image" | tr '/:@' '---' | cut -c1-80).md"
+            } > scan-section.md
           fi
           rm -f report.json
+          # section file stays in the shared job CWD (steps share the
+          # workspace; RUNNER_TEMP is not guaranteed to match across
+          # steps on this runner) — the post step picks it up
 
       # One sticky PR comment per scanned image, posted by the scan job
       # itself: the GitHub-hosted upload/download-artifact@v4 actions are
@@ -430,7 +433,12 @@ jobs:
           # tag-only marker (digests change on every digest-bump PR)
           image_tag="${IMAGE%@*}"
           marker="<!-- trivy-scan: ${image_tag} -->"
-          body="$(printf '%s\n\n## Trivy scan: %s\n\n' "$marker" "$IMAGE"; cat "$RUNNER_TEMP/scan-section.md")"
+          section="scan-section.md"
+          if [ ! -f "$section" ]; then
+            echo "::warning::no scan section found (scan step did not produce it); skipping the PR comment"
+            exit 0
+          fi
+          body="$(printf '%s\n\n## Trivy scan: %s\n\n' "$marker" "$IMAGE"; cat "$section")"
           payload="$(jq -n --arg body "$body" '{body: $body}')"
           # find-or-patch the sticky comment (marker-based, same pattern as
           # the flate gate's commented block); a failure only warns — the
