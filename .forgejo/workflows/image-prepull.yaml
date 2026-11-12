@@ -3,34 +3,33 @@
 name: Image Pre-pull
 
 # Strategy: warm the shared zot cache before Flux rolls out new images.
-# On pull_request (pre-merge, also validates that new refs are pullable) and
-# on push to localdev (the window between a merge and its reconciliation),
-# diff the rendered container images against the baseline with two
-# full-tree `flate get images` renders (same full-tree strategy as the
-# flate CI gate), then pull each new image through the cluster zot
-# registry. Zot's on-demand sync caches the image (S3-backed, shared by all
-# nodes) so the Flux rollout no longer depends on a cold upstream fetch —
-# which is what causes the ErrImagePull / ImagePullBackOff windows seen on
-# digest-bump merges. Pattern follows the home-ops image pre-pull
-# (onedr0p/home-ops ci.yaml image-pull-extract / image-pull jobs); here the
-# fan-out happens through zot instead of spegel P2P: each new image is
-# first pulled through a node's containerd with talosctl (which warms the
-# shared zot cache via the node mirror chain), falling back to a direct
-# pull through the zot service when the talosconfig mount is not available.
+# On pull_request to localdev (pre-merge, also validates that new refs
+# are pullable) and on manual workflow_dispatch (on-demand warming), diff
+# the rendered container images against the baseline with two full-tree
+# `flate get images` renders (same full-tree strategy as the flate CI
+# gate), then pull each new image through the cluster zot registry.
+# Merges to localdev are covered by the PR run that precedes the merge,
+# so no push trigger is needed. Zot's on-demand sync caches the image
+# (S3-backed, shared by all nodes) so the Flux rollout no longer depends
+# on a cold upstream fetch — which is what causes the ErrImagePull /
+# ImagePullBackOff windows seen on digest-bump merges. Pattern follows
+# the home-ops image pre-pull (onedr0p/home-ops ci.yaml
+# image-pull-extract / image-pull jobs); here the fan-out happens through
+# zot instead of spegel P2P: each new image is first pulled through a
+# node's containerd with talosctl (which warms the shared zot cache via
+# the node mirror chain), falling back to a direct pull through the zot
+# service when the talosconfig mount is not available.
 
 on:
   pull_request:
-    branches:
-      - localdev
-  push:
     branches:
       - localdev
   workflow_dispatch:
 
 concurrency:
   group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
-  # PR runs may be superseded by newer commits; push runs are the merge path
-  # and must queue instead of cancelling each other
+  # PR runs may be superseded by newer commits; manual dispatch runs
+  # (queued on the ref) must not cancel each other
   cancel-in-progress: ${{ forgejo.event_name == 'pull_request' }}
 
 permissions:
@@ -39,8 +38,9 @@ permissions:
 jobs:
   filter:
     name: Image Pre-pull - Filter
-    # Push events always extract (the merge path); PRs are gated on changed
-    # files so docs/infra-only PRs do not pay for two full-tree renders
+    # PRs are gated on changed files so docs/infra-only PRs do not pay for
+    # two full-tree renders; manual dispatch runs skip this job and
+    # extract unconditionally
     if: ${{ forgejo.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
@@ -72,7 +72,9 @@ jobs:
         with:
           # flate materializes the baseline tree from git history
           fetch-depth: 0
-          ref: ${{ forgejo.event.pull_request.head.sha }}
+          # PR runs render the PR head commit (not the event's merge ref);
+          # dispatch runs render the ref the dispatch was issued against
+          ref: ${{ forgejo.event.pull_request.head.sha || forgejo.ref }}
           persist-credentials: false
 
       - name: Install flate
@@ -113,25 +115,12 @@ jobs:
           if [ "${{ forgejo.event_name }}" == "pull_request" ]; then
             # Render the PR head tree and diff against the PR base
             base="${{ forgejo.event.pull_request.base.sha }}"
-          elif [ "${{ forgejo.event_name }}" == "push" ]; then
-            # Merge / direct push into localdev: diff against the previous tip
-            before="${{ forgejo.event.before }}"
-            if [[ "$before" =~ ^0+$ ]]; then
-              # First push to a new branch: fall back to the parent commit
-              base="$(git rev-parse HEAD~1)"
-            else
-              base="$before"
-            fi
           else
-            # workflow_dispatch: no baseline to diff against; the push event
-            # already covers merges
-            echo '[]' > images.json
-            echo "Changed images:"
-            cat images.json
-            echo "images<<EOF" >> "$OUT"
-            cat images.json >> "$OUT"
-            echo "EOF" >> "$OUT"
-            exit 0
+            # workflow_dispatch: no event baseline; diff against the
+            # previous commit of the dispatched branch — the on-demand
+            # equivalent of the merge-window warming the push trigger
+            # used to cover
+            base="$(git rev-parse HEAD~1)"
           fi
 
           # Materialize the baseline tree from the full-history checkout
