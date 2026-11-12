@@ -1,0 +1,168 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Workflow Lint
+
+# Audit the CI itself, but only when the pipeline files actually changed:
+#
+# - zizmor audits the .forgejo/workflows/*.yaml files themselves
+#   (template injection, unpinned actions, permission creep). A PR that
+#   does not touch them cannot produce a new finding, so a full audit on
+#   every app PR buys nothing.
+# - the actions-lint job runs the same server-side validator that rejects
+#   a workflow at commit time — it only has new information when a
+#   workflow file changed.
+#
+# Tool version bumps (zizmor, checkout, mise-action, action-changed-files)
+# are themselves workflow file changes, so new tool behavior always passes
+# through this gate on that PR.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - localdev
+
+concurrency:
+  group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  filter:
+    name: Workflow Lint - Filter
+    runs-on: ubuntu-latest
+    outputs:
+      changed-files: ${{ steps.changed-files.outputs.changed_files }}
+    steps:
+      - name: Get Changed Files
+        id: changed-files
+        uses: https://github.com/bjw-s-labs/action-changed-files@147be9638332cf68fd60714a610509d7a9360d60 # v0.7.0
+        with:
+          patterns: |
+            .forgejo/workflows/*
+
+  zizmor:
+    if: ${{ needs.filter.outputs.changed-files != '[]' }}
+    needs: filter
+    # Supply-chain gate on the CI itself: zizmor audits the workflow files
+    # (template injection, unpinned actions, permission creep, credential
+    # handling) — it says nothing about container images (that is the
+    # trivy scan in the image-prepull workflow).
+    #
+    # Runs via mise like the prepull tools instead of zizmor-action: the
+    # action bootstraps a python3 pip-wheel install that the runner pods
+    # are not guaranteed to have; the mise zizmor backend ships the bare
+    # binary.
+    name: Workflow Lint - Zizmor
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # renovate: datasource=github-releases depName=zizmorcore/zizmor
+      ZIZMOR_VERSION: "1.32.0"
+    steps:
+      - name: Checkout
+        uses: https://github.com/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: https://github.com/jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          cache: false
+          install: false
+
+      - name: Run zizmor
+        # --format=github emits ::error::/::warning:: annotations on the
+        # PR; --no-online-audits keeps the gate deterministic (the online
+        # audits need a github.com API token, which a Forgejo-issued
+        # token cannot use). The workflow files are passed explicitly as
+        # inputs (zizmor does not auto-detect .forgejo/workflows from a
+        # directory input). --min-severity=low blocks merges on
+        # low/medium/high/critical findings; informational findings
+        # (e.g. template expansions of platform event values) stay
+        # report-only. Any counted finding fails the job (zizmor exits
+        # non-zero).
+        run: |-
+          set -uo pipefail
+          mise exec "zizmor@${ZIZMOR_VERSION}" -- zizmor --format=github --no-online-audits --min-severity=low -- .forgejo/workflows/*.yaml
+
+  actions-lint:
+    if: ${{ needs.filter.outputs.changed-files != '[]' }}
+    needs: filter
+    # Server-side syntax gate — the GitLab-pipeline-lint equivalent for
+    # Forgejo: Gitea's CI lint API (Gitea/Forgejo ≥ 1.22) validates a
+    # workflow file with the exact server-side parser that rejects a
+    # file as 'invalid workflow file' at commit time. Offline linters
+    # (zizmor, actionlint) cannot know Gitea-specific rejections — e.g.
+    # the `|| ['literal-array']` matrix expression — so this job is the
+    # only check that can. It POSTs every .forgejo/workflows/*.yaml to
+    # the instance's own endpoint from inside the cluster (same API +
+    # token as the trivy PR comments). If this Forgejo predates the
+    # lint API the endpoint 404s: the job then warns and skips instead
+    # of breaking the gate.
+    name: Workflow Lint - Actions Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      API_URL: http://forgejo-http.services.svc.cluster.local:3000/
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ forgejo.repository }}
+    steps:
+      - name: Checkout
+        uses: https://github.com/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lint workflow files against the instance validator
+        run: |-
+          set -uo pipefail
+          endpoint="${API_URL}api/v1/repos/${REPO}/actions/lint"
+          # Probe first: a 404 means this Forgejo build has no lint API.
+          # Probe with a hardcoded minimal-valid workflow (JSON string,
+          # no file read).
+          probe_body='{"content":"name: p\non:\n  push:\njobs:\n  j:\n    runs-on: x\n    steps:\n      - run: echo p\n"}'
+          probe=$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+            -H "Authorization: token ${TOKEN}" -H "Content-Type: application/json" \
+            -d "$probe_body" "$endpoint" || echo "000")
+          if [ "$probe" = "404" ]; then
+            echo "::warning::${REPO} has no /actions/lint endpoint (needs Gitea/Forgejo ≥ 1.22); skipping the server-side workflow lint"
+            exit 0
+          fi
+          failed=0
+          for f in .forgejo/workflows/*.yaml; do
+            # --rawfile keeps the content exactly as on disk
+            payload=$(jq -n --rawfile content "$f" '{content: $content}')
+            resp=$(curl -sS -w '\n%{http_code}' -X POST \
+              -H "Authorization: token ${TOKEN}" -H "Content-Type: application/json" \
+              -d "$payload" "$endpoint") || { echo "::error::lint request failed for ${f}"; failed=1; continue; }
+            code=$(printf '%s' "$resp" | tail -n1)
+            body=$(printf '%s' "$resp" | sed '$d')
+            if [ "$code" = "200" ]; then
+              echo "${f}: ok"
+            else
+              echo "::error::${f} rejected by the instance validator (HTTP ${code}): ${body}"
+              failed=1
+            fi
+          done
+          exit "$failed"
+
+  success:
+    if: ${{ !cancelled() }}
+    needs:
+      - filter
+      - zizmor
+      - actions-lint
+    name: Workflow Lint - Success
+    runs-on: ubuntu-latest
+    steps:
+      - name: Any jobs failed?
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: exit 1
+
+      - name: All jobs passed or skipped?
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: echo "All jobs passed or skipped" && echo "${{ toJSON(needs.*.result) }}"
