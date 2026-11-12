@@ -340,15 +340,19 @@ jobs:
           rest="${image#"$registry"/}"
           name="${rest%%[:@]*}"
           ref="${rest#"$name"}"
-          # Scan source: warm zot for mirrored registries, upstream otherwise
+          # Scan source: warm zot for mirrored registries, upstream
+          # otherwise. trivy image references are scheme-less host:port
+          # paths (unlike crane, which takes a URL) — strip the http://
+          # from ZOT_URL; the plain-HTTP-ness is what --insecure is for
+          zot_host="${ZOT_URL#http://}"
           insecure=""
           case "$registry" in
             docker.io|ghcr.io|quay.io|gcr.io|registry.k8s.io|nvcr.io|registry.gitlab.com)
-              scan_ref="${ZOT_URL}/${registry}/${name}${ref}"
+              scan_ref="${zot_host}/${registry}/${name}${ref}"
               insecure="--insecure"
               ;;
             localhost:32000)
-              scan_ref="${ZOT_URL}/${name}${ref}"
+              scan_ref="${zot_host}/${name}${ref}"
               insecure="--insecure"
               ;;
             *)
