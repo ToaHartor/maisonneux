@@ -205,7 +205,7 @@ jobs:
         # talosctl and crane are both provided by mise (the home-ops
         # pre-pull pattern); both backends accept the bare version
         # (no v prefix), so the renovate-managed envs work as-is
-        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        uses: https://github.com/jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
           cache: false
           install: false
@@ -302,7 +302,7 @@ jobs:
       - name: Setup Mise
         # trivy is provided by mise (same pattern as the pull job's
         # talosctl/crane; the aqua backend serves the release binary)
-        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        uses: https://github.com/jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
           cache: false
           install: false
