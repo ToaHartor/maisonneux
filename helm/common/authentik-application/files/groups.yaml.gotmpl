@@ -1,0 +1,49 @@
+{{- $bindPolicyID := get . "bindPolicyID" }}
+{{- with get . "root" }}
+{{- $ = . }}
+{{- if (not (kindIs "slice" .Values.blueprint.groups)) }}
+
+- model: authentik_core.group
+  id: "app: {{ .Values.blueprint.application.slug }}"
+  identifiers:
+    name: "app: {{ .Values.blueprint.application.slug }}"
+  state: "present"
+  attrs:
+    name: "app: {{ .Values.blueprint.application.slug }}"
+
+- model: authentik_policies.PolicyBinding
+  id: {{ printf "%s-app-%s" (include "authentik-application.fullname" .) .Values.blueprint.application.slug | quote }}
+  identifiers:
+    pk: {{ $bindPolicyID | quote }}
+  attrs:
+    group: !KeyOf "app: {{ .Values.blueprint.application.slug }}"
+    order: 10
+    target: !Find [authentik_core.Application, [slug, {{ .Values.blueprint.application.slug }}]]
+{{- end }}
+
+{{- range $group := .Values.blueprint.groups }}
+
+- model: authentik_core.group
+  id: {{ $group.slug | quote }}
+  identifiers:
+    name: {{ $group.slug | quote }}
+  state: {{ $group.state | default "present" | quote }}
+  attrs:
+    name: {{ $group.slug | quote }}
+    {{- with $group.parent }}
+    parent: !Find [authentik_core.group, [name, {{ . | quote }}]]
+    {{- else}}
+    parent: null
+    {{- end }}
+
+- model: authentik_policies.PolicyBinding
+  id: {{ printf "%s-app-%s" (include "authentik-application.fullname" $) $group.slug | quote }}
+  identifiers:
+    pk: {{ $group.bindID | quote }}
+  attrs:
+    pk: {{ $group.bindID | quote }}
+    group: !KeyOf {{ $group.slug | quote}}
+    order: 10
+    target: !Find [authentik_core.Application, [slug, {{ $.Values.blueprint.application.slug }}]]
+{{- end }}
+{{- end }}{{/* end with of get-root */}}

@@ -9,9 +9,18 @@ metadata:
     homelab/auth-component: "true"
 spec:
   releaseName: ${APP}-oidc
-  chartRef:
-    kind: OCIRepository
-    name: ${APP}-authentik-application
+  chart:
+    # Vendored chart (helm/common/authentik-application; provenance in
+    # its README): the codeberg OCI registry stopped serving anonymous
+    # pulls, so the chart now renders directly from this git tree
+    spec:
+      chart: helm/common/authentik-application
+      interval: 12h
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
   interval: 50m
   install:
     createNamespace: true
@@ -19,7 +28,7 @@ spec:
       retries: 3
 
   values:
-    # From https://codeberg.org/wrenix/helm-charts/src/branch/main/authentik-application/values.yaml
+    # From helm/common/authentik-application/values.yaml (vendored; provenance in its README)
     blueprint:
       authentik:
         domain: "https://${auth_subdomain}.${main_domain_websecure}"

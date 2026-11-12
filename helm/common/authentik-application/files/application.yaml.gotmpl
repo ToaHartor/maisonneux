@@ -1,0 +1,30 @@
+{{- with get . "root" }}
+- model: authentik_core.Application
+  id: {{ .Values.blueprint.application.name | default (include "authentik-application.fullname" .) }}
+  identifiers:
+    slug: {{ .Values.blueprint.application.slug }}
+  state: present
+  attrs:
+    name: {{ .Values.blueprint.application.name | default (include "authentik-application.fullname" .) }}
+    slug: {{ .Values.blueprint.application.slug }}
+    {{- if .Values.blueprint.provider.enabled }}
+    provider: !KeyOf {{ .Values.blueprint.provider.name | default (include "authentik-application.fullname" .) }}
+    {{- end }}
+    policy_engine_mode: {{ .Values.blueprint.application.policyEngineMode }}
+    {{- with .Values.blueprint.application.group }}
+    group: {{ . | quote }}
+    {{- end }}
+    {{- with .Values.blueprint.application.launchURL }}
+    meta_launch_url: {{ . | quote }}
+    {{- end }}
+    open_in_new_tab: {{ toYaml .Values.blueprint.application.openInNewTab }}
+    {{- with .Values.blueprint.application.icon }}
+    icon: {{ . | quote }}
+    {{- end }}
+    {{- with .Values.blueprint.application.description }}
+    meta_description: {{ . | quote }}
+    {{- end }}
+    {{- with .Values.blueprint.application.publisher }}
+    meta_publisher: {{ . | quote }}
+    {{- end }}
+{{- end }}{{/* end with of get-root */}}
