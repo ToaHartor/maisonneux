@@ -43,6 +43,14 @@ This is a **Home Kubernetes cluster monorepo** managed with GitOps (Flux, Renova
 - Tools in runner job pods are installed via mise (a `jdx/mise-action` setup step + `mise exec "tool@version" -- ...`), never curl-downloaded: talosctl, crane, trivy and zizmor are mise core/aqua backends and accept the bare version strings already managed by renovate.
 - Inline `${{ ... }}` expansion inside `run:` blocks is a template-injection vector (the zizmor gate in `flate.yaml` audits the workflows and blocks low+ findings): pass matrix/event values through step-level `env:` instead — the runner assigns env values without shell re-expansion.
 
+**Verifying workflow changes locally** (the pipeline-verification process, in order):
+
+1. **Stub the external tools and run the step's shell locally** — put fake `trivy`/`curl`/`talosctl`/`crane` on `PATH` (or pre-seed their input files, e.g. a `report.json` / `scan-section.md` fixture in `tmp/investigation/`) and execute the step's `run:` block verbatim, covering every branch (findings / no findings / scan failed / missing file). This is the only way to test the glue logic, since the runner pods are deleted after the job and can't be re-inspected.
+2. **zizmor gate (offline)** — `zizmor --no-online-audits --min-severity=low -- .forgejo/workflows/*.yaml` at the CI-pinned version; `--no-online-audits` is required (a Forgejo token can't authenticate to github.com, so online audits 401). Verified suppression syntax is `# zizmor: ignore[rule]` on the offending line — `ignore-line(...)` does not exist.
+3. **Gitea's server-side lint** — the Workflow Lint workflow POSTs each file to `POST /api/v1/{owner}/{repo}/actions/lint`, the same parser that rejects a file at commit time; it is the only check that catches Gitea-specific expression quirks (e.g. `fromJSON(x) || [...]` in matrix fields). Locally, run it via the in-cluster API (`http://forgejo-http.services.svc.cluster.local:3000/`) or push and watch the Workflow Lint run.
+4. **flate gate** — when the change touches the GitOps tree: `FLATE_OUTPUT=gitea flate test all --log-level debug --allow-missing-kinds CustomResourceDefinition` with `FLATE_PATH=./kubernetes/clusters/test`, using the CI-pinned flate and a **fresh cache dir** (a stale cache masks render regressions); the expected result is all-green except the pre-existing tolerated skips.
+5. **Push and observe** — check the workflow run statuses in the Forgejo UI (the jobs API of this instance 404s, so run-level status is what's available); a red gate here is the last resort, since local steps 1–4 catch nearly everything before then.
+
 ## Repository Structure
 
 ```text
