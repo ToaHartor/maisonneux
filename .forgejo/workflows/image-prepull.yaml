@@ -280,7 +280,12 @@ jobs:
     # when there is nothing new to pull, or when the pull job already failed
     # (the PR is red on the pull anyway)
     if: ${{ needs.pull.result == 'success' && needs.extract.outputs.images != '[]' }}
-    needs: pull
+    # extract must be listed too: the if and the matrix reference
+    # needs.extract.outputs.images, which is only evaluable when extract
+    # is a declared dependency
+    needs:
+      - extract
+      - pull
     runs-on: ubuntu-latest
     permissions:
       contents: read
