@@ -232,9 +232,16 @@ jobs:
         # rollout pulls from the LAN. The step fails only when both
         # paths fail; for registries zot does not mirror there is
         # nothing to warm, so that skip stays a success.
+        env:
+          # matrix.image in env, not inlined in the run block: the value
+          # flows from PR content through the flate render, so expanding
+          # it into the shell (template-injection, zizmor audit) is a
+          # code-injection risk; the runner sets env values without
+          # shell re-expansion
+          IMAGE: ${{ matrix.image }}
         run: |-
           set -uo pipefail
-          image="${{ matrix.image }}"
+          image="$IMAGE"
           node="${NODE:-}"
           if [ -n "$node" ] && mise exec "talosctl@${TALOS_VERSION}" -- talosctl --nodes "$node" image pull "$image"; then
             echo "node pre-unpack succeeded on ${node}"
@@ -266,12 +273,96 @@ jobs:
           echo "warming zot cache: ${image}"
           mise exec "crane@${CRANE_VERSION}" -- crane --insecure pull "${ZOT_URL}/${registry}/${name}${ref}"
 
+  scan:
+    name: Image Pre-pull - Scan
+    # Vulnerability gate for the images the pull job just warmed: a PR that
+    # would ship an image with open critical CVEs must not merge. Skipped
+    # when there is nothing new to pull, or when the pull job already failed
+    # (the PR is red on the pull anyway)
+    if: ${{ needs.pull.result == 'success' && needs.extract.outputs.images != '[]' }}
+    needs: pull
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        image: ${{ fromJSON(needs.extract.outputs.images) }}
+      max-parallel: 4
+      fail-fast: false
+    env:
+      ZOT_URL: http://zot.internal-ci.svc.cluster.local:5000
+      # renovate: datasource=github-releases depName=aquasecurity/trivy
+      TRIVY_VERSION: "0.76.2"
+    steps:
+      - name: Setup Mise
+        # trivy is provided by mise (same pattern as the pull job's
+        # talosctl/crane; the aqua backend serves the release binary)
+        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          cache: false
+          install: false
+
+      - name: Trivy scan
+        # Scan what the pull job just warmed, so the scan is a LAN read of
+        # the zot cache instead of an upstream fetch: registries zot mirrors
+        # are scanned through the zot service (plain HTTP, hence --insecure;
+        # the kaniko build registry localhost:32000 is zot's own root
+        # path), self-hosted registries not mirrored by zot are scanned
+        # from their upstream reference directly.
+        #
+        # Two runs: first the full-severity report (informational, never
+        # fails the job — low/medium/high findings stay visible in the log
+        # without blocking Renovate churn), then the gate: critical CVEs
+        # block the merge. trivy auto-downloads its vulnerability DB on
+        # first use (runner pods have the internet access the tool setup
+        # already relies on).
+        env:
+          # matrix.image in env, not inlined in the run block: the value
+          # flows from PR content through the flate render, so expanding
+          # it into the shell (template-injection, zizmor audit) is a
+          # code-injection risk; the runner sets env values without
+          # shell re-expansion
+          IMAGE: ${{ matrix.image }}
+        run: |-
+          set -uo pipefail
+          image="$IMAGE"
+          # No registry host prefix means docker.io
+          registry="${image%%/*}"
+          if [[ ! "$registry" =~ [\.:] ]]; then
+            image="docker.io/${image}"
+            registry="docker.io"
+          fi
+          rest="${image#"$registry"/}"
+          name="${rest%%[:@]*}"
+          ref="${rest#"$name"}"
+          # Scan source: warm zot for mirrored registries, upstream otherwise
+          insecure=""
+          case "$registry" in
+            docker.io|ghcr.io|quay.io|gcr.io|registry.k8s.io|nvcr.io|registry.gitlab.com)
+              scan_ref="${ZOT_URL}/${registry}/${name}${ref}"
+              insecure="--insecure"
+              ;;
+            localhost:32000)
+              scan_ref="${ZOT_URL}/${name}${ref}"
+              insecure="--insecure"
+              ;;
+            *)
+              scan_ref="${image}"
+              ;;
+          esac
+          echo "scanning ${scan_ref}"
+          # Informational full report (all severities); never fails the job
+          mise exec "trivy@${TRIVY_VERSION}" -- trivy image $insecure --disable-telemetry "${scan_ref}" || echo "::warning::full trivy scan errored; relying on the critical gate below"
+          # Critical gate: block the merge on critical CVEs
+          mise exec "trivy@${TRIVY_VERSION}" -- trivy image $insecure --disable-telemetry --severity CRITICAL --exit-code 1 "${scan_ref}"
+
   success:
     if: ${{ !cancelled() }}
     needs:
       - filter
       - extract
       - pull
+      - scan
     name: Image Pre-pull - Success
     runs-on: ubuntu-latest
     steps:
