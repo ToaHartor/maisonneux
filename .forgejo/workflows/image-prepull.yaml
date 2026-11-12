@@ -385,11 +385,10 @@ jobs:
                 echo
                 echo "| Severity | CVE | Package | Version → Fixed |"
                 echo "|---|---|---|---|"
-                jq -r 'def vulns: ((.Results // []) | map(.Vulnerabilities // []) | add) // (.Vulnerabilities // []);
-                  def rank: .Severity as $s | (["CRITICAL", "HIGH", "MEDIUM", "LOW"] | index($s));
-                  vulns | sort_by(rank) | .[0:15][]
-                  | "| \(.Severity) | \(.VulnerabilityID) | \(.PkgName) | \(.InstalledVersion // "-") → \((.FixedVersion // "") | if . == "" then "-" else . end) |"'
-                  report.json
+                # One-line jq program (the file argument must share the
+                # line with the closing quote — a bare `report.json`
+                # line after it would be executed as a command)
+                jq -r 'def vulns: ((.Results // []) | map(.Vulnerabilities // []) | add) // (.Vulnerabilities // []); def rank: .Severity as $s | (["CRITICAL", "HIGH", "MEDIUM", "LOW"] | index($s)); vulns | sort_by(rank) | .[0:15][] | "| \(.Severity) | \(.VulnerabilityID) | \(.PkgName) | \(.InstalledVersion // "-") → \((.FixedVersion // "") | if . == "" then "-" else . end) |"' report.json
                 if [ "$total" -gt 15 ]; then
                   echo
                   echo "_(+ $((total - 15)) more findings — full list in the trivy JSON of the scan job)"
