@@ -4,7 +4,11 @@ name: Labeler
 
 on:
   workflow_dispatch:
-  pull_request_target:
+  # pull_request (not pull_request_target): the labeler only runs a
+  # digest-pinned action against a config file from the base repo and
+  # needs no secrets, so the safe non-target trigger is sufficient
+  # (zizmor flags pull_request_target as a dangerous trigger)
+  pull_request:
     branches: ["localdev"]
 
 jobs:

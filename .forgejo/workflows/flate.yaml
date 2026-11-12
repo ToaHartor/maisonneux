@@ -126,10 +126,55 @@ jobs:
       #         -d "${BODY_JSON}"
       #     fi
 
+  zizmor:
+    # Supply-chain gate on the CI itself: zizmor audits the workflow files
+    # (template injection, unpinned actions, permission creep, credential
+    # handling) — it says nothing about container images (that is the
+    # trivy scan in the image-prepull workflow).
+    #
+    # Runs via mise like the prepull tools instead of zizmor-action: the
+    # action bootstraps a python3 pip-wheel install that the runner pods
+    # are not guaranteed to have; the mise zizmor backend ships the bare
+    # binary.
+    name: Flate - Zizmor
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # renovate: datasource=github-releases depName=zizmorcore/zizmor
+      ZIZMOR_VERSION: "1.32.0"
+    steps:
+      - name: Checkout
+        uses: https://github.com/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: https://github.com/jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          cache: false
+          install: false
+
+      - name: Run zizmor
+        # --format=github emits ::error::/::warning:: annotations on the
+        # PR; --no-online-audits keeps the gate deterministic (the online
+        # audits need a github.com API token, which a Forgejo-issued
+        # token cannot use). The workflow files are passed explicitly as
+        # inputs (zizmor does not auto-detect .forgejo/workflows from a
+        # directory input). --min-severity=low blocks merges on
+        # low/medium/high/critical findings; informational findings
+        # (e.g. template expansions of platform event values) stay
+        # report-only. Any counted finding fails the job (zizmor exits
+        # non-zero).
+        run: |-
+          set -uo pipefail
+          mise exec "zizmor@${ZIZMOR_VERSION}" -- zizmor --format=github --no-online-audits --min-severity=low -- .forgejo/workflows/*.yaml
+
   success:
     if: ${{ !cancelled() }}
     needs:
       - flate
+      - zizmor
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
