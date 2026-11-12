@@ -444,7 +444,13 @@ jobs:
             echo "::warning::no scan section found (scan step did not produce it); skipping the PR comment"
             exit 0
           fi
-          body="$(printf '%s\n\n## Trivy scan: %s\n\n' "$marker" "$IMAGE"; cat "$section")"
+          # Folded by default so the PR merge controls stay above the
+          # report; the summary shows the section's findings line
+          # ("N findings: 3 critical, ...", "no findings", or
+          # "trivy scan failed (see the scan job log)")
+          summary="$(sed -n '2p' "$section" | sed 's/^-[[:space:]]*//')"
+          [ -n "$summary" ] || summary="details"
+          body="$(printf '%s\n\n<details>\n<summary><b>Trivy scan</b> — <code>%s</code> (%s)</summary>\n\n' "$marker" "$image_tag" "$summary"; cat "$section"; printf '\n</details>\n')"
           payload="$(jq -n --arg body "$body" '{body: $body}')"
           # find-or-patch the sticky comment (marker-based, same pattern as
           # the flate gate's commented block); a failure only warns — the
