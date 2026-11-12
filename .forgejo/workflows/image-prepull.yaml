@@ -165,16 +165,18 @@ jobs:
 
   pull:
     name: Image Pre-pull - Pull
-    # Only run when the extract job actually produced a list (skipped
-    # extract leaves the output empty, which must not trigger a pull)
-    if: ${{ needs.extract.result == 'success' && needs.extract.outputs.images != '[]' }}
+    # Runs whenever the extract succeeded; when the extract produced no
+    # images the matrix falls back to a single 'none' no-op entry (an
+    # empty matrix leaves the job incomplete on Forgejo, so the matrix
+    # is never empty) and every step below is guarded on the entry
+    if: ${{ needs.extract.result == 'success' }}
     needs: extract
     runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
       matrix:
-        image: ${{ fromJSON(needs.extract.outputs.images) }}
+        image: ${{ fromJSON(needs.extract.outputs.images) || ['none'] }}
       # Bound concurrent zot on-demand sync fetches; one flaky image must
       # not sink the rest
       max-parallel: 4
@@ -194,12 +196,14 @@ jobs:
         # talosctl and crane are both provided by mise (the home-ops
         # pre-pull pattern); both backends accept the bare version
         # (no v prefix), so the renovate-managed envs work as-is
+        if: ${{ matrix.image != 'none' }}
         uses: https://github.com/jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
           cache: false
           install: false
 
       - name: "Pre-unpack on node (fallback: warm zot cache)"
+        if: ${{ matrix.image != 'none' }}
         # Best path (the home-ops pre-pull pattern): pull through the
         # node's containerd — which goes through the node's registry
         # mirror chain, so zot is warmed for every node too — and unpack
@@ -264,12 +268,12 @@ jobs:
 
   scan:
     name: Image Pre-pull - Scan
-    # Vulnerability gate for the images the pull job just warmed: a PR that
-    # would ship an image with open critical CVEs must not merge. Skipped
-    # when there is nothing new to pull, or when the pull job already failed
-    # (the PR is red on the pull anyway)
-    if: ${{ needs.pull.result == 'success' && needs.extract.outputs.images != '[]' }}
-    # extract must be listed too: the if and the matrix reference
+    # Vulnerability report for the images the pull job just warmed: the
+    # findings land in the PR comment the AI reviewer reads. Runs
+    # whenever the pull job succeeded; with no new images the matrix is
+    # the 'none' no-op entry and the steps are skipped
+    if: ${{ needs.pull.result == 'success' }}
+    # extract must be listed too: the matrix references
     # needs.extract.outputs.images, which is only evaluable when extract
     # is a declared dependency
     needs:
@@ -280,7 +284,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        image: ${{ fromJSON(needs.extract.outputs.images) }}
+        image: ${{ fromJSON(needs.extract.outputs.images) || ['none'] }}
       max-parallel: 4
       fail-fast: false
     env:
@@ -291,12 +295,14 @@ jobs:
       - name: Setup Mise
         # trivy is provided by mise (same pattern as the pull job's
         # talosctl/crane; the aqua backend serves the release binary)
+        if: ${{ matrix.image != 'none' }}
         uses: https://github.com/jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
           cache: false
           install: false
 
       - name: Trivy scan
+        if: ${{ matrix.image != 'none' }}
         # Scan what the pull job just warmed, so the scan is a LAN read of
         # the zot cache instead of an upstream fetch: registries zot
         # mirrors are scanned through the zot service (plain HTTP, hence
@@ -395,8 +401,9 @@ jobs:
       - name: Upload scan report
         # Every matrix job uploads its section into one shared artifact;
         # the files are unique per image slug, so parallel uploads merge
-        # cleanly. if-no-files-found keeps the step green when the scan
-        # step itself was skipped
+        # cleanly. The 'none' no-op entry skips this step entirely, and
+        # if-no-files-found keeps it green in any other edge case
+        if: ${{ matrix.image != 'none' }}
         uses: https://github.com/actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: trivy-report
