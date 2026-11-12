@@ -318,15 +318,19 @@ jobs:
         # own root path), self-hosted registries not mirrored by zot are
         # scanned from their upstream reference directly.
         #
-        # Report-only, on purpose: the finding table is written to a
-        # section file that the scan-summary job aggregates into one
-        # sticky PR comment (read by the AI reviewer). We deliberately
-        # do NOT block the merge on CVEs — for a home cluster most
-        # published CVEs do not affect the actual exposure, and a
-        # blocking critical gate red'd Renovate churn until upstream
-        # shipped a fix. Restoring one is a one-line addition of a
-        # second trivy invocation with --severity CRITICAL --exit-code
-        # 1. A failed scan is a warning entry, not a job failure.
+        # Report-only, on purpose: each scan job posts its own sticky
+        # PR comment (one per image, marker-tagged) that the AI reviewer
+        # reads alongside the konflate diff. The GitHub-hosted
+        # upload/download-artifact@v4 actions are not supported by
+        # Gitea/Forgejo runners, so a single aggregated comment via a
+        # shared artifact is not possible — per-image comments it is.
+        # We deliberately do NOT block the merge on CVEs — for a home
+        # cluster most published CVEs do not affect the actual exposure,
+        # and a blocking critical gate red'd Renovate churn until
+        # upstream shipped a fix. Restoring one is a one-line addition
+        # of a second trivy invocation with --severity CRITICAL
+        # --exit-code 1. A failed scan is a warning entry, not a job
+        # failure.
         # trivy auto-downloads its vulnerability DB on first use (the
         # runner pods have the internet access the tool setup already
         # relies on).
@@ -405,86 +409,49 @@ jobs:
           fi
           rm -f report.json
 
-      - name: Upload scan report
-        # Every matrix job uploads its section into one shared artifact;
-        # the files are unique per image slug, so parallel uploads merge
-        # cleanly. The 'none' no-op entry skips this step entirely, and
-        # if-no-files-found keeps it green in any other edge case
+      # One sticky PR comment per scanned image, posted by the scan job
+      # itself: the GitHub-hosted upload/download-artifact@v4 actions are
+      # NOT supported by Gitea/Forgejo runners (GHESNotSupportedError), so
+      # the artifact-based single-comment aggregation is off the table.
+      # The marker is tag-only so digest bumps update the same comment
+      # instead of stacking new ones.
+      - name: Post PR comment
         if: ${{ matrix.image != 'none' }}
-        uses: https://github.com/actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: trivy-report
-          path: report-*.md
-          if-no-files-found: ignore
-
-  scan-summary:
-    name: Image Pre-pull - Scan Report
-    # Aggregate the per-image sections into a single sticky PR comment
-    # (the AI reviewer reads it alongside the konflate rendered diff).
-    # PR events only — a manual dispatch run has no issue to comment on.
-    # Report-only: a posting failure warns, it never blocks the PR.
-    if: ${{ needs.scan.result == 'success' && forgejo.event_name == 'pull_request' }}
-    needs: scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Download scan reports
-        # download-artifact with merge-multiple flattens every job's
-        # 'trivy-report' artifact into the workspace root
-        uses: https://github.com/actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          merge-multiple: true
-
-      - name: Post report
         env:
-          # The same in-cluster Forgejo API + repo token the ai-review
-          # workflow uses (the runner's default token lacks write access)
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # In-cluster Forgejo API + repo token (same auth the ai-review
+          # workflow uses; the runner's default token lacks write access)
           API_URL: http://forgejo-http.services.svc.cluster.local:3000/
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ forgejo.repository }}
-          PR_NUMBER: ${{ forgejo.event.pull_request.number }}
-          MARKER: "<!-- trivy-scan: report -->"
+          PR: ${{ forgejo.event.pull_request.number }}
+          IMAGE: ${{ matrix.image }}
         run: |-
           set -uo pipefail
-          mapfile -t files < <(find . -maxdepth 2 -name 'report-*.md' -print | sort)
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "no scan reports produced; skipping the PR comment"
+          # tag-only marker (digests change on every digest-bump PR)
+          image_tag="${IMAGE%@*}"
+          marker="<!-- trivy-scan: ${image_tag} -->"
+          body="$(printf '%s\n\n## Trivy scan: %s\n\n' "$marker" "$IMAGE"; cat "$RUNNER_TEMP/scan-section.md")"
+          payload="$(jq -n --arg body "$body" '{body: $body}')"
+          # find-or-patch the sticky comment (marker-based, same pattern as
+          # the flate gate's commented block); a failure only warns — the
+          # report stays in the job log
+          existing=$(curl -sf -H "Authorization: token ${TOKEN}" -H "Accept: application/json" \
+            "${API_URL}api/v1/repos/${REPO}/issues/${PR}/comments?limit=50" \
+            | jq -r --arg m "$marker" '.[] | select(.body | contains($m)) | .id' | head -n1 || true)
+          if [ -n "$existing" ]; then
+            resp=$(curl -sS -f -X PATCH -H "Authorization: token ${TOKEN}" \
+              -H "Accept: application/json" -H "Content-Type: application/json" \
+              -d "$payload" "${API_URL}api/v1/repos/${REPO}/issues/${PR}/comments/${existing}" || echo '{"error":"patch failed"}')
+          else
+            resp=$(curl -sS -f -X POST -H "Authorization: token ${TOKEN}" \
+              -H "Accept: application/json" -H "Content-Type: application/json" \
+              -d "$payload" "${API_URL}api/v1/repos/${REPO}/issues/${PR}/comments" || echo '{"error":"post failed"}')
+          fi
+          echo "$resp" | head -c 500; echo
+          if echo "$resp" | grep -q '"error"'; then
+            echo "::warning::could not post/patch the trivy PR comment (non-blocking)"
             exit 0
           fi
-          {
-            echo "${MARKER}"
-            echo
-            echo "## Trivy scan — ${#files[@]} newly prepulled image(s) (advisory, non-blocking)"
-            echo
-            echo "Vulnerability findings in the images this PR warmed in zot. The scan does not block the merge — most published CVEs do not affect a home cluster's exposure; look at the critical/high rows before merging. (To re-enable a blocking critical gate: add a second trivy invocation with --severity CRITICAL --exit-code 1 to the scan step.)"
-            echo
-            for f in "${files[@]}"; do
-              cat "$f"
-              echo
-            done
-          } > trivy-report.md
-          BODY_JSON=$(jq -Rs '{body: .}' < trivy-report.md)
-          # find-or-patch the sticky comment (marker-based, same pattern
-          # as the flate gate's comment block); posting failures warn
-          # instead of blocking — the report stays available in the
-          # artifact and the job log
-          EXISTING_ID=$(curl -fsS -H "Authorization: token ${GITHUB_TOKEN}" "${API_URL}repos/${REPO}/issues/${PR_NUMBER}/comments" | jq -r --arg marker "$MARKER" '[.[] | select(.body | startswith($marker))] | .[0].id // empty')
-          if [ -n "$EXISTING_ID" ]; then
-            if curl -fsS -X PATCH -H "Authorization: token ${GITHUB_TOKEN}" -H "Content-Type: application/json" -d "$BODY_JSON" "${API_URL}repos/${REPO}/issues/comments/${EXISTING_ID}" > /dev/null; then
-              echo "updated trivy report comment ${EXISTING_ID}"
-            else
-              echo "::warning::failed to update the trivy report comment (report stays in the artifact and the job log)"
-            fi
-          else
-            if curl -fsS -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Content-Type: application/json" -d "$BODY_JSON" "${API_URL}repos/${REPO}/issues/${PR_NUMBER}/comments" > /dev/null; then
-              echo "posted trivy report comment on ${REPO}#${PR_NUMBER}"
-            else
-              echo "::warning::failed to post the trivy report comment (report stays in the artifact and the job log)"
-            fi
-          fi
-
   success:
     if: ${{ !cancelled() }}
     needs:
@@ -492,7 +459,6 @@ jobs:
       - extract
       - pull
       - scan
-      - scan-summary
     name: Image Pre-pull - Success
     runs-on: ubuntu-latest
     steps:
