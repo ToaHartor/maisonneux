@@ -35,6 +35,13 @@ This is a **Home Kubernetes cluster monorepo** managed with GitOps (Flux, Renova
   never in `.tmp-*` folders at the repo root — `.gitignore` only
   covers `tmp/*`, so `.tmp-*` dirs pollute the git tree.
 
+### Forgejo Actions (`.forgejo/workflows/`)
+
+- `uses:` references MUST be full URLs — `uses: https://github.com/<owner>/<repo>@<sha> # v<version>`, matching the flate gate. The runner resolves short-form `owner/repo@ref` against the Forgejo instance (`data.forgejo.org`) and dies with "remote: Not found" for anything not mirrored there; github.com-referenced actions work because the runner has outbound github.com access.
+- A job's `if:` / `strategy.matrix` may only reference `needs.<job>` for jobs declared in that job's own `needs` list — Forgejo rejects the whole workflow at parse time otherwise ("job X is not in the needs list of job Y").
+- Tools in runner job pods are installed via mise (a `jdx/mise-action` setup step + `mise exec "tool@version" -- ...`), never curl-downloaded: talosctl, crane, trivy and zizmor are mise core/aqua backends and accept the bare version strings already managed by renovate.
+- Inline `${{ ... }}` expansion inside `run:` blocks is a template-injection vector (the zizmor gate in `flate.yaml` audits the workflows and blocks low+ findings): pass matrix/event values through step-level `env:` instead — the runner assigns env values without shell re-expansion.
+
 ## Repository Structure
 
 ```text
