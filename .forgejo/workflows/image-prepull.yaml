@@ -143,19 +143,27 @@ jobs:
           comm -13 base.images current.images > new.images
           rm -rf .flate-base
 
-          # Build the JSON array output (no jq in the runner pod)
-          json="["
-          first=true
-          while IFS= read -r img; do
-            [ -n "$img" ] || continue
-            if $first; then
-              first=false
-            else
-              json="$json, "
-            fi
-            json="$json\"$img\""
-          done < new.images
-          json="$json]"
+          # Build the JSON array output (no jq in the runner pod). With
+          # no changed images the output is a single "none" placeholder:
+          # an empty matrix leaves the pull/scan jobs incomplete on
+          # Forgejo, while the 'none' entry runs as a green no-op (every
+          # real step is guarded on matrix.image != 'none')
+          if [ -s new.images ]; then
+            json="["
+            first=true
+            while IFS= read -r img; do
+              [ -n "$img" ] || continue
+              if $first; then
+                first=false
+              else
+                json="$json, "
+              fi
+              json="$json\"$img\""
+            done < new.images
+            json="$json]"
+          else
+            json="[\"none\"]"
+          fi
           echo "$json" > images.json
           echo "Changed images:"
           cat images.json
@@ -165,10 +173,10 @@ jobs:
 
   pull:
     name: Image Pre-pull - Pull
-    # Runs whenever the extract succeeded; when the extract produced no
-    # images the matrix falls back to a single 'none' no-op entry (an
-    # empty matrix leaves the job incomplete on Forgejo, so the matrix
-    # is never empty) and every step below is guarded on the entry
+    # Runs whenever the extract succeeded. When no image changed, the
+    # extract outputs a single "none" placeholder instead of an empty
+    # list (an empty matrix leaves the job incomplete on Forgejo) and
+    # every step below is guarded on the entry
     if: ${{ needs.extract.result == 'success' }}
     needs: extract
     runs-on: ubuntu-latest
@@ -176,7 +184,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        image: ${{ fromJSON(needs.extract.outputs.images) || ['none'] }}
+        image: ${{ fromJSON(needs.extract.outputs.images) }}
       # Bound concurrent zot on-demand sync fetches; one flaky image must
       # not sink the rest
       max-parallel: 4
@@ -284,7 +292,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        image: ${{ fromJSON(needs.extract.outputs.images) || ['none'] }}
+        image: ${{ fromJSON(needs.extract.outputs.images) }}
       max-parallel: 4
       fail-fast: false
     env:
